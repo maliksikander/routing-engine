@@ -1,0 +1,37 @@
+package com.ef.mediaroutingengine.exceptions;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+@ControllerAdvice
+public class GenericExceptionHandler extends BaseExceptionHandler {
+
+    public  GenericExceptionHandler(){
+        super();
+    }
+
+    @Autowired
+    public GenericExceptionHandler(MessageSource messageSource){
+        this.messageSource = messageSource;
+    }
+
+    @ExceptionHandler({Exception.class})
+    protected ResponseEntity<Object> handleGenericException(final  Exception ex){
+
+        logger.error(String.format("Uncaught error. Stacktrace is : %s", ex + getFullStackTraceLog(ex)));
+        ApiError apiError = new ApiError(HttpStatus.INTERNAL_SERVER_ERROR,getTranslatedMessage("error.generic.internal.server.error",null));
+        return buildResponseEntity(apiError);
+    }
+    private String getFullStackTraceLog(Exception ex){
+        return Arrays.asList(ex.getStackTrace()).stream().map(Objects::toString).collect(Collectors.joining());
+    }
+
+}
