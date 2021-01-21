@@ -1,7 +1,7 @@
 stages:
   #- static-test
-  - artifacts
-  - test
+  #- artifacts
+  #- test
   - build
   #- deploy
 include:
@@ -51,21 +51,21 @@ include:
 ## ===============================================================
 
 
-mvn_artifacts:
-    stage: artifacts
-    #when: manual
-    image: maven:3.6.3
-    script:
-#    - yum install maven -y
-    - rm -rf target
-    - ls -ltr
-    - mvn clean
-    - mvn package
+#mvn_artifacts:
+#    stage: artifacts
+#    #when: manual
+#    image: maven:3.6.3
+#    script:
+##    - yum install maven -y
+#    - rm -rf target
+#    - ls -ltr
+#    - mvn clean
+#    - mvn package
 
-    artifacts:
-        paths:
-            - target
-    allow_failure: false
+#    artifacts:
+#        paths:
+#            - target
+#    allow_failure: false
 
 build-image:
     stage: build
@@ -79,7 +79,7 @@ build-image:
       - mvn_artifacts
 
     script:
-      - cp -r ./target ./
+      #- cp -r ./target ./
       - docker build --pull -t "$CI_REGISTRY_IMAGE:${CI_COMMIT_REF_NAME}" .
       - docker push "$CI_REGISTRY_IMAGE:${CI_COMMIT_REF_NAME}"
       
