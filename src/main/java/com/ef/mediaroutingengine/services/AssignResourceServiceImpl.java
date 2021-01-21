@@ -27,17 +27,17 @@ import java.time.Duration;
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AssignResourceServiceImpl implements AssignResourceService {
-    AssignResourceConfiguration config;
-    FindAgent findAgent;
-    AgentStateManager agentStateManager;
-    RoutingEngineCache routingEngineCache;
+    private final AssignResourceConfiguration config;
+    private final FindAgent findAgent;
+    private final AgentStateManager agentStateManager;
+    private final RoutingEngineCache routingEngineCache;
 
     private static final Logger log = LoggerFactory.getLogger(AssignResourceServiceImpl.class);
 
     @Autowired
-    public AssignResourceServiceImpl(AssignResourceConfiguration config, RoutingEngineCache cache) {
+    public AssignResourceServiceImpl(AssignResourceConfiguration config, RoutingEngineCache cache, FindAgent findAgent) {
         this.config = config;
-        this.findAgent = new FindAgentImpl();
+        this.findAgent = findAgent;
         this.agentStateManager = new AgentStateManagerImpl();
         this.routingEngineCache = cache;
     }
