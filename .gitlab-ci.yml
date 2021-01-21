@@ -54,7 +54,7 @@ include:
 mvn_artifacts:
     stage: artifacts
     #when: manual
-    image: maven
+    image: maven:3.6.3
     script:
 #    - yum install maven -y
     - rm -rf target
