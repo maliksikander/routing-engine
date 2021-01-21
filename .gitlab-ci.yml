@@ -4,8 +4,8 @@ stages:
   #- test
   - build
   #- deploy
-include:
-  - template: Container-Scanning.gitlab-ci.yml
+#include:
+#  - template: Container-Scanning.gitlab-ci.yml
 
 ##===============Code Quality /Static Testing==========
 #sonarqube-pretest:
