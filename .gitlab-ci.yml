@@ -1,7 +1,7 @@
 stages:
   #- static-test
   #- artifacts
-  #- test
+  - test
   - build
   #- deploy
 #include:
