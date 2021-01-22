@@ -9,3 +9,4 @@ bin/
 .settings/
 .vscode/
 *.iml
+docker/media-routing-engine-0.0.1-SNAPSHOT.jar
