@@ -1,4 +1,4 @@
-package com.ef.mediaroutingengine.services;
+package com.ef.mediaroutingengine.services.ControllerServices;
 
 import com.ef.mediaroutingengine.dto.AssignResourceRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;

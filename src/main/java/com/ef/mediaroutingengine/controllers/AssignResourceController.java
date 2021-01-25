@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.controllers;
 
 import com.ef.mediaroutingengine.dto.AssignResourceRequest;
-import com.ef.mediaroutingengine.services.AssignResourceService;
+import com.ef.mediaroutingengine.services.ControllerServices.AssignResourceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -3,7 +3,7 @@ package com.ef.mediaroutingengine;
 import com.ef.cim.objectmodel.*;
 import com.ef.mediaroutingengine.Constants.GeneralConstants;
 import com.ef.mediaroutingengine.model.AgentPresence;
-import com.ef.mediaroutingengine.redis.RedisClient;
+import com.ef.mediaroutingengine.services.redis.RedisClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;

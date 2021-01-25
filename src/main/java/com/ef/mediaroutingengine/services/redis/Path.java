@@ -26,7 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ef.mediaroutingengine.redis;
+package com.ef.mediaroutingengine.services.redis;
 
 /**
  * Path is a ReJSON path, representing a valid path into an object

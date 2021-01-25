@@ -17,6 +17,8 @@ public class RedisProperties {
     private Integer minIdle;
     private Integer maxWait;
 
+    private boolean connectAtStartup;
+
     public String getHost() {
         return host;
     }
@@ -87,6 +89,14 @@ public class RedisProperties {
 
     public void setMaxWait(Integer maxWait) {
         this.maxWait = maxWait;
+    }
+
+    public boolean getConnectAtStartup() {
+        return connectAtStartup;
+    }
+
+    public void setConnectAtStartup(boolean connectAtStartup) {
+        this.connectAtStartup = connectAtStartup;
     }
 
     @Override

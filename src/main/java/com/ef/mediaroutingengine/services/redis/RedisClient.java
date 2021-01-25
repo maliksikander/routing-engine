@@ -1,4 +1,4 @@
-package com.ef.mediaroutingengine.redis;
+package com.ef.mediaroutingengine.services.redis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 

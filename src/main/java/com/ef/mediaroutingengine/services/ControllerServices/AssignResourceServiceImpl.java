@@ -1,14 +1,17 @@
-package com.ef.mediaroutingengine.services;
+package com.ef.mediaroutingengine.services.ControllerServices;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.mediaroutingengine.config.AssignResourceConfiguration;
+import com.ef.mediaroutingengine.config.AssignResourceProperties;
 import com.ef.mediaroutingengine.dto.AgentReservedRequest;
 import com.ef.mediaroutingengine.dto.AssignResourceRequest;
 import com.ef.mediaroutingengine.dto.AssignTaskRequest;
 import com.ef.mediaroutingengine.dto.ChangeStateRequest;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.repositories.RoutingEngineCache;
+import com.ef.mediaroutingengine.services.AgentStateManager;
+import com.ef.mediaroutingengine.services.AgentStateManagerImpl;
+import com.ef.mediaroutingengine.services.FindAgent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -27,7 +30,7 @@ import java.time.Duration;
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AssignResourceServiceImpl implements AssignResourceService {
-    private final AssignResourceConfiguration config;
+    private final AssignResourceProperties config;
     private final FindAgent findAgent;
     private final AgentStateManager agentStateManager;
     private final RoutingEngineCache routingEngineCache;
@@ -35,7 +38,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     private static final Logger log = LoggerFactory.getLogger(AssignResourceServiceImpl.class);
 
     @Autowired
-    public AssignResourceServiceImpl(AssignResourceConfiguration config, RoutingEngineCache cache, FindAgent findAgent) {
+    public AssignResourceServiceImpl(AssignResourceProperties config, RoutingEngineCache cache, FindAgent findAgent) {
         this.config = config;
         this.findAgent = findAgent;
         this.agentStateManager = new AgentStateManagerImpl();
@@ -44,7 +47,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
 
     public void assign(AssignResourceRequest request){
         log.debug("assign method started");
-        for(int i = 0; i<this.config.getAssignResourceRetries(); i++) {
+        for(int i = 0; i<this.config.getRetries(); i++) {
             log.debug("Assign Resource attempt no: " + (i+1));
 
             //Make task and add to cache.
@@ -110,7 +113,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
                 log.debug("State could not change trying reserving agent again...");
             }
 
-            if(i==this.config.getAssignResourceRetries()-1){
+            if(i==this.config.getRetries()-1){
                 //publish Agent-Not-Available
                 log.debug("Find Agent retries finished Publish No-Agent-Available");
             }
