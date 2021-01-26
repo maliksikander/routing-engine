@@ -1,4 +1,4 @@
-package com.ef.mediaroutingengine.Constants;
+package com.ef.mediaroutingengine.constants;
 
 import com.ef.mediaroutingengine.model.AgentPresence;
 

@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.services;
 
 import com.ef.cim.objectmodel.CCUser;
-import com.ef.mediaroutingengine.Constants.GeneralConstants;
+import com.ef.mediaroutingengine.constants.GeneralConstants;
 import com.ef.mediaroutingengine.model.AgentPresence;
 import com.ef.mediaroutingengine.services.redis.RedisClient;
 import org.springframework.beans.factory.annotation.Autowired;
