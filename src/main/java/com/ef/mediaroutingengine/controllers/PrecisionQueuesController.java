@@ -15,23 +15,25 @@ public class PrecisionQueuesController {
     @Autowired
     PrecisionQueuesService service;
 
+    @CrossOrigin(origins = "http://localhost:4200")
     @PostMapping(value = "/precision-queues", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> createPrecisionQueue(@Valid @RequestBody PrecisionQueue requestBody) {
         return new ResponseEntity<>(this.service.create(requestBody), HttpStatus.OK);
     }
 
+    @CrossOrigin(origins = "http://localhost:4200")
     @GetMapping(value = "/precision-queues", produces = "application/json")
     public ResponseEntity<Object> retrievePrecisionQueues() {
         return new ResponseEntity<>(this.service.retrieve(), HttpStatus.OK);
     }
 
+    @CrossOrigin(origins = "http://localhost:4200")
     @PutMapping(value = "/precision-queues/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updatePrecisionQueue(@Valid @RequestBody PrecisionQueue requestBody, @PathVariable UUID id) {
-        this.service.update(requestBody, id);
-        SuccessResponseBody responseBody = new SuccessResponseBody("Successfully Updated");
-        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
+    @CrossOrigin(origins = "http://localhost:4200")
     @DeleteMapping(value = "/precision-queues/{id}", produces = "application/json")
     public ResponseEntity<Object> deletePrecisionQueue(@PathVariable UUID id) {
         this.service.delete(id);

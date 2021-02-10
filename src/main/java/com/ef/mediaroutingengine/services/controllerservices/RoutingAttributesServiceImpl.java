@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.services.controllerservices;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
+import com.ef.mediaroutingengine.dto.RoutingAttributeDeleteConflictResponse;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Expression;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
@@ -46,7 +47,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
 
     @Override
     @Transactional
-    public void update(RoutingAttribute routingAttribute, UUID id) {
+    public RoutingAttribute update(RoutingAttribute routingAttribute, UUID id) {
         if (!this.repository.existsById(id)) {
             throw new NotFoundException("Could not find resource to update");
         }
@@ -54,18 +55,25 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
 
         this.updatePrecisionQueues(routingAttribute, id);
         this.updateAgents(routingAttribute, id);
-        repository.save(routingAttribute);
+        return repository.save(routingAttribute);
     }
 
     @Override
     @Transactional
-    public void delete(UUID id) {
+    public RoutingAttributeDeleteConflictResponse delete(UUID id) {
         if (!repository.existsById(id)) {
             throw new NotFoundException("Could not find resource to delete");
         }
-        this.updatePrecisionQueues(null, id);
-        this.updateAgents(null, id);
-        repository.deleteById(id);
+        List<PrecisionQueue> precisionQueues = this.precisionQueueRepository.findByRoutingAttributeId(id);
+        List<CCUser> agents = this.agentsRepository.findByRoutingAttributeId(id);
+        if(precisionQueues.isEmpty() && agents.isEmpty()) {
+            repository.deleteById(id);
+            return null;
+        }
+        RoutingAttributeDeleteConflictResponse response = new RoutingAttributeDeleteConflictResponse();
+        response.setAgents(agents);
+        response.setPrecisionQueues(precisionQueues);
+        return response;
     }
 
     private void updatePrecisionQueues(RoutingAttribute routingAttribute, UUID id) {

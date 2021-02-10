@@ -36,23 +36,26 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
 
     @Override
     @Transactional
-    public void update(MediaRoutingDomain mediaRoutingDomain, UUID id) {
+    public MediaRoutingDomain update(MediaRoutingDomain mediaRoutingDomain, UUID id) {
         if(!this.repository.existsById(id)){
             throw new NotFoundException("Could not find the resource to update");
         }
         mediaRoutingDomain.setId(id);
         this.updatePrecisionQueues(mediaRoutingDomain, id);
-        this.repository.save(mediaRoutingDomain);
+        return this.repository.save(mediaRoutingDomain);
     }
 
     @Override
     @Transactional
-    public void delete(UUID id) {
+    public List<PrecisionQueue> delete(UUID id) {
         if(!this.repository.existsById(id)){
             throw new NotFoundException("Could not find the resource to delete");
         }
-        this.updatePrecisionQueues(null, id);
-        this.repository.deleteById(id);
+        List<PrecisionQueue> precisionQueues = this.precisionQueueRepository.findByMrdId(id);
+        if(precisionQueues.isEmpty()) {
+            this.repository.deleteById(id);
+        }
+        return precisionQueues;
     }
 
     private void updatePrecisionQueues(MediaRoutingDomain mediaRoutingDomain, UUID id){

@@ -35,18 +35,14 @@ public class AgentsServiceImpl implements AgentsService{
     }
 
     @Override
-    public void update(CCUser agent, UUID id) {
-        Optional<CCUser> existingObject = this.repository.findById(id);
-        if(!existingObject.isPresent()){
+    public CCUser update(CCUser agent, UUID id) {
+        if(!this.repository.existsById(id)){
             throw new NotFoundException("Could not find agent resource to update");
-        }
-        if(!agent.getKeycloakUser().equals(existingObject.get().getKeycloakUser())){
-            throw new IllegalArgumentException("Can not update KeyCloakUser object");
         }
 
         this.validateAndSetRoutingAttributes(agent);
         agent.setId(id);
-        this.repository.save(agent);
+        return this.repository.save(agent);
     }
 
     @Override

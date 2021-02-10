@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.controllers;
 
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
+import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.services.controllerservices.MediaRoutingDomainsService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,27 +22,29 @@ public class MediaRoutingDomainsController {
     @CrossOrigin(origins = "http://localhost:4200")
     @PostMapping(value = "/media-routing-domains", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> createMediaRoutingDomain(@Valid @RequestBody MediaRoutingDomain requestBody) {
-        MediaRoutingDomain responseBody = service.create(requestBody);
-        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        return new ResponseEntity<>(this.service.create(requestBody), HttpStatus.OK);
     }
 
+    @CrossOrigin(origins = "http://localhost:4200")
     @GetMapping(value = "/media-routing-domains", produces = "application/json")
     public ResponseEntity<Object> retrieveMediaRoutingDomains() {
-        List<MediaRoutingDomain> responseBody = this.service.retrieve();
-        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        return new ResponseEntity<>(this.service.retrieve(), HttpStatus.OK);
     }
 
+    @CrossOrigin(origins = "http://localhost:4200")
     @PutMapping(value = "/media-routing-domains/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateMediaRoutingDomain(@Valid @RequestBody MediaRoutingDomain requestBody, @PathVariable UUID id) {
-        this.service.update(requestBody, id);
-        SuccessResponseBody responseBody = new SuccessResponseBody("Successfully updated");
-        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
+    @CrossOrigin(origins = "http://localhost:4200")
     @DeleteMapping(value = "/media-routing-domains/{id}", produces = "application/json")
     public ResponseEntity<Object> deleteMediaRoutingDomain(@PathVariable UUID id) {
-        this.service.delete(id);
-        SuccessResponseBody responseBody = new SuccessResponseBody("Successfully deleted");
+        List<PrecisionQueue> precisionQueues = this.service.delete(id);
+        if(!precisionQueues.isEmpty()) {
+            return new ResponseEntity<>(precisionQueues, HttpStatus.CONFLICT);
+        }
+        SuccessResponseBody responseBody = new SuccessResponseBody("Successfully Deleted");
         return new ResponseEntity<>(responseBody, HttpStatus.OK);
     }
 }

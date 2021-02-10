@@ -8,6 +8,6 @@ import java.util.UUID;
 public interface AgentsService {
     CCUser create(CCUser agent);
     List<CCUser> retrieve();
-    void update(CCUser agent, UUID id);
+    CCUser update(CCUser agent, UUID id);
     void delete(UUID id);
 }

@@ -39,7 +39,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService{
     }
 
     @Override
-    public void update(PrecisionQueue precisionQueue, UUID id) {
+    public PrecisionQueue update(PrecisionQueue precisionQueue, UUID id) {
         if(!this.repository.existsById(id)) {
             throw new NotFoundException("Could not find precision queue resource to update");
         }
@@ -47,9 +47,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService{
         this.validateAndSetRoutingAttributes(precisionQueue);
         precisionQueue.setId(id);
 
-        System.out.println(precisionQueue.toString());
-        this.repository.save(precisionQueue);
-
+        return this.repository.save(precisionQueue);
     }
 
     @Override
