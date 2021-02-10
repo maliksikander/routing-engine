@@ -1,7 +1,6 @@
-package com.ef.mediaroutingengine.services.ControllerServices;
+package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.mediaroutingengine.dto.AssignResourceRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 public interface AssignResourceService {
     void assign(AssignResourceRequest request);

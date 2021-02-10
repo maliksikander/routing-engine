@@ -27,8 +27,8 @@ public class GenericExceptionHandler extends BaseExceptionHandler {
     protected ResponseEntity<Object> handleGenericException(final  Exception ex){
 
         logger.error(String.format("Uncaught error. Stacktrace is : %s", ex + getFullStackTraceLog(ex)));
-        ApiError apiError = new ApiError(HttpStatus.INTERNAL_SERVER_ERROR,getTranslatedMessage("error.generic.internal.server.error",null));
-        return buildResponseEntity(apiError);
+        ErrorResponseBody errorResponseBody = new ErrorResponseBody(getTranslatedMessage("error.generic.internal.server.error",null),ex.getMessage());
+        return buildResponseEntity(errorResponseBody, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     private String getFullStackTraceLog(Exception ex){
         return Arrays.asList(ex.getStackTrace()).stream().map(Objects::toString).collect(Collectors.joining());

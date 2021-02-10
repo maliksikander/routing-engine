@@ -1,11 +1,19 @@
 package com.ef.mediaroutingengine.model;
 
+import org.springframework.data.annotation.*;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import javax.validation.constraints.NotNull;
 import java.util.UUID;
 
+@Document(value = "mediaRoutingDomains")
 public class MediaRoutingDomain {
+    @Id
     private UUID id;
+    @NotNull
     private String name;
     private String description;
+    @NotNull
     private boolean interruptible;
 
     public UUID getId() {
@@ -38,5 +46,15 @@ public class MediaRoutingDomain {
 
     public void setInterruptible(boolean interruptible) {
         this.interruptible = interruptible;
+    }
+
+    @Override
+    public String toString() {
+        return "MediaRoutingDomain{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", interruptible=" + interruptible +
+                '}';
     }
 }

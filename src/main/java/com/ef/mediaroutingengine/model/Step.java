@@ -2,23 +2,13 @@ package com.ef.mediaroutingengine.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class Step {
-    private UUID id;
     private List<Expression> expressions;
     private int timeout;
 
     public Step(){
         this.expressions = new ArrayList<>();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
     }
 
     public List<Expression> getExpressions() {
@@ -47,5 +37,13 @@ public class Step {
 
     public void setTimeout(int timeout) {
         this.timeout = timeout;
+    }
+
+    @Override
+    public String toString() {
+        return "Step{" +
+                "expressions=" + expressions +
+                ", timeout=" + timeout +
+                '}';
     }
 }

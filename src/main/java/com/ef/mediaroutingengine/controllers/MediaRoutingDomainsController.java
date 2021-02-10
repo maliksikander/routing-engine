@@ -1,66 +1,47 @@
 package com.ef.mediaroutingengine.controllers;
 
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.ef.mediaroutingengine.services.controllerservices.MediaRoutingDomainsService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Timestamp;
+import javax.validation.Valid;
+
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 public class MediaRoutingDomainsController {
-    @PostMapping(value = "/v1/routing-engine/media-routing-domains", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<String> createMediaRoutingDomain(@RequestBody MediaRoutingDomain mediaRoutingDomain) {
-        JSONObject responseBody = new JSONObject();
-        responseBody.put("name", mediaRoutingDomain.getName());
-        responseBody.put("description", mediaRoutingDomain.getDescription());
-        responseBody.put("interruptible", mediaRoutingDomain.isInterruptible());
+    @Autowired
+    MediaRoutingDomainsService service;
 
-        mediaRoutingDomain.setId(UUID.randomUUID());
-        responseBody.put("_id", mediaRoutingDomain.getId());
-        responseBody.put("__v", 0);
-
-        return new ResponseEntity<>(responseBody.toString(), HttpStatus.OK);
+    @CrossOrigin(origins = "http://localhost:4200")
+    @PostMapping(value = "/media-routing-domains", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Object> createMediaRoutingDomain(@Valid @RequestBody MediaRoutingDomain requestBody) {
+        MediaRoutingDomain responseBody = service.create(requestBody);
+        return new ResponseEntity<>(responseBody, HttpStatus.OK);
     }
 
-    @GetMapping(value = "/v1/routing-engine/media-routing-domains", produces = "application/json")
-    public ResponseEntity<String> retrieveMediaRoutingDomains() {
-        JSONArray responseBody = new JSONArray();
-
-        JSONObject responseObject = new JSONObject();
-        responseObject.put("name", "Test");
-        responseObject.put("description", "Test");
-        responseObject.put("interruptible", true);
-
-        responseObject.put("_id", UUID.randomUUID().toString());
-        responseObject.put("__v", 0);
-
-        responseBody.put(responseObject);
-
-        return new ResponseEntity<>(responseBody.toString(), HttpStatus.OK);
+    @GetMapping(value = "/media-routing-domains", produces = "application/json")
+    public ResponseEntity<Object> retrieveMediaRoutingDomains() {
+        List<MediaRoutingDomain> responseBody = this.service.retrieve();
+        return new ResponseEntity<>(responseBody, HttpStatus.OK);
     }
 
-    @PutMapping(value = "/v1/routing-engine/media-routing-domains/{id}", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<String> updateMediaRoutingDomain(@RequestBody MediaRoutingDomain mediaRoutingDomain, @PathVariable String id) {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-
-        JSONObject responseBody = new JSONObject();
-        responseBody.put("msg", "Successfully updated");
-        responseBody.put("timestamp", timestamp.toString());
-        return new ResponseEntity<>(responseBody.toString(), HttpStatus.OK);
+    @PutMapping(value = "/media-routing-domains/{id}", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Object> updateMediaRoutingDomain(@Valid @RequestBody MediaRoutingDomain requestBody, @PathVariable UUID id) {
+        this.service.update(requestBody, id);
+        SuccessResponseBody responseBody = new SuccessResponseBody("Successfully updated");
+        return new ResponseEntity<>(responseBody, HttpStatus.OK);
     }
 
-    @DeleteMapping(value = "/v1/routing-engine/media-routing-domains/{id}", produces = "application/json")
-    public ResponseEntity<String> deleteMediaRoutingDomain(@PathVariable String id) {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-
-        JSONObject responseBody = new JSONObject();
-        responseBody.put("msg", "Successfully deleted");
-        responseBody.put("timestamp", timestamp.toString());
-        return new ResponseEntity<>(responseBody.toString(), HttpStatus.OK);
+    @DeleteMapping(value = "/media-routing-domains/{id}", produces = "application/json")
+    public ResponseEntity<Object> deleteMediaRoutingDomain(@PathVariable UUID id) {
+        this.service.delete(id);
+        SuccessResponseBody responseBody = new SuccessResponseBody("Successfully deleted");
+        return new ResponseEntity<>(responseBody, HttpStatus.OK);
     }
-
 }

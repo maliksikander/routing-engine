@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.exceptions;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -19,11 +20,11 @@ public class BaseExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * Build the response body in case of error
-     * @param apiError
+     * @param errorResponseBody
      * @return
      */
-    protected ResponseEntity<Object> buildResponseEntity(ApiError apiError){
-        return  new ResponseEntity<>(apiError, apiError.getStatus());
+    protected ResponseEntity<Object> buildResponseEntity(ErrorResponseBody errorResponseBody, HttpStatus httpStatus){
+        return  new ResponseEntity<>(errorResponseBody, httpStatus);
     }
 
     /**

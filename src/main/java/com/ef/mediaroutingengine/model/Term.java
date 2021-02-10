@@ -1,16 +1,19 @@
 package com.ef.mediaroutingengine.model;
 
-public class Term {
-    private String attributeName;
-    private String conditionOperator;
-    private boolean value;
+import com.ef.cim.objectmodel.RoutingAttribute;
 
-    public String getAttributeName() {
-        return attributeName;
+public class Term {
+    private RoutingAttribute routingAttribute;
+    private String conditionOperator;
+    private String value;
+    private String preTermCondition;
+
+    public RoutingAttribute getRoutingAttribute() {
+        return routingAttribute;
     }
 
-    public void setAttributeName(String attributeName) {
-        this.attributeName = attributeName;
+    public void setRoutingAttribute(RoutingAttribute routingAttribute) {
+        this.routingAttribute = routingAttribute;
     }
 
     public String getConditionOperator() {
@@ -21,11 +24,29 @@ public class Term {
         this.conditionOperator = conditionOperator;
     }
 
-    public boolean isValue() {
+    public String getValue() {
         return value;
     }
 
-    public void setValue(boolean value) {
+    public void setValue(String value) {
         this.value = value;
+    }
+
+    public String getPreTermCondition() {
+        return preTermCondition;
+    }
+
+    public void setPreTermCondition(String preTermCondition) {
+        this.preTermCondition = preTermCondition;
+    }
+
+    @Override
+    public String toString() {
+        return "Term{" +
+                "routingAttribute=" + routingAttribute +
+                ", conditionOperator='" + conditionOperator + '\'' +
+                ", value='" + value + '\'' +
+                ", preTermCondition='" + preTermCondition + '\'' +
+                '}';
     }
 }

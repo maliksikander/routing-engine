@@ -1,4 +1,4 @@
-package com.ef.mediaroutingengine.services.ControllerServices;
+package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.ChannelSession;

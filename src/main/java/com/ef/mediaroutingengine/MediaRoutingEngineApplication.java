@@ -3,18 +3,24 @@ package com.ef.mediaroutingengine;
 import com.ef.cim.objectmodel.*;
 import com.ef.mediaroutingengine.constants.GeneralConstants;
 import com.ef.mediaroutingengine.model.AgentPresence;
+import com.ef.mediaroutingengine.services.UserAudtiting;
 import com.ef.mediaroutingengine.services.redis.RedisClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.mongodb.config.EnableMongoAuditing;
 
 import java.sql.Timestamp;
 import java.util.UUID;
 
 @SpringBootApplication
+@EnableMongoAuditing(auditorAwareRef = "happyg")
 public class MediaRoutingEngineApplication {
 	public static void main(String[] args) {
 		ApplicationContext applicationContext = SpringApplication.run(MediaRoutingEngineApplication.class, args);
+
+		UserAudtiting userAudtiting = applicationContext.getBean(UserAudtiting.class);
+		System.out.println(userAudtiting.getClass());
 
 		GeneralConstants.agentPresence = MediaRoutingEngineApplication.getAgentPresenceInstance();
 		GeneralConstants.agentPresenceKey = "agentPresence:"+ GeneralConstants.agentPresence.getAgent().getId().toString();
@@ -30,27 +36,27 @@ public class MediaRoutingEngineApplication {
 	}
 
 	public static AgentPresence getAgentPresenceInstance(){
-		Resource resource1 = new Resource();
-		resource1.setRsid(UUID.randomUUID());
-		resource1.setRsname("resource1");
-
 		KeycloakUser keycloakUser = new KeycloakUser();
 		keycloakUser.setId(UUID.randomUUID());
 		keycloakUser.setFirstName("Ahmad");
 		keycloakUser.setLastName("Bappi");
-		keycloakUser.setRealm("realm1");
 		keycloakUser.addRole("admin");
-		keycloakUser.addPermittedResource(resource1);
 
 		RoutingAttribute routingAttribute = new RoutingAttribute();
 		routingAttribute.setId(UUID.randomUUID());
 		routingAttribute.setName("attribute1");
 		routingAttribute.setDescription("description");
 		routingAttribute.setType(AttributeType.BOOLEAN);
+		routingAttribute.setDefaultValue("true");
+
+		AssociatedRoutingAttribute associatedRoutingAttribute = new AssociatedRoutingAttribute();
+		associatedRoutingAttribute.setRoutingAttribute(routingAttribute);
+		associatedRoutingAttribute.setValue(routingAttribute.getDefaultValue());
 
 		CCUser ccUser = new CCUser();
+		ccUser.setId(keycloakUser.getId());
 		ccUser.setKeycloakUser(keycloakUser);
-		ccUser.addRoutingAttribute(routingAttribute);
+		ccUser.addAssociatedRoutingAttribute(associatedRoutingAttribute);
 
 		AgentPresence agentPresence = new AgentPresence();
 		agentPresence.setAgent(ccUser);

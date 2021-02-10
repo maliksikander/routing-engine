@@ -5,6 +5,7 @@ import java.util.List;
 
 public class Expression {
     private List<Term> terms;
+    private String preExpressionCondition;
 
     public Expression(){
         this.terms = new ArrayList<>();
@@ -28,5 +29,21 @@ public class Expression {
 
     public boolean removeTerm(Term term){
         return this.terms.remove(term);
+    }
+
+    public String getPreExpressionCondition() {
+        return preExpressionCondition;
+    }
+
+    public void setPreExpressionCondition(String preExpressionCondition) {
+        this.preExpressionCondition = preExpressionCondition;
+    }
+
+    @Override
+    public String toString() {
+        return "Expression{" +
+                "terms=" + terms +
+                ", preExpressionCondition='" + preExpressionCondition + '\'' +
+                '}';
     }
 }
