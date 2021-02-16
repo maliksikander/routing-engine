@@ -19,7 +19,7 @@ maven-compile:
 #    - yum install maven -y
     - mvn compiler:compile
     - mvn compiler:testCompile
-   only:
+  only:
     - /^CIM-.*$/
     - merge_requests
 
@@ -31,7 +31,7 @@ maven-test:
   script:
 #    - yum install maven -y
     - mvn test
-   only:
+  only:
     - /^CIM-.*$/
     - merge_requests
 #===============Code Quality /Static Testing==========
