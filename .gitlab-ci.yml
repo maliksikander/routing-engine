@@ -2,6 +2,7 @@ variables:
   IMAGE_NAME: ${CI_REGISTRY_IMAGE}/build:${CI_COMMIT_BRANCH}-${CI_COMMIT_SHA}
 
 stages:
+  - compile
   - static-test
   - artifacts
   - test
@@ -9,6 +10,19 @@ stages:
   - scan_api
   - publish
 
+
+maven:compile:
+  stage: compile
+  when: manual
+  image: maven:3.6.3
+   script:
+#    - yum install maven -y
+   - mvn compiler:compile
+   - mvn compiler:testCompile
+   only:
+    - /^CIM-.*$/
+    - merge_requests
+  
 #===============Code Quality /Static Testing==========
 sonarqube-pretest:
   stage: static-test
