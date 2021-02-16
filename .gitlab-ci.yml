@@ -1,88 +1,157 @@
+variables:
+  IMAGE_NAME: ${CI_REGISTRY_IMAGE}/build:${CI_COMMIT_BRANCH}-${CI_COMMIT_SHA}
+
+
 stages:
-  #- static-test
-  #- artifacts
+  - static-test
+  - artifacts
   - test
   - build
-  #- deploy
-#include:
-#  - template: Container-Scanning.gitlab-ci.yml
+  - scan_api
+  - publish
 
-##===============Code Quality /Static Testing==========
-#sonarqube-pretest:
-#   stage: static-test
-#   #when: manual
-#   #tags: [old-runner]
-#   image: sonarsource/sonar-scanner-cli:latest
-#   variables:
-#       SONAR_TOKEN: "d7f396cb22cd2393410d47834cccdf9fa8b1885d"
-#       SONAR_HOST_URL: "http://192.168.1.109:9000"
-#       SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" 
-#       GIT_DEPTH: 1
-#   script:
-#       - pwd
-#   cache:
-#       key: ${CI_JOB_NAME}
-#       paths:
-#       - .sonar/cache
-#   allow_failure: false
-#sonarqube-test:
-#   stage: static-test
-#   #tags: [old-runner]
-#   #when: manual
-#   image: sonarsource/sonar-scanner-cli:latest
-#   variables:
-#       SONAR_TOKEN: "d7f396cb22cd2393410d47834cccdf9fa8b1885d"
-#       SONAR_HOST_URL: "http://192.168.1.109:9000"
-#       SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" 
-#       GIT_DEPTH: 1
-#
-#   script:
-#       - sonar-scanner -Dsonar.qualitygate.wait=true
-#   allow_failure: false
-# include:
-#  - template: Code-Quality.gitlab-ci.yml
+#===============Code Quality /Static Testing==========
+sonarqube-pretest:
+  stage: static-test
+  when: manual
+  #tags: [old-runner]
+  image: sonarsource/sonar-scanner-cli:latest
+  variables:
+      SONAR_TOKEN: "a7e1c1503f8d4b2d3e2efb29fcbeb26f7e13f2f3"
+      SONAR_HOST_URL: "http://192.168.1.109:9000"
+      SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" 
+      GIT_DEPTH: 1
+  script:
+      - pwd
+  cache:
+      key: ${CI_JOB_NAME}
+      paths:
+      - .sonar/cache
+  allow_failure: false
+  only:
+      - "$CI_COMMIT_BRANCH"
+      - merge_requests
+sonarqube-test:
+  stage: static-test
+  #tags: [old-runner]
+  when: on_success
+  image: sonarsource/sonar-scanner-cli:latest
+  variables:
+      SONAR_TOKEN: "a7e1c1503f8d4b2d3e2efb29fcbeb26f7e13f2f3"
+      SONAR_HOST_URL: "http://192.168.1.109:9000"
+      SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" 
+      GIT_DEPTH: 1
 
-# code_quality:
-#    stage: static-test
-#    artifacts:
-#      expire_in: 1000 yrs
-#      expose_as: 'Code Quality Report'
-#      paths: [gl-code-quality-report.json]
-## ===============================================================
+  script:
+      - sonar-scanner -Dsonar.qualitygate.wait=true
+  allow_failure: false
+  only:
+      - "$CI_COMMIT_BRANCH"
+      - merge_requests
 
 
-#mvn_artifacts:
-#    stage: artifacts
-#    #when: manual
-#    image: maven:3.6.3
-#    script:
-##    - yum install maven -y
-#    - rm -rf target
-#    - ls -ltr
-#    - mvn clean
-#    - mvn package
 
-#    artifacts:
-#        paths:
-#            - target
-#    allow_failure: false
+# ===============================================================
 
-build-image:
-    stage: build
-    #when: manual
-    image: docker:18.06
-    services:
-      - docker:dind
-    before_script:
-      - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    #dependencies:
-    #  - mvn_artifacts
 
-    script:
-      #- cp -r ./target ./
-      - docker build --pull -t "$CI_REGISTRY_IMAGE:${CI_COMMIT_REF_NAME}" .
-      - docker push "$CI_REGISTRY_IMAGE:${CI_COMMIT_REF_NAME}"
+mvn_artifacts:
+   stage: artifacts
+   #when: manual
+   image: maven:3.6.3
+   script:
+#    - yum install maven -y
+   - rm -rf target
+   - ls -ltr
+   - mvn clean
+   - mvn package
+
+   artifacts:
+       paths:
+           - target
+   allow_failure: false
+  only:
+    - merge_requests
+
+build:image:
+ image: docker:latest
+ stage: build
+ when: on_success
+ services:
+   - docker:dind
+ before_script:
+   - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+ script:
+   - docker pull "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" || true
+   - docker build --cache-from "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" -t "$IMAGE_NAME" .
+   - docker push "$IMAGE_NAME"
+  only:
+    - merge_requests
       
     allow_failure: false
+anchore_scan_api:
+  image: anchore/engine-cli:latest
+  stage: scan_api
+  when: on_success
+  variables:
+    ANCHORE_CLI_URL: "http://192.168.2.249:8228/v1"
+    ANCHORE_CLI_USER: "admin"
+    ANCHORE_CLI_PASS: "foobar"
+    ANCHORE_CLI_SSL_VERIFY: "false"
+    ANCHORE_TIMEOUT: 900
+    ANCHORE_FAIL_ON_POLICY: "false"
+  script:
+    - echo "Adding image to Anchore engine at ${ANCHORE_CLI_URL}"
+    - anchore-cli image add ${IMAGE_NAME}
+    - echo "Waiting for analysis to complete"
+    - anchore-cli image wait ${IMAGE_NAME} --timeout ${ANCHORE_TIMEOUT}
+    - echo "Analysis complete"
+    - echo "Producing reports"
+    #- anchore-cli image content ${IMAGE_NAME} os > image-packages.txt
+    #- anchore-cli image content ${IMAGE_NAME} npm > image-npm.txt
+    #- anchore-cli image content ${IMAGE_NAME} gem > image-gem.txt
+    #- anchore-cli image content ${IMAGE_NAME} python > image-python.txt
+    #- anchore-cli image content ${IMAGE_NAME} java > image-java.txt
+    - anchore-cli image vuln ${IMAGE_NAME} all
+    - anchore-cli image vuln ${IMAGE_NAME} all > "${CI_PROJECT_TITLE}"-image-vulnerabilities.txt
+    - anchore-cli image get ${IMAGE_NAME} > "${CI_PROJECT_TITLE}"-image-details.txt
+    - anchore-cli evaluate check ${IMAGE_NAME} --detail > "${CI_PROJECT_TITLE}"-image-policy.txt || true
+    - if [ "${ANCHORE_FAIL_ON_POLICY}" == "true" ] ; then anchore-cli evaluate check ${IMAGE_NAME}  ; fi 
+  artifacts:
+    name: "$CI_JOB_NAME"
+    paths:
+    - ${CI_PROJECT_TITLE}-image-policy.txt
+    - ${CI_PROJECT_TITLE}-image-details.txt
+    - ${CI_PROJECT_TITLE}-image-vulnerabilities.txt
+    #- image-java.txt
+    #- image-python.txt
+    #- image-gem.txt
+    #- image-npm.txt
+    #- image-packages.txt
+  only:
+    - merge_requests
+  
+container_publish:
+  stage: publish
+  image: docker:latest
+  when: manual
+  services:
+    - docker:dind
+
+  variables:
+    #DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: none
+
+  script:
+    - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "${CI_REGISTRY}"
+    - docker pull "$IMAGE_NAME"
+    - docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
+    - |
+        if [ "$CI_COMMIT_REF_NAME" == "master" ]; then
+          docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:latest"
+          docker push "${CI_REGISTRY_IMAGE}:latest"
+        fi
+  only:
+    - merge_requests
 
 
