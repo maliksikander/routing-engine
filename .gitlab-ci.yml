@@ -17,8 +17,8 @@ maven:compile:
   image: maven:3.6.3
    script:
 #    - yum install maven -y
-   - mvn compile
-   - mvn testCompile
+    - mvn compiler:compile
+    - mvn compiler:testCompile
    only:
     - /^CIM-.*$/
     - merge_requests
