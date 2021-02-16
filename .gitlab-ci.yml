@@ -4,8 +4,8 @@ variables:
 stages:
   - compile
   - test
-  - static-test
   - mvn-scan
+  - static-test
   - artifacts
   - build
   - scan_api
@@ -61,6 +61,7 @@ sonarqube-pretest:
 sonarqube-check:
   image: maven:latest
   stage: mvn-scan
+  when: manual
   variables:
     SONAR_TOKEN: "a7e1c1503f8d4b2d3e2efb29fcbeb26f7e13f2f3"
     SONAR_HOST_URL: "http://192.168.2.30:9000"
