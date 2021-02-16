@@ -1,7 +1,6 @@
 variables:
   IMAGE_NAME: ${CI_REGISTRY_IMAGE}/build:${CI_COMMIT_BRANCH}-${CI_COMMIT_SHA}
 
-
 stages:
   - static-test
   - artifacts
@@ -69,8 +68,8 @@ mvn_artifacts:
        paths:
            - target
    allow_failure: false
-  only:
-    - merge_requests
+   only:
+   - merge_requests
 
 build:image:
  image: docker:latest
@@ -84,10 +83,10 @@ build:image:
    - docker pull "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" || true
    - docker build --cache-from "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" -t "$IMAGE_NAME" .
    - docker push "$IMAGE_NAME"
-  only:
-    - merge_requests
+ only:
+   - merge_requests
       
-    allow_failure: false
+ allow_failure: false
 anchore_scan_api:
   image: anchore/engine-cli:latest
   stage: scan_api
