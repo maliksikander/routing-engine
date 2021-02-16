@@ -4,8 +4,8 @@ variables:
 stages:
   - compile
   - test
-  - mvn-scan
   - static-test
+  - mvn-scan
   - artifacts
   - build
   - scan_api
