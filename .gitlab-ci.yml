@@ -33,6 +33,8 @@ sonarqube-pretest:
 sonarqube-test:
   stage: static-test
   #tags: [old-runner]
+  dependencies:
+      - sonarqube-pretest
   when: on_success
   image: sonarsource/sonar-scanner-cli:latest
   variables:
