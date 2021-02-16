@@ -129,7 +129,11 @@ build:image:
    - docker:dind
  before_script:
    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+ dependencies:
+   - mvn_artifacts
+
  script:
+   - cp -r ./target ./
    - docker pull "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" || true
    - docker build --cache-from "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" -t "$IMAGE_NAME" .
    - docker push "$IMAGE_NAME"
