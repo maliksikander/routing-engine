@@ -28,7 +28,7 @@ sonarqube-pretest:
       - .sonar/cache
   allow_failure: false
   only:
-      - "$CI_COMMIT_BRANCH"
+      - /^CIM-.*$/
       - merge_requests
 sonarqube-test:
   stage: static-test
@@ -45,7 +45,7 @@ sonarqube-test:
       - sonar-scanner -Dsonar.qualitygate.wait=true
   allow_failure: false
   only:
-      - "$CI_COMMIT_BRANCH"
+      - /^CIM-.*$/
       - merge_requests
 
 
