@@ -11,7 +11,7 @@ stages:
   - publish
 
 
-maven:compile:
+maven-compile:
   stage: compile
   when: manual
   image: maven:3.6.3
@@ -24,7 +24,7 @@ maven:compile:
     - merge_requests
 
 
-maven:test:
+maven-test:
   stage: test
   when: manual
   image: maven:3.6.3
