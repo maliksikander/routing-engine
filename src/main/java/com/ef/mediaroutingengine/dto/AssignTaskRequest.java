@@ -5,6 +5,7 @@ import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.mediaroutingengine.model.Task;
 
 public class AssignTaskRequest {
+
     private ChannelSession channelSession;
     private CCUser ccUser;
     private Task task;

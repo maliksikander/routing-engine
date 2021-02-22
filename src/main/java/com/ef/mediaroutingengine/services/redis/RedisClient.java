@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.services.redis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-
 import java.util.List;
 import java.util.Set;
 
@@ -18,9 +17,9 @@ public interface RedisClient {
 
 
     /**
-     * Returns the Object associated with the key.
-     * If the key does not exist, the special value nil is returned.
-     * If the value stored by key is not of Object type, an error is returned, because GET JSON can only be used to process give Object.
+     * Returns the Object associated with the key. If the key does not exist, the special value nil
+     * is returned. If the value stored by key is not of Object type, an error is returned, because
+     * GET JSON can only be used to process give Object.
      *
      * @param key
      * @param clazz
@@ -30,7 +29,8 @@ public interface RedisClient {
     public <T> T getJSON(String key, Class<T> clazz) throws JsonProcessingException;
 
     /**
-     * Get the list Objects associated with the keys.  If any key does not exist, the special value nil is returned.
+     * Get the list Objects associated with the keys.  If any key does not exist, the special value
+     * nil is returned.
      *
      * @param keys
      * @param <T>

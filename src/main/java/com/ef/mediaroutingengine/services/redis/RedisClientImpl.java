@@ -2,6 +2,9 @@ package com.ef.mediaroutingengine.services.redis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
@@ -9,20 +12,39 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.util.SafeEncoder;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 @Service
 public class RedisClientImpl implements RedisClient {
 
-    private final JedisPool jedisPool;
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private final JedisPool jedisPool;
 
 
     @Autowired
     public RedisClientImpl(JedisPool jedisPool) {
         this.jedisPool = jedisPool;
+    }
+
+    /**
+     * Helper to check for an OK reply
+     *
+     * @param str the reply string to "scrutinize"
+     */
+    private static void assertReplyOK(final String str) {
+        if (!str.equals("OK")) {
+            throw new RuntimeException(str);
+        }
+    }
+
+    /**
+     * Helper to check for errors and throw them as an exception
+     *
+     * @param str the reply string to "analyze"
+     * @throws RuntimeException
+     */
+    private static void assertReplyNotError(final String str) {
+        if (str.startsWith("-ERR")) {
+            throw new RuntimeException(str.substring(5));
+        }
     }
 
     @Override
@@ -32,7 +54,8 @@ public class RedisClientImpl implements RedisClient {
         try (Jedis conn = getConnection()) {
 
             conn.getClient()
-                    .sendCommand(Command.SET, SafeEncoder.encodeMany(key, Path.ROOT_PATH.toString(), objectMapper.writeValueAsString(object)));
+                    .sendCommand(Command.SET, SafeEncoder.encodeMany(key, Path.ROOT_PATH.toString(),
+                            objectMapper.writeValueAsString(object)));
             status = conn.getClient().getStatusCodeReply();
         }
         assertReplyOK(status);
@@ -42,17 +65,18 @@ public class RedisClientImpl implements RedisClient {
     @Override
     public <T> T getJSON(String key, Class<T> clazz) throws JsonProcessingException {
 
-
         String response = null;
         try (Jedis conn = getConnection()) {
-            conn.getClient().sendCommand(Command.GET, SafeEncoder.encodeMany(key, Path.ROOT_PATH.toString()));
+            conn.getClient().sendCommand(Command.GET,
+                    SafeEncoder.encodeMany(key, Path.ROOT_PATH.toString()));
             response = conn.getClient().getBulkReply();
         }
         if (response != null) {
             assertReplyNotError(response);
             return objectMapper.readValue(response, clazz);
-        } else
+        } else {
             return null;
+        }
     }
 
     @Override
@@ -77,7 +101,8 @@ public class RedisClientImpl implements RedisClient {
     @Override
     public Long delJSON(String key) {
         try (Jedis conn = getConnection()) {
-            conn.getClient().sendCommand(Command.DEL, SafeEncoder.encodeMany(key, Path.ROOT_PATH.toString()));
+            conn.getClient().sendCommand(Command.DEL,
+                    SafeEncoder.encodeMany(key, Path.ROOT_PATH.toString()));
             return conn.getClient().getIntegerReply();
         }
     }
@@ -127,6 +152,10 @@ public class RedisClientImpl implements RedisClient {
         }
     }
 
+    private Jedis getConnection() {
+        return this.jedisPool.getResource();
+    }
+
     private enum Command implements ProtocolCommand {
         DEL("JSON.DEL"),
         GET("JSON.GET"),
@@ -143,32 +172,6 @@ public class RedisClientImpl implements RedisClient {
             return raw;
         }
     }
-
-    private Jedis getConnection() {
-        return this.jedisPool.getResource();
-    }
-
-    /**
-     * Helper to check for an OK reply
-     *
-     * @param str the reply string to "scrutinize"
-     */
-    private static void assertReplyOK(final String str) {
-        if (!str.equals("OK"))
-            throw new RuntimeException(str);
-    }
-
-    /**
-     * Helper to check for errors and throw them as an exception
-     *
-     * @param str the reply string to "analyze"
-     * @throws RuntimeException
-     */
-    private static void assertReplyNotError(final String str) {
-        if (str.startsWith("-ERR"))
-            throw new RuntimeException(str.substring(5));
-    }
-
 
 //    @Override
 //    public void setJSON(String key, Object object ) {

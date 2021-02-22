@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
 public class TestCustomerRepository {
+
     @Autowired
     private CustomerRepository repository;
 

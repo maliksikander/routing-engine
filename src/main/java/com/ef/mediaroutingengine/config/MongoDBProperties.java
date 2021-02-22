@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "spring.data.mongodb")
 public class MongoDBProperties {
+
     private String uri;
 
     public String getUri() {

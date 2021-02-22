@@ -1,16 +1,16 @@
 package com.ef.mediaroutingengine.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(value = "precisionQueues")
 public class PrecisionQueue {
+
     @Id
     private UUID id;
     @NotBlank
@@ -25,7 +25,7 @@ public class PrecisionQueue {
     private int serviceLevelThreshold;
     private List<Step> steps;
 
-    public PrecisionQueue(){
+    public PrecisionQueue() {
         this.steps = new ArrayList<>();
     }
 
@@ -85,15 +85,15 @@ public class PrecisionQueue {
         this.steps = steps;
     }
 
-    public boolean containsStep(Step step){
+    public boolean containsStep(Step step) {
         return this.steps.contains(step);
     }
 
-    public boolean addStep(Step step){
+    public boolean addStep(Step step) {
         return this.steps.add(step);
     }
 
-    public boolean removeStep(Step step){
+    public boolean removeStep(Step step) {
         return this.steps.remove(step);
     }
 

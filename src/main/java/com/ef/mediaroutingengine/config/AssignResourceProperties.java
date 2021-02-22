@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "routing-engine.assign-resource")
 public class AssignResourceProperties {
+
     private int retries;
     private String changeStateUri;
     private String assignTaskUri;

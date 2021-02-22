@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.model;
 import com.ef.cim.objectmodel.RoutingAttribute;
 
 public class Term {
+
     private RoutingAttribute routingAttribute;
     private String conditionOperator;
     private String value;

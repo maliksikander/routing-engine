@@ -8,7 +8,7 @@ public class ErrorResponseBody {
     private String error;
     private String message;
 
-    public ErrorResponseBody(String error, String message){
+    public ErrorResponseBody(String error, String message) {
         this.error = error;
         this.message = message;
     }

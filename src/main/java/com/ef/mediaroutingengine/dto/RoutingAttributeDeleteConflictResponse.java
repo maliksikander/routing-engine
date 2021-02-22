@@ -2,10 +2,10 @@ package com.ef.mediaroutingengine.dto;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
-
 import java.util.List;
 
 public class RoutingAttributeDeleteConflictResponse {
+
     private List<PrecisionQueue> precisionQueues;
     private List<CCUser> agents;
 

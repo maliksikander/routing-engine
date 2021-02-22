@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "spring.redis")
 public class RedisProperties {
+
     private String host;
     private String password;
     private int port;

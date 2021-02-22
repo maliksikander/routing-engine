@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.dto;
 import com.ef.cim.objectmodel.ChannelSession;
 
 public class AssignResourceRequest {
+
     String topicId;
     ChannelSession channelSession;
 

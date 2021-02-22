@@ -1,70 +1,76 @@
 package com.ef.mediaroutingengine;
 
-import com.ef.cim.objectmodel.*;
+import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
+import com.ef.cim.objectmodel.AttributeType;
+import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.KeycloakUser;
+import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.constants.GeneralConstants;
 import com.ef.mediaroutingengine.model.AgentPresence;
 import com.ef.mediaroutingengine.services.UserAudtiting;
 import com.ef.mediaroutingengine.services.redis.RedisClient;
+import java.sql.Timestamp;
+import java.util.UUID;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 
-import java.sql.Timestamp;
-import java.util.UUID;
-
 @SpringBootApplication
 @EnableMongoAuditing(auditorAwareRef = "happyg")
 public class MediaRoutingEngineApplication {
-	public static void main(String[] args) {
-		ApplicationContext applicationContext = SpringApplication.run(MediaRoutingEngineApplication.class, args);
 
-		UserAudtiting userAudtiting = applicationContext.getBean(UserAudtiting.class);
-		System.out.println(userAudtiting.getClass());
+    public static void main(String[] args) {
+        ApplicationContext applicationContext = SpringApplication
+                .run(MediaRoutingEngineApplication.class, args);
 
-		GeneralConstants.agentPresence = MediaRoutingEngineApplication.getAgentPresenceInstance();
-		GeneralConstants.agentPresenceKey = "agentPresence:"+ GeneralConstants.agentPresence.getAgent().getId().toString();
+        UserAudtiting userAudtiting = applicationContext.getBean(UserAudtiting.class);
+        System.out.println(userAudtiting.getClass());
 
-		RedisClient redisClient = applicationContext.getBean(RedisClient.class);
+        GeneralConstants.agentPresence = MediaRoutingEngineApplication.getAgentPresenceInstance();
+        GeneralConstants.agentPresenceKey =
+                "agentPresence:" + GeneralConstants.agentPresence.getAgent().getId().toString();
 
-		try {
-			redisClient.setJSON(GeneralConstants.agentPresenceKey, GeneralConstants.agentPresence);
-		} catch (Exception e){
-			System.out.println("In main, while trying to put json in redis");
-			e.printStackTrace();
-		}
-	}
+        RedisClient redisClient = applicationContext.getBean(RedisClient.class);
 
-	public static AgentPresence getAgentPresenceInstance(){
-		KeycloakUser keycloakUser = new KeycloakUser();
-		keycloakUser.setId(UUID.randomUUID());
-		keycloakUser.setFirstName("Ahmad");
-		keycloakUser.setLastName("Bappi");
-		keycloakUser.addRole("admin");
+        try {
+            redisClient.setJSON(GeneralConstants.agentPresenceKey, GeneralConstants.agentPresence);
+        } catch (Exception e) {
+            System.out.println("In main, while trying to put json in redis");
+            e.printStackTrace();
+        }
+    }
 
-		RoutingAttribute routingAttribute = new RoutingAttribute();
-		routingAttribute.setId(UUID.randomUUID());
-		routingAttribute.setName("attribute1");
-		routingAttribute.setDescription("description");
-		routingAttribute.setType(AttributeType.BOOLEAN);
-		routingAttribute.setDefaultValue("true");
+    public static AgentPresence getAgentPresenceInstance() {
+        KeycloakUser keycloakUser = new KeycloakUser();
+        keycloakUser.setId(UUID.randomUUID());
+        keycloakUser.setFirstName("Ahmad");
+        keycloakUser.setLastName("Bappi");
+        keycloakUser.addRole("admin");
 
-		AssociatedRoutingAttribute associatedRoutingAttribute = new AssociatedRoutingAttribute();
-		associatedRoutingAttribute.setRoutingAttribute(routingAttribute);
-		associatedRoutingAttribute.setValue(routingAttribute.getDefaultValue());
+        RoutingAttribute routingAttribute = new RoutingAttribute();
+        routingAttribute.setId(UUID.randomUUID());
+        routingAttribute.setName("attribute1");
+        routingAttribute.setDescription("description");
+        routingAttribute.setType(AttributeType.BOOLEAN);
+        routingAttribute.setDefaultValue("true");
 
-		CCUser ccUser = new CCUser();
-		ccUser.setId(keycloakUser.getId());
-		ccUser.setKeycloakUser(keycloakUser);
-		ccUser.addAssociatedRoutingAttribute(associatedRoutingAttribute);
+        AssociatedRoutingAttribute associatedRoutingAttribute = new AssociatedRoutingAttribute();
+        associatedRoutingAttribute.setRoutingAttribute(routingAttribute);
+        associatedRoutingAttribute.setValue(routingAttribute.getDefaultValue());
 
-		AgentPresence agentPresence = new AgentPresence();
-		agentPresence.setAgent(ccUser);
-		agentPresence.setState("created");
-		agentPresence.addTopic("topic1");
-		agentPresence.setStateChangeTime(new Timestamp(9000));
+        CCUser ccUser = new CCUser();
+        ccUser.setId(keycloakUser.getId());
+        ccUser.setKeycloakUser(keycloakUser);
+        ccUser.addAssociatedRoutingAttribute(associatedRoutingAttribute);
 
-		return agentPresence;
-	}
+        AgentPresence agentPresence = new AgentPresence();
+        agentPresence.setAgent(ccUser);
+        agentPresence.setState("created");
+        agentPresence.addTopic("topic1");
+        agentPresence.setStateChangeTime(new Timestamp(9000));
+
+        return agentPresence;
+    }
 
 }

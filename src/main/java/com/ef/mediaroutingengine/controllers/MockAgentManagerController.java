@@ -12,20 +12,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class MockAgentManagerController {
+
     @PutMapping(value = "/mockAgentManager/state", consumes = "application/json", produces = "application/json")
     public ResponseEntity<String> changeState(@RequestBody ChangeStateRequest request) {
-        if(request.getState() == null || request.getCcUser() == null){
+        if (request.getState() == null || request.getCcUser() == null) {
             return new ResponseEntity<>(invalidDataResponseBody(), HttpStatus.PRECONDITION_FAILED);
         }
 
-        if(request.getCcUser().getDisplayName().equals("AGENT VINOD")){
-            return new ResponseEntity<>(agentUnavailableResponseBody(), HttpStatus.UNPROCESSABLE_ENTITY);
+        if (request.getCcUser().getDisplayName().equals("AGENT VINOD")) {
+            return new ResponseEntity<>(agentUnavailableResponseBody(),
+                    HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return new ResponseEntity<>(successResponseBody(), HttpStatus.OK);
     }
 
     @PostMapping(value = "/mockAgentManager/agent/task", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<String> assignTask(@RequestBody AssignTaskRequest request){
+    public ResponseEntity<String> assignTask(@RequestBody AssignTaskRequest request) {
         JSONObject responseBody = new JSONObject();
         responseBody.put("task", "assignTask");
         responseBody.put("msg", "ok");
@@ -34,7 +36,7 @@ public class MockAgentManagerController {
         return new ResponseEntity<>(responseBody.toString(), HttpStatus.ACCEPTED);
     }
 
-    private String successResponseBody(){
+    private String successResponseBody() {
         JSONObject responseBody = new JSONObject();
         responseBody.put("task", "changeAgentState");
         responseBody.put("msg", "state updated successfully");
@@ -43,7 +45,7 @@ public class MockAgentManagerController {
         return responseBody.toString();
     }
 
-    private String invalidDataResponseBody(){
+    private String invalidDataResponseBody() {
         JSONObject responseBody = new JSONObject();
         responseBody.put("task", "changeAgentState");
         responseBody.put("msg", "Precondition failed");
@@ -52,7 +54,7 @@ public class MockAgentManagerController {
         return responseBody.toString();
     }
 
-    private String agentUnavailableResponseBody(){
+    private String agentUnavailableResponseBody() {
         JSONObject responseBody = new JSONObject();
         responseBody.put("task", "changeAgentState");
         responseBody.put("msg", "Unprocessable entity");
@@ -61,7 +63,7 @@ public class MockAgentManagerController {
         return responseBody.toString();
     }
 
-    private String customErrorResponseBody(){
+    private String customErrorResponseBody() {
         JSONObject responseBody = new JSONObject();
         responseBody.put("task", "changeAgentState");
         responseBody.put("msg", "some custom error");

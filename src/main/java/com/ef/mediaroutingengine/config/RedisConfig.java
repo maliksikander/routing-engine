@@ -1,18 +1,16 @@
 package com.ef.mediaroutingengine.config;
 
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 @Configuration
 public class RedisConfig {
+
     private static final Logger logger = LoggerFactory.getLogger(RedisConfig.class);
 
     @Autowired
@@ -28,19 +26,18 @@ public class RedisConfig {
 
         try {
             logger.info("Redis config info  " + redisProperties.toString());
-            if(this.redisProperties.getConnectAtStartup()){
+            if (this.redisProperties.getConnectAtStartup()) {
                 return this.createJedisPool();
             }
             return new JedisPool();
-        }
-        catch (Exception ex){
-            logger.error("Error in redis pool initialization " , ex);
-            throw  ex;
+        } catch (Exception ex) {
+            logger.error("Error in redis pool initialization ", ex);
+            throw ex;
         }
 
     }
 
-    private JedisPool createJedisPool(){
+    private JedisPool createJedisPool() {
         // Pool Settings
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(redisProperties.getMaxActive());
@@ -49,13 +46,16 @@ public class RedisConfig {
         poolConfig.setMaxWaitMillis(redisProperties.getMaxWait());
 
         // final JedisPool jedisPool = new JedisPool(poolConfig,redisProperties.getHost(),redisProperties.getPort(),false);
-        final JedisPool jedisPool = new JedisPool(poolConfig,redisProperties.getHost(),redisProperties.getPort(),
-                redisProperties.getTimeout(),redisProperties.getPassword(),redisProperties.isSsl());
+        final JedisPool jedisPool = new JedisPool(poolConfig, redisProperties.getHost(),
+                redisProperties.getPort(),
+                redisProperties.getTimeout(), redisProperties.getPassword(),
+                redisProperties.isSsl());
         // Get Connection from pool to verify if connection is established with redis server
         //jedisPool.getResource();
         //jedisPool.getResource().flushDB();
         //jedisPool.getResource().flushAll();
-        logger.info("Redis pool initialized on ---> {}:{} ........", redisProperties.getHost(), redisProperties.getPort());
+        logger.info("Redis pool initialized on ---> {}:{} ........", redisProperties.getHost(),
+                redisProperties.getPort());
         return jedisPool;
     }
 

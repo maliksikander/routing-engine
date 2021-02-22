@@ -1,18 +1,14 @@
 package com.ef.mediaroutingengine.repositories;
 
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
-import org.joda.time.DateTime;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.mongodb.config.EnableMongoAuditing;
-import org.springframework.data.mongodb.core.MongoTemplate;
-
-import java.time.LocalDate;
-import java.util.UUID;
 
 @SpringBootTest
 public class TestMediaRoutingDomainRepository {
+
     @Autowired
     MediaRoutingDomainRepository repository;
 

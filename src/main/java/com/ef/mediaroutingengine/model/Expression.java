@@ -4,10 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Expression {
+
     private List<Term> terms;
     private String preExpressionCondition;
 
-    public Expression(){
+    public Expression() {
         this.terms = new ArrayList<>();
     }
 
@@ -19,15 +20,15 @@ public class Expression {
         this.terms = terms;
     }
 
-    public boolean containsTerm(Term term){
+    public boolean containsTerm(Term term) {
         return this.terms.contains(term);
     }
 
-    public boolean addTerm(Term term){
+    public boolean addTerm(Term term) {
         return this.terms.add(term);
     }
 
-    public boolean removeTerm(Term term){
+    public boolean removeTerm(Term term) {
         return this.terms.remove(term);
     }
 

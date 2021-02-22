@@ -43,6 +43,7 @@ public class Path {
 
     /**
      * Makes a root path
+     *
      * @return the root path
      * @deprecated use {@link #ROOT_PATH} instead
      */

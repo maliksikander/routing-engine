@@ -4,10 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Step {
+
     private List<Expression> expressions;
     private int timeout;
 
-    public Step(){
+    public Step() {
         this.expressions = new ArrayList<>();
     }
 
@@ -19,15 +20,15 @@ public class Step {
         this.expressions = expressions;
     }
 
-    public boolean containsExpression(Expression expression){
+    public boolean containsExpression(Expression expression) {
         return this.expressions.contains(expression);
     }
 
-    public boolean addExpression(Expression expression){
+    public boolean addExpression(Expression expression) {
         return this.expressions.add(expression);
     }
 
-    public boolean removeExpression(Expression expression){
+    public boolean removeExpression(Expression expression) {
         return this.expressions.remove(expression);
     }
 

@@ -16,14 +16,15 @@ public class SwaggerConfig {
 
     /**
      * Custom Configuration for Swagger
+     *
      * @return
      */
 
     @Bean
-    public Docket swaggerConfiguration(){
+    public Docket swaggerConfiguration() {
 
         // return a prepared Docket Instance
-        return  new Docket(DocumentationType.SWAGGER_2)
+        return new Docket(DocumentationType.SWAGGER_2)
                 .select()
                 .paths(PathSelectors.any())
                 .apis(RequestHandlerSelectors.basePackage("com.ef.spring.controllers"))
@@ -32,7 +33,8 @@ public class SwaggerConfig {
                 .apiInfo(apiDetails());
     }
 
-    private ApiInfo apiDetails(){
-        return new ApiInfoBuilder().title("Spring Boot Boilerplate Rest API").version("1.0").description("").build();
+    private ApiInfo apiDetails() {
+        return new ApiInfoBuilder().title("Spring Boot Boilerplate Rest API").version("1.0")
+                .description("").build();
     }
 }

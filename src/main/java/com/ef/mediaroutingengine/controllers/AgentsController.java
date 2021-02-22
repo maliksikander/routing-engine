@@ -2,19 +2,23 @@ package com.ef.mediaroutingengine.controllers;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.services.controllerservices.AgentsService;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import java.util.UUID;
+import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import javax.validation.Valid;
-import java.sql.Timestamp;
-import java.util.UUID;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class AgentsController {
+
     @Autowired
     private AgentsService service;
 
@@ -32,8 +36,9 @@ public class AgentsController {
 
     @CrossOrigin(origins = "http://localhost:4200")
     @PutMapping(value = "/agents/{id}", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Object> updateAgent(@PathVariable UUID id, @Valid @RequestBody CCUser requestBody) {
-        return new ResponseEntity<>(this.service.update(requestBody,id), HttpStatus.OK);
+    public ResponseEntity<Object> updateAgent(@PathVariable UUID id,
+            @Valid @RequestBody CCUser requestBody) {
+        return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
     @CrossOrigin(origins = "http://localhost:4200")

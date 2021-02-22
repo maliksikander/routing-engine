@@ -1,18 +1,18 @@
 package com.ef.mediaroutingengine.model;
 
 import com.ef.cim.objectmodel.CCUser;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class Task {
+
     private final UUID id;
     private String topicId;
     private String state;
     private List<CCUser> taskAssignee;
 
-    public Task(){
+    public Task() {
         this.id = UUID.randomUUID();
         this.taskAssignee = new ArrayList<>();
     }

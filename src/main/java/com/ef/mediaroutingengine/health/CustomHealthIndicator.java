@@ -6,7 +6,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CustomHealthIndicator implements HealthIndicator {
+
     private final String message_key = "Service A";
+
     @Override
     public Health health() {
 

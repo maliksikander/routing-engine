@@ -1,18 +1,18 @@
 package com.ef.mediaroutingengine.model;
 
 import com.ef.cim.objectmodel.CCUser;
-
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AgentPresence {
+
     private CCUser agent;
     private String state;
     private Timestamp stateChangeTime;
     private List<String> topics;
 
-    public AgentPresence(){
+    public AgentPresence() {
         this.topics = new ArrayList<>();
     }
 
@@ -48,15 +48,15 @@ public class AgentPresence {
         this.topics = topics;
     }
 
-    public boolean containsTopic(String topic){
+    public boolean containsTopic(String topic) {
         return this.topics.contains(topic);
     }
 
-    public boolean addTopic(String topic){
+    public boolean addTopic(String topic) {
         return this.topics.add(topic);
     }
 
-    public boolean removeTopic(String topic){
+    public boolean removeTopic(String topic) {
         return this.topics.remove(topic);
     }
 }

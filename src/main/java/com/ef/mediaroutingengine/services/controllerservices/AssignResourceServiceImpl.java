@@ -13,6 +13,7 @@ import com.ef.mediaroutingengine.services.AgentStateManager;
 import com.ef.mediaroutingengine.services.AgentStateManagerImpl;
 import com.ef.mediaroutingengine.services.FindAgent;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Duration;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,35 +21,38 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Scope;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.Duration;
-
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AssignResourceServiceImpl implements AssignResourceService {
+
+    private static final Logger log = LoggerFactory.getLogger(AssignResourceServiceImpl.class);
     private final AssignResourceProperties config;
     private final FindAgent findAgent;
     private final AgentStateManager agentStateManager;
     private final RoutingEngineCache routingEngineCache;
 
-    private static final Logger log = LoggerFactory.getLogger(AssignResourceServiceImpl.class);
-
     @Autowired
-    public AssignResourceServiceImpl(AssignResourceProperties config, RoutingEngineCache cache, FindAgent findAgent) {
+    public AssignResourceServiceImpl(AssignResourceProperties config, RoutingEngineCache cache,
+            FindAgent findAgent) {
         this.config = config;
         this.findAgent = findAgent;
         this.agentStateManager = new AgentStateManagerImpl();
         this.routingEngineCache = cache;
     }
 
-    public void assign(AssignResourceRequest request){
+    public void assign(AssignResourceRequest request) {
         log.debug("assign method started");
-        for(int i = 0; i<this.config.getRetries(); i++) {
-            log.debug("Assign Resource attempt no: " + (i+1));
+        for (int i = 0; i < this.config.getRetries(); i++) {
+            log.debug("Assign Resource attempt no: " + (i + 1));
 
             //Make task and add to cache.
             Task task = new Task();
@@ -58,10 +62,9 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             routingEngineCache.addTask(request.getTopicId(), task);
             log.debug("New Task Created and stored in cache");
 
-
             //Publish MOCK EWT
             ResponseEntity<String> agentEwtResponse = this.postAgentEwt(request.getTopicId(), 5);
-            if(agentEwtResponse != null){
+            if (agentEwtResponse != null) {
                 log.debug("Successfully published AGENT_EWT event");
             }
 
@@ -76,7 +79,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
                 log.debug("Agent not found");
                 ResponseEntity<String> response = postNoAgentAvailable(request.getTopicId());
 
-                if(response!=null){
+                if (response != null) {
                     log.debug("Successfully published NO_AGENT_AVAILABLE event");
                 }
 
@@ -89,31 +92,33 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             //If agent found change state
             boolean stateChanged = this.agentStateChanged(agent);
 
-            if(stateChanged) {
+            if (stateChanged) {
                 log.debug("Agent state changed to RESERVED");
                 routingEngineCache.changeTaskState(request.getTopicId(), "RESERVED");
                 log.debug("Task state changed to RESERVED in cache");
 
                 //Publish AGENT_RESERVED event
-                ResponseEntity<String> responseEntity = this.postAgentReserved(request.getTopicId(), agent);
-                if(responseEntity != null){
+                ResponseEntity<String> responseEntity = this
+                        .postAgentReserved(request.getTopicId(), agent);
+                if (responseEntity != null) {
                     log.debug("Successfully published AGENT_RESERVED event");
                 }
 
                 //Assign Task request to Agent Manager
-                responseEntity = this.postAssignTask(request.getTopicId(), request.getChannelSession(), agent, task);
-                if(responseEntity!=null){
+                responseEntity = this
+                        .postAssignTask(request.getTopicId(), request.getChannelSession(), agent,
+                                task);
+                if (responseEntity != null) {
                     log.debug("Assign Task request successful");
                 }
 
                 log.debug("assign method ended");
                 return;
-            }
-            else {
+            } else {
                 log.debug("State could not change trying reserving agent again...");
             }
 
-            if(i==this.config.getRetries()-1){
+            if (i == this.config.getRetries() - 1) {
                 //publish Agent-Not-Available
                 log.debug("Find Agent retries finished Publish No-Agent-Available");
             }
@@ -121,7 +126,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         log.debug("assign method ended");
     }
 
-    private boolean agentStateChanged(CCUser agent){
+    private boolean agentStateChanged(CCUser agent) {
         ChangeStateRequest changeStateRequest = new ChangeStateRequest();
         changeStateRequest.setCcUser(agent);
         changeStateRequest.setState("RESERVED");
@@ -129,22 +134,24 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {
-            JSONObject requestBody = new JSONObject(objectMapper.writeValueAsString(changeStateRequest));
-            ResponseEntity<String> responseEntity = this.httpRequest(requestBody, config.getChangeStateUri(), HttpMethod.PUT);
+            JSONObject requestBody = new JSONObject(
+                    objectMapper.writeValueAsString(changeStateRequest));
+            ResponseEntity<String> responseEntity = this
+                    .httpRequest(requestBody, config.getChangeStateUri(), HttpMethod.PUT);
 
-            if(responseEntity == null){
+            if (responseEntity == null) {
                 return false;
             }
-            if(responseEntity.getStatusCodeValue() == 200){
+            if (responseEntity.getStatusCodeValue() == 200) {
                 return true;
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e.getMessage());
         }
         return false;
     }
 
-    private ResponseEntity<String> postAgentReserved(String topicId, CCUser agent){
+    private ResponseEntity<String> postAgentReserved(String topicId, CCUser agent) {
         AgentReservedRequest request = new AgentReservedRequest();
         request.setAgent(agent);
         request.setTopicId(topicId);
@@ -153,7 +160,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         try {
             JSONObject requestBody = new JSONObject(objectMapper.writeValueAsString(request));
             return httpRequest(requestBody, this.config.getAgentReservedUri(), HttpMethod.POST);
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e.getMessage());
         }
         return null;
@@ -165,14 +172,15 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         return this.httpRequest(requestBody, config.getNoAgentAvailableUri(), HttpMethod.POST);
     }
 
-    private ResponseEntity<String> postAgentEwt(String topicId, int ewt){
+    private ResponseEntity<String> postAgentEwt(String topicId, int ewt) {
         JSONObject requestBody = new JSONObject();
         requestBody.put("topicId", topicId);
         requestBody.put("ewt", ewt);
         return this.httpRequest(requestBody, config.getAgentEwtUri(), HttpMethod.POST);
     }
 
-    private ResponseEntity<String> postAssignTask(String topicId, ChannelSession channelSession, CCUser agent, Task task){
+    private ResponseEntity<String> postAssignTask(String topicId, ChannelSession channelSession,
+            CCUser agent, Task task) {
         AssignTaskRequest request = new AssignTaskRequest();
         request.setTopicId(topicId);
         request.setChannelSession(channelSession);
@@ -183,14 +191,15 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         try {
             JSONObject requestBody = new JSONObject(objectMapper.writeValueAsString(request));
             return httpRequest(requestBody, this.config.getAssignTaskUri(), HttpMethod.POST);
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e.getMessage());
         }
         return null;
 
     }
 
-    private ResponseEntity<String> httpRequest(JSONObject requestBody, String uri, HttpMethod httpMethod) {
+    private ResponseEntity<String> httpRequest(JSONObject requestBody, String uri,
+            HttpMethod httpMethod) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -198,17 +207,17 @@ public class AssignResourceServiceImpl implements AssignResourceService {
 
         RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
         Duration duration = Duration.ofSeconds(5);
-        RestTemplate restTemplate= restTemplateBuilder.setConnectTimeout(duration).build();
+        RestTemplate restTemplate = restTemplateBuilder.setConnectTimeout(duration).build();
 
         try {
-            switch (httpMethod){
+            switch (httpMethod) {
                 case POST:
                     return restTemplate.postForEntity(uri, httpRequest, String.class);
                 case PUT:
                     return restTemplate.exchange(uri, HttpMethod.PUT, httpRequest, String.class);
             }
 
-        } catch (ResourceAccessException resourceAccessException){
+        } catch (ResourceAccessException resourceAccessException) {
             System.out.println(resourceAccessException.getMessage());
         }
 

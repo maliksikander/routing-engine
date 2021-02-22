@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.dto;
 import com.ef.cim.objectmodel.CCUser;
 
 public class AgentReservedRequest {
+
     String topicId;
     CCUser agent;
 

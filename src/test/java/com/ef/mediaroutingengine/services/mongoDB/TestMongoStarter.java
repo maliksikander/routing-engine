@@ -6,16 +6,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
 public class TestMongoStarter {
+
     @Autowired
     private MongoStarter mongoStarter;
 
     @Test
-    public void testConnect_runsSuccessfully(){
+    public void testConnect_runsSuccessfully() {
         mongoStarter.connect();
     }
 
     @Test
-    public void testCreate_runsSuccessfully(){
+    public void testCreate_runsSuccessfully() {
         mongoStarter.create();
     }
 }

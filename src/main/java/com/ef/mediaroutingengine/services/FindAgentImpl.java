@@ -11,20 +11,22 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class FindAgentImpl implements FindAgent{
+public class FindAgentImpl implements FindAgent {
+
     private final RedisClient redisClient;
 
     @Autowired
-    public FindAgentImpl(RedisClient redisClient){
+    public FindAgentImpl(RedisClient redisClient) {
         this.redisClient = redisClient;
     }
 
-    public CCUser find(boolean flag){
-        if(flag) {
+    public CCUser find(boolean flag) {
+        if (flag) {
             try {
-                AgentPresence agentPresence = this.redisClient.getJSON(GeneralConstants.agentPresenceKey, AgentPresence.class);
+                AgentPresence agentPresence = this.redisClient
+                        .getJSON(GeneralConstants.agentPresenceKey, AgentPresence.class);
                 return agentPresence.getAgent();
-            } catch (Exception e){
+            } catch (Exception e) {
                 System.out.println();
             }
         }
