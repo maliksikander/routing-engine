@@ -2,7 +2,7 @@ FROM gitlab.expertflow.com:9242/general/openjdk:8-jre-alpine-3.11
 MAINTAINER CTI Team Expertflow
 WORKDIR /app
 RUN apk update && apk add tzdata
-COPY media-routing-engine-0.0.1-SNAPSHOT.jar media-routing-engine.jar
+COPY media-routing-engine.jar media-routing-engine.jar
 COPY docker-entrypoint.sh docker-entrypoint.sh
 RUN echo "user:x:1001060000:0::/app:" >> /etc/passwd \
 && echo "user:!:$(($(date +%s) / 60 / 60 / 24)):0:99999:7:::" >> /etc/shadow \
