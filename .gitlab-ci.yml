@@ -64,7 +64,7 @@ maven-format:
   script:
 #    - yum install maven -y
     - mvn checkstyle:checkstyle -Dcheckstyle.config.location=checkstyle-checker.xml
-    #- mvn checkstyle:check -Dcheckstyle.config.location=checkstyle-checker.xml -Dcheckstyle.violationSeverity=warning
+    - mvn checkstyle:check -Dcheckstyle.config.location=checkstyle-checker.xml -Dcheckstyle.violationSeverity=warning
   allow_failure: false
   artifacts:
       expire_in: 999 yrs
