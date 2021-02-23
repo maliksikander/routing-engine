@@ -1,20 +1,37 @@
 variables:
-  IMAGE_NAME: ${CI_REGISTRY_IMAGE}/build:${CI_COMMIT_BRANCH}-${CI_COMMIT_SHA}
+  IMAGE_NAME: ${CI_REGISTRY_IMAGE}/build:${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}-${CI_COMMIT_SHA}
 
 stages:
+  - validate
   - compile
   - test
-  - static-test
-  - mvn-scan
+  - code_format
   - artifacts
+  #- static-test
+  - mvn-scan
+  - init
   - build
+  - docker_build
   - scan_api
   - publish
-
+##+==================Runs on Every Commit and merge requests========================+
+maven-validate:
+  stage: validate
+  #when: manual
+  image: maven:3.6.3
+  script:
+#    - yum install maven -y
+    - mvn validate
+    - echo "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}"
+  only:
+    - /^CIM-.*$/
+    - merge_requests
+  allow_failure: false
+#+==================Runs on Every Commit and merge requests========================+
 
 maven-compile:
   stage: compile
-  when: manual
+  when: on_success
   image: maven:3.6.3
   script:
 #    - yum install maven -y
@@ -23,124 +40,192 @@ maven-compile:
   only:
     - /^CIM-.*$/
     - merge_requests
+  allow_failure: false
 
+#+==================Runs on Every Commit and merge requests========================+
 
 maven-test:
   stage: test
-  when: manual
+  when: on_success
   image: maven:3.6.3
   script:
-#    - yum install maven -y
     - mvn test
   only:
     - /^CIM-.*$/
     - merge_requests
-#===============Code Quality /Static Testing==========
-sonarqube-pretest:
-  stage: static-test
-  when: manual
-  #tags: [old-runner]
-  image: sonarsource/sonar-scanner-cli:latest
-  variables:
-      SONAR_TOKEN: "a7e1c1503f8d4b2d3e2efb29fcbeb26f7e13f2f3"
-      SONAR_HOST_URL: "http://192.168.1.109:9000"
-      SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" 
-      GIT_DEPTH: 1
-  script:
-      - sonar-scanner -Dsonar.qualitygate.wait=true
-  cache:
-      key: ${CI_JOB_NAME}
-      paths:
-      - .sonar/cache
   allow_failure: false
-  only:
-      - /^CIM-.*$/
-      - merge_requests
-      
-      
-sonarqube-check:
-  image: maven:latest
-  stage: mvn-scan
-  when: manual
-  variables:
-    SONAR_TOKEN: "a7e1c1503f8d4b2d3e2efb29fcbeb26f7e13f2f3"
-    SONAR_HOST_URL: "http://192.168.1.109:9000"
-    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" 
-    GIT_DEPTH: 0
 
+#+==================Runs on Every Commit and merge requests========================+
+
+maven-format:
+  stage: code_format
+  when: on_success
+  image: maven:3.6.3
   script:
-    - mvn verify sonar:sonar -Dsonar.qualitygate.wait=true
-    - cat target/site/jacoco/index.html | grep -o '.*'
-  allow_failure: true
-  cache:
-        key: ${CI_JOB_NAME}
-        paths:
-        - .sonar/cache
+#    - yum install maven -y
+    - mvn checkstyle:checkstyle -Dcheckstyle.config.location=checkstyle-checker.xml
+    #- mvn checkstyle:check -Dcheckstyle.config.location=checkstyle-checker.xml -Dcheckstyle.violationSeverity=warning
+  allow_failure: false
+  artifacts:
+      expire_in: 999 yrs
+      paths:
+          - target/site/
   only:
     - /^CIM-.*$/
     - merge_requests
-        
-#sonarqube-test:
-#  stage: static-test
-#  #tags: [old-runner]
-#  when: on_success
-#  image: sonarsource/sonar-scanner-cli:latest
-#  variables:
-#      SONAR_TOKEN: "a7e1c1503f8d4b2d3e2efb29fcbeb26f7e13f2f3"
-#      SONAR_HOST_URL: "http://192.168.1.109:9000"
-#      SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" 
-#      GIT_DEPTH: 1
-#
-#  script:
-#      - sonar-scanner -Dsonar.qualitygate.wait=true
-#  allow_failure: false
-#  only:
-#      - /^CIM-.*$/
-#      - merge_requests
 
-
-
-# ===============================================================
-
+#+==================Runs on Every Commit only========================+
 
 mvn_artifacts:
    stage: artifacts
-   #when: manual
+   when: on_success
    image: maven:3.6.3
    script:
-#    - yum install maven -y
-   - rm -rf target
-   - ls -ltr
    - mvn clean
    - mvn package
+   - export TIME_TOKEN=$(env TZ=GMT-5 date +%d_%m_%Y-%H_%M_%S)
+   - echo "${TIME_TOKEN}"
+   - mv target/media-routing-engine-*.jar target/media-routing-engine-"${TIME_TOKEN}".jar
+   - mv target/media-routing-engine-*.jar.original target/media-routing-engine-"${TIME_TOKEN}".jar.original
 
    artifacts:
        paths:
            - target
+       expire_in: 999 yrs
    allow_failure: false
    only:
-   - merge_requests
+   - /^CIM-.*$/
+#===============Code Quality /Static Testing==========
+# sonarqube-pretest:
+#   stage: static-test
+#   when: manual
+#   #tags: [old-runner]
+#   image: sonarsource/sonar-scanner-cli:latest
+#   variables:
+#       SONAR_TOKEN: "a7e1c1503f8d4b2d3e2efb29fcbeb26f7e13f2f3"
+#       SONAR_HOST_URL: "http://192.168.1.109:9000"
+#       SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" 
+#       GIT_DEPTH: 1
+#   script:
+#       - sonar-scanner -Dsonar.qualitygate.wait=true
+#   cache:
+#       key: ${CI_JOB_NAME}
+#       paths:
+#       - .sonar/cache
+#   allow_failure: false
+#   only:
+#       - /^CIM-.*$/
+#       - merge_requests
 
+#+==================Runs on merge requests only========================+
+
+sonarqube-check:
+   image: maven:latest
+   stage: mvn-scan
+   when: on_success
+   variables:
+     SONAR_TOKEN: "a7e1c1503f8d4b2d3e2efb29fcbeb26f7e13f2f3"
+     SONAR_HOST_URL: "http://192.168.1.109:9000"
+     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" 
+     GIT_DEPTH: 0
+   script: 
+       - mvn verify sonar:sonar -Dsonar.qualitygate.wait=true -Dsonar.projectKey=MediaRoutingEngine-CIM-364 -Dsonar.projectName=MediaRoutingEngine-CIM-364
+       #- mvn test sonar:sonar -Dsonar.qualitygate.wait=true -Dsonar.projectKey=junit-test -Dsonar.projectName=junit-test
+       #- cat target/site/jacoco/index.html | grep -o '.*'
+   artifacts:
+     expire_in: 999 yrs
+     paths:
+       - target/surefire-reports/TEST-*.xml
+       - target/site/jacoco/index.html
+     reports:
+       junit:
+         - target/surefire-reports/TEST-*.xml
+         - target/site/jacoco/index.html
+   
+   allow_failure: false
+   cache:
+         key: ${CI_JOB_NAME}
+         paths:
+         - .sonar/cache
+   only:
+     #- /^CIM-.*$/
+     - merge_requests
+#+==================Runs on merge requests only========================+
+
+##================Auto_increment_Start================
+
+auto_increment:
+  image: docker:latest
+  stage: init
+  when: on_success
+  variables:
+    VAR_NAME: BUILD_NUMBER
+    TIME_VAR: BUILD_TIME
+    TOKEN: ${CI_PIPELINE_IID_TOKEN}
+    GITLAB_URL: "https://gitlab.expertflow.com"
+  before_script:
+  - apk add --update curl jq
+  script:
+  - export TIME_TOKEN=$(env TZ=GMT-5 date +%d_%m_%Y-%H_%M_%S)
+  - "VAR=$(curl -s -f  --header \"PRIVATE-TOKEN: ${TOKEN}\" \"${GITLAB_URL}/api/v4/projects/${CI_PROJECT_ID}/variables/${VAR_NAME}\" | jq  -r '.value' ) "
+  - let VAR=VAR+1
+  - "curl -s -f --request PUT --header \"PRIVATE-TOKEN: ${TOKEN}\" \"${GITLAB_URL}/api/v4/projects/${CI_PROJECT_ID}/variables/${VAR_NAME}\" --form \"value=${VAR}\" "
+  - "curl -s -f --request PUT --header \"PRIVATE-TOKEN: ${TOKEN}\" \"${GITLAB_URL}/api/v4/projects/${CI_PROJECT_ID}/variables/${TIME_VAR}\" --form \"value=${TIME_TOKEN}\" "
+  - echo "${TIME_TOKEN} ${VAR} ${TIME_VAR}"
+  only:
+  - merge_requests
+
+# ===================Auto_increment_END===================
+
+
+#+==================Runs on merge requests only========================+
+mvn_build:
+   stage: build
+   when: on_success
+   image: maven:3.6.3
+   script:
+#    - yum install maven -y
+   - mvn clean
+   - mvn package
+   #- export TIME_TOKEN=$(env TZ=GMT-5 date +%d_%m_%Y-%H_%M_%S)
+   #- echo "${TIME_TOKEN} ${BUILD_NUMBER}"
+   - mv target/media-routing-engine-*.jar target/media-routing-engine-"${BUILD_TIME}_build-${BUILD_NUMBER}".jar
+   - mv target/media-routing-engine-*.jar.original target/media-routing-engine-"${BUILD_TIME}_build-${BUILD_NUMBER}".jar.original
+
+   artifacts:
+       expire_in: 999 yrs
+       paths:
+           - target
+   allow_failure: false
+   only:
+   #- /^CIM-.*$/
+   - merge_requests
+#+==================Runs on merge requests only========================+
 build:image:
  image: docker:latest
- stage: build
+ stage: docker_build
  when: on_success
  services:
    - docker:dind
  before_script:
    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
  dependencies:
-   - mvn_artifacts
-
+   - mvn_build
  script:
-   - cp -r ./target ./
-   - docker pull "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" || true
-   - docker build --cache-from "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" -t "$IMAGE_NAME" .
+   - echo ${BUILD_TIME} ${BUILD_NUMBER}
+   - cp -r ./target/media-routing-engine-"${BUILD_TIME}_build-${BUILD_NUMBER}".jar ./docker/media-routing-engine.jar
+   #- docker pull "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" || true
+   #- docker build --cache-from "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" -t "$IMAGE_NAME" .
+   #- docker push "$IMAGE_NAME"
+   - cd docker
+   - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
+   - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$IMAGE_NAME"
    - docker push "$IMAGE_NAME"
  only:
-   - merge_requests
-      
+   - merge_requests      
  allow_failure: false
+
+#+==================Runs on merge requests only========================+
 anchore_scan_api:
   image: anchore/engine-cli:latest
   stage: scan_api
@@ -171,6 +256,7 @@ anchore_scan_api:
     - if [ "${ANCHORE_FAIL_ON_POLICY}" == "true" ] ; then anchore-cli evaluate check ${IMAGE_NAME}  ; fi 
   artifacts:
     name: "$CI_JOB_NAME"
+    expire_in: 999 yrs
     paths:
     - ${CI_PROJECT_TITLE}-image-policy.txt
     - ${CI_PROJECT_TITLE}-image-details.txt
@@ -182,7 +268,8 @@ anchore_scan_api:
     #- image-packages.txt
   only:
     - merge_requests
-  
+
+#+==================Runs on merge requests only========================+
 container_publish:
   stage: publish
   image: docker:latest
@@ -195,16 +282,17 @@ container_publish:
     GIT_STRATEGY: none
 
   script:
+    - export TIME_TOKEN=$(env TZ=GMT-5 date +%d_%m_%Y-%H_%M_%S)
+    - echo "${TIME_TOKEN} ${BUILD_NUMBER}"
     - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "${CI_REGISTRY}"
     - docker pull "$IMAGE_NAME"
-    - docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
-    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
+    - docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}-${BUILD_TIME}_build-${BUILD_NUMBER}"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}-${BUILD_TIME}_build-${BUILD_NUMBER}"
     - |
-        if [ "$CI_COMMIT_REF_NAME" == "master" ]; then
+        if [ "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" == "master" ]; then
           docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:latest"
           docker push "${CI_REGISTRY_IMAGE}:latest"
         fi
   only:
     - merge_requests
-
 
