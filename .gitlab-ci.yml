@@ -1,6 +1,6 @@
 variables:
   IMAGE_NAME: ${CI_REGISTRY_IMAGE}/build:${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}-${CI_COMMIT_SHA}
-
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
 stages:
   - validate
   - compile
@@ -41,6 +41,10 @@ maven-compile:
     - /^CIM-.*$/
     - merge_requests
   allow_failure: false
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository/
 
 #+==================Runs on Every Commit and merge requests========================+
 
@@ -54,6 +58,10 @@ maven-test:
     - /^CIM-.*$/
     - merge_requests
   allow_failure: false
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository/
 
 #+==================Runs on Every Commit and merge requests========================+
 
@@ -73,6 +81,12 @@ maven-format:
   only:
     - /^CIM-.*$/
     - merge_requests
+  cache:
+      key: ${CI_COMMIT_REF_SLUG}
+      paths:
+          - .m2/repository/
+          - .cache
+
 
 #+==================Runs on Every Commit only========================+
 
@@ -95,6 +109,11 @@ mvn_artifacts:
    allow_failure: false
    only:
    - /^CIM-.*$/
+   cache:
+       key: ${CI_COMMIT_REF_SLUG}
+       paths:
+           - .m2/repository/
+
 #===============Code Quality /Static Testing==========
 # sonarqube-pretest:
 #   stage: static-test
@@ -144,7 +163,7 @@ sonarqube-check:
    
    allow_failure: false
    cache:
-         key: ${CI_JOB_NAME}
+         key: ${CI_COMMIT_REF_SLUG}
          paths:
          - .sonar/cache
    only:
@@ -200,6 +219,11 @@ mvn_build:
    only:
    #- /^CIM-.*$/
    - merge_requests
+   cache:
+       key: ${CI_COMMIT_REF_SLUG}
+       paths:
+           - .m2/repository/
+
 #+==================Runs on merge requests only========================+
 build:image:
  image: docker:latest
