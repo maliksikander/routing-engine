@@ -7,7 +7,6 @@ stages:
   - test
   - code_format
   - artifacts
-  #- static-test
   - mvn-scan
   - init
   - build
@@ -20,7 +19,6 @@ maven-validate:
   #when: manual
   image: maven:3.6.3
   script:
-#    - yum install maven -y
     - mvn validate
     - echo "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}"
   only:
@@ -34,7 +32,6 @@ maven-compile:
   when: on_success
   image: maven:3.6.3
   script:
-#    - yum install maven -y
     - mvn compiler:compile
     - mvn compiler:testCompile
   only:
@@ -53,7 +50,7 @@ maven-test:
   when: on_success
   image: maven:3.6.3
   script:
-    - mvn test
+    - mvn verify
   only:
     - /^CIM-.*$/
     - merge_requests
@@ -62,6 +59,12 @@ maven-test:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
       - .m2/repository/
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+        - target/failsafe-reports/TEST-*.xml
 
 #+==================Runs on Every Commit and merge requests========================+
 
@@ -70,7 +73,6 @@ maven-format:
   when: on_success
   image: maven:3.6.3
   script:
-#    - yum install maven -y
     - mvn checkstyle:checkstyle -Dcheckstyle.config.location=checkstyle-checker.xml
     - mvn checkstyle:check -Dcheckstyle.config.location=checkstyle-checker.xml -Dcheckstyle.violationSeverity=warning
   allow_failure: false
@@ -98,7 +100,6 @@ mvn_artifacts:
    - mvn clean
    - mvn package
    - export TIME_TOKEN=$(env TZ=GMT-5 date +%d_%m_%Y-%H_%M_%S)
-   - echo "${TIME_TOKEN}"
    - mv target/media-routing-engine-*.jar target/media-routing-engine-"${TIME_TOKEN}".jar
    - mv target/media-routing-engine-*.jar.original target/media-routing-engine-"${TIME_TOKEN}".jar.original
 
@@ -114,27 +115,6 @@ mvn_artifacts:
        paths:
            - .m2/repository/
 
-#===============Code Quality /Static Testing==========
-# sonarqube-pretest:
-#   stage: static-test
-#   when: manual
-#   #tags: [old-runner]
-#   image: sonarsource/sonar-scanner-cli:latest
-#   variables:
-#       SONAR_TOKEN: "a7e1c1503f8d4b2d3e2efb29fcbeb26f7e13f2f3"
-#       SONAR_HOST_URL: "http://192.168.1.109:9000"
-#       SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" 
-#       GIT_DEPTH: 1
-#   script:
-#       - sonar-scanner -Dsonar.qualitygate.wait=true
-#   cache:
-#       key: ${CI_JOB_NAME}
-#       paths:
-#       - .sonar/cache
-#   allow_failure: false
-#   only:
-#       - /^CIM-.*$/
-#       - merge_requests
 
 #+==================Runs on merge requests only========================+
 
@@ -203,11 +183,8 @@ mvn_build:
    when: on_success
    image: maven:3.6.3
    script:
-#    - yum install maven -y
    - mvn clean
    - mvn package
-   #- export TIME_TOKEN=$(env TZ=GMT-5 date +%d_%m_%Y-%H_%M_%S)
-   #- echo "${TIME_TOKEN} ${BUILD_NUMBER}"
    - mv target/media-routing-engine-*.jar target/media-routing-engine-"${BUILD_TIME}_build-${BUILD_NUMBER}".jar
    - mv target/media-routing-engine-*.jar.original target/media-routing-engine-"${BUILD_TIME}_build-${BUILD_NUMBER}".jar.original
 
@@ -238,9 +215,6 @@ build:image:
  script:
    - echo ${BUILD_TIME} ${BUILD_NUMBER}
    - cp -r ./target/media-routing-engine-"${BUILD_TIME}_build-${BUILD_NUMBER}".jar ./docker/media-routing-engine.jar
-   #- docker pull "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" || true
-   #- docker build --cache-from "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" -t "$IMAGE_NAME" .
-   #- docker push "$IMAGE_NAME"
    - cd docker
    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$IMAGE_NAME"
