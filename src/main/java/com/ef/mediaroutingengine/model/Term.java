@@ -6,7 +6,7 @@ public class Term {
 
     private RoutingAttribute routingAttribute;
     private String conditionOperator;
-    private String value;
+    private int value;
     private String preTermCondition;
 
     public RoutingAttribute getRoutingAttribute() {
@@ -25,11 +25,11 @@ public class Term {
         this.conditionOperator = conditionOperator;
     }
 
-    public String getValue() {
+    public int getValue() {
         return value;
     }
 
-    public void setValue(String value) {
+    public void setValue(int value) {
         this.value = value;
     }
 
@@ -43,11 +43,11 @@ public class Term {
 
     @Override
     public String toString() {
-        return "Term{" +
-                "routingAttribute=" + routingAttribute +
-                ", conditionOperator='" + conditionOperator + '\'' +
-                ", value='" + value + '\'' +
-                ", preTermCondition='" + preTermCondition + '\'' +
-                '}';
+        return "Term{"
+                + "routingAttribute=" + routingAttribute
+                + ", conditionOperator='" + conditionOperator + '\''
+                + ", value='" + value + '\''
+                + ", preTermCondition='" + preTermCondition + '\''
+                + '}';
     }
 }

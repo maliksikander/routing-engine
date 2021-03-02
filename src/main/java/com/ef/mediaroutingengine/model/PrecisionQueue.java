@@ -3,8 +3,8 @@ package com.ef.mediaroutingengine.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -13,16 +13,19 @@ public class PrecisionQueue {
 
     @Id
     private UUID id;
-    @NotBlank
+    @NotNull
+    @Size(min = 3, max = 50)
     private String name;
     @NotNull
     private MediaRoutingDomain mrd;
     @NotNull
     private AgentSelectionCriteria agentSelectionCriteria;
     @NotNull
-    private ServiceLevelType serviceLevelType;
+    @Size(min = 1)
+    private int serviceLevelType;
     @NotNull
     private int serviceLevelThreshold;
+    @NotNull
     private List<Step> steps;
 
     public PrecisionQueue() {
@@ -61,11 +64,11 @@ public class PrecisionQueue {
         this.agentSelectionCriteria = agentSelectionCriteria;
     }
 
-    public ServiceLevelType getServiceLevelType() {
+    public int getServiceLevelType() {
         return serviceLevelType;
     }
 
-    public void setServiceLevelType(ServiceLevelType serviceLevelType) {
+    public void setServiceLevelType(int serviceLevelType) {
         this.serviceLevelType = serviceLevelType;
     }
 
@@ -99,14 +102,14 @@ public class PrecisionQueue {
 
     @Override
     public String toString() {
-        return "PrecisionQueue{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", mrd=" + mrd +
-                ", agentSelectionCriteria=" + agentSelectionCriteria +
-                ", serviceLevelType=" + serviceLevelType +
-                ", serviceLevelThreshold=" + serviceLevelThreshold +
-                ", steps=" + steps +
-                '}';
+        return "PrecisionQueue{"
+                + "id=" + id
+                + ", name='" + name + '\''
+                + ", mrd=" + mrd
+                + ", agentSelectionCriteria=" + agentSelectionCriteria
+                + ", serviceLevelType=" + serviceLevelType
+                + ", serviceLevelThreshold=" + serviceLevelThreshold
+                + ", steps=" + steps
+                + '}';
     }
 }

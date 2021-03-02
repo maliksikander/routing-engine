@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.model;
 
 import java.util.UUID;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -11,7 +12,9 @@ public class MediaRoutingDomain {
     @Id
     private UUID id;
     @NotNull
+    @Size(min = 3, max = 110)
     private String name;
+    @Size(max = 500)
     private String description;
     @NotNull
     private boolean interruptible;

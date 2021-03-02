@@ -14,10 +14,8 @@ import java.util.UUID;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
-import org.springframework.data.mongodb.config.EnableMongoAuditing;
 
 @SpringBootApplication
-@EnableMongoAuditing(auditorAwareRef = "happyg")
 public class MediaRoutingEngineApplication {
 
     public static void main(String[] args) {
@@ -53,7 +51,7 @@ public class MediaRoutingEngineApplication {
         routingAttribute.setName("attribute1");
         routingAttribute.setDescription("description");
         routingAttribute.setType(AttributeType.BOOLEAN);
-        routingAttribute.setDefaultValue("true");
+        routingAttribute.setDefaultValue(1);
 
         AssociatedRoutingAttribute associatedRoutingAttribute = new AssociatedRoutingAttribute();
         associatedRoutingAttribute.setRoutingAttribute(routingAttribute);

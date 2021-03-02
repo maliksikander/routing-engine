@@ -1,14 +1,18 @@
 package com.ef.mediaroutingengine.model;
 
+import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import org.springframework.stereotype.Service;
 
+@Service
 public class TestingStringLength {
-    @NotNull(message = "name cannot be null")
+    @NotNull
+    @Size(min = 3, max = 5)
     private String name;
     @Min(1)
+    @Max(5)
     private int age;
 
     public String getName() {
@@ -29,9 +33,9 @@ public class TestingStringLength {
 
     @Override
     public String toString() {
-        return "TestingStringLength{" +
-                "name='" + name + '\'' +
-                ", age=" + age +
-                '}';
+        return "TestingStringLength{"
+                + "name='" + name + '\''
+                + ", age=" + age
+                + '}';
     }
 }
