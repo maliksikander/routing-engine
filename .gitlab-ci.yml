@@ -205,7 +205,7 @@ mvn_build:
 build:image:
  image: docker:latest
  stage: docker_build
- when: on_success
+ when: manual
  services:
    - docker:dind
  before_script:
