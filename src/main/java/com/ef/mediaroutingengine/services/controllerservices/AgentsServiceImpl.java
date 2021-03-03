@@ -21,7 +21,7 @@ public class AgentsServiceImpl implements AgentsService {
 
     @Autowired
     public AgentsServiceImpl(AgentsRepository repository,
-            RoutingAttributeRepository routingAttributeRepository) {
+                             RoutingAttributeRepository routingAttributeRepository) {
         this.repository = repository;
         this.routingAttributeRepository = routingAttributeRepository;
     }

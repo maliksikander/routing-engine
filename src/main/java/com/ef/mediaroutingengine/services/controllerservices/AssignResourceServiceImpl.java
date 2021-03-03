@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -40,19 +41,31 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     private final AgentStateManager agentStateManager;
     private final RoutingEngineCache routingEngineCache;
 
+    /**
+     * Default constructor.
+     *
+     * @param config Assign Resource properties
+     * @param cache routing engine's cache
+     * @param findAgent FindAgent object
+     */
     @Autowired
     public AssignResourceServiceImpl(AssignResourceProperties config, RoutingEngineCache cache,
-            FindAgent findAgent) {
+                                     FindAgent findAgent) {
         this.config = config;
         this.findAgent = findAgent;
         this.agentStateManager = new AgentStateManagerImpl();
         this.routingEngineCache = cache;
     }
 
+    /**
+     * Assigns a resource to a conversation.
+     *
+     * @param request AssignResourceRequest object
+     */
     public void assign(AssignResourceRequest request) {
         log.debug("assign method started");
         for (int i = 0; i < this.config.getRetries(); i++) {
-            log.debug("Assign Resource attempt no: " + (i + 1));
+            log.debug("Assign Resource attempt no: {}", (i + 1));
 
             //Make task and add to cache.
             Task task = new Task();
@@ -180,7 +193,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     }
 
     private ResponseEntity<String> postAssignTask(String topicId, ChannelSession channelSession,
-            CCUser agent, Task task) {
+                                                  CCUser agent, Task task) {
         AssignTaskRequest request = new AssignTaskRequest();
         request.setTopicId(topicId);
         request.setChannelSession(channelSession);
@@ -199,7 +212,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     }
 
     private ResponseEntity<String> httpRequest(JSONObject requestBody, String uri,
-            HttpMethod httpMethod) {
+                                               HttpMethod httpMethod) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -215,6 +228,9 @@ public class AssignResourceServiceImpl implements AssignResourceService {
                     return restTemplate.postForEntity(uri, httpRequest, String.class);
                 case PUT:
                     return restTemplate.exchange(uri, HttpMethod.PUT, httpRequest, String.class);
+                default:
+                    String error = "Only POST, PUT allowed";
+                    return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
             }
 
         } catch (ResourceAccessException resourceAccessException) {

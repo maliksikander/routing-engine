@@ -18,12 +18,23 @@ public class RoutingEngineCache {
         this.taskCache.put(topicId, task);
     }
 
+    /**
+     * Removes task from cache.
+     *
+     * @param topicId String
+     */
     public void removeTask(String topicId) {
         if (this.taskExists(topicId)) {
             this.taskCache.remove(topicId);
         }
     }
 
+    /**
+     * Changes task state in cache.
+     *
+     * @param topicId String
+     * @param state String
+     */
     public void changeTaskState(String topicId, String state) {
         if (this.taskExists(topicId)) {
             this.taskCache.get(topicId).setState(state);

@@ -53,11 +53,11 @@ public class MediaRoutingDomain {
 
     @Override
     public String toString() {
-        return "MediaRoutingDomain{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", interruptible=" + interruptible +
-                '}';
+        return "MediaRoutingDomain{"
+                + "id=" + id
+                + ", name='" + name + '\''
+                + ", description='" + description + '\''
+                + ", interruptible=" + interruptible
+                + '}';
     }
 }

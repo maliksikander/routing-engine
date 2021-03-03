@@ -1,4 +1,4 @@
-FROM gitlab.expertflow.com:9242/general/openjdk:8-jre-alpine-3.11
+FROM gitlab.expertflow.com:9242/general/openj9:master
 MAINTAINER CTI Team Expertflow
 WORKDIR /app
 RUN apk update && apk add tzdata

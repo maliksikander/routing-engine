@@ -25,7 +25,7 @@ public class RedisClientImpl implements RedisClient {
     }
 
     /**
-     * Helper to check for an OK reply
+     * Helper to check for an OK reply.
      *
      * @param str the reply string to "scrutinize"
      */
@@ -36,10 +36,10 @@ public class RedisClientImpl implements RedisClient {
     }
 
     /**
-     * Helper to check for errors and throw them as an exception
+     * Helper to check for errors and throw them as an exception.
      *
      * @param str the reply string to "analyze"
-     * @throws RuntimeException
+     * @throws RuntimeException exception
      */
     private static void assertReplyNotError(final String str) {
         if (str.startsWith("-ERR")) {
@@ -83,14 +83,14 @@ public class RedisClientImpl implements RedisClient {
     public <T> List<T> mgetJSON(Class<T> clazz, String... keys) throws JsonProcessingException {
 
         List<String> objectsList = null;
-        List<T> responseList = new ArrayList<T>();
+        List<T> responseList = new ArrayList<>();
         try (Jedis conn = getConnection()) {
 
             conn.getClient().sendCommand(Command.MGET, SafeEncoder.encodeMany(keys));
             objectsList = conn.getClient().getMultiBulkReply();
         }
 
-        if (objectsList != null && objectsList.size() > 0) {
+        if (objectsList != null && !objectsList.isEmpty()) {
             for (String object : objectsList) {
                 responseList.add(objectMapper.readValue(object, clazz));
             }

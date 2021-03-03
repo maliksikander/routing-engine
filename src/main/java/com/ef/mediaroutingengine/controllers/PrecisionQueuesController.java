@@ -18,9 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class PrecisionQueuesController {
+    private final PrecisionQueuesService service;
 
     @Autowired
-    PrecisionQueuesService service;
+    public PrecisionQueuesController(PrecisionQueuesService service) {
+        this.service = service;
+    }
 
     @CrossOrigin(origins = "http://localhost:4200")
     @PostMapping(value = "/precision-queues", consumes = "application/json", produces = "application/json")
@@ -42,6 +45,12 @@ public class PrecisionQueuesController {
         return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
+    /**
+     * Deletes a precision queue.
+     *
+     * @param id UUID
+     * @return ResponseEntity
+     */
     @CrossOrigin(origins = "http://localhost:4200")
     @DeleteMapping(value = "/precision-queues/{id}", produces = "application/json")
     public ResponseEntity<Object> deletePrecisionQueue(@PathVariable UUID id) {

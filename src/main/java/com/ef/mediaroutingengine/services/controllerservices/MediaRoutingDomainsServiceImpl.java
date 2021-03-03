@@ -19,7 +19,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
 
     @Autowired
     public MediaRoutingDomainsServiceImpl(MediaRoutingDomainRepository repository,
-            PrecisionQueueRepository precisionQueueRepository) {
+                                          PrecisionQueueRepository precisionQueueRepository) {
         this.repository = repository;
         this.precisionQueueRepository = precisionQueueRepository;
     }

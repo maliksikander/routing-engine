@@ -13,6 +13,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class MockAgentManagerController {
 
+    /**
+     * Mock of agent-manager's change-state API.
+     *
+     * @param request changeStateRequest
+     * @return ResponseEntity
+     */
     @PutMapping(value = "/mockAgentManager/state", consumes = "application/json", produces = "application/json")
     public ResponseEntity<String> changeState(@RequestBody ChangeStateRequest request) {
         if (request.getState() == null || request.getCcUser() == null) {
@@ -26,6 +32,12 @@ public class MockAgentManagerController {
         return new ResponseEntity<>(successResponseBody(), HttpStatus.OK);
     }
 
+    /**
+     * Mock of agent-manager's assign-task api.
+     *
+     * @param request AssignTaskRequest.
+     * @return ResponseEntity
+     */
     @PostMapping(value = "/mockAgentManager/agent/task", consumes = "application/json", produces = "application/json")
     public ResponseEntity<String> assignTask(@RequestBody AssignTaskRequest request) {
         JSONObject responseBody = new JSONObject();

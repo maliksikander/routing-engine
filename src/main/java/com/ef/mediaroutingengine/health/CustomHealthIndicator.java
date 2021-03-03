@@ -7,20 +7,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class CustomHealthIndicator implements HealthIndicator {
 
-    private final String message_key = "Service A";
+    private static final String MESSAGE_KEY = "Service A";
 
     @Override
     public Health health() {
 
-        if (!isRunningServiceA()) {
-            return Health.down().withDetail(message_key, "Not Available").build();
+        if (Boolean.FALSE.equals(isRunningServiceA())) {
+            return Health.down().withDetail(MESSAGE_KEY, "Not Available").build();
         }
-        return Health.up().withDetail(message_key, "Available").build();
+        return Health.up().withDetail(MESSAGE_KEY, "Available").build();
     }
 
     private Boolean isRunningServiceA() {
-        Boolean isRunning = true;
         // Logic Skipped
-        return isRunning;
+        return true;
     }
 }

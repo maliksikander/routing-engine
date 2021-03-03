@@ -10,22 +10,24 @@ import redis.clients.jedis.JedisPoolConfig;
 
 @Configuration
 public class RedisConfig {
-
     private static final Logger logger = LoggerFactory.getLogger(RedisConfig.class);
-
-    @Autowired
     private final RedisProperties redisProperties;
 
+    @Autowired
     public RedisConfig(RedisProperties redisProperties) {
         this.redisProperties = redisProperties;
     }
 
+    /**
+     * Creates a bean of JedisPool.
+     * @return JedisPool
+     */
     @Bean
     public JedisPool jedisPool() {
         logger.info("Initializing redis pool ........");
 
         try {
-            logger.info("Redis config info  " + redisProperties.toString());
+            logger.info("Redis config info {}", redisProperties);
             if (this.redisProperties.getConnectAtStartup()) {
                 return this.createJedisPool();
             }
@@ -45,7 +47,8 @@ public class RedisConfig {
         poolConfig.setMaxIdle(redisProperties.getMaxIdle());
         poolConfig.setMaxWaitMillis(redisProperties.getMaxWait());
 
-        // final JedisPool jedisPool = new JedisPool(poolConfig,redisProperties.getHost(),redisProperties.getPort(),false);
+        // final JedisPool jedisPool = new JedisPool(poolConfig,redisProperties.getHost(),
+        // redisProperties.getPort(),false);
         final JedisPool jedisPool = new JedisPool(poolConfig, redisProperties.getHost(),
                 redisProperties.getPort(),
                 redisProperties.getTimeout(), redisProperties.getPassword(),

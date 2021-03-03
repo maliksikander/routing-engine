@@ -33,7 +33,7 @@ public class GenericExceptionHandler extends BaseExceptionHandler {
     }
 
     private String getFullStackTraceLog(Exception ex) {
-        return Arrays.asList(ex.getStackTrace()).stream().map(Objects::toString)
+        return Arrays.stream(ex.getStackTrace()).map(Objects::toString)
                 .collect(Collectors.joining());
     }
 

@@ -10,36 +10,37 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+/**
+ * Centralized logging using Spring AOP.
+ */
 @Aspect
 @Component
-
-/**
- *
- * Centralized logging using Spring AOP
- */
 public class EFLogger {
 
     Logger logger = LoggerFactory.getLogger(EFLogger.class);
 
     @Pointcut(value = "execution(* com.ef.mediaroutingengine.controllers.*.*(..) )")
     public void appPointcut() {
-
+        // This method is kept empty on purpose
     }
 
+    /**
+     * Common Logger.
+     * @param proceedingJoinPoint join point
+     * @return Object
+     * @throws Throwable exception
+     */
     @Around("appPointcut()")
     public Object topicManagerLogger(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
 
         ObjectMapper objectMapper = new ObjectMapper();
         String className = proceedingJoinPoint.getTarget().getClass().toString();
         String methodName = proceedingJoinPoint.getSignature().getName();
-        Object[] args = proceedingJoinPoint.getArgs();
-        logger.info(className + " : " + methodName + "() Invoked ");
+        logger.info("{} : {}() Invoked", className, methodName);
         Object response = proceedingJoinPoint.proceed();
-        logger.info(className + " : " + methodName + "() Response : " + objectMapper
-                .writeValueAsString(response));
+        String responseString = objectMapper.writeValueAsString(response);
+        logger.info("{} : {}() Response : {}", className, methodName, responseString);
         return response;
 
     }
-
-
 }

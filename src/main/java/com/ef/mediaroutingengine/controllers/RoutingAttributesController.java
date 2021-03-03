@@ -19,9 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class RoutingAttributesController {
+    private final RoutingAttributesService service;
 
     @Autowired
-    private RoutingAttributesService service;
+    public RoutingAttributesController(RoutingAttributesService service) {
+        this.service = service;
+    }
 
     @CrossOrigin(origins = "http://localhost:4200")
     @PostMapping(value = "/routing-attributes", consumes = "application/json", produces = "application/json")
@@ -43,6 +46,12 @@ public class RoutingAttributesController {
         return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
+    /**
+     * Deletes a routing attribute.
+     *
+     * @param id UUID
+     * @return ResponseEntity
+     */
     @CrossOrigin(origins = "http://localhost:4200")
     @DeleteMapping(value = "/routing-attributes/{id}", produces = "application/json")
     public ResponseEntity<Object> deleteRoutingAttribute(@PathVariable UUID id) {

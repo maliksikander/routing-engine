@@ -8,12 +8,12 @@ public interface RedisClient {
 
 
     /**
-     * Associate Object as JSON value to key
+     * Associate Object as JSON value to key.
      *
-     * @param key
-     * @param object
+     * @param key String
+     * @param object Object
      */
-    public void setJSON(String key, Object object) throws Exception;
+    void setJSON(String key, Object object) throws Exception;
 
 
     /**
@@ -21,80 +21,81 @@ public interface RedisClient {
      * is returned. If the value stored by key is not of Object type, an error is returned, because
      * GET JSON can only be used to process give Object.
      *
-     * @param key
-     * @param clazz
-     * @param <T>
-     * @return
+     * @param key String
+     * @param clazz class type T
+     * @param <T> type T
+     * @return T
      */
-    public <T> T getJSON(String key, Class<T> clazz) throws JsonProcessingException;
+    <T> T getJSON(String key, Class<T> clazz) throws JsonProcessingException;
 
     /**
      * Get the list Objects associated with the keys.  If any key does not exist, the special value
      * nil is returned.
      *
-     * @param keys
-     * @param <T>
-     * @return
+     * @param keys String
+     * @param <T> type T
+     * @return T
      */
-    public <T> List<T> mgetJSON(Class<T> clazz, String... keys) throws JsonProcessingException;
+    <T> List<T> mgetJSON(Class<T> clazz, String... keys) throws JsonProcessingException;
 
     /**
      * Delete an object associated given key.
      *
-     * @param key
-     * @return
+     * @param key String
+     * @return Long
      */
     Long delJSON(String key);
 
     /**
-     * Adds one or more members to a set
+     * Adds one or more members to a set.
      *
-     * @param key
-     * @param member
+     * @param key String
+     * @param member String
      */
-    public Long SADD(String key, String member);
+    Long SADD(String key, String member);
 
     /**
-     * Gets all the members in a set
+     * Gets all the members in a set.
      *
-     * @param key
-     * @return
+     * @param key String
+     * @return set of String
      */
-    public Set<String> SMEMBERS(String key);
+    Set<String> SMEMBERS(String key);
 
     /**
-     * Removes one or more members from a set
+     * Removes one or more members from a set.
      *
-     * @param key
-     * @param member
+     * @param key String
+     * @param member String
+     * @return Long
      */
-    public Long SREM(String key, String... member);
+    Long SREM(String key, String... member);
 
 
     /**
-     * Associate value as String  to key
+     * Associate value as String  to key.
      *
-     * @param key
-     * @param value
+     * @param key String
+     * @param value String
      */
-    public void set(String key, String value);
+    void set(String key, String value);
 
     /**
-     * Get value associated with key
+     * Get value associated with key.
      *
-     * @param key
-     * @return
+     * @param key String
+     * @return String
      */
-    public String get(String key);
+    String get(String key);
 
     /**
      * Delete an value associated given key.
      *
-     * @param key
-     * @return
+     * @param key String
+     * @return Long
      */
 
-    public Long del(String key);
+    Long del(String key);
 
 
 }

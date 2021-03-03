@@ -25,10 +25,17 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     private final MediaRoutingDomainRepository mrdRepository;
     private final RoutingAttributeRepository routingAttributeRepository;
 
+    /**
+     * Default constructor.
+     *
+     * @param repository precision queue repository
+     * @param mrdRepository media routing domain's repository
+     * @param routingAttributeRepository routing attribute's repository
+     */
     @Autowired
     public PrecisionQueuesServiceImpl(PrecisionQueueRepository repository,
-            MediaRoutingDomainRepository mrdRepository,
-            RoutingAttributeRepository routingAttributeRepository) {
+                                      MediaRoutingDomainRepository mrdRepository,
+                                      RoutingAttributeRepository routingAttributeRepository) {
         this.repository = repository;
         this.mrdRepository = mrdRepository;
         this.routingAttributeRepository = routingAttributeRepository;

@@ -42,9 +42,9 @@ public class Step {
 
     @Override
     public String toString() {
-        return "Step{" +
-                "expressions=" + expressions +
-                ", timeout=" + timeout +
-                '}';
+        return "Step{"
+                + "expressions=" + expressions
+                + ", timeout=" + timeout
+                + '}';
     }
 }

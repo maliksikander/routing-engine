@@ -12,15 +12,23 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class AssignResourceController {
+    private final AssignResourceService assignResourceService;
 
     @Autowired
-    AssignResourceService assignResourceService;
+    public AssignResourceController(AssignResourceService service) {
+        this.assignResourceService = service;
+    }
 
-    @PostMapping(value = "/routingEngine/assignResource", consumes = "application/json", produces = "application/json")
+    /**
+     * Assigns an agent to a conversation.
+     *
+     * @param request AssignResourceRequest
+     * @return ResponseEntity
+     */
+    @PostMapping(value = "/routingEngine/assignResource", consumes = "application/json",
+            produces = "application/json")
     public ResponseEntity<String> assignResource(@RequestBody AssignResourceRequest request) {
-        CompletableFuture.runAsync(() -> {
-            this.assignResourceService.assign(request);
-        });
+        CompletableFuture.runAsync(() -> this.assignResourceService.assign(request));
         return new ResponseEntity<>("The request is received Successfully", HttpStatus.OK);
     }
 }

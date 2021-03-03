@@ -25,10 +25,17 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
     private final PrecisionQueueRepository precisionQueueRepository;
     private final AgentsRepository agentsRepository;
 
+    /**
+     * Default constructor.
+     *
+     * @param repository routing attribute repository
+     * @param precisionQueueRepository precision queue repository
+     * @param agentsRepository agents repository
+     */
     @Autowired
     public RoutingAttributesServiceImpl(RoutingAttributeRepository repository,
-            PrecisionQueueRepository precisionQueueRepository,
-            AgentsRepository agentsRepository) {
+                                        PrecisionQueueRepository precisionQueueRepository,
+                                        AgentsRepository agentsRepository) {
         this.repository = repository;
         this.precisionQueueRepository = precisionQueueRepository;
         this.agentsRepository = agentsRepository;

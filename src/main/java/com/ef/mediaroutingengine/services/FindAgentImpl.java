@@ -20,14 +20,20 @@ public class FindAgentImpl implements FindAgent {
         this.redisClient = redisClient;
     }
 
+    /**
+     * finds agent.
+     *
+     * @param flag boolean
+     * @return CCUser
+     */
     public CCUser find(boolean flag) {
         if (flag) {
             try {
                 AgentPresence agentPresence = this.redisClient
-                        .getJSON(GeneralConstants.agentPresenceKey, AgentPresence.class);
+                        .getJSON(GeneralConstants.getAgentPresenceKey(), AgentPresence.class);
                 return agentPresence.getAgent();
             } catch (Exception e) {
-                System.out.println();
+                System.out.println(e.getMessage());
             }
         }
         return null;

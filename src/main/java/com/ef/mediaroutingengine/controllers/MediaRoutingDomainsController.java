@@ -20,12 +20,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class MediaRoutingDomainsController {
+    private final MediaRoutingDomainsService service;
 
     @Autowired
-    MediaRoutingDomainsService service;
+    public MediaRoutingDomainsController(MediaRoutingDomainsService service) {
+        this.service = service;
+    }
 
     @CrossOrigin(origins = "http://localhost:4200")
-    @PostMapping(value = "/media-routing-domains", consumes = "application/json", produces = "application/json")
+    @PostMapping(value = "/media-routing-domains", consumes = "application/json",
+            produces = "application/json")
     public ResponseEntity<Object> createMediaRoutingDomain(
             @Valid @RequestBody MediaRoutingDomain requestBody) {
         return new ResponseEntity<>(this.service.create(requestBody), HttpStatus.OK);
@@ -44,6 +48,12 @@ public class MediaRoutingDomainsController {
         return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
+    /**
+     * Delete a mrd.
+     *
+     * @param id UUID
+     * @return ResponseEntity
+     */
     @CrossOrigin(origins = "http://localhost:4200")
     @DeleteMapping(value = "/media-routing-domains/{id}", produces = "application/json")
     public ResponseEntity<Object> deleteMediaRoutingDomain(@PathVariable UUID id) {

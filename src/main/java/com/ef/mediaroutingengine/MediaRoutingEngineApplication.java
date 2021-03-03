@@ -7,7 +7,6 @@ import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.constants.GeneralConstants;
 import com.ef.mediaroutingengine.model.AgentPresence;
-import com.ef.mediaroutingengine.services.UserAudtiting;
 import com.ef.mediaroutingengine.services.redis.RedisClient;
 import java.sql.Timestamp;
 import java.util.UUID;
@@ -18,27 +17,35 @@ import org.springframework.context.ApplicationContext;
 @SpringBootApplication
 public class MediaRoutingEngineApplication {
 
+    /**
+     * application's starting point.
+     *
+     * @param args list of command line arguments
+     */
     public static void main(String[] args) {
         ApplicationContext applicationContext = SpringApplication
                 .run(MediaRoutingEngineApplication.class, args);
 
-        UserAudtiting userAudtiting = applicationContext.getBean(UserAudtiting.class);
-        System.out.println(userAudtiting.getClass());
-
-        GeneralConstants.agentPresence = MediaRoutingEngineApplication.getAgentPresenceInstance();
-        GeneralConstants.agentPresenceKey =
-                "agentPresence:" + GeneralConstants.agentPresence.getAgent().getId().toString();
+        GeneralConstants.setAgentPresence(MediaRoutingEngineApplication.getAgentPresenceInstance());
+        GeneralConstants.setAgentPresenceKey(
+                "agentPresence:" + GeneralConstants.getAgentPresence().getAgent().getId().toString());
 
         RedisClient redisClient = applicationContext.getBean(RedisClient.class);
 
         try {
-            redisClient.setJSON(GeneralConstants.agentPresenceKey, GeneralConstants.agentPresence);
+            redisClient.setJSON(GeneralConstants.getAgentPresenceKey(),
+                    GeneralConstants.getAgentPresence());
         } catch (Exception e) {
             System.out.println("In main, while trying to put json in redis");
             e.printStackTrace();
         }
     }
 
+    /**
+     * Creates a AgentPresence instance.
+     *
+     * @return AgentPresence
+     */
     public static AgentPresence getAgentPresenceInstance() {
         KeycloakUser keycloakUser = new KeycloakUser();
         keycloakUser.setId(UUID.randomUUID());

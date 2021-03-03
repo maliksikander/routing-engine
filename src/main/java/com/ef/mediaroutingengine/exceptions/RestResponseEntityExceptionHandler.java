@@ -1,6 +1,5 @@
 package com.ef.mediaroutingengine.exceptions;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
@@ -112,6 +111,12 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
+    /**
+     * Handles not-found exception.
+     *
+     * @param ex NotFoundException
+     * @return ResponseEntity
+     */
     @ExceptionHandler({NotFoundException.class})
     public ResponseEntity<Object> handleNotFoundException(final NotFoundException ex) {
         logger.error(ex.getMessage());
@@ -120,6 +125,12 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
         return new ResponseEntity<>(responseBody, HttpStatus.NOT_FOUND);
     }
 
+    /**
+     * Handles Malformed url exception.
+     *
+     * @param ex MalformedURLException object
+     * @return ResponseEntity object
+     */
     @ExceptionHandler({MalformedURLException.class})
     public ResponseEntity<Object> handleMalformedURLException(final MalformedURLException ex) {
         logger.error(ex.getMessage());
@@ -128,6 +139,12 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Handles Illegal argument exception.
+     *
+     * @param ex IllegalArgumentException object
+     * @return ResponseEntity object
+     */
     @ExceptionHandler({IllegalArgumentException.class})
     public ResponseEntity<Object> handleIllegalArgumentException(
             final IllegalArgumentException ex) {
@@ -138,6 +155,12 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
         return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Handles JSON Exception.
+     *
+     * @param ex JSONException object
+     * @return ResponseEntity object
+     */
     @ExceptionHandler({JSONException.class})
     public ResponseEntity<Object> handleJsonException(final JSONException ex) {
         logger.error(ex.getMessage());
@@ -146,13 +169,17 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Handles Constraint Violation Exception.
+     *
+     * @param ex ConstraintViolationException object
+     * @return ResponseEntity object
+     */
     @ExceptionHandler({ConstraintViolationException.class})
-    public ResponseEntity<Object> constraintViolationException(Exception ex, WebRequest request)
-            throws IOException {
+    public ResponseEntity<Object> constraintViolationException(Exception ex, WebRequest request) {
         logger.error(ex.getMessage());
         ErrorResponseBody error = new ErrorResponseBody(getTranslatedMessage(ex.getMessage(), null),
                 null);
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
-
     }
 }

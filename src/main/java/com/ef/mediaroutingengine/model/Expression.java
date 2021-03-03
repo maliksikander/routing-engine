@@ -42,9 +42,9 @@ public class Expression {
 
     @Override
     public String toString() {
-        return "Expression{" +
-                "terms=" + terms +
-                ", preExpressionCondition='" + preExpressionCondition + '\'' +
-                '}';
+        return "Expression{"
+                + "terms=" + terms
+                + ", preExpressionCondition='" + preExpressionCondition + '\''
+                + '}';
     }
 }

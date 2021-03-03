@@ -35,10 +35,10 @@ public class ErrorResponseBody {
 
     @Override
     public String toString() {
-        return "ErrorResponseBody{" +
-                "timestamp=" + timestamp +
-                ", error='" + error + '\'' +
-                ", message='" + message + '\'' +
-                '}';
+        return "ErrorResponseBody{"
+                + "timestamp=" + timestamp
+                + ", error='" + error + '\''
+                + ", message='" + message + '\''
+                + '}';
     }
 }

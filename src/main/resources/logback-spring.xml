@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <appender class="ch.qos.logback.core.ConsoleAppender" name="Console">
-    <layout class="ch.qos.logback.classic.PatternLayout">
-      <Pattern>
-        %d{yyyy-MM-dd HH:mm:ss,SSS} | %-5p | %m |%M Line:%L| %t%n
-      </Pattern>
-    </layout>
-  </appender>
+    <appender class="ch.qos.logback.core.ConsoleAppender" name="Console">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                %d{yyyy-MM-dd HH:mm:ss,SSS} | %-5p | %m |%M Line:%L| %t%n
+            </Pattern>
+        </layout>
+    </appender>
 
-  <appender class="ch.qos.logback.core.rolling.RollingFileAppender" name="FILE">
+    <appender class="ch.qos.logback.core.rolling.RollingFileAppender" name="FILE">
 
-    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-      <Pattern>
-        %d{dd-MM-yyyy HH:mm:ss.SSS} [%thread] %-5level %logger{36}.%M - %msg%n
-      </Pattern>
-    </encoder>
-    <file>${LOG_PATH}/log.log</file>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>
+                %d{dd-MM-yyyy HH:mm:ss.SSS} [%thread] %-5level %logger{36}.%M - %msg%n
+            </Pattern>
+        </encoder>
+        <file>${LOG_PATH}/log.log</file>
 
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>
-        ${LOG_PATH}/archived/log_%d{dd-MM-yyyy}.log
-      </fileNamePattern>
-      <maxHistory>10</maxHistory>
-      <totalSizeCap>100MB</totalSizeCap>
-    </rollingPolicy>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>
+                ${LOG_PATH}/archived/log_%d{dd-MM-yyyy}.log
+            </fileNamePattern>
+            <maxHistory>10</maxHistory>
+            <totalSizeCap>100MB</totalSizeCap>
+        </rollingPolicy>
 
-  </appender>
+    </appender>
 
-  <logger additivity="false" level="trace" name="com.ef">
-    <appender-ref ref="Console"/>
-    <appender-ref ref="FILE"/>
-  </logger>
+    <logger additivity="false" level="trace" name="com.ef">
+        <appender-ref ref="Console"/>
+        <appender-ref ref="FILE"/>
+    </logger>
 
-  <!-- Log everything at the TRACE level -->
-  <root level="info">
-    <appender-ref ref="Console"/>
-  </root>
+    <!-- Log everything at the TRACE level -->
+    <root level="info">
+        <appender-ref ref="Console"/>
+    </root>
 </configuration>

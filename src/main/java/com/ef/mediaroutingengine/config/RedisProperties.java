@@ -102,16 +102,16 @@ public class RedisProperties {
 
     @Override
     public String toString() {
-        return "RedisProperties{" +
-                "host='" + host + '\'' +
-                ", password='" + password + '\'' +
-                ", port=" + port +
-                ", ssl=" + ssl +
-                ", timeout=" + timeout +
-                ", maxActive=" + maxActive +
-                ", maxIdle=" + maxIdle +
-                ", minIdle=" + minIdle +
-                ", maxWait=" + maxWait +
-                '}';
+        return "RedisProperties{"
+                + "host='" + host + '\''
+                + ", password='" + password + '\''
+                + ", port=" + port
+                + ", ssl=" + ssl
+                + ", timeout=" + timeout
+                + ", maxActive=" + maxActive
+                + ", maxIdle=" + maxIdle
+                + ", minIdle=" + minIdle
+                + ", maxWait=" + maxWait
+                + '}';
     }
 }

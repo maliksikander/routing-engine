@@ -29,7 +29,7 @@
 package com.ef.mediaroutingengine.services.redis;
 
 /**
- * Path is a ReJSON path, representing a valid path into an object
+ * Path is a ReJSON path, representing a valid path into an object.
  */
 public class Path {
 
@@ -42,7 +42,7 @@ public class Path {
     }
 
     /**
-     * Makes a root path
+     * Makes a root path.
      *
      * @return the root path
      * @deprecated use {@link #ROOT_PATH} instead

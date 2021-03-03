@@ -18,9 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class AgentsController {
+    private final AgentsService service;
 
     @Autowired
-    private AgentsService service;
+    public AgentsController(AgentsService service) {
+        this.service = service;
+    }
 
     @CrossOrigin(origins = "http://localhost:4200")
     @PostMapping(value = "/agents", consumes = "application/json", produces = "application/json")
@@ -37,10 +40,16 @@ public class AgentsController {
     @CrossOrigin(origins = "http://localhost:4200")
     @PutMapping(value = "/agents/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateAgent(@PathVariable UUID id,
-            @Valid @RequestBody CCUser requestBody) {
+                                              @Valid @RequestBody CCUser requestBody) {
         return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
+    /**
+     * Deletes a agent.
+     *
+     * @param id UUID
+     * @return ResponseEntity
+     */
     @CrossOrigin(origins = "http://localhost:4200")
     @DeleteMapping(value = "/agents/{id}", produces = "application/json")
     public ResponseEntity<Object> deleteAgent(@PathVariable UUID id) {

@@ -15,9 +15,9 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 public class SwaggerConfig {
 
     /**
-     * Custom Configuration for Swagger
+     * Custom Configuration for Swagger.
      *
-     * @return
+     * @return Docket object
      */
 
     @Bean

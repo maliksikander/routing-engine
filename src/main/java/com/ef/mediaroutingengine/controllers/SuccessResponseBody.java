@@ -25,9 +25,9 @@ public class SuccessResponseBody {
 
     @Override
     public String toString() {
-        return "SuccessResponseBody{" +
-                "timestamp=" + timestamp +
-                ", message='" + message + '\'' +
-                '}';
+        return "SuccessResponseBody{"
+                + "timestamp=" + timestamp
+                + ", message='" + message + '\''
+                + '}';
     }
 }

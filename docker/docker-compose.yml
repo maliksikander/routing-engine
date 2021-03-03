@@ -5,5 +5,5 @@ services:
     ports:
       - 8081:8081
     env_file:
-      - media-routing-engine-variables.env
+      - docker-variables.env
     restart: always

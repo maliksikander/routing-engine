@@ -19,29 +19,32 @@ public class BaseExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Build the response body in case of error
+     * Build the response body in case of error.
      *
-     * @param errorResponseBody
-     * @return
+     * @param errorResponseBody ErrorResponseBody
+     * @return ResponseEntity
      */
     protected ResponseEntity<Object> buildResponseEntity(ErrorResponseBody errorResponseBody,
-            HttpStatus httpStatus) {
+                                                         HttpStatus httpStatus) {
         return new ResponseEntity<>(errorResponseBody, httpStatus);
     }
 
     /**
-     * @param ex
-     * @param args
-     * @return
+     * Retrieves translated error message.
+     *
+     * @param ex exception
+     * @param args list of objects
+     * @return String
      */
-
     protected String getTranslatedMessage(Exception ex, Object[] args) {
         return getTranslatedMessage(ex.getMessage(), args);
     }
 
     /**
-     * @param objectError
-     * @return
+     * Retrieves translated error message.
+     *
+     * @param objectError ObjectError.
+     * @return String
      */
     protected String getTranslatedMessage(ObjectError objectError) {
         Locale locale = LocaleContextHolder.getLocale();
@@ -49,9 +52,11 @@ public class BaseExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * @param message
-     * @param args
-     * @return
+     * Retrieves translated error message.
+     *
+     * @param message String
+     * @param args list of objects
+     * @return String
      */
     protected String getTranslatedMessage(@Nullable String message, Object[] args) {
 
