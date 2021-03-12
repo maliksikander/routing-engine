@@ -1,0 +1,12 @@
+**/.DS_Store
+target/
+logs/
+bin/
+.idea/
+.project
+.classpath
+.factorypath
+.settings/
+.vscode/
+*.iml
+docker/media-routing-engine-0.0.1-SNAPSHOT.jar
