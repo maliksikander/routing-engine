@@ -1,5 +1,5 @@
 variables:
-  IMAGE_NAME: ${CI_REGISTRY_IMAGE}/build:${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}-${CI_COMMIT_SHA}
+  IMAGE_NAME: ${CI_REGISTRY_IMAGE}/build:${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}-${CI_COMMIT_SHA}
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
 stages:
   - validate
@@ -20,7 +20,7 @@ maven-validate:
   image: maven:3.6.3
   script:
     - mvn validate
-    - echo "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}"
+    - echo "${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}"
   only:
     - /^CIM-.*$/
     - merge_requests
@@ -284,13 +284,13 @@ container_publish:
     - echo "${TIME_TOKEN} ${BUILD_NUMBER}"
     - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "${CI_REGISTRY}"
     - docker pull "$IMAGE_NAME"
-    - docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}-${BUILD_TIME}_build-${BUILD_NUMBER}"
-    - docker push "${CI_REGISTRY_IMAGE}:${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}-${BUILD_TIME}_build-${BUILD_NUMBER}"
-    - |
-        if [ "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" == "master" ]; then
-          docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:latest"
-          docker push "${CI_REGISTRY_IMAGE}:latest"
-        fi
+    - docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}-${BUILD_TIME}_build-${BUILD_NUMBER}"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}-${BUILD_TIME}_build-${BUILD_NUMBER}"
+    #- |
+    #    if [ "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" == "master" ]; then
+    #      docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:latest"
+    #      docker push "${CI_REGISTRY_IMAGE}:latest"
+    #    fi
   only:
     - merge_requests
 
