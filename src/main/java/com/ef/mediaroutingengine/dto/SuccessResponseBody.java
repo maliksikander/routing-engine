@@ -1,4 +1,4 @@
-package com.ef.mediaroutingengine.controllers;
+package com.ef.mediaroutingengine.dto;
 
 import java.sql.Timestamp;
 

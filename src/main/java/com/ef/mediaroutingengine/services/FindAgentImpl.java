@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.services;
 
 import com.ef.cim.objectmodel.CCUser;
-import com.ef.mediaroutingengine.constants.GeneralConstants;
 import com.ef.mediaroutingengine.model.AgentPresence;
 import com.ef.mediaroutingengine.services.redis.RedisClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,11 +28,12 @@ public class FindAgentImpl implements FindAgent {
     public CCUser find(boolean flag) {
         if (flag) {
             try {
-                AgentPresence agentPresence = this.redisClient
-                        .getJSON(GeneralConstants.getAgentPresenceKey(), AgentPresence.class);
-                return agentPresence.getAgent();
+                String key = "agentPresence:8d42617c-0603-4fbe-9863-2507c0fff9fd";
+                return this.redisClient.getJSON(key, AgentPresence.class).getAgent();
             } catch (Exception e) {
+                System.out.println("find agent exception starts");
                 System.out.println(e.getMessage());
+                System.out.println("find agent exception ends");
             }
         }
         return null;

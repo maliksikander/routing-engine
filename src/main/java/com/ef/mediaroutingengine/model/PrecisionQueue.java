@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.springframework.data.annotation.Id;
@@ -20,8 +21,7 @@ public class PrecisionQueue {
     private MediaRoutingDomain mrd;
     @NotNull
     private AgentSelectionCriteria agentSelectionCriteria;
-    @NotNull
-    @Size(min = 1)
+    @Min(1)
     private int serviceLevelType;
     @NotNull
     private int serviceLevelThreshold;

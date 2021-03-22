@@ -81,7 +81,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
                 log.debug("Successfully published AGENT_EWT event");
             }
 
-            //Find An Agent;
+            // Find An Agent;
             CCUser agent = this.findAgent.find(true);
             //The find agent implementation will publish EWT event {not implemented in this mock implementation}
             //If agent found it will return an agent (CcUser object)
@@ -118,9 +118,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
                 }
 
                 //Assign Task request to Agent Manager
-                responseEntity = this
-                        .postAssignTask(request.getTopicId(), request.getChannelSession(), agent,
-                                task);
+                responseEntity = this.postAssignTask(request.getTopicId(), request.getChannelSession(), agent);
                 if (responseEntity != null) {
                     log.debug("Assign Task request successful");
                 }
@@ -137,6 +135,32 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             }
         }
         log.debug("assign method ended");
+    }
+
+    @Override
+    public void assignResource(AssignResourceRequest request) {
+        CCUser agent = this.findAgent.find(true);
+
+        ResponseEntity<String> responseEntity = this.postAgentReserved(request.getTopicId(), agent);
+        System.out.println("Assign Resource Topic: " + request.getTopicId());
+        if (responseEntity != null) {
+            log.debug("Successfully published AGENT_RESERVED event");
+        }
+
+        ResponseEntity<String> changeStateRes = this.postChangeState(agent, "READY");
+        if (changeStateRes == null) {
+            log.error("Change state request unsuccessful");
+            return;
+        }
+
+        System.out.println("STATE HAS CHANGED");
+
+        ResponseEntity<String> assignTaskRes = this.postAssignTask(request.getTopicId(),
+                request.getChannelSession(), agent);
+
+        if (assignTaskRes == null) {
+            log.error("Assign Task request unsuccessful");
+        }
     }
 
     private boolean agentStateChanged(CCUser agent) {
@@ -172,6 +196,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             JSONObject requestBody = new JSONObject(objectMapper.writeValueAsString(request));
+            System.out.println("POST AGENT RESERVED BODY: " + requestBody);
             return httpRequest(requestBody, this.config.getAgentReservedUri(), HttpMethod.POST);
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -193,17 +218,34 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     }
 
     private ResponseEntity<String> postAssignTask(String topicId, ChannelSession channelSession,
-                                                  CCUser agent, Task task) {
+                                                  CCUser agent) {
         AssignTaskRequest request = new AssignTaskRequest();
         request.setTopicId(topicId);
         request.setChannelSession(channelSession);
         request.setCcUser(agent);
-        request.setTask(task);
+        System.out.println("Channel session: " + channelSession.toString());
+        System.out.println(144);
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            JSONObject requestBody = new JSONObject(objectMapper.writeValueAsString(request));
+            System.out.println("POST ASSIGN TASK REQUEST BODY: " + requestBody);
+            return httpRequest(requestBody, this.config.getAssignTaskUri(), HttpMethod.POST);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private ResponseEntity<String> postChangeState(CCUser ccUser, String state) {
+        ChangeStateRequest request = new ChangeStateRequest();
+        request.setCcUser(ccUser);
+        request.setState(state);
 
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             JSONObject requestBody = new JSONObject(objectMapper.writeValueAsString(request));
-            return httpRequest(requestBody, this.config.getAssignTaskUri(), HttpMethod.POST);
+            return httpRequest(requestBody, this.config.getChangeStateUri(), HttpMethod.PUT);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }

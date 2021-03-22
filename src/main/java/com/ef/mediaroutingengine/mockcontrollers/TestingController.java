@@ -1,4 +1,4 @@
-package com.ef.mediaroutingengine.controllers;
+package com.ef.mediaroutingengine.mockcontrollers;
 
 import com.ef.mediaroutingengine.model.TestingStringLength;
 import javax.validation.Valid;

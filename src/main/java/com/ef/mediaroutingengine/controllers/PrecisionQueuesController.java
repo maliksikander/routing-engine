@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.controllers;
 
+import com.ef.mediaroutingengine.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.services.controllerservices.PrecisionQueuesService;
 import java.util.UUID;

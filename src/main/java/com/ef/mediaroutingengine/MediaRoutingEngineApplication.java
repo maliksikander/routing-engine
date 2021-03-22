@@ -23,14 +23,16 @@ public class MediaRoutingEngineApplication {
      * @param args list of command line arguments
      */
     public static void main(String[] args) {
-        ApplicationContext applicationContext = SpringApplication
-                .run(MediaRoutingEngineApplication.class, args);
+        ApplicationContext applicationContext = SpringApplication.run(MediaRoutingEngineApplication.class, args);
+        //putOneAgentInAgentPresenceCache(applicationContext);
+    }
 
+    private static void putOneAgentInAgentPresenceCache(ApplicationContext context) {
         GeneralConstants.setAgentPresence(MediaRoutingEngineApplication.getAgentPresenceInstance());
         GeneralConstants.setAgentPresenceKey(
                 "agentPresence:" + GeneralConstants.getAgentPresence().getAgent().getId().toString());
 
-        RedisClient redisClient = applicationContext.getBean(RedisClient.class);
+        RedisClient redisClient = context.getBean(RedisClient.class);
 
         try {
             redisClient.setJSON(GeneralConstants.getAgentPresenceKey(),

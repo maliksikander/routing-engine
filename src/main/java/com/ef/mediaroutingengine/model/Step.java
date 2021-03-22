@@ -7,6 +7,7 @@ public class Step {
 
     private List<Expression> expressions;
     private int timeout;
+    //List<CCUser> associatedAgents;
 
     public Step() {
         this.expressions = new ArrayList<>();
