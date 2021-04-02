@@ -6,13 +6,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "routing-engine.assign-resource")
 public class AssignResourceProperties {
-
     private int retries;
-    private String changeStateUri;
-    private String assignTaskUri;
-    private String agentReservedUri;
-    private String agentEwtUri;
-    private String noAgentAvailableUri;
+    private String agentManagerBaseUri;
+    private String botFrameworkBaseUri;
 
     public int getRetries() {
         return this.retries;
@@ -22,43 +18,39 @@ public class AssignResourceProperties {
         this.retries = retries;
     }
 
-    public String getChangeStateUri() {
-        return changeStateUri;
+    public String getAgentManagerBaseUri() {
+        return agentManagerBaseUri;
     }
 
-    public void setChangeStateUri(String changeStateUri) {
-        this.changeStateUri = changeStateUri;
+    public void setAgentManagerBaseUri(String agentManagerBaseUri) {
+        this.agentManagerBaseUri = agentManagerBaseUri;
+    }
+
+    public String getBotFrameworkBaseUri() {
+        return botFrameworkBaseUri;
+    }
+
+    public void setBotFrameworkBaseUri(String botFrameworkBaseUri) {
+        this.botFrameworkBaseUri = botFrameworkBaseUri;
+    }
+
+    public String getChangeStateUri() {
+        return this.getAgentManagerBaseUri() + "/api/v1/agent/state";
     }
 
     public String getAssignTaskUri() {
-        return assignTaskUri;
-    }
-
-    public void setAssignTaskUri(String assignTaskUri) {
-        this.assignTaskUri = assignTaskUri;
+        return this.getAgentManagerBaseUri() + "/api/v1/agent/task";
     }
 
     public String getAgentReservedUri() {
-        return agentReservedUri;
-    }
-
-    public void setAgentReservedUri(String agentReservedUri) {
-        this.agentReservedUri = agentReservedUri;
+        return this.getBotFrameworkBaseUri() + "/agent-reserved";
     }
 
     public String getAgentEwtUri() {
-        return agentEwtUri;
-    }
-
-    public void setAgentEwtUri(String agentEwtUri) {
-        this.agentEwtUri = agentEwtUri;
+        return this.getBotFrameworkBaseUri() + "/ewt";
     }
 
     public String getNoAgentAvailableUri() {
-        return noAgentAvailableUri;
-    }
-
-    public void setNoAgentAvailableUri(String noAgentAvailableUri) {
-        this.noAgentAvailableUri = noAgentAvailableUri;
+        return this.getBotFrameworkBaseUri() + "/no-agent-available";
     }
 }
