@@ -215,7 +215,7 @@ docker_build_branch:
  before_script:
    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
  dependencies:
-   - mvn_build
+   - mvn_artifacts
  script:
    - echo ${BUILD_TIME} ${BUILD_NUMBER}
    - cp -r ./target/media-routing-engine-*.jar ./docker/media-routing-engine.jar
