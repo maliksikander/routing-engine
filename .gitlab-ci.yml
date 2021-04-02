@@ -224,7 +224,7 @@ docker_build_branch:
    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$IMAGE_NAME_BRANCH"
    - docker push "$IMAGE_NAME_BRANCH"
  only:
-   - merge_requests      
+   - /^CIM-.*$/      
  allow_failure: false
 
 #+==================Runs on merge requests only========================+
