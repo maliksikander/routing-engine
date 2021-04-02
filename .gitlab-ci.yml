@@ -1,28 +1,29 @@
 variables:
-  IMAGE_NAME: ${CI_REGISTRY_IMAGE}/build:${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}-${CI_COMMIT_SHA}
-
+  IMAGE_NAME: ${CI_REGISTRY_IMAGE}/build:${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}-${CI_COMMIT_SHA}
+  IMAGE_NAME_BRANCH: ${CI_REGISTRY_IMAGE}/build:${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHA}
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
 stages:
   - validate
   - compile
   - test
   - code_format
   - artifacts
-  #- static-test
   - mvn-scan
   - init
   - build
-  - docker_build
+  - docker_build_branch
+  - docker_build_merge
   - scan_api
-  - publish
+  - publish_branch
+  - publish_merge
 ##+==================Runs on Every Commit and merge requests========================+
 maven-validate:
   stage: validate
   #when: manual
   image: maven:3.6.3
   script:
-#    - yum install maven -y
     - mvn validate
-    - echo "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}"
+    - echo "${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}"
   only:
     - /^CIM-.*$/
     - merge_requests
@@ -34,13 +35,16 @@ maven-compile:
   when: on_success
   image: maven:3.6.3
   script:
-#    - yum install maven -y
     - mvn compiler:compile
     - mvn compiler:testCompile
   only:
     - /^CIM-.*$/
     - merge_requests
   allow_failure: false
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository/
 
 #+==================Runs on Every Commit and merge requests========================+
 
@@ -49,11 +53,21 @@ maven-test:
   when: on_success
   image: maven:3.6.3
   script:
-    - mvn test
+    - mvn verify
   only:
     - /^CIM-.*$/
     - merge_requests
   allow_failure: false
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository/
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+        - target/failsafe-reports/TEST-*.xml
 
 #+==================Runs on Every Commit and merge requests========================+
 
@@ -62,7 +76,6 @@ maven-format:
   when: on_success
   image: maven:3.6.3
   script:
-#    - yum install maven -y
     - mvn checkstyle:checkstyle -Dcheckstyle.config.location=checkstyle-checker.xml
     - mvn checkstyle:check -Dcheckstyle.config.location=checkstyle-checker.xml -Dcheckstyle.violationSeverity=warning
   allow_failure: false
@@ -73,6 +86,12 @@ maven-format:
   only:
     - /^CIM-.*$/
     - merge_requests
+  cache:
+      key: ${CI_COMMIT_REF_SLUG}
+      paths:
+          - .m2/repository/
+          - .cache
+
 
 #+==================Runs on Every Commit only========================+
 
@@ -84,7 +103,6 @@ mvn_artifacts:
    - mvn clean
    - mvn package
    - export TIME_TOKEN=$(env TZ=GMT-5 date +%d_%m_%Y-%H_%M_%S)
-   - echo "${TIME_TOKEN}"
    - mv target/media-routing-engine-*.jar target/media-routing-engine-"${TIME_TOKEN}".jar
    - mv target/media-routing-engine-*.jar.original target/media-routing-engine-"${TIME_TOKEN}".jar.original
 
@@ -95,27 +113,11 @@ mvn_artifacts:
    allow_failure: false
    only:
    - /^CIM-.*$/
-#===============Code Quality /Static Testing==========
-# sonarqube-pretest:
-#   stage: static-test
-#   when: manual
-#   #tags: [old-runner]
-#   image: sonarsource/sonar-scanner-cli:latest
-#   variables:
-#       SONAR_TOKEN: "a7e1c1503f8d4b2d3e2efb29fcbeb26f7e13f2f3"
-#       SONAR_HOST_URL: "http://192.168.1.109:9000"
-#       SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" 
-#       GIT_DEPTH: 1
-#   script:
-#       - sonar-scanner -Dsonar.qualitygate.wait=true
-#   cache:
-#       key: ${CI_JOB_NAME}
-#       paths:
-#       - .sonar/cache
-#   allow_failure: false
-#   only:
-#       - /^CIM-.*$/
-#       - merge_requests
+   cache:
+       key: ${CI_COMMIT_REF_SLUG}
+       paths:
+           - .m2/repository/
+
 
 #+==================Runs on merge requests only========================+
 
@@ -144,7 +146,7 @@ sonarqube-check:
    
    allow_failure: false
    cache:
-         key: ${CI_JOB_NAME}
+         key: ${CI_COMMIT_REF_SLUG}
          paths:
          - .sonar/cache
    only:
@@ -184,11 +186,8 @@ mvn_build:
    when: on_success
    image: maven:3.6.3
    script:
-#    - yum install maven -y
    - mvn clean
    - mvn package
-   #- export TIME_TOKEN=$(env TZ=GMT-5 date +%d_%m_%Y-%H_%M_%S)
-   #- echo "${TIME_TOKEN} ${BUILD_NUMBER}"
    - mv target/media-routing-engine-*.jar target/media-routing-engine-"${BUILD_TIME}_build-${BUILD_NUMBER}".jar
    - mv target/media-routing-engine-*.jar.original target/media-routing-engine-"${BUILD_TIME}_build-${BUILD_NUMBER}".jar.original
 
@@ -200,11 +199,38 @@ mvn_build:
    only:
    #- /^CIM-.*$/
    - merge_requests
-#+==================Runs on merge requests only========================+
-build:image:
+   cache:
+       key: ${CI_COMMIT_REF_SLUG}
+       paths:
+           - .m2/repository/
+
+#+==================Runs on every commit (manual)========================+
+docker_build_branch:
  image: docker:latest
- stage: docker_build
- when: on_success
+ stage: docker_build_branch
+ when: manual
+ services:
+   - docker:dind
+ before_script:
+   - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+ dependencies:
+   - mvn_build
+ script:
+   - echo ${BUILD_TIME} ${BUILD_NUMBER}
+   - cp -r ./target/media-routing-engine-*.jar ./docker/media-routing-engine.jar
+   - cd docker
+   - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
+   - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$IMAGE_NAME_BRANCH"
+   - docker push "$IMAGE_NAME_BRANCH"
+ only:
+   - merge_requests      
+ allow_failure: false
+
+#+==================Runs on merge requests only========================+
+docker_build_merge:
+ image: docker:latest
+ stage: docker_build_merge
+ when: manual
  services:
    - docker:dind
  before_script:
@@ -214,9 +240,6 @@ build:image:
  script:
    - echo ${BUILD_TIME} ${BUILD_NUMBER}
    - cp -r ./target/media-routing-engine-"${BUILD_TIME}_build-${BUILD_NUMBER}".jar ./docker/media-routing-engine.jar
-   #- docker pull "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" || true
-   #- docker build --cache-from "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}" -t "$IMAGE_NAME" .
-   #- docker push "$IMAGE_NAME"
    - cd docker
    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$IMAGE_NAME"
@@ -225,10 +248,53 @@ build:image:
    - merge_requests      
  allow_failure: false
 
-#+==================Runs on merge requests only========================+
-anchore_scan_api:
+#+==================Runs on if docker build in branch========================+
+anchore_scan_branch:
   image: anchore/engine-cli:latest
-  stage: scan_api
+  stage: scan_api_branch
+  when: on_success
+  variables:
+    ANCHORE_CLI_URL: "http://192.168.2.249:8228/v1"
+    ANCHORE_CLI_USER: "admin"
+    ANCHORE_CLI_PASS: "foobar"
+    ANCHORE_CLI_SSL_VERIFY: "false"
+    ANCHORE_TIMEOUT: 900
+    ANCHORE_FAIL_ON_POLICY: "false"
+  script:
+    - echo "Adding image to Anchore engine at ${ANCHORE_CLI_URL}"
+    - anchore-cli image add ${IMAGE_NAME_BRANCH}
+    - echo "Waiting for analysis to complete"
+    - anchore-cli image wait ${IMAGE_NAME_BRANCH} --timeout ${ANCHORE_TIMEOUT}
+    - echo "Analysis complete"
+    - echo "Producing reports"
+    #- anchore-cli image content ${IMAGE_NAME_BRANCH} os > image-packages.txt
+    #- anchore-cli image content ${IMAGE_NAME_BRANCH} npm > image-npm.txt
+    #- anchore-cli image content ${IMAGE_NAME_BRANCH} gem > image-gem.txt
+    #- anchore-cli image content ${IMAGE_NAME_BRANCH} python > image-python.txt
+    #- anchore-cli image content ${IMAGE_NAME_BRANCH} java > image-java.txt
+    - anchore-cli image vuln ${IMAGE_NAME_BRANCH} all
+    - anchore-cli image vuln ${IMAGE_NAME_BRANCH} all > "${CI_PROJECT_TITLE}"-image-vulnerabilities.txt
+    - anchore-cli image get ${IMAGE_NAME_BRANCH} > "${CI_PROJECT_TITLE}"-image-details.txt
+    - anchore-cli evaluate check ${IMAGE_NAME_BRANCH} --detail > "${CI_PROJECT_TITLE}"-image-policy.txt || true
+    - if [ "${ANCHORE_FAIL_ON_POLICY}" == "true" ] ; then anchore-cli evaluate check ${IMAGE_NAME_BRANCH}  ; fi 
+  artifacts:
+    name: "$CI_JOB_NAME"
+    expire_in: 999 yrs
+    paths:
+    - ${CI_PROJECT_TITLE}-image-policy.txt
+    - ${CI_PROJECT_TITLE}-image-details.txt
+    - ${CI_PROJECT_TITLE}-image-vulnerabilities.txt
+    #- image-java.txt
+    #- image-python.txt
+    #- image-gem.txt
+    #- image-npm.txt
+    #- image-packages.txt
+  only:
+    - /^CIM-.*$/
+#+==================Runs on merge requests only========================+
+anchore_scan_merge:
+  image: anchore/engine-cli:latest
+  stage: scan_api_merge
   when: on_success
   variables:
     ANCHORE_CLI_URL: "http://192.168.2.249:8228/v1"
@@ -269,9 +335,37 @@ anchore_scan_api:
   only:
     - merge_requests
 
+#+==================Runs on if docker build in branch========================+
+container_publish_branch:
+  stage: publish_branch
+  image: docker:latest
+  when: manual
+  services:
+    - docker:dind
+
+  variables:
+    #DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: none
+
+  script:
+    - export TIME_TOKEN=$(env TZ=GMT-5 date +%d_%m_%Y-%H_%M_%S)
+    - echo "${TIME_TOKEN} ${BUILD_NUMBER}"
+    - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "${CI_REGISTRY}"
+    - docker pull "$IMAGE_NAME_BRANCH"
+    - docker tag "$IMAGE_NAME_BRANCH" "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}-${TIME_TOKEN}"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_BRANCH}-${TIME_TOKEN}"
+    #- |
+    #    if [ "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" == "master" ]; then
+    #      docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:latest"
+    #      docker push "${CI_REGISTRY_IMAGE}:latest"
+    #    fi
+  only:
+    - /^CIM-.*$/
+
+
 #+==================Runs on merge requests only========================+
-container_publish:
-  stage: publish
+container_publish_merge:
+  stage: publish_merge
   image: docker:latest
   when: manual
   services:
@@ -286,13 +380,12 @@ container_publish:
     - echo "${TIME_TOKEN} ${BUILD_NUMBER}"
     - docker login -u gitlab-ci-token -p "$CI_JOB_TOKEN" "${CI_REGISTRY}"
     - docker pull "$IMAGE_NAME"
-    - docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}-${BUILD_TIME}_build-${BUILD_NUMBER}"
-    - docker push "${CI_REGISTRY_IMAGE}:${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}-${BUILD_TIME}_build-${BUILD_NUMBER}"
-    - |
-        if [ "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" == "master" ]; then
-          docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:latest"
-          docker push "${CI_REGISTRY_IMAGE}:latest"
-        fi
+    - docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}-${BUILD_TIME}_build-${BUILD_NUMBER}"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}-${BUILD_TIME}_build-${BUILD_NUMBER}"
+    #- |
+    #    if [ "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" == "master" ]; then
+    #      docker tag "$IMAGE_NAME" "${CI_REGISTRY_IMAGE}:latest"
+    #      docker push "${CI_REGISTRY_IMAGE}:latest"
+    #    fi
   only:
     - merge_requests
-
