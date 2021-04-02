@@ -221,6 +221,8 @@ docker_build_branch:
    - cp -r ./target/media-routing-engine-*.jar ./docker/media-routing-engine.jar
    - cd docker
    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
+   - docker logout  $CI_REGISTRY
+   - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$IMAGE_NAME_BRANCH"
    - docker push "$IMAGE_NAME_BRANCH"
  only:
@@ -243,6 +245,8 @@ docker_build_merge:
    - cp -r ./target/media-routing-engine-"${BUILD_TIME}_build-${BUILD_NUMBER}".jar ./docker/media-routing-engine.jar
    - cd docker
    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
+   - docker logout  $CI_REGISTRY
+   - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$IMAGE_NAME"
    - docker push "$IMAGE_NAME"
  only:
