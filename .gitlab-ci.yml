@@ -13,7 +13,8 @@ stages:
   - build
   - docker_build_branch
   - docker_build_merge
-  - scan_api
+  - scan_api_branch
+  - scan_api_merge
   - publish_branch
   - publish_merge
 ##+==================Runs on Every Commit and merge requests========================+
