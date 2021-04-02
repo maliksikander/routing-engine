@@ -213,7 +213,7 @@ docker_build_branch:
  services:
    - docker:dind
  before_script:
-   - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+   - docker login -u "deployment" -p "xWb8WafM8ZvdwBHNxLm3" $CI_REGISTRY
  dependencies:
    - mvn_artifacts
  script:
@@ -235,7 +235,7 @@ docker_build_merge:
  services:
    - docker:dind
  before_script:
-   - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+   - docker login -u "deployment" -p "xWb8WafM8ZvdwBHNxLm3" $CI_REGISTRY
  dependencies:
    - mvn_build
  script:
