@@ -5,12 +5,13 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.dto.RoutingAttributeDeleteConflictResponse;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.model.Expression;
-import com.ef.mediaroutingengine.model.PrecisionQueue;
-import com.ef.mediaroutingengine.model.Step;
-import com.ef.mediaroutingengine.model.Term;
+import com.ef.mediaroutingengine.model.ExpressionEntity;
+import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
+import com.ef.mediaroutingengine.model.StepEntity;
+import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
-import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
+import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
+import com.ef.mediaroutingengine.repositories.PrecisionQueueRedis;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
 import java.util.List;
 import java.util.UUID;
@@ -22,23 +23,26 @@ import org.springframework.transaction.annotation.Transactional;
 public class RoutingAttributesServiceImpl implements RoutingAttributesService {
 
     private final RoutingAttributeRepository repository;
-    private final PrecisionQueueRepository precisionQueueRepository;
+    private final PrecisionQueueEntityRepository precisionQueueEntityRepository;
     private final AgentsRepository agentsRepository;
+    private final PrecisionQueueRedis pqRedis;
 
     /**
      * Default constructor.
      *
-     * @param repository routing attribute repository
-     * @param precisionQueueRepository precision queue repository
-     * @param agentsRepository agents repository
+     * @param repository                     routing attribute repository
+     * @param precisionQueueEntityRepository precision queue repository
+     * @param agentsRepository               agents repository
      */
     @Autowired
     public RoutingAttributesServiceImpl(RoutingAttributeRepository repository,
-                                        PrecisionQueueRepository precisionQueueRepository,
-                                        AgentsRepository agentsRepository) {
+                                        PrecisionQueueEntityRepository precisionQueueEntityRepository,
+                                        AgentsRepository agentsRepository,
+                                        PrecisionQueueRedis pqRedis) {
         this.repository = repository;
-        this.precisionQueueRepository = precisionQueueRepository;
+        this.precisionQueueEntityRepository = precisionQueueEntityRepository;
         this.agentsRepository = agentsRepository;
+        this.pqRedis = pqRedis;
     }
 
     @Override
@@ -54,15 +58,23 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
 
     @Override
     @Transactional
-    public RoutingAttribute update(RoutingAttribute routingAttribute, UUID id) {
+    public RoutingAttribute update(RoutingAttribute routingAttribute, UUID id) throws Exception {
         if (!this.repository.existsById(id)) {
             throw new NotFoundException("Could not find resource to update");
         }
+        if (!pqRedis.collectionExists()) {
+            throw new IllegalStateException("Could not update, Collection in Redis-cache not found");
+        }
+
         routingAttribute.setId(id);
 
+        // Update DB.
         this.updatePrecisionQueues(routingAttribute, id);
         this.updateAgents(routingAttribute, id);
-        return repository.save(routingAttribute);
+        RoutingAttribute saved = repository.save(routingAttribute);
+        // Update Cache.
+        pqRedis.updateRoutingAttribute(saved);
+        return saved;
     }
 
     @Override
@@ -71,51 +83,51 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
         if (!repository.existsById(id)) {
             throw new NotFoundException("Could not find resource to delete");
         }
-        List<PrecisionQueue> precisionQueues = this.precisionQueueRepository
+        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueEntityRepository
                 .findByRoutingAttributeId(id);
         List<CCUser> agents = this.agentsRepository.findByRoutingAttributeId(id);
-        if (precisionQueues.isEmpty() && agents.isEmpty()) {
+        if (precisionQueueEntities.isEmpty() && agents.isEmpty()) {
             repository.deleteById(id);
             return null;
         }
         RoutingAttributeDeleteConflictResponse response = new RoutingAttributeDeleteConflictResponse();
         response.setAgents(agents);
-        response.setPrecisionQueues(precisionQueues);
+        response.setPrecisionQueues(precisionQueueEntities);
         return response;
     }
 
     private void updatePrecisionQueues(RoutingAttribute routingAttribute, UUID id) {
-        List<PrecisionQueue> precisionQueues = this.precisionQueueRepository
+        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueEntityRepository
                 .findByRoutingAttributeId(id);
-        if (precisionQueues != null && !precisionQueues.isEmpty()) {
-            for (PrecisionQueue precisionQueue : precisionQueues) {
-                List<Step> steps = precisionQueue.getSteps();
-                if (steps == null) {
+        if (precisionQueueEntities != null && !precisionQueueEntities.isEmpty()) {
+            for (PrecisionQueueEntity precisionQueueEntity : precisionQueueEntities) {
+                List<StepEntity> stepEntities = precisionQueueEntity.getSteps();
+                if (stepEntities == null) {
                     continue;
                 }
-                for (Step step : steps) {
-                    List<Expression> expressions = step.getExpressions();
-                    if (expressions == null) {
+                for (StepEntity stepEntity : stepEntities) {
+                    List<ExpressionEntity> expressionEntities = stepEntity.getExpressions();
+                    if (expressionEntities == null) {
                         continue;
                     }
-                    for (Expression expression : expressions) {
-                        List<Term> terms = expression.getTerms();
-                        if (terms == null) {
+                    for (ExpressionEntity expressionEntity : expressionEntities) {
+                        List<TermEntity> termEntities = expressionEntity.getTerms();
+                        if (termEntities == null) {
                             continue;
                         }
-                        for (Term term : terms) {
-                            RoutingAttribute existingRoutingAttribute = term.getRoutingAttribute();
+                        for (TermEntity termEntity : termEntities) {
+                            RoutingAttribute existingRoutingAttribute = termEntity.getRoutingAttribute();
                             if (existingRoutingAttribute == null) {
                                 continue;
                             }
                             if (existingRoutingAttribute.getId().equals(id)) {
-                                term.setRoutingAttribute(routingAttribute);
+                                termEntity.setRoutingAttribute(routingAttribute);
                             }
                         }
                     }
                 }
             }
-            this.precisionQueueRepository.saveAll(precisionQueues);
+            this.precisionQueueEntityRepository.saveAll(precisionQueueEntities);
         }
     }
 

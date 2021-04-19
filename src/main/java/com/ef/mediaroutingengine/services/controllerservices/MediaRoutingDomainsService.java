@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
-import com.ef.mediaroutingengine.model.PrecisionQueue;
+import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,7 +11,7 @@ public interface MediaRoutingDomainsService {
 
     List<MediaRoutingDomain> retrieve();
 
-    MediaRoutingDomain update(MediaRoutingDomain mediaRoutingDomain, UUID id);
+    MediaRoutingDomain update(MediaRoutingDomain mediaRoutingDomain, UUID id) throws Exception;
 
-    List<PrecisionQueue> delete(UUID id);
+    List<PrecisionQueueEntity> delete(UUID id);
 }

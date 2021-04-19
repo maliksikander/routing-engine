@@ -1,8 +1,8 @@
 package com.ef.mediaroutingengine.controllers;
 
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
-import com.ef.mediaroutingengine.model.PrecisionQueue;
-import com.ef.mediaroutingengine.services.controllerservices.PrecisionQueuesService;
+import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
+import com.ef.mediaroutingengine.services.controllerservices.PrecisionQueueEntityService;
 import java.util.UUID;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,18 +18,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class PrecisionQueuesController {
-    private final PrecisionQueuesService service;
+public class PrecisionQueueEntityController {
+    private final PrecisionQueueEntityService service;
 
     @Autowired
-    public PrecisionQueuesController(PrecisionQueuesService service) {
+    public PrecisionQueueEntityController(PrecisionQueueEntityService service) {
         this.service = service;
     }
 
     @CrossOrigin(origins = "http://localhost:4200")
     @PostMapping(value = "/precision-queues", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> createPrecisionQueue(
-            @Valid @RequestBody PrecisionQueue requestBody) {
+            @Valid @RequestBody PrecisionQueueEntity requestBody) throws Exception {
         return new ResponseEntity<>(this.service.create(requestBody), HttpStatus.OK);
     }
 
@@ -42,7 +42,7 @@ public class PrecisionQueuesController {
     @CrossOrigin(origins = "http://localhost:4200")
     @PutMapping(value = "/precision-queues/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updatePrecisionQueue(
-            @Valid @RequestBody PrecisionQueue requestBody, @PathVariable UUID id) {
+            @Valid @RequestBody PrecisionQueueEntity requestBody, @PathVariable UUID id) throws Exception {
         return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
@@ -54,7 +54,7 @@ public class PrecisionQueuesController {
      */
     @CrossOrigin(origins = "http://localhost:4200")
     @DeleteMapping(value = "/precision-queues/{id}", produces = "application/json")
-    public ResponseEntity<Object> deletePrecisionQueue(@PathVariable UUID id) {
+    public ResponseEntity<Object> deletePrecisionQueue(@PathVariable UUID id) throws Exception {
         this.service.delete(id);
         SuccessResponseBody responseBody = new SuccessResponseBody("Successfully deleted");
         return new ResponseEntity<>(responseBody, HttpStatus.OK);

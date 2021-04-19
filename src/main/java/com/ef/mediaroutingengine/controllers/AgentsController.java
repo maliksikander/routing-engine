@@ -28,7 +28,7 @@ public class AgentsController {
 
     @CrossOrigin(origins = "http://localhost:4200")
     @PostMapping(value = "/agents", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Object> createAgent(@Valid @RequestBody CCUser requestBody) {
+    public ResponseEntity<Object> createAgent(@Valid @RequestBody CCUser requestBody) throws Exception {
         return new ResponseEntity<>(this.service.create(requestBody), HttpStatus.OK);
     }
 
@@ -41,7 +41,7 @@ public class AgentsController {
     @CrossOrigin(origins = "http://localhost:4200")
     @PutMapping(value = "/agents/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateAgent(@PathVariable UUID id,
-                                              @Valid @RequestBody CCUser requestBody) {
+                                              @Valid @RequestBody CCUser requestBody) throws Exception {
         return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
@@ -53,7 +53,7 @@ public class AgentsController {
      */
     @CrossOrigin(origins = "http://localhost:4200")
     @DeleteMapping(value = "/agents/{id}", produces = "application/json")
-    public ResponseEntity<Object> deleteAgent(@PathVariable UUID id) {
+    public ResponseEntity<Object> deleteAgent(@PathVariable UUID id) throws Exception {
         this.service.delete(id);
         SuccessResponseBody responseBody = new SuccessResponseBody("Successfully deleted");
         return new ResponseEntity<>(responseBody, HttpStatus.OK);

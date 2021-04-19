@@ -1,13 +1,32 @@
 package com.ef.mediaroutingengine.model;
 
+import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
+import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Term {
-
     private RoutingAttribute routingAttribute;
-    private String conditionOperator;
+    private String relationalOperator;
     private int value;
-    private String preTermCondition;
+    private String preTermLogicalOperator;
+
+    public Term() {
+
+    }
+
+    /**
+     * Parametrized constructor. Constructs object from TermEntity object.
+     *
+     * @param termEntity the Term entity object stored in configurations DB
+     */
+    public Term(TermEntity termEntity) {
+        this.routingAttribute = termEntity.getRoutingAttribute();
+        this.relationalOperator = termEntity.getRelationalOperator();
+        this.value = termEntity.getValue();
+        this.preTermLogicalOperator = termEntity.getPreTermCondition();
+    }
 
     public RoutingAttribute getRoutingAttribute() {
         return routingAttribute;
@@ -17,12 +36,12 @@ public class Term {
         this.routingAttribute = routingAttribute;
     }
 
-    public String getConditionOperator() {
-        return conditionOperator;
+    public String getRelationalOperator() {
+        return relationalOperator;
     }
 
-    public void setConditionOperator(String conditionOperator) {
-        this.conditionOperator = conditionOperator;
+    public void setRelationalOperator(String relationalOperator) {
+        this.relationalOperator = relationalOperator;
     }
 
     public int getValue() {
@@ -33,21 +52,58 @@ public class Term {
         this.value = value;
     }
 
-    public String getPreTermCondition() {
-        return preTermCondition;
+    public String getPreTermLogicalOperator() {
+        return preTermLogicalOperator;
     }
 
-    public void setPreTermCondition(String preTermCondition) {
-        this.preTermCondition = preTermCondition;
+    public void setPreTermLogicalOperator(String preTermLogicalOperator) {
+        this.preTermLogicalOperator = preTermLogicalOperator;
     }
 
-    @Override
-    public String toString() {
-        return "Term{"
-                + "routingAttribute=" + routingAttribute
-                + ", conditionOperator='" + conditionOperator + '\''
-                + ", value='" + value + '\''
-                + ", preTermCondition='" + preTermCondition + '\''
-                + '}';
+    /**
+     * Evaluates the list of agents associated with this term.
+     *
+     * @param allAgents list of all agents in the configuration db.
+     */
+    public List<CCUser> evaluateAssociatedAgents(List<CCUser> allAgents) {
+        List<CCUser> associatedAgents = new ArrayList<>();
+
+        for (CCUser agent: allAgents) {
+            List<AssociatedRoutingAttribute> associatedRoutingAttributes = agent.getAssociatedRoutingAttributes();
+            if (associatedRoutingAttributes == null) {
+                continue;
+            }
+            for (AssociatedRoutingAttribute associatedRoutingAttribute: associatedRoutingAttributes) {
+                if (this.routingAttribute.equals(associatedRoutingAttribute.getRoutingAttribute())
+                        // Example 3 (agent's value) > 4 (value in term)
+                        && applyRelationalOperator(associatedRoutingAttribute.getValue(), this.value)) {
+                    associatedAgents.add(agent);
+                    break;
+                }
+            }
+        }
+
+        return associatedAgents;
+    }
+
+    private boolean applyRelationalOperator(int a, int b) {
+        switch (this.relationalOperator) {
+            case "==":
+                return a == b;
+            case "!=":
+                return a != b;
+            case "<":
+                return a < b;
+            case ">":
+                return a > b;
+            case "<=":
+            case "=<":
+                return a <= b;
+            case ">=":
+            case "=>":
+                return a >= b;
+            default:
+                return false;
+        }
     }
 }

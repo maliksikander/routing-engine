@@ -1,43 +1,62 @@
 package com.ef.mediaroutingengine.model;
 
+import com.ef.cim.objectmodel.CCUser;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(value = "precisionQueues")
 public class PrecisionQueue {
-
-    @Id
     private UUID id;
-    @NotNull
-    @Size(min = 3, max = 50)
     private String name;
-    @NotNull
     private MediaRoutingDomain mrd;
-    @NotNull
     private AgentSelectionCriteria agentSelectionCriteria;
-    @Min(1)
     private int serviceLevelType;
-    @NotNull
     private int serviceLevelThreshold;
-    @NotNull
     private List<Step> steps;
 
     public PrecisionQueue() {
-        this.steps = new ArrayList<>();
+
+    }
+
+    /**
+     * Parametrized constructor. Constructs a PrecisionQueue object with a PrecisionQueueEntity object.
+     *
+     * @param pqEntity the precision-queue entity object Stored in the DB.
+     */
+    public PrecisionQueue(PrecisionQueueEntity pqEntity) {
+        this.id = pqEntity.getId();
+        this.name = pqEntity.getName();
+        this.mrd = pqEntity.getMrd();
+        this.agentSelectionCriteria = pqEntity.getAgentSelectionCriteria();
+        this.serviceLevelType = pqEntity.getServiceLevelType();
+        this.serviceLevelThreshold = pqEntity.getServiceLevelThreshold();
+        this.steps = toSteps(pqEntity.getSteps());
+    }
+
+    private List<Step> toSteps(List<StepEntity> stepEntities) {
+        if (stepEntities == null) {
+            return new ArrayList<>();
+        }
+        List<Step> elements = new ArrayList<>();
+        for (StepEntity stepEntity: stepEntities) {
+            elements.add(new Step(stepEntity));
+        }
+        return elements;
     }
 
     public UUID getId() {
         return id;
     }
 
+    /**
+     * Sets the id only if it is null.
+     *
+     * @param id unique id to set
+     */
     public void setId(UUID id) {
-        this.id = id;
+        if (this.id == null) {
+            this.id = id;
+        }
     }
 
     public String getName() {
@@ -88,28 +107,17 @@ public class PrecisionQueue {
         this.steps = steps;
     }
 
-    public boolean containsStep(Step step) {
-        return this.steps.contains(step);
-    }
-
-    public boolean addStep(Step step) {
-        return this.steps.add(step);
-    }
-
-    public boolean removeStep(Step step) {
-        return this.steps.remove(step);
-    }
-
-    @Override
-    public String toString() {
-        return "PrecisionQueue{"
-                + "id=" + id
-                + ", name='" + name + '\''
-                + ", mrd=" + mrd
-                + ", agentSelectionCriteria=" + agentSelectionCriteria
-                + ", serviceLevelType=" + serviceLevelType
-                + ", serviceLevelThreshold=" + serviceLevelThreshold
-                + ", steps=" + steps
-                + '}';
+    /**
+     * Evaluates the agents associated with each step in this precision-queue.
+     *
+     * @param allAgents List of all agents in the configuration DB
+     */
+    public void evaluateAgentsAssociatedWithSteps(List<CCUser> allAgents) {
+        if (steps == null) {
+            return;
+        }
+        for (Step step: steps) {
+            step.evaluateAssociatedAgents(allAgents);
+        }
     }
 }

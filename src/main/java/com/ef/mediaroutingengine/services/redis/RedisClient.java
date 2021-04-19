@@ -28,6 +28,8 @@ public interface RedisClient {
      */
     <T> T getJSON(String key, Class<T> clazz) throws JsonProcessingException;
 
+    <T> List<T> getJsonArray(String key, Class<T> clazz) throws JsonProcessingException;
+
     /**
      * Get the list Objects associated with the keys.  If any key does not exist, the special value
      * nil is returned.

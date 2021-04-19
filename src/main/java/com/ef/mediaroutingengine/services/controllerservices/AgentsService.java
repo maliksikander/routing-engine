@@ -6,11 +6,11 @@ import java.util.UUID;
 
 public interface AgentsService {
 
-    CCUser create(CCUser agent);
+    CCUser create(CCUser agent) throws Exception;
 
     List<CCUser> retrieve();
 
-    CCUser update(CCUser agent, UUID id);
+    CCUser update(CCUser agent, UUID id) throws Exception;
 
-    void delete(UUID id);
+    void delete(UUID id) throws Exception;
 }

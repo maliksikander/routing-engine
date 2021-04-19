@@ -2,13 +2,14 @@ package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.model.Expression;
+import com.ef.mediaroutingengine.model.ExpressionEntity;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
-import com.ef.mediaroutingengine.model.PrecisionQueue;
-import com.ef.mediaroutingengine.model.Step;
-import com.ef.mediaroutingengine.model.Term;
+import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
+import com.ef.mediaroutingengine.model.StepEntity;
+import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.MediaRoutingDomainRepository;
-import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
+import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
+import com.ef.mediaroutingengine.repositories.PrecisionQueueRedis;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
 import java.util.HashMap;
 import java.util.List;
@@ -19,11 +20,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
+public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityService {
 
-    private final PrecisionQueueRepository repository;
+    private final PrecisionQueueEntityRepository repository;
     private final MediaRoutingDomainRepository mrdRepository;
     private final RoutingAttributeRepository routingAttributeRepository;
+    private final PrecisionQueueRedis precisionQueueRedis;
 
     /**
      * Default constructor.
@@ -33,47 +35,56 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * @param routingAttributeRepository routing attribute's repository
      */
     @Autowired
-    public PrecisionQueuesServiceImpl(PrecisionQueueRepository repository,
-                                      MediaRoutingDomainRepository mrdRepository,
-                                      RoutingAttributeRepository routingAttributeRepository) {
+    public PrecisionQueueEntityServiceImpl(PrecisionQueueEntityRepository repository,
+                                           MediaRoutingDomainRepository mrdRepository,
+                                           RoutingAttributeRepository routingAttributeRepository,
+                                           PrecisionQueueRedis precisionQueueRedis) {
         this.repository = repository;
         this.mrdRepository = mrdRepository;
         this.routingAttributeRepository = routingAttributeRepository;
+        this.precisionQueueRedis = precisionQueueRedis;
     }
 
     @Override
-    public PrecisionQueue create(PrecisionQueue precisionQueue) {
-        this.validateAndSetMRD(precisionQueue);
-        precisionQueue.setId(UUID.randomUUID());
-        return repository.insert(precisionQueue);
+    public PrecisionQueueEntity create(PrecisionQueueEntity precisionQueueEntity) throws Exception {
+        this.validateAndSetMRD(precisionQueueEntity);
+        precisionQueueEntity.setId(UUID.randomUUID());
+        PrecisionQueueEntity saved = repository.insert(precisionQueueEntity);
+        this.precisionQueueRedis.add(saved);
+        return saved;
     }
 
     @Override
-    public List<PrecisionQueue> retrieve() {
+    public List<PrecisionQueueEntity> retrieve() {
         return this.repository.findAll();
     }
 
     @Override
-    public PrecisionQueue update(PrecisionQueue precisionQueue, UUID id) {
+    public PrecisionQueueEntity update(PrecisionQueueEntity precisionQueueEntity, UUID id) throws Exception {
         if (!this.repository.existsById(id)) {
             throw new NotFoundException("Could not find precision queue resource to update");
         }
-        this.validateAndSetMRD(precisionQueue);
-        this.validateAndSetRoutingAttributes(precisionQueue);
-        precisionQueue.setId(id);
-
-        return this.repository.save(precisionQueue);
+        if (!this.precisionQueueRedis.collectionExists()) {
+            throw new IllegalStateException("Could not update, Collection in Redis-cache not found");
+        }
+        this.validateAndSetMRD(precisionQueueEntity);
+        this.validateAndSetRoutingAttributes(precisionQueueEntity);
+        precisionQueueEntity.setId(id);
+        PrecisionQueueEntity saved = this.repository.save(precisionQueueEntity);
+        this.precisionQueueRedis.evaluateAssociatedAgents(saved);
+        return saved;
     }
 
     @Override
-    public void delete(UUID id) {
+    public void delete(UUID id) throws Exception {
         if (!this.repository.existsById(id)) {
             throw new NotFoundException("Could not find precision resource to delete");
         }
         this.repository.deleteById(id);
+        this.precisionQueueRedis.remove(id);
     }
 
-    private void validateAndSetMRD(PrecisionQueue pq) {
+    private void validateAndSetMRD(PrecisionQueueEntity pq) {
         NotFoundException notFoundException = new NotFoundException(
                 "Could not find media-routing-domain resource");
         if (pq.getMrd().getId() == null) {
@@ -97,26 +108,26 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         return routingAttributeMap;
     }
 
-    private void validateAndSetRoutingAttributes(PrecisionQueue pq) {
-        List<Step> steps = pq.getSteps();
-        if (steps == null || steps.isEmpty()) {
+    private void validateAndSetRoutingAttributes(PrecisionQueueEntity pq) {
+        List<StepEntity> stepEntities = pq.getSteps();
+        if (stepEntities == null || stepEntities.isEmpty()) {
             return;
         }
 
         Map<UUID, RoutingAttribute> routingAttributes = this.retrieveRoutingAttributes();
 
-        for (Step step : steps) {
-            List<Expression> expressions = step.getExpressions();
-            if (expressions == null) {
+        for (StepEntity stepEntity : stepEntities) {
+            List<ExpressionEntity> expressionEntities = stepEntity.getExpressions();
+            if (expressionEntities == null) {
                 continue;
             }
-            for (Expression expression : expressions) {
-                List<Term> terms = expression.getTerms();
-                if (terms == null) {
+            for (ExpressionEntity expressionEntity : expressionEntities) {
+                List<TermEntity> termEntities = expressionEntity.getTerms();
+                if (termEntities == null) {
                     continue;
                 }
-                for (Term term : terms) {
-                    RoutingAttribute requestRoutingAttribute = term.getRoutingAttribute();
+                for (TermEntity termEntity : termEntities) {
+                    RoutingAttribute requestRoutingAttribute = termEntity.getRoutingAttribute();
                     if (requestRoutingAttribute == null) {
                         continue;
                     }
@@ -125,7 +136,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
                         throw new NotFoundException("Could not find a routing-attribute resource");
                     }
 
-                    term.setRoutingAttribute(
+                    termEntity.setRoutingAttribute(
                             routingAttributes.get(requestRoutingAttribute.getId()));
                 }
             }

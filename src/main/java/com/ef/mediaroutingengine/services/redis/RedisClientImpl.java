@@ -1,8 +1,11 @@
 package com.ef.mediaroutingengine.services.redis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,9 +76,28 @@ public class RedisClientImpl implements RedisClient {
         }
         if (response != null) {
             assertReplyNotError(response);
+            TypeReference<HashMap<String, String>> typeRef = new TypeReference<HashMap<String, String>>() {
+            };
             return objectMapper.readValue(response, clazz);
         } else {
             return null;
+        }
+    }
+
+    @Override
+    public <T> List<T> getJsonArray(String key, Class<T> clazz) throws JsonProcessingException {
+        String response = null;
+        try (Jedis conn = getConnection()) {
+            conn.getClient().sendCommand(Command.GET,
+                    SafeEncoder.encodeMany(key, Path.ROOT_PATH.toString()));
+            response = conn.getClient().getBulkReply();
+        }
+        if (response != null) {
+            assertReplyNotError(response);
+            JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, clazz);
+            return objectMapper.readValue(response, type);
+        } else {
+            return new ArrayList<>();
         }
     }
 

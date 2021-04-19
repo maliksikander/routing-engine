@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.model;
 
+import java.util.Objects;
 import java.util.UUID;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -49,6 +50,23 @@ public class MediaRoutingDomain {
 
     public void setInterruptible(boolean interruptible) {
         this.interruptible = interruptible;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        MediaRoutingDomain that = (MediaRoutingDomain) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 
     @Override

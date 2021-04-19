@@ -32,9 +32,7 @@ package com.ef.mediaroutingengine.services.redis;
  * Path is a ReJSON path, representing a valid path into an object.
  */
 public class Path {
-
     public static final Path ROOT_PATH = new Path(".");
-
     private final String strPath;
 
     public Path(final String strPath) {

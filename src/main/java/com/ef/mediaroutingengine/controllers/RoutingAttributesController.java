@@ -43,7 +43,7 @@ public class RoutingAttributesController {
     @CrossOrigin(origins = "http://localhost:4200")
     @PutMapping(value = "/routing-attributes/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateRoutingAttribute(
-            @Valid @RequestBody RoutingAttribute requestBody, @PathVariable UUID id) {
+            @Valid @RequestBody RoutingAttribute requestBody, @PathVariable UUID id) throws Exception {
         return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
