@@ -5,6 +5,7 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class Term {
     private RoutingAttribute routingAttribute;
@@ -65,10 +66,10 @@ public class Term {
      *
      * @param allAgents list of all agents in the configuration db.
      */
-    public List<CCUser> evaluateAssociatedAgents(List<CCUser> allAgents) {
-        List<CCUser> associatedAgents = new ArrayList<>();
+    public List<UUID> evaluateAssociatedAgents(List<Agent> allAgents) {
+        List<UUID> associatedAgents = new ArrayList<>();
 
-        for (CCUser agent: allAgents) {
+        for (Agent agent: allAgents) {
             List<AssociatedRoutingAttribute> associatedRoutingAttributes = agent.getAssociatedRoutingAttributes();
             if (associatedRoutingAttributes == null) {
                 continue;
@@ -77,7 +78,7 @@ public class Term {
                 if (this.routingAttribute.equals(associatedRoutingAttribute.getRoutingAttribute())
                         // Example 3 (agent's value) > 4 (value in term)
                         && applyRelationalOperator(associatedRoutingAttribute.getValue(), this.value)) {
-                    associatedAgents.add(agent);
+                    associatedAgents.add(agent.getId());
                     break;
                 }
             }

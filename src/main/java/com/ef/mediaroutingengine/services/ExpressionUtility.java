@@ -1,10 +1,11 @@
 package com.ef.mediaroutingengine.services;
 
-import com.ef.cim.objectmodel.CCUser;
+import com.ef.mediaroutingengine.model.Agent;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
@@ -22,7 +23,7 @@ public class ExpressionUtility {
      *                        and brackets
      * @return list of associated-agents.
      */
-    public static List<CCUser> evaluateInfix(@NotNull List<Object> infixExpression) {
+    public static List<Agent> evaluateInfix(@NotNull List<Object> infixExpression) {
         List<Object> postFixList = ExpressionUtility.convertInfixToPostfix(infixExpression);
         return ExpressionUtility.evaluatePostfix(postFixList);
     }
@@ -34,20 +35,20 @@ public class ExpressionUtility {
      * @return list of associated-agents.
      */
     @SuppressWarnings("unchecked")
-    public static List<CCUser> evaluatePostfix(@NotNull List<Object> postfixExpression) {
+    public static List<Agent> evaluatePostfix(@NotNull List<Object> postfixExpression) {
         if (postfixExpression.isEmpty()) {
             return new ArrayList<>();
         }
 
-        Deque<List<CCUser>> stack = new ArrayDeque<>();
+        Deque<List<Agent>> stack = new ArrayDeque<>();
 
         for (Object postfixEntity : postfixExpression) {
             if (isOperand(postfixEntity)) {
-                List<CCUser> operand = (List<CCUser>) postfixEntity;
+                List<Agent> operand = (List<Agent>) postfixEntity;
                 stack.push(operand);
             } else { // If operator ("AND", "OR")
-                List<CCUser> val1 = stack.pop();
-                List<CCUser> val2 = stack.pop();
+                List<Agent> val1 = stack.pop();
+                List<Agent> val2 = stack.pop();
                 String operator = (String) postfixEntity;
 
                 switch (operator.toUpperCase()) {
@@ -138,12 +139,12 @@ public class ExpressionUtility {
         return elements;
     }
 
-    private static List<CCUser> intersection(List<CCUser> a, List<CCUser> b) {
+    private static List<Agent> intersection(List<Agent> a, List<Agent> b) {
         return a.stream().distinct().filter(b::contains).collect(Collectors.toList());
     }
 
-    private static List<CCUser> union(List<CCUser> a, List<CCUser> b) {
-        List<CCUser> unionList = new ArrayList<>(a);
+    private static List<Agent> union(List<Agent> a, List<Agent> b) {
+        List<Agent> unionList = new ArrayList<>(a);
         unionList.addAll(b);
         return unionList;
     }

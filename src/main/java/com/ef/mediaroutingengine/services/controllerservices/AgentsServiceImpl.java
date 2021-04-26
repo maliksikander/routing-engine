@@ -5,8 +5,8 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
-import com.ef.mediaroutingengine.repositories.PrecisionQueueRedis;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
+import com.ef.mediaroutingengine.services.PrecisionQueuesPool;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,22 +19,22 @@ public class AgentsServiceImpl implements AgentsService {
 
     private final AgentsRepository repository;
     private final RoutingAttributeRepository routingAttributeRepository;
-    private final PrecisionQueueRedis precisionQueueRedis;
+    private final PrecisionQueuesPool precisionQueuesPool;
 
     /**
      * Constructor. Autowired, loads the beans.
      *
-     * @param repository to communicate with Agents collection in the DB.
+     * @param repository                 to communicate with Agents collection in the DB.
      * @param routingAttributeRepository to communicate with Routing-attributes collection in DB.
-     * @param precisionQueueRedis to communicate with Precision-Queue collection in redis-cache.
+     * @param precisionQueuesPool        to communicate with Precision-Queue collection in redis-cache.
      */
     @Autowired
     public AgentsServiceImpl(AgentsRepository repository,
                              RoutingAttributeRepository routingAttributeRepository,
-                             PrecisionQueueRedis precisionQueueRedis) {
+                             PrecisionQueuesPool precisionQueuesPool) {
         this.repository = repository;
         this.routingAttributeRepository = routingAttributeRepository;
-        this.precisionQueueRedis = precisionQueueRedis;
+        this.precisionQueuesPool = precisionQueuesPool;
     }
 
     @Override
@@ -42,7 +42,7 @@ public class AgentsServiceImpl implements AgentsService {
         this.validateAndSetRoutingAttributes(agent);
         agent.setId(agent.getKeycloakUser().getId());
         CCUser saved = this.repository.insert(agent);
-        this.precisionQueueRedis.evaluateAssociatedAgentsForAll();
+        this.precisionQueuesPool.evaluateAssociatedAgentsForAll();
         return saved;
     }
 
@@ -60,7 +60,7 @@ public class AgentsServiceImpl implements AgentsService {
         this.validateAndSetRoutingAttributes(agent);
         agent.setId(id);
         CCUser saved = this.repository.save(agent);
-        this.precisionQueueRedis.evaluateAssociatedAgentsForAll();
+        this.precisionQueuesPool.evaluateAssociatedAgentsForAll();
         return saved;
     }
 
@@ -70,7 +70,7 @@ public class AgentsServiceImpl implements AgentsService {
             throw new NotFoundException("Could not find agent resource to delete");
         }
         this.repository.deleteById(id);
-        this.precisionQueueRedis.removeAgentFromAll(id);
+        this.precisionQueuesPool.removeAgentFromAll(id);
     }
 
     private Map<UUID, RoutingAttribute> getRoutingAttributesFromDB() {

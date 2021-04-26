@@ -9,8 +9,8 @@ import com.ef.mediaroutingengine.model.StepEntity;
 import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.MediaRoutingDomainRepository;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
-import com.ef.mediaroutingengine.repositories.PrecisionQueueRedis;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
+import com.ef.mediaroutingengine.services.PrecisionQueuesPool;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,24 +25,24 @@ public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityServ
     private final PrecisionQueueEntityRepository repository;
     private final MediaRoutingDomainRepository mrdRepository;
     private final RoutingAttributeRepository routingAttributeRepository;
-    private final PrecisionQueueRedis precisionQueueRedis;
+    private final PrecisionQueuesPool precisionQueuesPool;
 
     /**
      * Default constructor.
      *
-     * @param repository precision queue repository
-     * @param mrdRepository media routing domain's repository
+     * @param repository                 precision queue repository
+     * @param mrdRepository              media routing domain's repository
      * @param routingAttributeRepository routing attribute's repository
      */
     @Autowired
     public PrecisionQueueEntityServiceImpl(PrecisionQueueEntityRepository repository,
                                            MediaRoutingDomainRepository mrdRepository,
                                            RoutingAttributeRepository routingAttributeRepository,
-                                           PrecisionQueueRedis precisionQueueRedis) {
+                                           PrecisionQueuesPool precisionQueuesPool) {
         this.repository = repository;
         this.mrdRepository = mrdRepository;
         this.routingAttributeRepository = routingAttributeRepository;
-        this.precisionQueueRedis = precisionQueueRedis;
+        this.precisionQueuesPool = precisionQueuesPool;
     }
 
     @Override
@@ -50,7 +50,7 @@ public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityServ
         this.validateAndSetMRD(precisionQueueEntity);
         precisionQueueEntity.setId(UUID.randomUUID());
         PrecisionQueueEntity saved = repository.insert(precisionQueueEntity);
-        this.precisionQueueRedis.add(saved);
+        //this.precisionQueuesPool.add(saved);
         return saved;
     }
 
@@ -64,14 +64,11 @@ public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityServ
         if (!this.repository.existsById(id)) {
             throw new NotFoundException("Could not find precision queue resource to update");
         }
-        if (!this.precisionQueueRedis.collectionExists()) {
-            throw new IllegalStateException("Could not update, Collection in Redis-cache not found");
-        }
         this.validateAndSetMRD(precisionQueueEntity);
         this.validateAndSetRoutingAttributes(precisionQueueEntity);
         precisionQueueEntity.setId(id);
         PrecisionQueueEntity saved = this.repository.save(precisionQueueEntity);
-        this.precisionQueueRedis.evaluateAssociatedAgents(saved);
+        this.precisionQueuesPool.evaluateAssociatedAgents(saved);
         return saved;
     }
 
@@ -81,7 +78,7 @@ public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityServ
             throw new NotFoundException("Could not find precision resource to delete");
         }
         this.repository.deleteById(id);
-        this.precisionQueueRedis.remove(id);
+        this.precisionQueuesPool.remove(id);
     }
 
     private void validateAndSetMRD(PrecisionQueueEntity pq) {

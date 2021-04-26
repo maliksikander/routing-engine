@@ -11,8 +11,8 @@ import com.ef.mediaroutingengine.model.StepEntity;
 import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
-import com.ef.mediaroutingengine.repositories.PrecisionQueueRedis;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
+import com.ef.mediaroutingengine.services.PrecisionQueuesPool;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
     private final RoutingAttributeRepository repository;
     private final PrecisionQueueEntityRepository precisionQueueEntityRepository;
     private final AgentsRepository agentsRepository;
-    private final PrecisionQueueRedis pqRedis;
+    private final PrecisionQueuesPool precisionQueuesPool;
 
     /**
      * Default constructor.
@@ -38,11 +38,11 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
     public RoutingAttributesServiceImpl(RoutingAttributeRepository repository,
                                         PrecisionQueueEntityRepository precisionQueueEntityRepository,
                                         AgentsRepository agentsRepository,
-                                        PrecisionQueueRedis pqRedis) {
+                                        PrecisionQueuesPool precisionQueuesPool) {
         this.repository = repository;
         this.precisionQueueEntityRepository = precisionQueueEntityRepository;
         this.agentsRepository = agentsRepository;
-        this.pqRedis = pqRedis;
+        this.precisionQueuesPool = precisionQueuesPool;
     }
 
     @Override
@@ -62,9 +62,6 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
         if (!this.repository.existsById(id)) {
             throw new NotFoundException("Could not find resource to update");
         }
-        if (!pqRedis.collectionExists()) {
-            throw new IllegalStateException("Could not update, Collection in Redis-cache not found");
-        }
 
         routingAttribute.setId(id);
 
@@ -73,7 +70,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
         this.updateAgents(routingAttribute, id);
         RoutingAttribute saved = repository.save(routingAttribute);
         // Update Cache.
-        pqRedis.updateRoutingAttribute(saved);
+        precisionQueuesPool.updateRoutingAttribute(saved);
         return saved;
     }
 

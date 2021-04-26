@@ -174,6 +174,13 @@ public class RedisClientImpl implements RedisClient {
         }
     }
 
+    @Override
+    public boolean exists(String key) {
+        try (Jedis conn = getConnection()) {
+            return conn.exists(key);
+        }
+    }
+
     private Jedis getConnection() {
         return this.jedisPool.getResource();
     }

@@ -99,7 +99,7 @@ public interface RedisClient {
 
     Long del(String key);
 
-
+    boolean exists(String key);
 }
 
 
