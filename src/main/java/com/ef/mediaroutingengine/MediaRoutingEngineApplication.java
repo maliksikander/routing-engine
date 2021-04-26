@@ -6,8 +6,12 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.constants.GeneralConstants;
+import com.ef.mediaroutingengine.dto.RedisEvent;
 import com.ef.mediaroutingengine.model.AgentPresence;
+import com.ef.mediaroutingengine.model.CommonEnums;
 import com.ef.mediaroutingengine.services.redis.RedisClient;
+import com.ef.mediaroutingengine.services.redispubsub.MessagePublisher;
+import com.ef.mediaroutingengine.services.redispubsub.RedisMessagePublisher;
 import java.sql.Timestamp;
 import java.util.UUID;
 import org.springframework.boot.SpringApplication;
@@ -24,6 +28,11 @@ public class MediaRoutingEngineApplication {
      */
     public static void main(String[] args) {
         ApplicationContext applicationContext = SpringApplication.run(MediaRoutingEngineApplication.class, args);
+        MessagePublisher publisher = applicationContext.getBean(MessagePublisher.class);
+        RedisEvent redisEvent = new RedisEvent();
+        redisEvent.setName(CommonEnums.RedisEventName.TASK_STATE_CHANGED);
+        redisEvent.setData("DATA");
+        publisher.publish(redisEvent);
         //putOneAgentInAgentPresenceCache(applicationContext);
     }
 

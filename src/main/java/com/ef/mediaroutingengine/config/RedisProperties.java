@@ -19,6 +19,7 @@ public class RedisProperties {
     private Integer maxWait;
 
     private boolean connectAtStartup;
+    private String channelTopic;
 
     public String getHost() {
         return host;
@@ -100,6 +101,14 @@ public class RedisProperties {
         this.connectAtStartup = connectAtStartup;
     }
 
+    public String getChannelTopic() {
+        return channelTopic;
+    }
+
+    public void setChannelTopic(String channelTopic) {
+        this.channelTopic = channelTopic;
+    }
+
     @Override
     public String toString() {
         return "RedisProperties{"
@@ -112,6 +121,8 @@ public class RedisProperties {
                 + ", maxIdle=" + maxIdle
                 + ", minIdle=" + minIdle
                 + ", maxWait=" + maxWait
+                + ", connectAtStartup=" + connectAtStartup
+                + ", channelTopic='" + channelTopic + '\''
                 + '}';
     }
 }

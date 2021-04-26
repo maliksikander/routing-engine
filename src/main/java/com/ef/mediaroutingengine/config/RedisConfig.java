@@ -49,9 +49,12 @@ public class RedisConfig {
 
         // final JedisPool jedisPool = new JedisPool(poolConfig,redisProperties.getHost(),
         // redisProperties.getPort(),false);
-        final JedisPool jedisPool = new JedisPool(poolConfig, redisProperties.getHost(),
+        final JedisPool jedisPool = new JedisPool(
+                poolConfig,
+                redisProperties.getHost(),
                 redisProperties.getPort(),
-                redisProperties.getTimeout(), redisProperties.getPassword(),
+                redisProperties.getTimeout(),
+                redisProperties.getPassword(),
                 redisProperties.isSsl());
         // Get Connection from pool to verify if connection is established with redis server
         //jedisPool.getResource();

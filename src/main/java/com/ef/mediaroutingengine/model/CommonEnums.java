@@ -113,4 +113,9 @@ public class CommonEnums {
         ALL_PRECISION_QUEUES,
         ALL_LABELS
     }
+
+    public enum RedisEventName {
+        TASK_STATE_CHANGED,
+        AGENT_MRD_STATE_CHANGED
+    }
 }
