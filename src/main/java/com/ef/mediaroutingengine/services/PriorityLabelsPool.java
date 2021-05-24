@@ -1,10 +1,10 @@
-package com.ef.mediaroutingengine.repositories;
+package com.ef.mediaroutingengine.services;
 
 import com.ef.mediaroutingengine.eventlisteners.AllLabelsEvent;
 import com.ef.mediaroutingengine.eventlisteners.DeleteLabelEvent;
 import com.ef.mediaroutingengine.eventlisteners.NewLabelEvent;
 import com.ef.mediaroutingengine.eventlisteners.UpdateLabelEvent;
-import com.ef.mediaroutingengine.model.CommonEnums;
+import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.PriorityLabel;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -144,7 +144,7 @@ public class PriorityLabelsPool {
                         LinkedHashMap::new));
     }
 
-    public void handleLabelEvents(CommonEnums.EventProperties property, String messageBody) {
+    public void handleLabelEvents(Enums.EventName property, String messageBody) {
         this.changeSupport.firePropertyChange(property.name(), "", messageBody);
     }
 

@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.model;
 
-public class CommonEnums {
+public class Enums {
     private static boolean mreStatus = false;
 
     public static void setMreStatus(boolean status) {
@@ -12,20 +12,20 @@ public class CommonEnums {
     }
 
     public enum TaskState {
-        NEW,
-        OFFERED,
-        ACCEPTED,
+        CREATED,
+        QUEUED,
+        RESERVED,
         ACTIVE,
         PAUSED,
-        WRAPPING_UP,
-        INTERRUPTED,
-        CLOSED,
-        UNKNOWN
+        WRAP_UP,
+        CLOSED
     }
 
-    public enum EventProperties {
+    public enum EventName {
         NEW_TASK,
+        TASK_REMOVED,
         AGENT_STATE,
+        AGENT_MRD_STATE,
         EWT_REQUEST_EVENT,
         TIMER,
         TRANSFER,
@@ -64,13 +64,16 @@ public class CommonEnums {
         LOGIN,
         NOT_READY,
         READY,
+        LOGOUT,
+        ACTIVE
+    }
+
+    public enum AgentMrdStateName {
+        READY,
+        NOT_READY,
         INTERRUPTED,
         ACTIVE,
-        WORK_READY,
-        RESERVED,
         BUSY,
-        LOGOUT,
-        WORK_NOT_READY,
         UNKNOWN
     }
 
@@ -82,36 +85,6 @@ public class CommonEnums {
     public enum DefaultQueue {
         DEFAULT_PRECISION_QUEUE,
         CHAT
-    }
-
-    public enum IncomingMsgType {
-        NEW_TASK,
-        AGENT_STATE,
-        EWT,
-        TRANSFER,
-        TASK_STATE,
-        CONFERENCE,
-        LEAVE_CONVERSATION,
-        NEW_ATTRIBUTE,
-        UPDATE_ATTRIBUTE,
-        DELETE_ATTRIBUTE,
-        NEW_AGENT,
-        UPDATE_AGENT,
-        DELETE_AGENT,
-        NEW_MRD,
-        UPDATE_MRD,
-        DELETE_MRD,
-        NEW_PRECISION_QUEUE,
-        UPDATE_PRECISION_QUEUE,
-        DELETE_PRECISION_QUEUE,
-        NEW_LABEL,
-        DELETE_LABEL,
-        UPDATE_LABEL,
-        ALL_ATTRIBUTES,
-        ALL_AGENTS,
-        ALL_MRDS,
-        ALL_PRECISION_QUEUES,
-        ALL_LABELS
     }
 
     public enum RedisEventName {

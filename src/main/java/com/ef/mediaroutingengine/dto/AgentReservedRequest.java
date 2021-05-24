@@ -1,17 +1,18 @@
 package com.ef.mediaroutingengine.dto;
 
 import com.ef.cim.objectmodel.CCUser;
+import java.util.UUID;
 
 public class AgentReservedRequest {
 
-    String topicId;
+    UUID topicId;
     CCUser agent;
 
-    public String getTopicId() {
+    public UUID getTopicId() {
         return topicId;
     }
 
-    public void setTopicId(String topicId) {
+    public void setTopicId(UUID topicId) {
         this.topicId = topicId;
     }
 

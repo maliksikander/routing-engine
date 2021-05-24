@@ -5,11 +5,11 @@ import com.ef.mediaroutingengine.services.queue.PriorityQueue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PrecisionQueue implements IQueue {
-    protected static final Logger log = LogManager.getLogger(PrecisionQueue.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(PrecisionQueue.class);
     private UUID id;
     private String name;
     private MediaRoutingDomain mrd;
@@ -196,7 +196,7 @@ public class PrecisionQueue implements IQueue {
     }
 
     @Override
-    public boolean enqueue(TaskService task) {
+    public boolean enqueue(Task task) {
         if (task == null || this.serviceQueue.taskExists(task.getId())) {
             return false;
         }
@@ -206,9 +206,9 @@ public class PrecisionQueue implements IQueue {
     }
 
     @Override
-    public TaskService dequeue() {
-        TaskService task = this.serviceQueue.dequeue(true); //serviceQueue.poll
-        log.debug("Removed Task: {}", task != null ? task.getId() : "task not found" + " from queue: "
+    public Task dequeue() {
+        Task task = this.serviceQueue.dequeue(true); //serviceQueue.poll
+        LOGGER.debug("Removed Task: {}", task != null ? task.getId() : "task not found" + " from queue: "
                 + this.getName());
         printQueue();
         return task;
@@ -216,14 +216,14 @@ public class PrecisionQueue implements IQueue {
 
     @Override
     public void printQueue() {
-        log.debug("FIFO Precision Queue: {}", this.serviceQueue);
+        LOGGER.debug("FIFO Precision Queue: {}", this.serviceQueue);
     }
 
     @Override
     public void logAllSteps() {
         int i = 0;
         for (Step step : this.steps) {
-            log.info("Step {}: {}, No. of associated agents: {}", ++i, step, step.getAssociatedAgents().size());
+            LOGGER.info("Step {}: {}, No. of associated agents: {}", ++i, step, step.getAssociatedAgents().size());
         }
     }
 
@@ -232,10 +232,10 @@ public class PrecisionQueue implements IQueue {
      *
      * @return the task at the queue's head.
      */
-    public TaskService peek() {
-        TaskService task = null;
+    public Task peek() {
+        Task task = null;
         task = this.serviceQueue.dequeue(false); // serviceQueue.peek
-        log.debug("peek task: {}", task != null ? task.getId() : "Task not found");
+        LOGGER.debug("peek task: {}", task != null ? task.getId() : "Task not found");
         return task;
     }
 
@@ -245,7 +245,7 @@ public class PrecisionQueue implements IQueue {
      * @param task the task to be removed.
      * @return true if found and removed, false otherwise
      */
-    public boolean removeTask(TaskService task) {
+    public boolean removeTask(Task task) {
         if (task == null) {
             return false;
         }

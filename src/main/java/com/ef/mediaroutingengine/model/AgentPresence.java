@@ -6,11 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AgentPresence {
-
     private CCUser agent;
     private String state;
     private Timestamp stateChangeTime;
     private List<String> topics;
+    private List<AgentMrdState> agentMrdStates;
 
     public AgentPresence() {
         this.topics = new ArrayList<>();
@@ -58,5 +58,13 @@ public class AgentPresence {
 
     public boolean removeTopic(String topic) {
         return this.topics.remove(topic);
+    }
+
+    public List<AgentMrdState> getAgentMrdStates() {
+        return agentMrdStates;
+    }
+
+    public void setAgentMrdStates(List<AgentMrdState> agentMrdStates) {
+        this.agentMrdStates = agentMrdStates;
     }
 }

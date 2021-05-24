@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.eventlisteners;
 
-import com.ef.mediaroutingengine.model.CommonEnums;
-import com.ef.mediaroutingengine.repositories.MrdPool;
+import com.ef.mediaroutingengine.model.Enums;
+import com.ef.mediaroutingengine.services.MrdPool;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -14,7 +14,7 @@ public class DeleteMRDEvent implements PropertyChangeListener {
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         try {
-            if (evt.getPropertyName().equalsIgnoreCase(CommonEnums.EventProperties.DELETE_MRD.toString())) {
+            if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.DELETE_MRD.toString())) {
                 LOGGER.debug("DeleteMRDEvent() begin");
                 JsonNode node = (JsonNode) evt.getNewValue();
                 String mrdName = node.get("Name").textValue();

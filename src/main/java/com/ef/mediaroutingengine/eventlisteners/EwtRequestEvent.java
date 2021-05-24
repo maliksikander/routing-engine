@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.eventlisteners;
 
-import com.ef.mediaroutingengine.model.CommonEnums;
+import com.ef.mediaroutingengine.model.Enums;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import org.slf4j.Logger;
@@ -11,7 +11,7 @@ public class EwtRequestEvent implements PropertyChangeListener {
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if (evt.getPropertyName().equalsIgnoreCase(CommonEnums.EventProperties.EWT_REQUEST_EVENT.toString())) {
+        if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.EWT_REQUEST_EVENT.toString())) {
             LOGGER.info("EWT_REQUEST_EVENT property listener");
         }
     }

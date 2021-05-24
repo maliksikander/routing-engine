@@ -2,7 +2,7 @@ package com.ef.mediaroutingengine.services;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.TaskService;
+import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +57,7 @@ public class AgentsPool {
      * @param task the task to end
      * @return true if found and ended, false otherwise
      */
-    public boolean endTask(TaskService task) {
+    public boolean endTask(Task task) {
         Agent assignedTo = this.agents.get(task.getAssignedTo());
         if (assignedTo != null) {
             assignedTo.endTask(task);

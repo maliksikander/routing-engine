@@ -1,7 +1,8 @@
 package com.ef.mediaroutingengine.eventlisteners;
 
+import com.ef.mediaroutingengine.dto.AgentMrdStateChangedRequest;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.CommonEnums;
+import com.ef.mediaroutingengine.model.Enums;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -10,9 +11,11 @@ import java.util.LinkedList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
-public class AgentStateEvent implements PropertyChangeListener {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AgentStateEvent.class);
+@Service
+public class AgentMrdStateEvent implements PropertyChangeListener {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AgentMrdStateEvent.class);
     /*
      this.changeSupport => fires property change to Task Schedulers
      */
@@ -23,7 +26,7 @@ public class AgentStateEvent implements PropertyChangeListener {
      * Adds a property change listener to the changeSupport.
      *
      * @param listener the property change listener object
-     * @param name the name of the listener to avoid duplicates
+     * @param name     the name of the listener to avoid duplicates
      */
     public void addPropertyChangeListener(PropertyChangeListener listener, String name) {
         if (!this.precisionQueueChangeSupportListeners.contains(name)) {
@@ -39,33 +42,33 @@ public class AgentStateEvent implements PropertyChangeListener {
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if (agentStateChanged(evt)) {
-            JsonNode eventNewValue = (JsonNode) evt.getNewValue();
-
+        if (agentMrdStateChanged(evt)) {
+            AgentMrdStateChangedRequest request = (AgentMrdStateChangedRequest) evt.getNewValue();
             Agent agent = (Agent) evt.getSource();
-            agent.setState(this.getAgentStateFrom(eventNewValue));
-            agent.setAgentMode(this.getAgentModeFrom(eventNewValue));
+            agent.setMrdStates(request.getAgentMrdStates());
+            // TODO: CHECK if AGENT MODE CAN BE CHANGED FROM AGENT MANAGER
+            // agent.setAgentMode(this.getAgentModeFrom(eventNewValue));
 
             this.fireStateChangeToTaskSchedulersIfStateActiveOrReady(agent.getState());
             LOGGER.debug("Agent State Listener for agent: {}", agent.getId());
         }
     }
 
-    private boolean agentStateChanged(PropertyChangeEvent evt) {
-        return evt.getPropertyName().equalsIgnoreCase(CommonEnums.EventProperties.AGENT_STATE.name());
+    private boolean agentMrdStateChanged(PropertyChangeEvent evt) {
+        return evt.getPropertyName().equalsIgnoreCase(Enums.EventName.AGENT_MRD_STATE.name());
     }
 
-    private CommonEnums.AgentState getAgentStateFrom(JsonNode newValue) {
+    private Enums.AgentState getAgentStateFrom(JsonNode newValue) {
         String newStateString = newValue.get("State").textValue();
-        return CommonEnums.AgentState.valueOf(newStateString);
+        return Enums.AgentState.valueOf(newStateString);
     }
 
-    private CommonEnums.AgentMode getAgentModeFrom(JsonNode newValue) {
+    private Enums.AgentMode getAgentModeFrom(JsonNode newValue) {
         boolean isRoutable = newValue.get("Routable").toString().equalsIgnoreCase("true");
-        return isRoutable ? CommonEnums.AgentMode.ROUTABLE : CommonEnums.AgentMode.NON_ROUTABLE;
+        return isRoutable ? Enums.AgentMode.ROUTABLE : Enums.AgentMode.NON_ROUTABLE;
     }
 
-    private void fireStateChangeToTaskSchedulersIfStateActiveOrReady(CommonEnums.AgentState state) {
+    private void fireStateChangeToTaskSchedulersIfStateActiveOrReady(Enums.AgentState state) {
         switch (state) {
             case READY:
             case ACTIVE:

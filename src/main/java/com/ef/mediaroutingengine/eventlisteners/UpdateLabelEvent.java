@@ -1,8 +1,8 @@
 package com.ef.mediaroutingengine.eventlisteners;
 
-import com.ef.mediaroutingengine.model.CommonEnums;
+import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.PriorityLabel;
-import com.ef.mediaroutingengine.repositories.PriorityLabelsPool;
+import com.ef.mediaroutingengine.services.PriorityLabelsPool;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,7 +19,7 @@ public class UpdateLabelEvent implements PropertyChangeListener {
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         try {
-            if (evt.getPropertyName().equalsIgnoreCase(CommonEnums.EventProperties.UPDATE_LABEL.name())) {
+            if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.UPDATE_LABEL.name())) {
                 log.debug("UpdateLabelEvent onEvent() Started");
                 String newValue = (String) evt.getNewValue();
                 ObjectMapper objectMapper = new ObjectMapper()

@@ -1,14 +1,15 @@
 package com.ef.mediaroutingengine.services.queue;
 
 import com.ef.mediaroutingengine.model.Pair;
-import com.ef.mediaroutingengine.model.TaskService;
-import com.ef.mediaroutingengine.repositories.PriorityLabelsPool;
+import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.services.PriorityLabelsPool;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.validation.constraints.NotNull;
@@ -17,7 +18,7 @@ import javax.validation.constraints.NotNull;
  * The type Priority queue.
  */
 public class PriorityQueue {
-    private final Map<Integer, ConcurrentLinkedQueue<TaskService>> multiLevelQueueMap;
+    private final Map<Integer, ConcurrentLinkedQueue<Task>> multiLevelQueueMap;
     private final int noOfQueueLevels = 11;
 
     /**
@@ -33,16 +34,16 @@ public class PriorityQueue {
     /**
      * Enqueue boolean.
      *
-     * @param taskService the task service
+     * @param task the task service
      * @return the boolean
      */
-    public boolean enqueue(@NotNull TaskService taskService) {
-        if (taskService.getPriority() > 10) {
-            taskService.setPriority(10);
-        } else if (taskService.getPriority() < 1) {
-            taskService.setPriority(1);
+    public boolean enqueue(@NotNull Task task) {
+        if (task.getPriority() > 10) {
+            task.setPriority(10);
+        } else if (task.getPriority() < 1) {
+            task.setPriority(1);
         }
-        return this.multiLevelQueueMap.get(taskService.getPriority()).offer(taskService);
+        return this.multiLevelQueueMap.get(task.getPriority()).offer(task);
     }
 
     /**
@@ -52,7 +53,7 @@ public class PriorityQueue {
      *             task will not be removed from queue otherwise (queue peek operation)
      * @return the task service in both cases (poll or peak), returns null if task not found
      */
-    public TaskService dequeue(boolean poll) {
+    public Task dequeue(boolean poll) {
         for (int i = this.noOfQueueLevels; i >= 1; i--) {
             if (this.multiLevelQueueMap.get(i).size() > 0) {
                 return poll
@@ -82,7 +83,7 @@ public class PriorityQueue {
      * @param index the index of task service
      * @return the task service
      */
-    public TaskService get(int index) {
+    public Task get(int index) {
         // TODO: implement this method
         return null;
     }
@@ -97,12 +98,12 @@ public class PriorityQueue {
         int index = -1;
         int previousQueuesSize = 0;
         for (int i = this.noOfQueueLevels; i >= 1; i--) {
-            Queue<TaskService> queue = this.multiLevelQueueMap.get(i);
+            Queue<Task> queue = this.multiLevelQueueMap.get(i);
             int k = 0;
             for (Iterator<?> it = queue.iterator(); it.hasNext(); ) {
-                TaskService iter = (TaskService) it.next();
+                Task iter = (Task) it.next();
                 System.out.println(iter);
-                if (iter.getId().equalsIgnoreCase(taskId)) {
+                if (iter.getId().equals(taskId)) {
                     index = previousQueuesSize + k;
                     return index;
                 }
@@ -119,11 +120,11 @@ public class PriorityQueue {
      * @param taskId the task id
      * @return the task service
      */
-    public TaskService getTask(String taskId) {
-        for (Map.Entry<Integer, ConcurrentLinkedQueue<TaskService>> entry : this.multiLevelQueueMap.entrySet()) {
+    public Task getTask(String taskId) {
+        for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
             for (Iterator<?> it = entry.getValue().iterator(); it.hasNext(); ) {
-                TaskService iter = (TaskService) it.next();
-                if (iter.getId().equalsIgnoreCase(taskId)) {
+                Task iter = (Task) it.next();
+                if (iter.getId().equals(taskId)) {
                     return iter;
                 }
             }
@@ -134,11 +135,11 @@ public class PriorityQueue {
     /**
      * Task exists boolean.
      *
-     * @param taskService the task service
+     * @param task the task service
      * @return the boolean
      */
-    public boolean taskExists(@NotNull TaskService taskService) {
-        return taskExists(taskService.getId());
+    public boolean taskExists(@NotNull Task task) {
+        return taskExists(task.getId());
     }
 
     /**
@@ -147,10 +148,10 @@ public class PriorityQueue {
      * @param taskId the task id
      * @return the boolean
      */
-    public boolean taskExists(String taskId) {
-        for (Map.Entry<Integer, ConcurrentLinkedQueue<TaskService>> entry : this.multiLevelQueueMap.entrySet()) {
-            for (TaskService taskService1 : entry.getValue()) {
-                if (taskId.equalsIgnoreCase(taskService1.getId())) {
+    public boolean taskExists(UUID taskId) {
+        for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
+            for (Task task1 : entry.getValue()) {
+                if (taskId.equals(task1.getId())) {
                     return true;
                 }
             }
@@ -161,15 +162,15 @@ public class PriorityQueue {
     /**
      * Remove boolean.
      *
-     * @param taskService the task service
+     * @param task the task service
      * @return the boolean
      */
-    public boolean remove(@NotNull TaskService taskService) {
-        for (Map.Entry<Integer, ConcurrentLinkedQueue<TaskService>> entry : this.multiLevelQueueMap.entrySet()) {
+    public boolean remove(@NotNull Task task) {
+        for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
             Iterator it = entry.getValue().iterator();
             while (it.hasNext()) {
-                TaskService i = (TaskService) it.next();
-                if (i.getId().equalsIgnoreCase(taskService.getId())) {
+                Task i = (Task) it.next();
+                if (i.getId().equals(task.getId())) {
                     entry.getValue().remove(i);
                     return true;
                 }
@@ -183,24 +184,24 @@ public class PriorityQueue {
      *
      * @return list of enqueued tasks
      */
-    public List<TaskService> getEnqueuedTasksList() {
-        List<TaskService> taskServiceList = new LinkedList<>();
-        for (Map.Entry<Integer, ConcurrentLinkedQueue<TaskService>> entry : this.multiLevelQueueMap.entrySet()) {
-            for (TaskService taskService1 : entry.getValue()) {
-                taskServiceList.add(taskService1);
+    public List<Task> getEnqueuedTasksList() {
+        List<Task> taskList = new LinkedList<>();
+        for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
+            for (Task task1 : entry.getValue()) {
+                taskList.add(task1);
             }
         }
-        return taskServiceList;
+        return taskList;
     }
 
     /**
      * Restores the tasks in the queue from backup.
      *
-     * @param taskServiceList list of tasks to be restored
+     * @param taskList list of tasks to be restored
      */
-    public void restoreBackup(@NotNull List<TaskService> taskServiceList) {
-        for (TaskService taskService : taskServiceList) {
-            this.enqueue(taskService);
+    public void restoreBackup(@NotNull List<Task> taskList) {
+        for (Task task : taskList) {
+            this.enqueue(task);
         }
     }
 
@@ -213,7 +214,7 @@ public class PriorityQueue {
         Map<String, Integer> labelStats = new HashMap<>();
         for (int i = this.noOfQueueLevels; i >= 1; i--) {
             for (Iterator<?> it = this.multiLevelQueueMap.get(i).iterator(); it.hasNext(); ) {
-                String selectedPriorityLabel = ((TaskService) it.next()).getSelectedPriorityLabel();
+                String selectedPriorityLabel = ((Task) it.next()).getSelectedPriorityLabel();
                 if ("".equalsIgnoreCase(selectedPriorityLabel)) {
                     continue;
                 }
@@ -250,7 +251,7 @@ public class PriorityQueue {
         for (Map.Entry entry : this.multiLevelQueueMap.entrySet()) {
             if (((ConcurrentLinkedQueue) entry.getValue()).peek() != null) {
                 long queueMaxTime = System.currentTimeMillis()
-                        - ((ConcurrentLinkedQueue<TaskService>) entry.getValue()).peek().getEnqueueTime();
+                        - ((ConcurrentLinkedQueue<Task>) entry.getValue()).peek().getEnqueueTime();
                 if (queueMaxTime > maxTime) {
                     maxTime = queueMaxTime;
                 }
@@ -264,7 +265,7 @@ public class PriorityQueue {
         String result = "->/";
         for (int i = this.noOfQueueLevels; i >= 1; i--) {
             for (Iterator<?> it = this.multiLevelQueueMap.get(i).iterator(); it.hasNext(); ) {
-                result = result + ((TaskService) it.next()).getId() + ",";
+                result = result + ((Task) it.next()).getId() + ",";
             }
         }
         result = result.substring(result.length() - 1).equalsIgnoreCase("/")

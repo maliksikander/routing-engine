@@ -1,17 +1,19 @@
-package com.ef.mediaroutingengine.repositories;
+package com.ef.mediaroutingengine.services;
 
 import com.ef.mediaroutingengine.eventlisteners.AllMrdsEvent;
 import com.ef.mediaroutingengine.eventlisteners.DeleteMRDEvent;
 import com.ef.mediaroutingengine.eventlisteners.NewMRDEvent;
 import com.ef.mediaroutingengine.eventlisteners.UpdateMRDEvent;
-import com.ef.mediaroutingengine.model.CommonEnums;
+import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.LinkedList;
 import java.util.List;
+import org.springframework.stereotype.Service;
 
+@Service
 public class MrdPool {
     private final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
     private static MrdPool instance;
@@ -131,19 +133,19 @@ public class MrdPool {
         return this.mrds;
     }
 
-    public void handleAllMrdsEvent(CommonEnums.EventProperties property, JsonNode node) {
+    public void handleAllMrdsEvent(Enums.EventName property, JsonNode node) {
         this.changeSupport.firePropertyChange(property.name(), null, node);
     }
 
-    public void handleNewMrdEvent(CommonEnums.EventProperties property, JsonNode node) {
+    public void handleNewMrdEvent(Enums.EventName property, JsonNode node) {
         this.changeSupport.firePropertyChange(property.name(), null, node);
     }
 
-    public void handleUpdateMrdEvent(CommonEnums.EventProperties property, JsonNode node) {
+    public void handleUpdateMrdEvent(Enums.EventName property, JsonNode node) {
         this.changeSupport.firePropertyChange(property.name(), null, node);
     }
 
-    public void handleDeleteMrdEvent(CommonEnums.EventProperties property, JsonNode node) {
+    public void handleDeleteMrdEvent(Enums.EventName property, JsonNode node) {
         this.changeSupport.firePropertyChange(property.name(), null, node);
     }
 }

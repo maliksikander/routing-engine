@@ -1,11 +1,11 @@
 package com.ef.mediaroutingengine.eventlisteners;
 
-import com.ef.mediaroutingengine.model.CommonEnums;
-import com.ef.mediaroutingengine.model.TaskService;
+import com.ef.mediaroutingengine.dto.TaskDto;
+import com.ef.mediaroutingengine.model.Enums;
+import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.services.AgentsPool;
 import com.ef.mediaroutingengine.services.PrecisionQueuesPool;
-import com.ef.mediaroutingengine.services.TaskServiceManager;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.ef.mediaroutingengine.services.TasksPool;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import org.slf4j.Logger;
@@ -18,42 +18,38 @@ public class TaskStateEvent implements PropertyChangeListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskStateEvent.class);
     private final AgentsPool agentsPool;
     private final PrecisionQueuesPool precisionQueuesPool;
-    private final TaskServiceManager taskServiceManager;
+    private final TasksPool tasksPool;
 
     /**
      * Default constructor. Autowired -> loads the beans.
      *
-     * @param agentsPool the pool of all agents
+     * @param agentsPool          the pool of all agents
      * @param precisionQueuesPool the pool of all precision queues
-     * @param taskServiceManager the service that handles tasks flow
+     * @param tasksPool           the service that handles tasks flow
      */
     @Autowired
     public TaskStateEvent(AgentsPool agentsPool, PrecisionQueuesPool precisionQueuesPool,
-                          TaskServiceManager taskServiceManager) {
+                          TasksPool tasksPool) {
         this.agentsPool = agentsPool;
         this.precisionQueuesPool = precisionQueuesPool;
-        this.taskServiceManager = taskServiceManager;
+        this.tasksPool = tasksPool;
     }
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if (evt.getPropertyName().equalsIgnoreCase(CommonEnums.EventProperties.TASK_STATE.toString())) {
+        if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.TASK_STATE.toString())) {
             LOGGER.debug("TaskStateEvent.propertyChange() method started");
             try {
-                JsonNode node = (JsonNode) evt.getNewValue();
-                String taskId = node.has("TaskId") ? node.get("TaskId").textValue() : "";
-                String stateStr = node.has("State") ? node.get("State").textValue() : "";
+                TaskDto taskDto = (TaskDto) evt.getNewValue();
+                Task task = tasksPool.getTask(taskDto.getId());
+                Enums.TaskState state = taskDto.getState();
 
-                CommonEnums.TaskState state = CommonEnums.TaskState.valueOf(stateStr);
-                TaskService task = taskServiceManager.getTask(taskId);
                 switch (state) {
-                    case INTERRUPTED:
-                    case OFFERED:
-                    case ACCEPTED:
-                    case NEW:
+                    case CREATED:
+                    case QUEUED:
+                    case RESERVED:
                     case PAUSED:
-                    case UNKNOWN:
-                    case WRAPPING_UP:
+                    case WRAP_UP:
                         task.setTaskState(state);
                         break;
                     case ACTIVE:
@@ -63,7 +59,7 @@ public class TaskStateEvent implements PropertyChangeListener {
                     case CLOSED:
                         this.agentsPool.endTask(task);
                         this.precisionQueuesPool.endTask(task);
-                        taskServiceManager.removeTask(taskId);
+                        tasksPool.removeTask(taskDto.getId().toString());
                         break;
                     default:
                         break;

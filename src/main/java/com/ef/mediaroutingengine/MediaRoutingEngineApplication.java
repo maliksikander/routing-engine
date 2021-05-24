@@ -1,22 +1,25 @@
 package com.ef.mediaroutingengine;
 
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
-import com.ef.cim.objectmodel.AttributeType;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
+import com.ef.cim.objectmodel.RoutingAttributeType;
 import com.ef.mediaroutingengine.constants.GeneralConstants;
 import com.ef.mediaroutingengine.dto.RedisEvent;
+import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.model.AgentPresence;
-import com.ef.mediaroutingengine.model.CommonEnums;
+import com.ef.mediaroutingengine.model.Enums;
+import com.ef.mediaroutingengine.model.MediaRoutingDomain;
+import com.ef.mediaroutingengine.services.redis.ChannelSubscribe;
 import com.ef.mediaroutingengine.services.redis.RedisClient;
-import com.ef.mediaroutingengine.services.redispubsub.MessagePublisher;
-import com.ef.mediaroutingengine.services.redispubsub.RedisMessagePublisher;
 import java.sql.Timestamp;
 import java.util.UUID;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPubSub;
 
 @SpringBootApplication
 public class MediaRoutingEngineApplication {
@@ -28,12 +31,25 @@ public class MediaRoutingEngineApplication {
      */
     public static void main(String[] args) {
         ApplicationContext applicationContext = SpringApplication.run(MediaRoutingEngineApplication.class, args);
-        MessagePublisher publisher = applicationContext.getBean(MessagePublisher.class);
-        RedisEvent redisEvent = new RedisEvent();
-        redisEvent.setName(CommonEnums.RedisEventName.TASK_STATE_CHANGED);
-        redisEvent.setData("DATA");
-        publisher.publish(redisEvent);
-        //putOneAgentInAgentPresenceCache(applicationContext);
+        ChannelSubscribe channelSubscribe = applicationContext.getBean(ChannelSubscribe.class);
+        JedisPool jedisPool = applicationContext.getBean(JedisPool.class);
+
+        JedisPubSub jedisPubSub = channelSubscribe.getJedisPubSubInstance();
+        jedisPool.getResource().subscribe(jedisPubSub, "REDIS_MESSAGE_CHANNEL");
+    }
+
+    private static void addTask(ApplicationContext applicationContext) {
+        MediaRoutingDomain mrd = new MediaRoutingDomain();
+        mrd.setDescription("Description 1");
+        mrd.setId(UUID.randomUUID());
+        mrd.setName("MRD1");
+        mrd.setInterruptible(false);
+
+        TaskDto task = new TaskDto();
+        task.setId(UUID.randomUUID());
+        task.setState(Enums.TaskState.CREATED);
+        task.setPriority(1);
+        task.setMrd(mrd);
     }
 
     private static void putOneAgentInAgentPresenceCache(ApplicationContext context) {
@@ -44,7 +60,7 @@ public class MediaRoutingEngineApplication {
         RedisClient redisClient = context.getBean(RedisClient.class);
 
         try {
-            redisClient.setJSON(GeneralConstants.getAgentPresenceKey(),
+            redisClient.setJson(GeneralConstants.getAgentPresenceKey(),
                     GeneralConstants.getAgentPresence());
         } catch (Exception e) {
             System.out.println("In main, while trying to put json in redis");
@@ -68,7 +84,7 @@ public class MediaRoutingEngineApplication {
         routingAttribute.setId(UUID.randomUUID());
         routingAttribute.setName("attribute1");
         routingAttribute.setDescription("description");
-        routingAttribute.setType(AttributeType.BOOLEAN);
+        routingAttribute.setType(RoutingAttributeType.BOOLEAN);
         routingAttribute.setDefaultValue(1);
 
         AssociatedRoutingAttribute associatedRoutingAttribute = new AssociatedRoutingAttribute();

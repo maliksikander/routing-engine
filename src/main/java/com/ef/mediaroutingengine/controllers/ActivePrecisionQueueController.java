@@ -21,7 +21,7 @@ public class ActivePrecisionQueueController {
     @SuppressWarnings("unchecked")
     @GetMapping("/active-precision-queues")
     public ResponseEntity<Object> retrieve() throws JsonProcessingException {
-        List<PrecisionQueue> precisionQueues = redisClient.getJSON("activePrecisionQueues", ArrayList.class);
+        List<PrecisionQueue> precisionQueues = redisClient.getJson("activePrecisionQueues", ArrayList.class);
         return new ResponseEntity<>(precisionQueues, HttpStatus.OK);
     }
 }

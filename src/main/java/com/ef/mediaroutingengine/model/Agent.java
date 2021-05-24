@@ -3,7 +3,8 @@ package com.ef.mediaroutingengine.model;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.mediaroutingengine.eventlisteners.AgentStateEvent;
+import com.ef.mediaroutingengine.dto.AgentMrdStateChangedRequest;
+import com.ef.mediaroutingengine.eventlisteners.AgentMrdStateEvent;
 import com.ef.mediaroutingengine.eventlisteners.GetAgentState;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -24,12 +25,13 @@ public class Agent {
     private final KeycloakUser keycloakUser;
     private final List<AssociatedRoutingAttribute> associatedRoutingAttributes;
 
-    private CommonEnums.AgentState agentState;
-    private CommonEnums.AgentMode agentMode = CommonEnums.AgentMode.NON_ROUTABLE;
+    private Enums.AgentState agentState;
+    private List<AgentMrdState> agentMrdStates;
+    private Enums.AgentMode agentMode = Enums.AgentMode.NON_ROUTABLE;
     private AtomicInteger numOfTasks;
     private LocalDateTime lastReadyStateChangeTime;
     // Todo: Make assigned task a synchronized list
-    private final List<TaskService> assignedTasks;
+    private final List<Task> assignedTasks;
 
     private final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
     private List<PropertyChangeListener> listeners;
@@ -53,7 +55,7 @@ public class Agent {
     private void initialize() {
         this.listeners = new LinkedList<>();
         this.listeners.add(new GetAgentState());
-        this.listeners.add(new AgentStateEvent());
+        this.listeners.add(new AgentMrdStateEvent());
 
         for (PropertyChangeListener listener : this.listeners) {
             this.changeSupport.addPropertyChangeListener(listener);
@@ -68,13 +70,13 @@ public class Agent {
      */
     public void addSchedulerListener(PropertyChangeListener listener, String name) {
         for (PropertyChangeListener i : this.listeners) {
-            if (i instanceof AgentStateEvent) {
-                ((AgentStateEvent) i).addPropertyChangeListener(listener, name);
+            if (i instanceof AgentMrdStateEvent) {
+                ((AgentMrdStateEvent) i).addPropertyChangeListener(listener, name);
             }
         }
     }
 
-    public boolean taskExists(TaskService task) {
+    public boolean taskExists(Task task) {
         return this.assignedTasks.contains(task);
     }
 
@@ -83,7 +85,7 @@ public class Agent {
      *
      * @param task the task to be added.
      */
-    public void assignTask(TaskService task) {
+    public void assignTask(Task task) {
         if (task == null) {
             LOGGER.debug("Cannot assign task, taskService is null");
             return;
@@ -95,8 +97,24 @@ public class Agent {
                 this.keycloakUser.getId(), task.getId(), this.assignedTasks.size());
     }
 
-    public void assignTask(String taskId) {
-//        this.assignTask(TaskServiceManager.getInstance().getTask(taskId));
+    public void changeMrdState(AgentMrdStateChangedRequest request) {
+        this.changeSupport.firePropertyChange(Enums.EventName.AGENT_MRD_STATE.name(), null, request);
+    }
+
+    /**
+     * Sets the Mrd states of the Agent.
+     *
+     * @param updated the list of updated Mrd states
+     */
+    public void setMrdStates(List<AgentMrdState> updated) {
+        for (AgentMrdState newMrdState: updated) {
+            for (AgentMrdState oldMrdState: this.agentMrdStates) {
+                if (oldMrdState.getMrdId().equals(newMrdState.getMrdId())) {
+                    oldMrdState.setState(newMrdState.getState());
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -104,7 +122,7 @@ public class Agent {
      *
      * @param task the task to end.
      */
-    public void endTask(TaskService task) {
+    public void endTask(Task task) {
         if (taskExists(task)) {
             if (task.getStartTime() != null) {
                 task.setHandlingTime(System.currentTimeMillis() - task.getStartTime());
@@ -118,10 +136,6 @@ public class Agent {
                 this.keycloakUser.getId(), task.getId(), this.assignedTasks.size());
     }
 
-    public void endTask(String taskId) {
-//        this.endTask(TaskServiceManager.getInstance().getTask(taskId));
-    }
-
     public UUID getId() {
         return this.keycloakUser.getId();
     }
@@ -130,7 +144,7 @@ public class Agent {
         return this.associatedRoutingAttributes;
     }
 
-    public CommonEnums.AgentState getState() {
+    public Enums.AgentState getState() {
         return this.agentState;
     }
 
@@ -139,23 +153,31 @@ public class Agent {
      *
      * @param state the state to be set
      */
-    public void setState(CommonEnums.AgentState state) {
+    public void setState(Enums.AgentState state) {
         this.agentState = state;
-        if (state == CommonEnums.AgentState.LOGOUT) {
+        if (state == Enums.AgentState.LOGOUT) {
             synchronized (this.assignedTasks) {
                 this.assignedTasks.clear();
             }
         }
-        if (state == CommonEnums.AgentState.READY) {
+        if (state == Enums.AgentState.READY) {
             this.setReadyStateChangeTime(LocalDateTime.now());
         }
     }
 
-    public CommonEnums.AgentMode getAgentMode() {
+    public List<AgentMrdState> getAgentMrdStates() {
+        return agentMrdStates;
+    }
+
+    public void setAgentMrdStates(List<AgentMrdState> agentMrdStates) {
+        this.agentMrdStates = agentMrdStates;
+    }
+
+    public Enums.AgentMode getAgentMode() {
         return agentMode;
     }
 
-    public void setAgentMode(CommonEnums.AgentMode agentMode) {
+    public void setAgentMode(Enums.AgentMode agentMode) {
         this.agentMode = agentMode;
     }
 
@@ -165,5 +187,18 @@ public class Agent {
 
     public void setReadyStateChangeTime(LocalDateTime time) {
         this.lastReadyStateChangeTime = time;
+    }
+
+    /**
+     * Converts the Agent object to CCUser object.
+     *
+     * @return the converted CCUser object
+     */
+    public CCUser toCcUser() {
+        CCUser ccUser = new CCUser();
+        ccUser.setId(this.getId());
+        ccUser.setKeycloakUser(this.keycloakUser);
+        ccUser.setAssociatedRoutingAttributes(this.associatedRoutingAttributes);
+        return ccUser;
     }
 }

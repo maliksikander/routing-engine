@@ -2,12 +2,14 @@ package com.ef.mediaroutingengine.dto;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.ChannelSession;
+import java.util.UUID;
 
 public class AssignTaskRequest {
 
     private ChannelSession channelSession;
     private CCUser ccUser;
-    private String topicId;
+    private UUID topicId;
+    private UUID taskId;
 
     public ChannelSession getChannelSession() {
         return channelSession;
@@ -25,11 +27,19 @@ public class AssignTaskRequest {
         this.ccUser = ccUser;
     }
 
-    public String getTopicId() {
+    public UUID getTopicId() {
         return topicId;
     }
 
-    public void setTopicId(String topicId) {
+    public void setTopicId(UUID topicId) {
         this.topicId = topicId;
+    }
+
+    public UUID getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(UUID taskId) {
+        this.taskId = taskId;
     }
 }

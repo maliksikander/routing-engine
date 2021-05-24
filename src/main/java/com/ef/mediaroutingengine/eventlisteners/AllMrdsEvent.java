@@ -1,8 +1,8 @@
 package com.ef.mediaroutingengine.eventlisteners;
 
-import com.ef.mediaroutingengine.model.CommonEnums;
+import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
-import com.ef.mediaroutingengine.repositories.MrdPool;
+import com.ef.mediaroutingengine.services.MrdPool;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.beans.PropertyChangeEvent;
@@ -16,7 +16,7 @@ public class AllMrdsEvent implements PropertyChangeListener {
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         try {
-            if (evt.getPropertyName().equalsIgnoreCase(CommonEnums.EventProperties.ALL_MRDS.name())) {
+            if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.ALL_MRDS.name())) {
                 LOGGER.debug("AddMrdsEvent() begin");
                 ArrayNode newValue = (ArrayNode) evt.getNewValue();
                 for (final JsonNode node : newValue) {

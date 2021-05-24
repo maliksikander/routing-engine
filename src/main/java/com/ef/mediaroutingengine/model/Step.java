@@ -1,8 +1,7 @@
 package com.ef.mediaroutingengine.model;
 
-import com.ef.mediaroutingengine.services.ExpressionUtility;
+import com.ef.mediaroutingengine.services.utilities.ExpressionUtility;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;

@@ -1,17 +1,17 @@
 package com.ef.mediaroutingengine.dto;
 
-import com.ef.mediaroutingengine.model.CommonEnums;
+import com.ef.mediaroutingengine.model.Enums;
 import java.io.Serializable;
 
 public class RedisEvent implements Serializable {
-    CommonEnums.RedisEventName name;
+    Enums.RedisEventName name;
     Object data;
 
-    public CommonEnums.RedisEventName getName() {
+    public Enums.RedisEventName getName() {
         return name;
     }
 
-    public void setName(CommonEnums.RedisEventName name) {
+    public void setName(Enums.RedisEventName name) {
         this.name = name;
     }
 

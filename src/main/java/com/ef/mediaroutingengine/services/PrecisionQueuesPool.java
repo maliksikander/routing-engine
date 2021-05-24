@@ -2,13 +2,13 @@ package com.ef.mediaroutingengine.services;
 
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.CommonEnums;
+import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.Expression;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Step;
-import com.ef.mediaroutingengine.model.TaskService;
+import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.Term;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
 import java.util.List;
@@ -74,8 +74,12 @@ public class PrecisionQueuesPool {
         return null;
     }
 
+    public PrecisionQueue findById(UUID id) {
+        return this.precisionQueues.get(id);
+    }
+
     public PrecisionQueue getDefaultQueue() {
-        return this.findByName(CommonEnums.DefaultQueue.DEFAULT_PRECISION_QUEUE.name());
+        return this.findByName(Enums.DefaultQueue.DEFAULT_PRECISION_QUEUE.name());
     }
 
     /**
@@ -173,7 +177,7 @@ public class PrecisionQueuesPool {
         }
     }
 
-    private long calculateAvgTalkTimeOf(PrecisionQueue queue, TaskService task) {
+    private long calculateAvgTalkTimeOf(PrecisionQueue queue, Task task) {
         long currentTotalTalkTime = queue.getAverageTalkTime() * queue.getNoOfTask();
         long newTotalTalkTime = currentTotalTalkTime + task.getHandlingTime();
         return newTotalTalkTime / (queue.getNoOfTask() + 1);
@@ -185,8 +189,8 @@ public class PrecisionQueuesPool {
      * @param task the task to end
      * @return true if task found and ended, false otherwise
      */
-    public boolean endTask(TaskService task) {
-        PrecisionQueue queue = findByName(task.getQueueName());
+    public boolean endTask(Task task) {
+        PrecisionQueue queue = findByName(task.getQueue().toString());
         if (queue != null) {
             if (queue.getAverageTalkTime() != null && queue.getAverageTalkTime() > 0) {
                 queue.setAverageTalkTime(calculateAvgTalkTimeOf(queue, task));
@@ -194,7 +198,7 @@ public class PrecisionQueuesPool {
                 queue.setAverageTalkTime(task.getHandlingTime());
             }
             queue.incrNoOfTask();
-            queue.endTask(task.getId());
+            queue.endTask(task.getId().toString());
             return true;
         }
         return false;

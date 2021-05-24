@@ -1,11 +1,9 @@
 package com.ef.mediaroutingengine.services.redis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +18,7 @@ public class RedisClientImpl implements RedisClient {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private final JedisPool jedisPool;
+    private static final String JSON_ROOT_PATH = ".";
 
 
     @Autowired
@@ -51,45 +50,44 @@ public class RedisClientImpl implements RedisClient {
     }
 
     @Override
-    public void setJSON(String key, Object object) throws JsonProcessingException {
-
-        String status;
-        try (Jedis conn = getConnection()) {
-
-            conn.getClient()
-                    .sendCommand(Command.SET, SafeEncoder.encodeMany(key, Path.ROOT_PATH.toString(),
-                            objectMapper.writeValueAsString(object)));
-            status = conn.getClient().getStatusCodeReply();
-        }
-        assertReplyOK(status);
-
+    public boolean setJson(String key, Object object) {
+        return this.setJson(key, JSON_ROOT_PATH, object);
     }
 
     @Override
-    public <T> T getJSON(String key, Class<T> clazz) throws JsonProcessingException {
-
-        String response = null;
+    public boolean setJson(String key, String path, Object object) {
         try (Jedis conn = getConnection()) {
-            conn.getClient().sendCommand(Command.GET,
-                    SafeEncoder.encodeMany(key, Path.ROOT_PATH.toString()));
-            response = conn.getClient().getBulkReply();
+            String value = objectMapper.writeValueAsString(object);
+            conn.getClient().sendCommand(Command.SET, SafeEncoder.encodeMany(key, path, value));
+            String status = conn.getClient().getStatusCodeReply();
+            assertReplyOK(status);
+            return true;
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
-        if (response != null) {
-            assertReplyNotError(response);
-            TypeReference<HashMap<String, String>> typeRef = new TypeReference<HashMap<String, String>>() {
-            };
-            return objectMapper.readValue(response, clazz);
-        } else {
-            return null;
+        return false;
+    }
+
+    @Override
+    public <T> T getJson(String key, Class<T> clazz) {
+        try (Jedis conn = getConnection()) {
+            conn.getClient().sendCommand(Command.GET, SafeEncoder.encodeMany(key, JSON_ROOT_PATH));
+            String response = conn.getClient().getBulkReply();
+            if (response != null) {
+                assertReplyNotError(response);
+                return objectMapper.readValue(response, clazz);
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
+        return null;
     }
 
     @Override
     public <T> List<T> getJsonArray(String key, Class<T> clazz) throws JsonProcessingException {
         String response = null;
         try (Jedis conn = getConnection()) {
-            conn.getClient().sendCommand(Command.GET,
-                    SafeEncoder.encodeMany(key, Path.ROOT_PATH.toString()));
+            conn.getClient().sendCommand(Command.GET, SafeEncoder.encodeMany(key, JSON_ROOT_PATH));
             response = conn.getClient().getBulkReply();
         }
         if (response != null) {
@@ -102,29 +100,28 @@ public class RedisClientImpl implements RedisClient {
     }
 
     @Override
-    public <T> List<T> mgetJSON(Class<T> clazz, String... keys) throws JsonProcessingException {
-
-        List<String> objectsList = null;
+    public <T> List<T> multiGetJson(Class<T> clazz, String... keys) {
         List<T> responseList = new ArrayList<>();
         try (Jedis conn = getConnection()) {
+            String keysString = String.join(" ", keys);
+            conn.getClient().sendCommand(Command.MGET, SafeEncoder.encodeMany(keysString, "."));
+            List<String> objectsList = conn.getClient().getMultiBulkReply();
 
-            conn.getClient().sendCommand(Command.MGET, SafeEncoder.encodeMany(keys));
-            objectsList = conn.getClient().getMultiBulkReply();
-        }
-
-        if (objectsList != null && !objectsList.isEmpty()) {
-            for (String object : objectsList) {
-                responseList.add(objectMapper.readValue(object, clazz));
+            if (objectsList != null) {
+                for (String object : objectsList) {
+                    responseList.add(objectMapper.readValue(object, clazz));
+                }
             }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
         return responseList;
     }
 
     @Override
-    public Long delJSON(String key) {
+    public Long delJson(String key) {
         try (Jedis conn = getConnection()) {
-            conn.getClient().sendCommand(Command.DEL,
-                    SafeEncoder.encodeMany(key, Path.ROOT_PATH.toString()));
+            conn.getClient().sendCommand(Command.DEL, SafeEncoder.encodeMany(key, JSON_ROOT_PATH));
             return conn.getClient().getIntegerReply();
         }
     }
@@ -201,133 +198,4 @@ public class RedisClientImpl implements RedisClient {
             return raw;
         }
     }
-
-//    @Override
-//    public void setJSON(String key, Object object ) {
-//
-//
-//        List<byte[]> args = new ArrayList<>(4);
-//
-//        args.add(SafeEncoder.encode(key));
-//        args.add(SafeEncoder.encode(Path.ROOT_PATH.toString()));
-//        args.add(SafeEncoder.encode(gson.toJson(object)));
-//        String status;
-//        try (Jedis conn = getConnection()) {
-//            conn.getClient()
-//                    .sendCommand(Command.SET, args.toArray(new byte[args.size()][]));
-//            status = conn.getClient().getStatusCodeReply();
-//        }
-//        assertReplyOK(status);
-//
-//    }
-//
-//    @Override
-//    public <T> T getJSON(String key, Class<T> clazz) {
-//        return null;
-//    }
-//
-//    @Override
-//    public <T> List<T> mgetJSON(String... keys) {
-//        return null;
-//    }
-//
-//
-//    @Override
-//    public <T> T getJSON(String key, Class<T> clazz, Path... paths) {
-//
-//        byte[][] args = new byte[1 + paths.length][];
-//        int i=0;
-//        args[i] = SafeEncoder.encode(key);
-//        for (Path p :paths) {
-//            args[++i] = SafeEncoder.encode(p.toString());
-//        }
-//
-//        String rep;
-//        try (Jedis conn = getConnection()) {
-//            conn.getClient().sendCommand(Command.GET, args);
-//            rep = conn.getClient().getBulkReply();
-//        }
-//
-//        if(rep!=null){
-//            assertReplyNotError(rep);
-//            return gson.fromJson(rep, clazz);
-//        }
-//        else
-//            return null;
-//    }
-//
-////    @Override
-////    public Long del(String key) {
-////        Long rep;
-////        try (Jedis conn = getConnection()) {
-////            rep=conn.del(key);
-////        }
-////        return rep;
-////    }
-//
-//    @Override
-//    public Long delJSON(String key) {
-//
-//        byte[][] args = new byte[2][];
-//        args[0] = SafeEncoder.encode(key);
-//        args[1] = SafeEncoder.encode(Path.ROOT_PATH.toString());
-//
-//        try (Jedis conn = getConnection()) {
-//            conn.getClient().sendCommand(Command.DEL, args);
-//            return conn.getClient().getIntegerReply();
-//        }
-//    }
-//
-//    @Override
-//    public void SADD(String key, String member) {
-//
-//    }
-//
-//    @Override
-//    public Set<String> SMEMBERS(String key) {
-//        return null;
-//    }
-//
-//    @Override
-//    public void SREM(String key, String... member) {
-//
-//    }
-//
-//    private Jedis getConnection() {
-//        return this.jedisPool.getResource();
-//    }
-//
-//    /**
-//     * Existential modifier for the set command, by default we don't care
-//     */
-//    private enum ExistenceModifier implements ProtocolCommand {
-//        DEFAULT(""),
-//        NOT_EXISTS("NX"),
-//        MUST_EXIST("XX");
-//        private final byte[] raw;
-//
-//        ExistenceModifier(String alt) {
-//            raw = SafeEncoder.encode(alt);
-//        }
-//
-//        public byte[] getRaw() {
-//            return raw;
-//        }
-//    }
-//
-//    private enum Command implements ProtocolCommand {
-//        DEL("JSON.DEL"),
-//        GET("JSON.GET"),
-//        SET("JSON.SET"),
-//        TYPE("JSON.TYPE");
-//        private final byte[] raw;
-//
-//        Command(String alt) {
-//            raw = SafeEncoder.encode(alt);
-//        }
-//
-//        public byte[] getRaw() {
-//            return raw;
-//        }
-//    }
 }

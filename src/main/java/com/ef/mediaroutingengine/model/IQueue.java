@@ -1,9 +1,9 @@
 package com.ef.mediaroutingengine.model;
 
 public interface IQueue {
-    boolean enqueue(TaskService task);
+    boolean enqueue(Task task);
 
-    TaskService dequeue();
+    Task dequeue();
 
     void printQueue();
 

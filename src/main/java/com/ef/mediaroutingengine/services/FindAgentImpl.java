@@ -29,7 +29,7 @@ public class FindAgentImpl implements FindAgent {
         if (flag) {
             try {
                 String key = "agentPresence:8d42617c-0603-4fbe-9863-2507c0fff9fd";
-                return this.redisClient.getJSON(key, AgentPresence.class).getAgent();
+                return this.redisClient.getJson(key, AgentPresence.class).getAgent();
             } catch (Exception e) {
                 System.out.println("find agent exception starts");
                 System.out.println(e.getMessage());

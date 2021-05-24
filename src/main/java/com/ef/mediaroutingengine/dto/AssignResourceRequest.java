@@ -1,19 +1,11 @@
 package com.ef.mediaroutingengine.dto;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import java.util.UUID;
 
 public class AssignResourceRequest {
-
-    String topicId;
-    ChannelSession channelSession;
-
-    public String getTopicId() {
-        return topicId;
-    }
-
-    public void setTopicId(String topicId) {
-        this.topicId = topicId;
-    }
+    private ChannelSession channelSession;
+    private UUID queue;
 
     public ChannelSession getChannelSession() {
         return channelSession;
@@ -21,5 +13,21 @@ public class AssignResourceRequest {
 
     public void setChannelSession(ChannelSession channelSession) {
         this.channelSession = channelSession;
+    }
+
+    public UUID getQueue() {
+        return queue;
+    }
+
+    public void setQueue(UUID queue) {
+        this.queue = queue;
+    }
+
+    @Override
+    public String toString() {
+        return "AssignResourceRequest{"
+                + "channelSession=" + channelSession
+                + ", queue=" + queue
+                + '}';
     }
 }

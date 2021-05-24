@@ -28,7 +28,7 @@ public class AssignResourceController {
     @PostMapping(value = "/assign-resource", consumes = "application/json",
             produces = "application/json")
     public ResponseEntity<String> assignResource(@RequestBody AssignResourceRequest request) {
-        CompletableFuture.runAsync(() -> this.assignResourceService.assignResource(request));
+        CompletableFuture.runAsync(() -> this.assignResourceService.assign(request));
         return new ResponseEntity<>("The request is received Successfully", HttpStatus.OK);
     }
 }

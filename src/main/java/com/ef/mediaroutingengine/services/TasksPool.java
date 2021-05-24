@@ -1,14 +1,14 @@
 package com.ef.mediaroutingengine.services;
 
-import com.ef.mediaroutingengine.eventlisteners.DispatchSelectedAgent;
-import com.ef.mediaroutingengine.eventlisteners.NewTaskEvent;
-import com.ef.mediaroutingengine.eventlisteners.TaskStateEvent;
+import com.ef.cim.objectmodel.ChannelConfig;
+import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.mediaroutingengine.dto.AssignResourceRequest;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.CommonEnums;
+import com.ef.mediaroutingengine.model.Enums;
+import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
-import com.ef.mediaroutingengine.model.TaskService;
+import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.Tuple;
-import com.ef.mediaroutingengine.repositories.PriorityLabelsPool;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -16,21 +16,21 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TaskServiceManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TaskServiceManager.class);
+public class TasksPool {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TasksPool.class);
 
     private final PrecisionQueuesPool precisionQueuesPool;
-    private final List<TaskService> allTasks;
+    private final MrdPool mrdPool;
+    private final List<Task> allTasks;
 
-    private final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
-    private final List<PropertyChangeListener> listeners;
+    private final PropertyChangeSupport changeSupport;
     private final List<String> changeSupportPrecisionQueueListeners = new LinkedList<>();
 
     /**
@@ -39,33 +39,19 @@ public class TaskServiceManager {
      * @param precisionQueuesPool pool of all precision queues.
      */
     @Autowired
-    public TaskServiceManager(PrecisionQueuesPool precisionQueuesPool) {
+    public TasksPool(PrecisionQueuesPool precisionQueuesPool, MrdPool mrdPool) {
         this.precisionQueuesPool = precisionQueuesPool;
-        this.listeners = new LinkedList<>();
-        allTasks = new LinkedList<>();
-        this.initialize();
-    }
+        this.mrdPool = mrdPool;
+        this.allTasks = new LinkedList<>();
 
-    @Lookup
-    public TaskStateEvent getTaskStateEvent() {
-        return null;
-    }
-
-    private void initialize() {
-        listeners.add(new NewTaskEvent());
-        listeners.add(new DispatchSelectedAgent());
-        listeners.add(getTaskStateEvent());
-
-        for (PropertyChangeListener listener : this.listeners) {
-            this.changeSupport.addPropertyChangeListener(listener);
-        }
+        this.changeSupport = new PropertyChangeSupport(this);
     }
 
     /**
      * Adds a property change listener, which will listen to property changes of this object.
      *
      * @param listener the property change listener object
-     * @param name the name of the listener
+     * @param name     the name of the listener
      */
     public void addPropertyChangeListener(PropertyChangeListener listener, String name) {
         if (!this.changeSupportPrecisionQueueListeners.contains(name)) {
@@ -83,9 +69,9 @@ public class TaskServiceManager {
      * Dispatches agent to the relevant component after Agent is reserved.
      *
      * @param agent the agent to dispatch
-     * @param task the task assigned to the agent
+     * @param task  the task assigned to the agent
      */
-    public void dispatchSelectedAgent(Agent agent, TaskService task) {
+    public void dispatchSelectedAgent(Agent agent, Task task) {
         // Implementation to be completed with respect to new design
         // Dispatching event, Dispatched with event: "TaskAgentSelected" to jms communicator
         // Agent-reserved according to new design.
@@ -95,11 +81,11 @@ public class TaskServiceManager {
     /**
      * Transfer a task from one agent to another.
      *
-     * @param agent the agent the task is being transferred to
+     * @param agent         the agent the task is being transferred to
      * @param previousAgent the previous agent who was handling the task
-     * @param task the task being transferred
+     * @param task          the task being transferred
      */
-    public void transferTask(Agent agent, Agent previousAgent, TaskService task) {
+    public void transferTask(Agent agent, Agent previousAgent, Task task) {
         // Implementation to be completed with respect to new design
         // Dispatching event to either bot-framework or Agent-manager
         LOGGER.info("Transferring Task: {} from agent: {} to agent: {}",
@@ -110,16 +96,16 @@ public class TaskServiceManager {
      * Rejects transferring of task to another agent.
      *
      * @param agent the agent the task was intended to transfer to
-     * @param task the task in use
+     * @param task  the task in use
      */
-    public void transferReject(Agent agent, TaskService task) {
+    public void transferReject(Agent agent, Task task) {
         // Implementation to be completed with respect to new design
         // Dispatching event to either bot-framework or Agent-manager
         LOGGER.info("Transferring task: {} to agent: {} rejected", task.getId(), agent.getId());
     }
 
-    public void addTaskDuringStateRestore(TaskService taskService) {
-        this.allTasks.add(taskService);
+    public void addTaskDuringStateRestore(Task task) {
+        this.allTasks.add(task);
     }
 
     private Tuple<Integer, String> getPriorityTupleFrom(JsonNode node) {
@@ -148,90 +134,87 @@ public class TaskServiceManager {
         return new Tuple<>(priority, selectedPriorityLabel);
     }
 
-    private boolean contains(TaskService task) {
-        for (TaskService element : this.allTasks) {
-            if (element.getId().equalsIgnoreCase(task.getId())) {
+    private boolean contains(Task task) {
+        for (Task element : this.allTasks) {
+            if (element.getId().equals(task.getId())) {
                 return true;
             }
         }
         return false;
     }
 
-    private void add(TaskService task) {
+    private void add(Task task) {
         if (!this.contains(task)) {
             this.allTasks.add(task);
         }
     }
 
-    private TaskService createTaskInstanceFrom(JsonNode node) {
-        String taskId = node.get("TaskId").textValue();
-        String mrdName = node.get("MRD").textValue();
-        Tuple<Integer, String> priorityTuple = this.getPriorityTupleFrom(node);
-        JsonNode params = node.get("Params");
-        String lastAssignedAgentId = params.has("agent") ? params.get("agent").textValue() : "";
-        String conversationId = params.has("chatId") ? params.get("chatId").textValue() : "";
+    private MediaRoutingDomain getMediaRoutingDomainFrom(AssignResourceRequest request) {
+        ChannelSession channelSession = request.getChannelSession();
+        UUID mrdId = channelSession.getChannel().getChannelConnector().getChannelType().getMediaRoutingDomain();
+        return this.mrdPool.getMrd(mrdId.toString());
+    }
 
-        return new TaskService(taskId, "", mrdName, priorityTuple.first, priorityTuple.second,
-                lastAssignedAgentId, conversationId);
+    private Task createTaskInstanceFrom(AssignResourceRequest request, PrecisionQueue queue) {
+        MediaRoutingDomain mrd = this.getMediaRoutingDomainFrom(request);
+        return new Task(request.getChannelSession(), mrd, queue, "");
+    }
+
+    private PrecisionQueue getPrecisionQueueFrom(AssignResourceRequest request) {
+        PrecisionQueue queue = this.precisionQueuesPool.findById(request.getQueue());
+        // If skill group queue not found, use default queue
+        if (queue == null) {
+            ChannelConfig channelConfig = request.getChannelSession().getChannel().getChannelConfig();
+            queue = this.precisionQueuesPool.findById(channelConfig.getRoutingPolicy().getDefaultQueue());
+        }
+        return queue;
     }
 
     /**
      * Adds a new task in the tasks pool and enqueue it in the relevant precision queue.
      *
-     * @param node Json object containing data to add a new task.
+     * @param request request object to assign agent.
      */
-    public void enqueueNewTask(JsonNode node) {
-        TaskService task = this.createTaskInstanceFrom(node);
+    public void enqueueNewTask(AssignResourceRequest request) {
+        PrecisionQueue queue = this.getPrecisionQueueFrom(request);
+        Task task = this.createTaskInstanceFrom(request, queue);
+
         this.add(task);
-
-        String queueName = node.get("Params").get("skillgroup").textValue();
-        PrecisionQueue queue = this.precisionQueuesPool.findByName(queueName);
-
-        // If skill group queue not found, use default queue
-        if (queue == null) {
-            queueName = CommonEnums.DefaultQueue.DEFAULT_PRECISION_QUEUE.name();
-            queue = this.precisionQueuesPool.findByName(queueName);
-        }
         queue.enqueue(task);
-
-        task.setQueueName(queueName);
         task.setTimeouts(queue.getTimeouts());
-        this.changeSupport.firePropertyChange(CommonEnums.IncomingMsgType.NEW_TASK.name(), null, task);
+
+        this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
     }
 
     /**
      * Enqueues a transfer task in the default precision queue.
      *
-     * @param taskService the task being enqueued
+     * @param task the task being enqueued
      */
-    public void enqueueTransferTask(TaskService taskService) {
-        this.precisionQueuesPool.getDefaultQueue().enqueue(taskService);
-        String eventName = CommonEnums.IncomingMsgType.NEW_TASK.name();
-        this.changeSupport.firePropertyChange(eventName, null, taskService);
-    }
-
-    public void changeTaskState(JsonNode node) {
-        this.changeSupport.firePropertyChange(CommonEnums.IncomingMsgType.TASK_STATE.name(), null, node);
+    public void enqueueTransferTask(Task task) {
+        this.precisionQueuesPool.getDefaultQueue().enqueue(task);
+        String eventName = Enums.EventName.NEW_TASK.name();
+        this.changeSupport.firePropertyChange(eventName, null, task);
     }
 
     public void conferenceChat(JsonNode node) {
-        this.changeSupport.firePropertyChange(CommonEnums.IncomingMsgType.CONFERENCE.name(), null, node);
+        this.changeSupport.firePropertyChange(Enums.EventName.CONFERENCE.name(), null, node);
     }
 
     /**
      * Handles the conference of two agents on a task.
      *
-     * @param agent main agent assigned to the task
+     * @param agent            main agent assigned to the task
      * @param participantAgent new agent being added to handle the task
-     * @param task the task being handled
+     * @param task             the task being handled
      */
-    public void conference(Agent agent, Agent participantAgent, TaskService task) {
+    public void conference(Agent agent, Agent participantAgent, Task task) {
         // Dispatcher event. Published message "TaskConferenced" on communicator
         // To be implemented in the new design.
         LOGGER.debug("Conference method called");
     }
 
-    public List<TaskService> getAllTasks() {
+    public List<Task> getAllTasks() {
         return this.allTasks;
     }
 
@@ -241,9 +224,9 @@ public class TaskServiceManager {
      * @param taskId id of the task to find
      * @return TaskService object if found, null otherwise
      */
-    public TaskService getTask(String taskId) {
-        for (TaskService task : this.allTasks) {
-            if (task.getId().equalsIgnoreCase(taskId)) {
+    public Task getTask(UUID taskId) {
+        for (Task task : this.allTasks) {
+            if (task.getId().equals(taskId)) {
                 return task;
             }
         }
@@ -256,9 +239,9 @@ public class TaskServiceManager {
      * @param conversationId the conversation-id to serch task by
      * @return task if found, null otherwise
      */
-    public TaskService getTaskByConversationId(String conversationId) {
-        for (TaskService task : this.allTasks) {
-            if (task.getConversationId().equalsIgnoreCase(conversationId)) {
+    public Task getTaskByConversationId(UUID conversationId) {
+        for (Task task : this.allTasks) {
+            if (task.getTopicId().equals(conversationId)) {
                 return task;
             }
         }
@@ -274,8 +257,8 @@ public class TaskServiceManager {
     public boolean removeTask(String taskId) {
         LOGGER.debug("Going to remove task: {}", taskId);
         boolean result = false;
-        for (TaskService task : this.allTasks) {
-            if (task.getId().equalsIgnoreCase(taskId)) {
+        for (Task task : this.allTasks) {
+            if (task.getId().equals(taskId)) {
                 this.allTasks.remove(task);
                 result = true;
                 break;
