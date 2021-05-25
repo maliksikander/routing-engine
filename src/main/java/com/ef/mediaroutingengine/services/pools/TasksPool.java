@@ -127,7 +127,7 @@ public class TasksPool {
 
     private Task createTaskInstanceFrom(AssignResourceRequest request, PrecisionQueue queue) {
         MediaRoutingDomain mrd = this.getMediaRoutingDomainFrom(request);
-        return new Task(request.getChannelSession(), mrd, queue, "");
+        return new Task(request.getChannelSession(), mrd, queue);
     }
 
     private PrecisionQueue getPrecisionQueueFrom(AssignResourceRequest request) {

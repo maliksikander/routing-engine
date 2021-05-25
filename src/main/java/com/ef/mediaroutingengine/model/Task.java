@@ -22,7 +22,6 @@ public class Task implements Serializable {
     private final ChannelSession channelSession;
     private final MediaRoutingDomain mrd;
     private final PrecisionQueue queue;
-    private final String selectedPriorityLabel;
 
     private int priority;
     private Enums.TaskState taskState;
@@ -43,17 +42,14 @@ public class Task implements Serializable {
      *
      * @param channelSession the channel session in request
      * @param mrd            associated media routing domain
-     * @param priorityLabel  priority label
      */
-    public Task(ChannelSession channelSession, MediaRoutingDomain mrd, PrecisionQueue queue,
-                String priorityLabel) {
+    public Task(ChannelSession channelSession, MediaRoutingDomain mrd, PrecisionQueue queue) {
         this.id = UUID.randomUUID();
         this.channelSession = channelSession;
         this.mrd = mrd;
         this.queue = queue;
-        this.selectedPriorityLabel = priorityLabel;
 
-        this.priority = channelSession.getChannelData().getRequestPriority();
+        this.priority = 10; // Right now hardcoded at highest priority level
         this.taskState = Enums.TaskState.CREATED;
         this.enqueueTime = System.currentTimeMillis();
         this.timer = new Timer();
@@ -79,10 +75,6 @@ public class Task implements Serializable {
 
     public PrecisionQueue getQueue() {
         return this.queue;
-    }
-
-    public String getSelectedPriorityLabel() {
-        return selectedPriorityLabel;
     }
 
     public int getPriority() {
