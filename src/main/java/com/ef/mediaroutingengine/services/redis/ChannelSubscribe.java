@@ -5,7 +5,7 @@ import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.eventlisteners.TaskStateEvent;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.Enums;
-import com.ef.mediaroutingengine.services.AgentsPool;
+import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.beans.PropertyChangeSupport;

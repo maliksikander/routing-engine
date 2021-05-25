@@ -1,9 +1,6 @@
 package com.ef.mediaroutingengine.services.queue;
 
-import com.ef.mediaroutingengine.model.Pair;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.services.PriorityLabelsPool;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -203,42 +200,6 @@ public class PriorityQueue {
         for (Task task : taskList) {
             this.enqueue(task);
         }
-    }
-
-    /**
-     * Returns the label stats of the queue.
-     *
-     * @return map of label stats
-     */
-    public Map<String, Pair> getLabelStats() {
-        Map<String, Integer> labelStats = new HashMap<>();
-        for (int i = this.noOfQueueLevels; i >= 1; i--) {
-            for (Iterator<?> it = this.multiLevelQueueMap.get(i).iterator(); it.hasNext(); ) {
-                String selectedPriorityLabel = ((Task) it.next()).getSelectedPriorityLabel();
-                if ("".equalsIgnoreCase(selectedPriorityLabel)) {
-                    continue;
-                }
-                if (labelStats.containsKey(selectedPriorityLabel)) {
-                    labelStats.put(selectedPriorityLabel, (labelStats.get(selectedPriorityLabel).intValue()) + 1);
-                } else {
-                    labelStats.put(selectedPriorityLabel, 1);
-                }
-            }
-        }
-        Map<String, Pair> labelsAndMaxTimeStats = new HashMap<>();
-        for (Map.Entry entry : labelStats.entrySet()) {
-            labelsAndMaxTimeStats.put(entry.getKey().toString(),
-                    new Pair(
-                            entry.getValue(),
-                            (this.multiLevelQueueMap.get(PriorityLabelsPool.getInstance()
-                                    .getPriorityLabel(entry.getKey().toString().toUpperCase())
-                                    .getPriority()).peek() != null) ? (System.currentTimeMillis()
-                                    - this.multiLevelQueueMap.get(PriorityLabelsPool.getInstance()
-                                    .getPriorityLabel(entry.getKey().toString().toUpperCase())
-                                    .getPriority()).peek().getEnqueueTime()) : 0
-                    ));
-        }
-        return labelsAndMaxTimeStats;
     }
 
     /**

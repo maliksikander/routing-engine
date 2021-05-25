@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.mediaroutingengine.dto.AssignResourceRequest;
-import com.ef.mediaroutingengine.services.TasksPool;
+import com.ef.mediaroutingengine.services.pools.TasksPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

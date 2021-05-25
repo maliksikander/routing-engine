@@ -3,7 +3,7 @@ package com.ef.mediaroutingengine.controllers;
 import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.services.TasksPool;
+import com.ef.mediaroutingengine.services.pools.TasksPool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;

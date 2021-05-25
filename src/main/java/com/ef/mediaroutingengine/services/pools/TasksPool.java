@@ -1,4 +1,4 @@
-package com.ef.mediaroutingengine.services;
+package com.ef.mediaroutingengine.services.pools;
 
 import com.ef.cim.objectmodel.ChannelConfig;
 import com.ef.cim.objectmodel.ChannelSession;
@@ -8,14 +8,11 @@ import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.model.Tuple;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,10 +41,6 @@ public class TasksPool {
         this.mrdPool = mrdPool;
         this.allTasks = new LinkedList<>();
         this.changeSupport = new PropertyChangeSupport(this);
-    }
-
-    public void addTask(Task task) {
-        this.allTasks.add(task);
     }
 
     /**
@@ -109,32 +102,6 @@ public class TasksPool {
 
     public void addTaskDuringStateRestore(Task task) {
         this.allTasks.add(task);
-    }
-
-    private Tuple<Integer, String> getPriorityTupleFrom(JsonNode node) {
-        JsonNode params = node.get("Params");
-        int priority = Integer.parseInt(node.get("Priority").toString());
-        String selectedPriorityLabel = "";
-
-        if (priority == 0 && params != null) {
-            Iterator<Map.Entry<String, JsonNode>> paramsIterator = params.fields();
-            while (paramsIterator.hasNext()) {
-                Map.Entry<String, JsonNode> jsonNode = paramsIterator.next();
-                if (jsonNode.getKey().equalsIgnoreCase("labels")) {
-                    String[] labelsList = jsonNode.getValue().textValue().split(",");
-                    for (String label : labelsList) {
-                        PriorityLabelsPool pool = PriorityLabelsPool.getInstance();
-                        label = label.toUpperCase();
-                        if (pool.contains(label) && pool.getPriority(label) > priority) {
-                            priority = pool.getPriority(label);
-                            selectedPriorityLabel = label;
-                        }
-                    }
-                }
-            }
-        }
-
-        return new Tuple<>(priority, selectedPriorityLabel);
     }
 
     private boolean contains(Task task) {

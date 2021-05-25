@@ -6,7 +6,7 @@ import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
-import com.ef.mediaroutingengine.services.PrecisionQueuesPool;
+import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

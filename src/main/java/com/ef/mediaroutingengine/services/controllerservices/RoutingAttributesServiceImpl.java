@@ -12,7 +12,7 @@ import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
-import com.ef.mediaroutingengine.services.PrecisionQueuesPool;
+import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;

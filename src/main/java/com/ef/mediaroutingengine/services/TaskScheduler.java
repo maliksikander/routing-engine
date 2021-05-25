@@ -7,6 +7,8 @@ import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.Step;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.services.pools.AgentsPool;
+import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.redis.TaskDao;
 import com.ef.mediaroutingengine.services.utilities.RestRequest;
 import java.beans.PropertyChangeEvent;
