@@ -118,8 +118,8 @@ public class TaskScheduler implements PropertyChangeListener {
     }
 
     private void assign(Task task) {
-        boolean assignedToLastAssignedAgent = this.assignToLastAssignedAgent(task);
-
+//        boolean assignedToLastAssignedAgent = this.assignToLastAssignedAgent(task);
+        boolean assignedToLastAssignedAgent = false;
         if (!assignedToLastAssignedAgent) {
             boolean isReserved = false;
 
