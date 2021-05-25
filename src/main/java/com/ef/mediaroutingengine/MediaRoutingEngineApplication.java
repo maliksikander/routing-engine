@@ -2,6 +2,8 @@ package com.ef.mediaroutingengine;
 
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.ChannelData;
+import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.RoutingAttributeType;
@@ -11,6 +13,8 @@ import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.model.AgentPresence;
 import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
+import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.services.TasksPool;
 import com.ef.mediaroutingengine.services.redis.ChannelSubscribe;
 import com.ef.mediaroutingengine.services.redis.RedisClient;
 import java.sql.Timestamp;
@@ -31,6 +35,7 @@ public class MediaRoutingEngineApplication {
      */
     public static void main(String[] args) {
         ApplicationContext applicationContext = SpringApplication.run(MediaRoutingEngineApplication.class, args);
+
         ChannelSubscribe channelSubscribe = applicationContext.getBean(ChannelSubscribe.class);
         JedisPool jedisPool = applicationContext.getBean(JedisPool.class);
 

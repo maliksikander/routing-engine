@@ -43,8 +43,11 @@ public class TasksPool {
         this.precisionQueuesPool = precisionQueuesPool;
         this.mrdPool = mrdPool;
         this.allTasks = new LinkedList<>();
-
         this.changeSupport = new PropertyChangeSupport(this);
+    }
+
+    public void addTask(Task task) {
+        this.allTasks.add(task);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.model;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 import javax.validation.constraints.NotNull;
@@ -8,7 +9,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(value = "mediaRoutingDomains")
-public class MediaRoutingDomain {
+public class MediaRoutingDomain implements Serializable {
 
     @Id
     private UUID id;

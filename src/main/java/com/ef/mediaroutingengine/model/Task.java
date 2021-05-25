@@ -6,6 +6,7 @@ import com.ef.mediaroutingengine.eventlisteners.EwtRequestEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -14,7 +15,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Task {
+public class Task implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(Task.class);
 
     private final UUID id;
@@ -223,8 +224,7 @@ public class Task {
     @Override
     public String toString() {
         String result = "";
-        result = "TaskId: " + this.id + ", MRD: " + this.mrd + ", Customer Name: " + this.getCustomerName()
-                + ", Priority: " + this.getPriority();
+        result = "TaskId: " + this.id + ", MRD: " + this.mrd + ", Priority: " + this.getPriority();
         return result;
     }
 

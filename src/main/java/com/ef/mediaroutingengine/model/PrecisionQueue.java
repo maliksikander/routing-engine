@@ -2,13 +2,14 @@ package com.ef.mediaroutingengine.model;
 
 import com.ef.mediaroutingengine.services.TaskScheduler;
 import com.ef.mediaroutingengine.services.queue.PriorityQueue;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PrecisionQueue implements IQueue {
+public class PrecisionQueue implements IQueue, Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrecisionQueue.class);
     private UUID id;
     private String name;
