@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.eventlisteners;
 import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
@@ -42,18 +43,20 @@ public class TaskStateEvent implements PropertyChangeListener {
             try {
                 TaskDto taskDto = (TaskDto) evt.getNewValue();
                 Task task = tasksPool.getTask(taskDto.getId());
-                Enums.TaskState state = taskDto.getState();
 
-                switch (state) {
+                Enums.TaskStateName stateName = taskDto.getState().getName();
+                String stateReasonCode = taskDto.getState().getReasonCode();
+
+                switch (stateName) {
                     case CREATED:
                     case QUEUED:
                     case RESERVED:
                     case PAUSED:
                     case WRAP_UP:
-                        task.setTaskState(state);
+                        task.setTaskState(new TaskState(stateName, stateReasonCode));
                         break;
                     case ACTIVE:
-                        task.setTaskState(state);
+                        task.setTaskState(new TaskState(stateName, stateReasonCode));
                         task.setStartTime(System.currentTimeMillis());
                         break;
                     case CLOSED:

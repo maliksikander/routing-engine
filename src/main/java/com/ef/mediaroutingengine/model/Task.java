@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.model;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.eventlisteners.DispatchEWT;
 import com.ef.mediaroutingengine.eventlisteners.EwtRequestEvent;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -21,10 +22,10 @@ public class Task implements Serializable {
     private final UUID id;
     private final ChannelSession channelSession;
     private final MediaRoutingDomain mrd;
-    private final PrecisionQueue queue;
+    private final UUID queue;
 
     private int priority;
-    private Enums.TaskState taskState;
+    private TaskState state;
     private UUID assignedTo;
 
     private final Long enqueueTime;
@@ -43,17 +44,38 @@ public class Task implements Serializable {
      * @param channelSession the channel session in request
      * @param mrd            associated media routing domain
      */
-    public Task(ChannelSession channelSession, MediaRoutingDomain mrd, PrecisionQueue queue) {
+    public Task(ChannelSession channelSession, MediaRoutingDomain mrd, UUID queue) {
         this.id = UUID.randomUUID();
         this.channelSession = channelSession;
         this.mrd = mrd;
         this.queue = queue;
 
         this.priority = 10; // Right now hardcoded at highest priority level
-        this.taskState = Enums.TaskState.CREATED;
+        this.state = new TaskState(Enums.TaskStateName.CREATED, "");
         this.enqueueTime = System.currentTimeMillis();
         this.timer = new Timer();
 
+        this.changeSupport = new PropertyChangeSupport(this);
+        this.changeSupport.addPropertyChangeListener(new DispatchEWT());
+        this.changeSupport.addPropertyChangeListener(new EwtRequestEvent());
+    }
+
+    /**
+     * Constructor. build object from TaskDto Object.
+     * @param taskDto build object from this dto.
+     */
+    public Task(TaskDto taskDto) {
+        this.id = taskDto.getId();
+        this.channelSession = taskDto.getChannelSession();
+        this.mrd = taskDto.getMrd();
+        this.queue = taskDto.getQueue();
+
+        this.priority = taskDto.getPriority();
+        this.state = taskDto.getState();
+        this.assignedTo = taskDto.getAssignedTo();
+        this.enqueueTime = taskDto.getEnqueueTime();
+
+        this.timer = new Timer();
         this.changeSupport = new PropertyChangeSupport(this);
         this.changeSupport.addPropertyChangeListener(new DispatchEWT());
         this.changeSupport.addPropertyChangeListener(new EwtRequestEvent());
@@ -73,7 +95,7 @@ public class Task implements Serializable {
         return this.mrd;
     }
 
-    public PrecisionQueue getQueue() {
+    public UUID getQueue() {
         return this.queue;
     }
 
@@ -85,12 +107,12 @@ public class Task implements Serializable {
         this.priority = priority;
     }
 
-    public Enums.TaskState getTaskState() {
-        return this.taskState;
+    public TaskState getTaskState() {
+        return this.state;
     }
 
-    public void setTaskState(Enums.TaskState state) {
-        this.taskState = state;
+    public void setTaskState(TaskState state) {
+        this.state = state;
     }
 
     public UUID getAssignedTo() {

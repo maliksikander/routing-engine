@@ -3,7 +3,6 @@ package com.ef.mediaroutingengine.services.pools;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -11,29 +10,21 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AgentsPool {
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentsPool.class);
-
-    private final AgentsRepository agentsRepository;
-    private final Map<UUID, Agent> agents;
-
-    @Autowired
-    public AgentsPool(AgentsRepository agentsRepository) {
-        this.agentsRepository = agentsRepository;
-        agents = new ConcurrentHashMap<>();
-    }
+    private final Map<UUID, Agent> agents = new ConcurrentHashMap<>();
 
     /**
-     * Loads All agents from DB into Agents pool in ram.
+     * Loads the pool at start of the application.
+     *
+     * @param ccUsers list of CCUsers from the config DB.
      */
-    public void loadFromDb() {
+    public void loadPoolFrom(List<CCUser> ccUsers) {
         this.agents.clear();
-        List<CCUser> ccUsers = agentsRepository.findAll();
-        for (CCUser ccUser: ccUsers) {
+        for (CCUser ccUser : ccUsers) {
             this.agents.put(ccUser.getId(), new Agent(ccUser));
         }
     }
@@ -91,5 +82,9 @@ public class AgentsPool {
         List<Agent> agentList = new ArrayList<>();
         this.agents.forEach((k, v) -> agentList.add(v));
         return agentList;
+    }
+
+    public int size() {
+        return this.agents.size();
     }
 }

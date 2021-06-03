@@ -1,16 +1,10 @@
 package com.ef.mediaroutingengine.services.pools;
 
-import com.ef.cim.objectmodel.RoutingAttribute;
-import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.Enums;
-import com.ef.mediaroutingengine.model.Expression;
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
-import com.ef.mediaroutingengine.model.Step;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.model.Term;
-import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
+import com.ef.mediaroutingengine.services.TaskScheduler;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -25,38 +20,32 @@ public class PrecisionQueuesPool {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrecisionQueuesPool.class);
 
     private final AgentsPool agentsPool;
-    private final PrecisionQueueEntityRepository pqRepository;
-
     private final Map<UUID, PrecisionQueue> precisionQueues;
 
     /**
      * Constructor. Autowired, loads the beans.
      *
-     * @param agentsPool   all agents
-     * @param pqRepository to communicate with PrecisionQueues collection in DB
+     * @param agentsPool all agents
      */
     @Autowired
-    public PrecisionQueuesPool(AgentsPool agentsPool, PrecisionQueueEntityRepository pqRepository) {
+    public PrecisionQueuesPool(AgentsPool agentsPool) {
         this.agentsPool = agentsPool;
-        this.pqRepository = pqRepository;
         this.precisionQueues = new ConcurrentHashMap<>();
     }
 
     /**
      * Loads all the precision queues from DB.
      */
-    public void loadAllFromDb() {
-        List<PrecisionQueueEntity> precisionQueueEntities = this.pqRepository.findAll();
-        List<Agent> allAgents = agentsPool.toList();
-        if (allAgents.isEmpty()) {
-            LOGGER.warn("Agents pool is empty");
-        }
-
+    public void loadPoolFrom(List<PrecisionQueueEntity> precisionQueueEntities) {
         for (PrecisionQueueEntity entity : precisionQueueEntities) {
-            PrecisionQueue precisionQueue = new PrecisionQueue(entity);
-            precisionQueue.evaluateAgentsAssociatedWithSteps(allAgents);
+            PrecisionQueue precisionQueue = new PrecisionQueue(entity, this.agentsPool, getTaskSchedulerBean());
             this.precisionQueues.put(precisionQueue.getId(), precisionQueue);
         }
+    }
+
+    @Lookup
+    public TaskScheduler getTaskSchedulerBean() {
+        return null;
     }
 
     /**
@@ -93,90 +82,6 @@ public class PrecisionQueuesPool {
         return removed != null;
     }
 
-    /**
-     * Evaluates the agents associated with steps in a single precision-queue.
-     *
-     * @param entity precision-queue entity in the DB
-     */
-    public void evaluateAssociatedAgents(PrecisionQueueEntity entity) {
-        List<Agent> allAgents = agentsPool.toList();
-        if (allAgents.isEmpty()) {
-            LOGGER.warn("Agents pool is empty");
-        }
-
-        PrecisionQueue precisionQueue = new PrecisionQueue(entity);
-        precisionQueue.evaluateAgentsAssociatedWithSteps(allAgents);
-        this.precisionQueues.put(precisionQueue.getId(), precisionQueue);
-    }
-
-    /**
-     * Evaluates the agents associated with steps of all precision-queues.
-     */
-    public void evaluateAssociatedAgentsForAll() {
-        List<Agent> agents = this.agentsPool.toList();
-        List<PrecisionQueueEntity> pqEntities = pqRepository.findAll();
-
-        for (PrecisionQueueEntity entity : pqEntities) {
-            PrecisionQueue precisionQueue = new PrecisionQueue(entity);
-            precisionQueue.evaluateAgentsAssociatedWithSteps(agents);
-            precisionQueues.put(precisionQueue.getId(), precisionQueue);
-        }
-    }
-
-    /**
-     * Updates the routing-attribute in all precision-queues.
-     *
-     * @param updated the routing attribute to be updated
-     */
-    public void updateRoutingAttribute(RoutingAttribute updated) {
-        for (Map.Entry<UUID, PrecisionQueue> entry : this.precisionQueues.entrySet()) {
-            PrecisionQueue precisionQueue = entry.getValue();
-            for (Step step : precisionQueue.getSteps()) {
-                for (Expression expression : step.getExpressions()) {
-                    for (Term term : expression.getTerms()) {
-                        RoutingAttribute routingAttribute = term.getRoutingAttribute();
-                        if (updated.equals(routingAttribute)) {
-                            routingAttribute.setName(updated.getName());
-                            routingAttribute.setDescription(updated.getDescription());
-                            routingAttribute.setDefaultValue(updated.getDefaultValue());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Updates Media routing domain object in all precision-queues.
-     *
-     * @param updated mrd to be updated
-     */
-    public void updateMediaRoutingDomain(MediaRoutingDomain updated) {
-        for (Map.Entry<UUID, PrecisionQueue> entry : this.precisionQueues.entrySet()) {
-            PrecisionQueue precisionQueue = entry.getValue();
-            MediaRoutingDomain mrd = precisionQueue.getMrd();
-            if (mrd.equals(updated)) {
-                mrd.setName(updated.getName());
-                mrd.setDescription(updated.getDescription());
-                mrd.setInterruptible(updated.isInterruptible());
-            }
-        }
-    }
-
-    /**
-     * Removes agent from all precision-queues.
-     *
-     * @param id unique id of agent to be removed
-     */
-    public void removeAgentFromAll(UUID id) {
-        for (Map.Entry<UUID, PrecisionQueue> entry : this.precisionQueues.entrySet()) {
-            PrecisionQueue precisionQueue = entry.getValue();
-            for (Step step : precisionQueue.getSteps()) {
-                step.removeAssociatedAgent(id);
-            }
-        }
-    }
-
     private long calculateAvgTalkTimeOf(PrecisionQueue queue, Task task) {
         long currentTotalTalkTime = queue.getAverageTalkTime() * queue.getNoOfTask();
         long newTotalTalkTime = currentTotalTalkTime + task.getHandlingTime();
@@ -202,5 +107,9 @@ public class PrecisionQueuesPool {
             return true;
         }
         return false;
+    }
+
+    public int size() {
+        return this.precisionQueues.size();
     }
 }

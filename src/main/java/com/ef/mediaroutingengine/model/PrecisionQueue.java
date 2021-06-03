@@ -1,41 +1,38 @@
 package com.ef.mediaroutingengine.model;
 
 import com.ef.mediaroutingengine.services.TaskScheduler;
+import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.queue.PriorityQueue;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PrecisionQueue implements IQueue, Serializable {
+public class PrecisionQueue implements IQueue {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrecisionQueue.class);
     private UUID id;
     private String name;
     private MediaRoutingDomain mrd;
+    // TODO: Remove this field. This is now fetched from the channel's configurations
     private AgentSelectionCriteria agentSelectionCriteria;
     private int serviceLevelType;
     private int serviceLevelThreshold;
     private List<Step> steps;
 
-    private PriorityQueue serviceQueue;
-    private TaskScheduler taskScheduler;
-    private int[] timeouts;
+    private final PriorityQueue serviceQueue;
+    private final TaskScheduler taskScheduler;
+    private final int[] timeouts;
     private Long averageTalkTime = 0L;
     private Long noOfTask = 0L;
-    boolean enableReporting = false;
-
-    public PrecisionQueue() {
-
-    }
+    boolean enableReporting;
 
     /**
      * Parametrized constructor. Constructs a PrecisionQueue object with a PrecisionQueueEntity object.
      *
      * @param pqEntity the precision-queue entity object Stored in the DB.
      */
-    public PrecisionQueue(PrecisionQueueEntity pqEntity) {
+    public PrecisionQueue(PrecisionQueueEntity pqEntity, AgentsPool agentsPool, TaskScheduler taskScheduler) {
         this.id = pqEntity.getId();
         this.name = pqEntity.getName();
         this.mrd = pqEntity.getMrd();
@@ -43,6 +40,17 @@ public class PrecisionQueue implements IQueue, Serializable {
         this.serviceLevelType = pqEntity.getServiceLevelType();
         this.serviceLevelThreshold = pqEntity.getServiceLevelThreshold();
         this.steps = toSteps(pqEntity.getSteps());
+        this.evaluateAgentsAssociatedWithSteps(agentsPool.toList());
+
+        this.serviceQueue = new PriorityQueue();
+        this.taskScheduler = taskScheduler;
+        this.taskScheduler.init(this.name, this);
+        this.timeouts = new int[10];
+        if (!this.steps.isEmpty()) {
+            this.timeouts[this.steps.size() - 1] = -1; // ignore last step timeout no matter how much is it set
+        }
+        this.averageTalkTime = 0L;
+        this.noOfTask = 0L;
     }
 
     private List<Step> toSteps(List<StepEntity> stepEntities) {
@@ -127,24 +135,12 @@ public class PrecisionQueue implements IQueue, Serializable {
         return serviceQueue;
     }
 
-    public void setServiceQueue(PriorityQueue serviceQueue) {
-        this.serviceQueue = serviceQueue;
-    }
-
     public TaskScheduler getTaskScheduler() {
         return taskScheduler;
     }
 
-    public void setTaskScheduler(TaskScheduler taskScheduler) {
-        this.taskScheduler = taskScheduler;
-    }
-
     public int[] getTimeouts() {
         return timeouts;
-    }
-
-    public void setTimeouts(int[] timeouts) {
-        this.timeouts = timeouts;
     }
 
     public Long getAverageTalkTime() {

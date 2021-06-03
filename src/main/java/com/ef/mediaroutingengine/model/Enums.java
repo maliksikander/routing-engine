@@ -11,7 +11,7 @@ public class Enums {
         return mreStatus;
     }
 
-    public enum TaskState {
+    public enum TaskStateName {
         CREATED,
         QUEUED,
         RESERVED,
@@ -89,6 +89,7 @@ public class Enums {
 
     public enum RedisEventName {
         TASK_STATE_CHANGED,
+        AGENT_STATE_CHANGED,
         AGENT_MRD_STATE_CHANGED
     }
 }

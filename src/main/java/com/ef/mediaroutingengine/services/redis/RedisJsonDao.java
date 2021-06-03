@@ -13,7 +13,7 @@ public class RedisJsonDao<T> {
      * Constructor.
      *
      * @param redisClient the redis client to send commands to redis server.
-     * @param type type of the objects in the collection.
+     * @param type        type of the objects in the collection.
      */
     @SuppressWarnings("unchecked")
     public RedisJsonDao(RedisClient redisClient, String type) {
@@ -25,7 +25,7 @@ public class RedisJsonDao<T> {
     /**
      * Inserts if not present, updates if present, and object on a specific key in Redis.
      *
-     * @param id the id of the object to be saved.
+     * @param id    the id of the object to be saved.
      * @param value the object to be saved.
      * @return true if saved successfully, false otherwise.
      */

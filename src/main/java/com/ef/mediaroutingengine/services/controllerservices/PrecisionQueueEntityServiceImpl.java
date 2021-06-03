@@ -10,7 +10,6 @@ import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.MediaRoutingDomainRepository;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
-import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,6 @@ public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityServ
     private final PrecisionQueueEntityRepository repository;
     private final MediaRoutingDomainRepository mrdRepository;
     private final RoutingAttributeRepository routingAttributeRepository;
-    private final PrecisionQueuesPool precisionQueuesPool;
 
     /**
      * Default constructor.
@@ -37,21 +35,17 @@ public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityServ
     @Autowired
     public PrecisionQueueEntityServiceImpl(PrecisionQueueEntityRepository repository,
                                            MediaRoutingDomainRepository mrdRepository,
-                                           RoutingAttributeRepository routingAttributeRepository,
-                                           PrecisionQueuesPool precisionQueuesPool) {
+                                           RoutingAttributeRepository routingAttributeRepository) {
         this.repository = repository;
         this.mrdRepository = mrdRepository;
         this.routingAttributeRepository = routingAttributeRepository;
-        this.precisionQueuesPool = precisionQueuesPool;
     }
 
     @Override
     public PrecisionQueueEntity create(PrecisionQueueEntity precisionQueueEntity) throws Exception {
         this.validateAndSetMRD(precisionQueueEntity);
         precisionQueueEntity.setId(UUID.randomUUID());
-        PrecisionQueueEntity saved = repository.insert(precisionQueueEntity);
-        //this.precisionQueuesPool.add(saved);
-        return saved;
+        return repository.insert(precisionQueueEntity);
     }
 
     @Override
@@ -67,9 +61,7 @@ public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityServ
         this.validateAndSetMRD(precisionQueueEntity);
         this.validateAndSetRoutingAttributes(precisionQueueEntity);
         precisionQueueEntity.setId(id);
-        PrecisionQueueEntity saved = this.repository.save(precisionQueueEntity);
-        this.precisionQueuesPool.evaluateAssociatedAgents(saved);
-        return saved;
+        return this.repository.save(precisionQueueEntity);
     }
 
     @Override
@@ -78,7 +70,6 @@ public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityServ
             throw new NotFoundException("Could not find precision resource to delete");
         }
         this.repository.deleteById(id);
-        this.precisionQueuesPool.remove(id);
     }
 
     private void validateAndSetMRD(PrecisionQueueEntity pq) {

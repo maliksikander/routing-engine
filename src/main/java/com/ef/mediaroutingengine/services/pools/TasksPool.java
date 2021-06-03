@@ -122,12 +122,12 @@ public class TasksPool {
     private MediaRoutingDomain getMediaRoutingDomainFrom(AssignResourceRequest request) {
         ChannelSession channelSession = request.getChannelSession();
         UUID mrdId = channelSession.getChannel().getChannelConnector().getChannelType().getMediaRoutingDomain();
-        return this.mrdPool.getMrd(mrdId.toString());
+        return this.mrdPool.getMrd(mrdId);
     }
 
     private Task createTaskInstanceFrom(AssignResourceRequest request, PrecisionQueue queue) {
         MediaRoutingDomain mrd = this.getMediaRoutingDomainFrom(request);
-        return new Task(request.getChannelSession(), mrd, queue);
+        return new Task(request.getChannelSession(), mrd, queue.getId());
     }
 
     private PrecisionQueue getPrecisionQueueFrom(AssignResourceRequest request) {
@@ -145,14 +145,30 @@ public class TasksPool {
      *
      * @param request request object to assign agent.
      */
-    public void enqueueNewTask(AssignResourceRequest request) {
+    public void enqueueTask(AssignResourceRequest request) {
         PrecisionQueue queue = this.getPrecisionQueueFrom(request);
         Task task = this.createTaskInstanceFrom(request, queue);
+        this.enqueueTask(task, queue);
+    }
 
+    /**
+     * Enqueues task all present in the redis DB at start of application.
+     *
+     * @param task task to be enqueued.
+     */
+    public void enqueueTask(Task task) {
+        PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue());
+        if (queue != null) {
+            this.enqueueTask(task, queue);
+        } else {
+            LOGGER.warn("Queue id: {} not found while enqueuing task", task.getQueue());
+        }
+    }
+
+    private void enqueueTask(Task task, PrecisionQueue queue) {
         this.add(task);
         queue.enqueue(task);
         task.setTimeouts(queue.getTimeouts());
-
         this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
     }
 
@@ -237,5 +253,9 @@ public class TasksPool {
         LOGGER.debug(result ? "Task with id: {} removed successfully" : "Task not found. Task Id: {}",
                 taskId, taskId);
         return result;
+    }
+
+    public int size() {
+        return this.allTasks.size();
     }
 }

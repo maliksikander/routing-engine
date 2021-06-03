@@ -1,11 +1,9 @@
 package com.ef.mediaroutingengine.model;
 
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
-import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class Term {
     private RoutingAttribute routingAttribute;
@@ -66,19 +64,19 @@ public class Term {
      *
      * @param allAgents list of all agents in the configuration db.
      */
-    public List<UUID> evaluateAssociatedAgents(List<Agent> allAgents) {
-        List<UUID> associatedAgents = new ArrayList<>();
+    public List<Agent> evaluateAssociatedAgents(List<Agent> allAgents) {
+        List<Agent> associatedAgents = new ArrayList<>();
 
-        for (Agent agent: allAgents) {
+        for (Agent agent : allAgents) {
             List<AssociatedRoutingAttribute> associatedRoutingAttributes = agent.getAssociatedRoutingAttributes();
             if (associatedRoutingAttributes == null) {
                 continue;
             }
-            for (AssociatedRoutingAttribute associatedRoutingAttribute: associatedRoutingAttributes) {
+            for (AssociatedRoutingAttribute associatedRoutingAttribute : associatedRoutingAttributes) {
                 if (this.routingAttribute.equals(associatedRoutingAttribute.getRoutingAttribute())
                         // Example 3 (agent's value) > 4 (value in term)
                         && applyRelationalOperator(associatedRoutingAttribute.getValue(), this.value)) {
-                    associatedAgents.add(agent.getId());
+                    associatedAgents.add(agent);
                     break;
                 }
             }

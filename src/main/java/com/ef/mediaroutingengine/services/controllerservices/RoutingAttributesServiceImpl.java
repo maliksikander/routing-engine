@@ -12,7 +12,6 @@ import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
-import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +24,6 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
     private final RoutingAttributeRepository repository;
     private final PrecisionQueueEntityRepository precisionQueueEntityRepository;
     private final AgentsRepository agentsRepository;
-    private final PrecisionQueuesPool precisionQueuesPool;
 
     /**
      * Default constructor.
@@ -37,12 +35,10 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
     @Autowired
     public RoutingAttributesServiceImpl(RoutingAttributeRepository repository,
                                         PrecisionQueueEntityRepository precisionQueueEntityRepository,
-                                        AgentsRepository agentsRepository,
-                                        PrecisionQueuesPool precisionQueuesPool) {
+                                        AgentsRepository agentsRepository) {
         this.repository = repository;
         this.precisionQueueEntityRepository = precisionQueueEntityRepository;
         this.agentsRepository = agentsRepository;
-        this.precisionQueuesPool = precisionQueuesPool;
     }
 
     @Override
@@ -65,13 +61,9 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
 
         routingAttribute.setId(id);
 
-        // Update DB.
         this.updatePrecisionQueues(routingAttribute, id);
         this.updateAgents(routingAttribute, id);
-        RoutingAttribute saved = repository.save(routingAttribute);
-        // Update Cache.
-        precisionQueuesPool.updateRoutingAttribute(saved);
-        return saved;
+        return repository.save(routingAttribute);
     }
 
     @Override

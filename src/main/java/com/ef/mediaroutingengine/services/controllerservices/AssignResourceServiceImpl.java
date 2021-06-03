@@ -24,7 +24,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     @Override
     public void assign(AssignResourceRequest request) {
         LOGGER.debug("assign method started");
-        this.tasksPool.enqueueNewTask(request);
+        this.tasksPool.enqueueTask(request);
         LOGGER.debug("assign method ended");
     }
 }

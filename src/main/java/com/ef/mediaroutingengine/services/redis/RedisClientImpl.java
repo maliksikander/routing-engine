@@ -104,6 +104,9 @@ public class RedisClientImpl implements RedisClient {
         List<T> responseList = new ArrayList<>();
         try (Jedis conn = getConnection()) {
             String keysString = String.join(" ", keys);
+            if (keysString.equals("")) {
+                return new ArrayList<>();
+            }
             conn.getClient().sendCommand(Command.MGET, SafeEncoder.encodeMany(keysString, "."));
             List<String> objectsList = conn.getClient().getMultiBulkReply();
 

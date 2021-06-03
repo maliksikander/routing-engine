@@ -14,8 +14,8 @@ public class TaskDao extends RedisJsonDao<TaskDto> {
         super(redisClient, "task");
     }
 
-    public boolean changeState(UUID taskId, Enums.TaskState taskState) {
+    public boolean changeState(UUID taskId, Enums.TaskStateName taskStateName) {
         String path = ".state";
-        return this.updateField(taskId.toString(), path, taskState);
+        return this.updateField(taskId.toString(), path, taskStateName);
     }
 }

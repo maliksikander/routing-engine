@@ -7,6 +7,7 @@ import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.Step;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.redis.TaskDao;
@@ -18,9 +19,12 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 @Service
+@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class TaskScheduler implements PropertyChangeListener {
     // Queue Scheduler works as short term scheduler,
     // it scans the queue and removes task to assign an agent
@@ -139,7 +143,7 @@ public class TaskScheduler implements PropertyChangeListener {
             }
 
             if (!isReserved) {
-                this.changeStateOf(task, Enums.TaskState.QUEUED);
+                this.changeStateOf(task, Enums.TaskStateName.QUEUED, "");
             }
         }
     }
@@ -210,7 +214,7 @@ public class TaskScheduler implements PropertyChangeListener {
             boolean isAssigned = this.restRequest.postAssignTask(task.getChannelSession(),
                     ccUser, task.getTopicId(), task.getId());
             if (isAssigned) {
-                this.changeStateOf(task, Enums.TaskState.RESERVED);
+                this.changeStateOf(task, Enums.TaskStateName.RESERVED, "");
                 precisionQueue.dequeue();
                 agent.assignTask(task);
 
@@ -228,10 +232,10 @@ public class TaskScheduler implements PropertyChangeListener {
         return false;
     }
 
-    private void changeStateOf(Task task, Enums.TaskState taskState) {
-        if (!task.getTaskState().equals(taskState)) {
-            task.setTaskState(taskState);
-            this.taskDao.changeState(task.getId(), taskState);
+    private void changeStateOf(Task task, Enums.TaskStateName taskStateName, String reasonCode) {
+        if (!task.getTaskState().equals(taskStateName)) {
+            task.setTaskState(new TaskState(taskStateName, reasonCode));
+            this.taskDao.changeState(task.getId(), taskStateName);
         }
     }
 }

@@ -1,21 +1,21 @@
 package com.ef.mediaroutingengine.dto;
 
-import com.ef.mediaroutingengine.model.Enums;
+import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
-import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.model.TaskState;
 import java.io.Serializable;
 import java.util.UUID;
-import org.springframework.data.redis.core.RedisHash;
 
-@RedisHash("task")
 public class TaskDto implements Serializable {
     private UUID id;
+    private ChannelSession channelSession;
     private MediaRoutingDomain mrd;
-    private PrecisionQueue queue;
+    private UUID queue;
     private int priority;
-    private Enums.TaskState state;
+    private TaskState state;
     private UUID assignedTo;
+    private Long enqueueTime;
 
     public TaskDto() {
 
@@ -28,11 +28,13 @@ public class TaskDto implements Serializable {
      */
     public TaskDto(Task task) {
         this.id = task.getId();
+        this.channelSession = task.getChannelSession();
         this.mrd = task.getMrd();
         this.queue = task.getQueue();
         this.priority = task.getPriority();
         this.state = task.getTaskState();
         this.assignedTo = task.getAssignedTo();
+        this.enqueueTime = task.getEnqueueTime();
     }
 
     public UUID getId() {
@@ -51,11 +53,11 @@ public class TaskDto implements Serializable {
         this.mrd = mrd;
     }
 
-    public PrecisionQueue getQueue() {
+    public UUID getQueue() {
         return queue;
     }
 
-    public void setQueue(PrecisionQueue queue) {
+    public void setQueue(UUID queue) {
         this.queue = queue;
     }
 
@@ -67,11 +69,11 @@ public class TaskDto implements Serializable {
         this.priority = priority;
     }
 
-    public Enums.TaskState getState() {
+    public TaskState getState() {
         return state;
     }
 
-    public void setState(Enums.TaskState state) {
+    public void setState(TaskState state) {
         this.state = state;
     }
 
@@ -83,10 +85,23 @@ public class TaskDto implements Serializable {
         this.assignedTo = assignedTo;
     }
 
+    public ChannelSession getChannelSession() {
+        return channelSession;
+    }
+
+    public void setChannelSession(ChannelSession channelSession) {
+        this.channelSession = channelSession;
+    }
+
+    public Long getEnqueueTime() {
+        return enqueueTime;
+    }
+
     @Override
     public String toString() {
         return "TaskDto{"
                 + "id=" + id
+                + ", channelSession=" + channelSession
                 + ", mrd=" + mrd
                 + ", queue=" + queue
                 + ", priority=" + priority

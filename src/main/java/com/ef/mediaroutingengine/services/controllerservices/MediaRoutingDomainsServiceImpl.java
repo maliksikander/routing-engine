@@ -5,7 +5,6 @@ import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.repositories.MediaRoutingDomainRepository;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
-import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,22 +16,18 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
 
     private final MediaRoutingDomainRepository repository;
     private final PrecisionQueueEntityRepository precisionQueueEntityRepository;
-    private final PrecisionQueuesPool precisionQueuesPool;
 
     /**
      * Constructor, Autowired, loads the beans.
      *
-     * @param repository to communicate with MRD collection in DB
+     * @param repository                     to communicate with MRD collection in DB
      * @param precisionQueueEntityRepository to communicate with PrecisionQueues collection in DB
-     * @param precisionQueuesPool to communicate with Precision-Queues collection in redis-cache
      */
     @Autowired
     public MediaRoutingDomainsServiceImpl(MediaRoutingDomainRepository repository,
-                                          PrecisionQueueEntityRepository precisionQueueEntityRepository,
-                                          PrecisionQueuesPool precisionQueuesPool) {
+                                          PrecisionQueueEntityRepository precisionQueueEntityRepository) {
         this.repository = repository;
         this.precisionQueueEntityRepository = precisionQueueEntityRepository;
-        this.precisionQueuesPool = precisionQueuesPool;
     }
 
     @Override
@@ -54,9 +49,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         }
         mediaRoutingDomain.setId(id);
         this.updatePrecisionQueues(mediaRoutingDomain, id);
-        MediaRoutingDomain saved = this.repository.save(mediaRoutingDomain);
-        this.precisionQueuesPool.updateMediaRoutingDomain(saved);
-        return saved;
+        return this.repository.save(mediaRoutingDomain);
     }
 
     @Override
