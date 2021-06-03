@@ -51,7 +51,7 @@ public class Task implements Serializable {
         this.queue = queue;
 
         this.priority = 10; // Right now hardcoded at highest priority level
-        this.state = new TaskState(Enums.TaskStateName.CREATED, "");
+        this.state = new TaskState(Enums.TaskStateName.CREATED, Enums.TaskStateReasonCode.NONE);
         this.enqueueTime = System.currentTimeMillis();
         this.timer = new Timer();
 

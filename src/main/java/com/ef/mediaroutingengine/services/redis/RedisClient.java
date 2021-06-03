@@ -17,6 +17,8 @@ public interface RedisClient {
 
     boolean setJson(String key, String path, Object object);
 
+    boolean setJsonWithSet(String type, String id, Object object);
+
     /**
      * Returns the Object associated with the key. If the key does not exist, the special value nil
      * is returned. If the value stored by key is not of Object type, an error is returned, because
@@ -48,6 +50,8 @@ public interface RedisClient {
      * @return Long
      */
     Long delJson(String key);
+
+    boolean delJsonWithSet(String type, String id);
 
     /**
      * Adds one or more members to a set.

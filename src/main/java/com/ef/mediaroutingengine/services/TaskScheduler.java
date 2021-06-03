@@ -143,7 +143,7 @@ public class TaskScheduler implements PropertyChangeListener {
             }
 
             if (!isReserved) {
-                this.changeStateOf(task, Enums.TaskStateName.QUEUED, "");
+                this.changeStateOf(task, Enums.TaskStateName.QUEUED, Enums.TaskStateReasonCode.NONE);
             }
         }
     }
@@ -214,7 +214,7 @@ public class TaskScheduler implements PropertyChangeListener {
             boolean isAssigned = this.restRequest.postAssignTask(task.getChannelSession(),
                     ccUser, task.getTopicId(), task.getId());
             if (isAssigned) {
-                this.changeStateOf(task, Enums.TaskStateName.RESERVED, "");
+                this.changeStateOf(task, Enums.TaskStateName.RESERVED, Enums.TaskStateReasonCode.NONE);
                 precisionQueue.dequeue();
                 agent.assignTask(task);
 
@@ -232,7 +232,7 @@ public class TaskScheduler implements PropertyChangeListener {
         return false;
     }
 
-    private void changeStateOf(Task task, Enums.TaskStateName taskStateName, String reasonCode) {
+    private void changeStateOf(Task task, Enums.TaskStateName taskStateName, Enums.TaskStateReasonCode reasonCode) {
         if (!task.getTaskState().equals(taskStateName)) {
             task.setTaskState(new TaskState(taskStateName, reasonCode));
             this.taskDao.changeState(task.getId(), taskStateName);

@@ -92,4 +92,12 @@ public class Enums {
         AGENT_STATE_CHANGED,
         AGENT_MRD_STATE_CHANGED
     }
+
+    public enum TaskStateReasonCode {
+        RONA,
+        DONE,
+        RESPONSE_TIMEOUT,
+        NO_AGENT_AVAILABLE,
+        NONE
+    }
 }

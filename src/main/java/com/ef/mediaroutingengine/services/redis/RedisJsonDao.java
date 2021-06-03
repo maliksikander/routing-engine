@@ -30,16 +30,7 @@ public class RedisJsonDao<T> {
      * @return true if saved successfully, false otherwise.
      */
     public boolean save(String id, T value) {
-        try {
-            // Todo: Implement transaction for this
-            if (this.redisClient.setJson(this.getKey(id), value)) {
-                this.redisClient.SADD(type, id);
-                return true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
+        return this.redisClient.setJsonWithSet(this.type, id, value);
     }
 
     public T find(String id) {
@@ -65,6 +56,10 @@ public class RedisJsonDao<T> {
 
     public boolean updateField(String id, String path, Object value) {
         return this.redisClient.setJson(this.getKey(id), path, value);
+    }
+
+    public boolean deleteById(String id) {
+        return this.redisClient.delJsonWithSet(this.type, id);
     }
 
     private String getKey(String id) {

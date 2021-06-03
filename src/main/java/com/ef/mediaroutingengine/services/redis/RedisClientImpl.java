@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Transaction;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -63,6 +64,25 @@ public class RedisClientImpl implements RedisClient {
             assertReplyOK(status);
             return true;
         } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean setJsonWithSet(String type, String id, Object object) {
+        Transaction transaction = null;
+        try (Jedis conn = getConnection()) {
+            transaction = conn.multi();
+            transaction.sadd(type, id);
+            String value = objectMapper.writeValueAsString(object);
+            transaction.sendCommand(Command.SET, SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH, value));
+            transaction.exec();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.discard();
+            }
             e.printStackTrace();
         }
         return false;
@@ -127,6 +147,24 @@ public class RedisClientImpl implements RedisClient {
             conn.getClient().sendCommand(Command.DEL, SafeEncoder.encodeMany(key, JSON_ROOT_PATH));
             return conn.getClient().getIntegerReply();
         }
+    }
+
+    @Override
+    public boolean delJsonWithSet(String type, String id) {
+        Transaction transaction = null;
+        try (Jedis conn = getConnection()) {
+            transaction = conn.multi();
+            transaction.sendCommand(Command.DEL, SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH));
+            transaction.srem(type, id);
+            transaction.exec();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.discard();
+            }
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override
@@ -200,5 +238,9 @@ public class RedisClientImpl implements RedisClient {
         public byte[] getRaw() {
             return raw;
         }
+    }
+
+    private String getKey(String type, String id) {
+        return type + ":" + id;
     }
 }
