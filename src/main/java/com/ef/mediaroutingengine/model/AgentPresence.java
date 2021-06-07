@@ -4,16 +4,32 @@ import com.ef.cim.objectmodel.CCUser;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class AgentPresence {
     private CCUser agent;
-    private String state;
+    private AgentState state;
     private Timestamp stateChangeTime;
-    private List<String> topics;
     private List<AgentMrdState> agentMrdStates;
 
+    /**
+     * Default constructor.
+     */
     public AgentPresence() {
-        this.topics = new ArrayList<>();
+        this.agentMrdStates = new ArrayList<>();
+    }
+
+    /**
+     * Parameterized Constructor.
+     * @param agent agent object
+     * @param state state of the agent
+     * @param agentMrdStates list of mrd states of the agent.
+     */
+    public AgentPresence(CCUser agent, AgentState state, List<AgentMrdState> agentMrdStates) {
+        this.agent = agent;
+        this.state = state;
+        this.stateChangeTime = new Timestamp(System.currentTimeMillis());
+        this.agentMrdStates = agentMrdStates;
     }
 
     public CCUser getAgent() {
@@ -24,11 +40,11 @@ public class AgentPresence {
         this.agent = agent;
     }
 
-    public String getState() {
+    public AgentState getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(AgentState state) {
         this.state = state;
     }
 
@@ -40,31 +56,38 @@ public class AgentPresence {
         this.stateChangeTime = stateChangeTime;
     }
 
-    public List<String> getTopics() {
-        return topics;
-    }
-
-    public void setTopics(List<String> topics) {
-        this.topics = topics;
-    }
-
-    public boolean containsTopic(String topic) {
-        return this.topics.contains(topic);
-    }
-
-    public boolean addTopic(String topic) {
-        return this.topics.add(topic);
-    }
-
-    public boolean removeTopic(String topic) {
-        return this.topics.remove(topic);
-    }
-
     public List<AgentMrdState> getAgentMrdStates() {
         return agentMrdStates;
     }
 
     public void setAgentMrdStates(List<AgentMrdState> agentMrdStates) {
         this.agentMrdStates = agentMrdStates;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AgentPresence that = (AgentPresence) o;
+        return Objects.equals(agent, that.agent);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(agent);
+    }
+
+    @Override
+    public String toString() {
+        return "AgentPresence{"
+                + "agent=" + agent
+                + ", state=" + state
+                + ", stateChangeTime=" + stateChangeTime
+                + ", agentMrdStates=" + agentMrdStates
+                + '}';
     }
 }

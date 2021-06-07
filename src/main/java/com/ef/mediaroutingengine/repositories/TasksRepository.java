@@ -1,16 +1,18 @@
-package com.ef.mediaroutingengine.services.redis;
+package com.ef.mediaroutingengine.repositories;
 
 import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.model.Enums;
+import com.ef.mediaroutingengine.services.redis.RedisClient;
+import com.ef.mediaroutingengine.services.redis.RedisJsonDao;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
-@Service
-public class TaskDao extends RedisJsonDao<TaskDto> {
+@Component
+public class TasksRepository extends RedisJsonDao<TaskDto> {
 
     @Autowired
-    public TaskDao(RedisClient redisClient) {
+    public TasksRepository(RedisClient redisClient) {
         super(redisClient, "task");
     }
 

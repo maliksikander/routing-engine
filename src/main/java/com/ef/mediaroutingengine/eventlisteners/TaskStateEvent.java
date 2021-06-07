@@ -4,10 +4,10 @@ import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.TaskState;
+import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
-import com.ef.mediaroutingengine.services.redis.TaskDao;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ public class TaskStateEvent implements PropertyChangeListener {
     private final AgentsPool agentsPool;
     private final PrecisionQueuesPool precisionQueuesPool;
     private final TasksPool tasksPool;
-    private final TaskDao taskDao;
+    private final TasksRepository tasksRepository;
 
     /**
      * Default constructor. Autowired -> loads the beans.
@@ -32,11 +32,11 @@ public class TaskStateEvent implements PropertyChangeListener {
      */
     @Autowired
     public TaskStateEvent(AgentsPool agentsPool, PrecisionQueuesPool precisionQueuesPool,
-                          TasksPool tasksPool, TaskDao taskDao) {
+                          TasksPool tasksPool, TasksRepository tasksRepository) {
         this.agentsPool = agentsPool;
         this.precisionQueuesPool = precisionQueuesPool;
         this.tasksPool = tasksPool;
-        this.taskDao = taskDao;
+        this.tasksRepository = tasksRepository;
     }
 
     @Override
@@ -63,7 +63,7 @@ public class TaskStateEvent implements PropertyChangeListener {
                         task.setStartTime(System.currentTimeMillis());
                         break;
                     case CLOSED:
-                        this.taskDao.deleteById(task.getId().toString());
+                        this.tasksRepository.deleteById(task.getId().toString());
                         this.agentsPool.endTask(task);
                         this.precisionQueuesPool.endTask(task);
                         tasksPool.removeTask(taskDto.getId().toString());

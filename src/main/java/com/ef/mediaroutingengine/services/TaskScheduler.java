@@ -8,9 +8,9 @@ import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.Step;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.TaskState;
+import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
-import com.ef.mediaroutingengine.services.redis.TaskDao;
 import com.ef.mediaroutingengine.services.utilities.RestRequest;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -43,7 +43,7 @@ public class TaskScheduler implements PropertyChangeListener {
     private final TasksPool tasksPool;
     private final AgentsPool agentsPool;
     private final RestRequest restRequest;
-    private final TaskDao taskDao;
+    private final TasksRepository tasksRepository;
 
     private String name;
     private PrecisionQueue precisionQueue;
@@ -52,18 +52,18 @@ public class TaskScheduler implements PropertyChangeListener {
     /**
      * Constructor.
      *
-     * @param tasksPool the pool of all tasks
-     * @param agentsPool the pool of all agents
-     * @param restRequest to make rest calls to other components.
-     * @param taskDao to communicate with the Redis Tasks collection.
+     * @param tasksPool       the pool of all tasks
+     * @param agentsPool      the pool of all agents
+     * @param restRequest     to make rest calls to other components.
+     * @param tasksRepository to communicate with the Redis Tasks collection.
      */
     @Autowired
     public TaskScheduler(TasksPool tasksPool, AgentsPool agentsPool, RestRequest restRequest,
-                         TaskDao taskDao) {
+                         TasksRepository tasksRepository) {
         this.tasksPool = tasksPool;
         this.agentsPool = agentsPool;
         this.restRequest = restRequest;
-        this.taskDao = taskDao;
+        this.tasksRepository = tasksRepository;
     }
 
     /**
@@ -168,8 +168,8 @@ public class TaskScheduler implements PropertyChangeListener {
     }
 
     private boolean isActiveOrReadyAndIsRoutable(Agent agent) {
-        return (agent.getState() == Enums.AgentState.ACTIVE
-                || agent.getState() == Enums.AgentState.READY)
+        return (agent.getState() == Enums.AgentStateName.ACTIVE
+                || agent.getState() == Enums.AgentStateName.READY)
                 && agent.getAgentMode() == Enums.AgentMode.ROUTABLE;
     }
 
@@ -235,7 +235,7 @@ public class TaskScheduler implements PropertyChangeListener {
     private void changeStateOf(Task task, Enums.TaskStateName taskStateName, Enums.TaskStateReasonCode reasonCode) {
         if (!task.getTaskState().equals(taskStateName)) {
             task.setTaskState(new TaskState(taskStateName, reasonCode));
-            this.taskDao.changeState(task.getId(), taskStateName);
+            this.tasksRepository.changeState(task.getId(), taskStateName);
         }
     }
 }

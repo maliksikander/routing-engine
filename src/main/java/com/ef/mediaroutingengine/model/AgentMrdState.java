@@ -5,8 +5,23 @@ import java.util.UUID;
 
 public class AgentMrdState {
     private UUID mrdId;
-    private Enums.AgentMrdStateName state;
+    private MrdState state;
     private Timestamp stateChangeTime;
+
+    public AgentMrdState() {
+
+    }
+
+    /**
+     * Parameterized Constructor.
+     * @param mrdId id the associated mrd
+     * @param state agent's state for the associated mrd
+     */
+    public AgentMrdState(UUID mrdId, MrdState state) {
+        this.mrdId = mrdId;
+        this.state = state;
+        this.stateChangeTime = new Timestamp(System.currentTimeMillis());
+    }
 
     public UUID getMrdId() {
         return mrdId;
@@ -16,11 +31,11 @@ public class AgentMrdState {
         this.mrdId = mrdId;
     }
 
-    public Enums.AgentMrdStateName getState() {
+    public MrdState getState() {
         return state;
     }
 
-    public void setState(Enums.AgentMrdStateName state) {
+    public void setState(MrdState state) {
         this.state = state;
     }
 

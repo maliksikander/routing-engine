@@ -11,9 +11,10 @@ import java.util.LinkedList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-@Service
+@Component
 public class AgentMrdStateEvent implements PropertyChangeListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentMrdStateEvent.class);
     /*
@@ -21,6 +22,7 @@ public class AgentMrdStateEvent implements PropertyChangeListener {
      */
     private final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
     private final List<String> precisionQueueChangeSupportListeners = new LinkedList<>();
+
 
     /**
      * Adds a property change listener to the changeSupport.
@@ -58,9 +60,9 @@ public class AgentMrdStateEvent implements PropertyChangeListener {
         return evt.getPropertyName().equalsIgnoreCase(Enums.EventName.AGENT_MRD_STATE.name());
     }
 
-    private Enums.AgentState getAgentStateFrom(JsonNode newValue) {
+    private Enums.AgentStateName getAgentStateFrom(JsonNode newValue) {
         String newStateString = newValue.get("State").textValue();
-        return Enums.AgentState.valueOf(newStateString);
+        return Enums.AgentStateName.valueOf(newStateString);
     }
 
     private Enums.AgentMode getAgentModeFrom(JsonNode newValue) {
@@ -68,7 +70,7 @@ public class AgentMrdStateEvent implements PropertyChangeListener {
         return isRoutable ? Enums.AgentMode.ROUTABLE : Enums.AgentMode.NON_ROUTABLE;
     }
 
-    private void fireStateChangeToTaskSchedulersIfStateActiveOrReady(Enums.AgentState state) {
+    private void fireStateChangeToTaskSchedulersIfStateActiveOrReady(Enums.AgentStateName state) {
         switch (state) {
             case READY:
             case ACTIVE:

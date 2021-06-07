@@ -25,7 +25,7 @@ public class Agent {
     private final KeycloakUser keycloakUser;
     private final List<AssociatedRoutingAttribute> associatedRoutingAttributes;
 
-    private Enums.AgentState agentState;
+    private Enums.AgentStateName agentStateName;
     private List<AgentMrdState> agentMrdStates;
     private Enums.AgentMode agentMode = Enums.AgentMode.NON_ROUTABLE;
     private AtomicInteger numOfTasks;
@@ -144,8 +144,8 @@ public class Agent {
         return this.associatedRoutingAttributes;
     }
 
-    public Enums.AgentState getState() {
-        return this.agentState;
+    public Enums.AgentStateName getState() {
+        return this.agentStateName;
     }
 
     /**
@@ -153,14 +153,14 @@ public class Agent {
      *
      * @param state the state to be set
      */
-    public void setState(Enums.AgentState state) {
-        this.agentState = state;
-        if (state == Enums.AgentState.LOGOUT) {
+    public void setState(Enums.AgentStateName state) {
+        this.agentStateName = state;
+        if (state == Enums.AgentStateName.LOGOUT) {
             synchronized (this.assignedTasks) {
                 this.assignedTasks.clear();
             }
         }
-        if (state == Enums.AgentState.READY) {
+        if (state == Enums.AgentStateName.READY) {
             this.setReadyStateChangeTime(LocalDateTime.now());
         }
     }

@@ -60,12 +60,16 @@ public class Enums {
         DISPATCH_EWT
     }
 
-    public enum AgentState {
+    public enum AgentStateName {
         LOGIN,
         NOT_READY,
         READY,
         LOGOUT,
         ACTIVE
+    }
+
+    public enum AgentStateReasonCode {
+        NONE
     }
 
     public enum AgentMrdStateName {
@@ -75,6 +79,10 @@ public class Enums {
         ACTIVE,
         BUSY,
         UNKNOWN
+    }
+
+    public enum AgentMrdStateReasonCode {
+        NONE
     }
 
     public enum AgentMode {
