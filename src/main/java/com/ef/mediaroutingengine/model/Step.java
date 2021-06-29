@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.model;
 
 import com.ef.mediaroutingengine.services.utilities.ExpressionUtility;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -117,10 +118,10 @@ public class Step {
      * @param agentSelectionCriteria The selection criteria on which to sort the agents
      * @return the sorted or ordered associated agents list.
      */
-    public List<Agent> orderAgentsBy(AgentSelectionCriteria agentSelectionCriteria) {
+    public List<Agent> orderAgentsBy(AgentSelectionCriteria agentSelectionCriteria, UUID mrdId) {
         switch (agentSelectionCriteria) {
             case LONGEST_AVAILABLE:
-                return sortAsLongestAvailable(this.associatedAgents);
+                return sortAsLongestAvailable(mrdId);
             case MOST_SKILLED:
             case LEAST_SKILLED:
             case DEFAULT:
@@ -131,9 +132,9 @@ public class Step {
         }
     }
 
-    private List<Agent> sortAsLongestAvailable(List<Agent> toBeSorted) {
-        List<Agent> sorted = new ArrayList<>(toBeSorted);
-        //sorted.sort(Comparator.comparing(CCUser::getReadyStateChangeTime));
+    private List<Agent> sortAsLongestAvailable(UUID mrdId) {
+        List<Agent> sorted = new ArrayList<>(this.associatedAgents);
+        sorted.sort(Comparator.comparing((Agent o) -> o.getLastReadyStateChangeTimeFor(mrdId)));
         return sorted;
     }
 }

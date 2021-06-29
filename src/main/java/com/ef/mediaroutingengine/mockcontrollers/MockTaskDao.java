@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.mockcontrollers;
 
+import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskDto;
-import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +16,11 @@ public class MockTaskDao {
     @Autowired
     private TasksRepository tasksRepository;
 
+    @GetMapping("/get-all-tasks")
+    public ResponseEntity<Object> getAllTasks() {
+        return new ResponseEntity<>(this.tasksRepository.findAll(), HttpStatus.OK);
+    }
+
     /**
      * Mocks the Task DAO add functionality.
      *
@@ -25,7 +30,7 @@ public class MockTaskDao {
     @GetMapping("task-dao/add")
     public ResponseEntity<Object> add(@RequestParam String id) {
         TaskDto taskDto = new TaskDto();
-        taskDto.setState(new TaskState(Enums.TaskStateName.CREATED, Enums.TaskStateReasonCode.NONE));
+        taskDto.setState(new TaskState(Enums.TaskStateName.QUEUED, null));
         taskDto.setPriority(10);
         this.tasksRepository.save(id, taskDto);
         return new ResponseEntity<>("Success", HttpStatus.OK);

@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.services.jms;
 
+import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.StateChangeEvent;
-import com.ef.mediaroutingengine.model.Enums;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,14 +28,14 @@ import org.springframework.stereotype.Service;
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class ActivemqCommunicator implements JmsCommunicator {
     private static final Logger LOGGER = LoggerFactory.getLogger(ActivemqCommunicator.class);
+    private static final String SUBSCRIBER_NAME = "ROUTING-ENGINE-SUBSCRIBER";
+    private final JmsEventsService jmsEventsService;
     Connection connection;
     MessageProducer publisher;
     private Session subscriberSession;
     private Session publisherSession;
     private MessageConsumer subscriber;
     private String topicName;
-    private static final String SUBSCRIBER_NAME = "ROUTING-ENGINE-SUBSCRIBER";
-    private final JmsEventsService jmsEventsService;
 
     /**
      * Constructor
@@ -83,7 +83,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
             throws JMSException, JsonProcessingException {
         LOGGER.debug("method started");
 
-        StateChangeEvent stateChangeEvent = new StateChangeEvent(eventName, message);
+        StateChangeEvent stateChangeEvent = new StateChangeEvent(eventName, message, this.topicName);
         ObjectMapper objectMapper = new ObjectMapper();
         String messageStr = objectMapper.writeValueAsString(stateChangeEvent);
 
@@ -129,9 +129,11 @@ public class ActivemqCommunicator implements JmsCommunicator {
     @Override
     public void onMessage(Message message) {
         LOGGER.debug("ActivemqServiceImpl.onMessage method started");
-
         try {
-            String event = message.getJMSType();
+            Enums.RedisEventName event = Enums.RedisEventName.valueOf(message.getJMSType());
+            System.out.println("*******************************");
+            System.out.println("JMS EVENT: " + event + " received");
+            System.out.println("*******************************");
             this.jmsEventsService.handleEvent(event, message);
             message.acknowledge();
 

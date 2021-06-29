@@ -12,7 +12,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** Properties for ActiveMQ configuration. */
+/**
+ * Properties for ActiveMQ configuration.
+ */
 @Configuration
 @ConfigurationProperties(prefix = "amq")
 public class ActivemqProperties {
@@ -113,6 +115,7 @@ public class ActivemqProperties {
 
     /**
      * Creates AMQ Connection on application start.
+     *
      * @return AMQ Connection
      * @throws Exception exception
      */
@@ -154,6 +157,7 @@ public class ActivemqProperties {
         }
         connection.setClientID(CLIENT_ID);
         LOGGER.debug("ActivemqServiceImpl.setConnection | Connection created successfully");
+
         connection.start();
         LOGGER.debug("ActivemqServiceImpl.setConnection | Connection started successfully");
         return connection;
@@ -163,35 +167,35 @@ public class ActivemqProperties {
     @Override
     public String toString() {
         return "ActivemqProperties{"
-            + "protocol="
-            + transport
-            + ", brokerUrl='"
-            + brokerUrl
-            + '\''
-            + ", timeout='"
-            + timeout
-            + '\''
-            + ", randomize='"
-            + randomize
-            + '\''
-            + ", priorityBackup='"
-            + priorityBackup
-            + '\''
-            + ", maxReconnectAttempts='"
-            + maxReconnectAttempts
-            + '\''
-            + ", trustStorePath='"
-            + trustStorePath
-            + '\''
-            + ", trustStorePassword='"
-            + trustStorePassword
-            + '\''
-            + ", keyStorePath='"
-            + keyStorePath
-            + '\''
-            + ", keyStorePassword='"
-            + keyStorePassword
-            + '\''
-            + '}';
+                + "protocol="
+                + transport
+                + ", brokerUrl='"
+                + brokerUrl
+                + '\''
+                + ", timeout='"
+                + timeout
+                + '\''
+                + ", randomize='"
+                + randomize
+                + '\''
+                + ", priorityBackup='"
+                + priorityBackup
+                + '\''
+                + ", maxReconnectAttempts='"
+                + maxReconnectAttempts
+                + '\''
+                + ", trustStorePath='"
+                + trustStorePath
+                + '\''
+                + ", trustStorePassword='"
+                + trustStorePassword
+                + '\''
+                + ", keyStorePath='"
+                + keyStorePath
+                + '\''
+                + ", keyStorePassword='"
+                + keyStorePassword
+                + '\''
+                + '}';
     }
 }

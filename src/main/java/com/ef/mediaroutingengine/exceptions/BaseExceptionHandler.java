@@ -32,7 +32,7 @@ public class BaseExceptionHandler extends ResponseEntityExceptionHandler {
     /**
      * Retrieves translated error message.
      *
-     * @param ex exception
+     * @param ex   exception
      * @param args list of objects
      * @return String
      */
@@ -55,7 +55,7 @@ public class BaseExceptionHandler extends ResponseEntityExceptionHandler {
      * Retrieves translated error message.
      *
      * @param message String
-     * @param args list of objects
+     * @param args    list of objects
      * @return String
      */
     protected String getTranslatedMessage(@Nullable String message, Object[] args) {

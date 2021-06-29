@@ -37,7 +37,7 @@ public class TasksController {
     @GetMapping("")
     public ResponseEntity<Object> retrieve(@RequestParam Optional<UUID> id) {
         if (id.isPresent()) {
-            Task task = this.tasksPool.getTask(id.get());
+            Task task = this.tasksPool.findById(id.get());
             if (task != null) {
                 TaskDto taskDto = new TaskDto(task);
                 return new ResponseEntity<>(taskDto, HttpStatus.OK);
@@ -46,7 +46,7 @@ public class TasksController {
             }
         }
         List<TaskDto> taskDtoList = new ArrayList<>();
-        for (Task task: tasksPool.getAllTasks()) {
+        for (Task task : tasksPool.findAll()) {
             taskDtoList.add(new TaskDto(task));
         }
         return new ResponseEntity<>(taskDtoList, HttpStatus.OK);

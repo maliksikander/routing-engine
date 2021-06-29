@@ -2,12 +2,14 @@ package com.ef.mediaroutingengine.services.pools;
 
 import com.ef.cim.objectmodel.ChannelConfig;
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.AssignResourceRequest;
+import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -25,6 +27,7 @@ public class TasksPool {
 
     private final PrecisionQueuesPool precisionQueuesPool;
     private final MrdPool mrdPool;
+    private final TasksRepository tasksRepository;
     private final List<Task> allTasks;
 
     private final PropertyChangeSupport changeSupport;
@@ -36,9 +39,10 @@ public class TasksPool {
      * @param precisionQueuesPool pool of all precision queues.
      */
     @Autowired
-    public TasksPool(PrecisionQueuesPool precisionQueuesPool, MrdPool mrdPool) {
+    public TasksPool(PrecisionQueuesPool precisionQueuesPool, MrdPool mrdPool, TasksRepository tasksRepository) {
         this.precisionQueuesPool = precisionQueuesPool;
         this.mrdPool = mrdPool;
+        this.tasksRepository = tasksRepository;
         this.allTasks = new LinkedList<>();
         this.changeSupport = new PropertyChangeSupport(this);
     }
@@ -122,7 +126,7 @@ public class TasksPool {
     private MediaRoutingDomain getMediaRoutingDomainFrom(AssignResourceRequest request) {
         ChannelSession channelSession = request.getChannelSession();
         UUID mrdId = channelSession.getChannel().getChannelConnector().getChannelType().getMediaRoutingDomain();
-        return this.mrdPool.getMrd(mrdId);
+        return this.mrdPool.findById(mrdId);
     }
 
     private Task createTaskInstanceFrom(AssignResourceRequest request, PrecisionQueue queue) {
@@ -147,8 +151,16 @@ public class TasksPool {
      */
     public void enqueueTask(AssignResourceRequest request) {
         PrecisionQueue queue = this.getPrecisionQueueFrom(request);
-        Task task = this.createTaskInstanceFrom(request, queue);
-        this.enqueueTask(task, queue);
+        if (queue != null) {
+            Task task = this.createTaskInstanceFrom(request, queue);
+            this.add(task);
+            this.tasksRepository.save(task.getId().toString(), new TaskDto(task));
+            queue.enqueue(task);
+            task.setTimeouts(queue.getTimeouts());
+            this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
+        } else {
+            LOGGER.warn("Queue id: {} not found in pool while enqueuing task", request.getQueue());
+        }
     }
 
     /**
@@ -159,17 +171,36 @@ public class TasksPool {
     public void enqueueTask(Task task) {
         PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue());
         if (queue != null) {
-            this.enqueueTask(task, queue);
+            this.add(task);
+            if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
+                queue.enqueue(task);
+                task.setTimeouts(queue.getTimeouts());
+                this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
+            }
         } else {
             LOGGER.warn("Queue id: {} not found while enqueuing task", task.getQueue());
         }
     }
 
-    private void enqueueTask(Task task, PrecisionQueue queue) {
-        this.add(task);
-        queue.enqueue(task);
-        task.setTimeouts(queue.getTimeouts());
-        this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
+    /**
+     * Reroutes a task to be assigned to another agent. Deletes the task in request, creates a new task from
+     * the task in request and enqueue the newly created task.
+     *
+     * @param task task to reschedule.
+     */
+    public void rerouteTask(Task task) {
+        this.tasksRepository.deleteById(task.getId().toString());
+        this.allTasks.remove(task);
+
+        Task newTask = new Task(task);
+        this.allTasks.add(newTask);
+        this.tasksRepository.save(newTask.getId().toString(), new TaskDto(newTask));
+
+        PrecisionQueue queue = this.precisionQueuesPool.findById(newTask.getQueue());
+        queue.enqueue(newTask);
+        newTask.setEnqueueTime(System.currentTimeMillis());
+        newTask.setTimeouts(queue.getTimeouts());
+        this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, newTask);
     }
 
     /**
@@ -200,7 +231,7 @@ public class TasksPool {
         LOGGER.debug("Conference method called");
     }
 
-    public List<Task> getAllTasks() {
+    public List<Task> findAll() {
         return this.allTasks;
     }
 
@@ -210,7 +241,7 @@ public class TasksPool {
      * @param taskId id of the task to find
      * @return TaskService object if found, null otherwise
      */
-    public Task getTask(UUID taskId) {
+    public Task findById(UUID taskId) {
         for (Task task : this.allTasks) {
             if (task.getId().equals(taskId)) {
                 return task;
@@ -225,7 +256,7 @@ public class TasksPool {
      * @param conversationId the conversation-id to serch task by
      * @return task if found, null otherwise
      */
-    public Task getTaskByConversationId(UUID conversationId) {
+    public Task findByConversationId(UUID conversationId) {
         for (Task task : this.allTasks) {
             if (task.getTopicId().equals(conversationId)) {
                 return task;
@@ -237,22 +268,12 @@ public class TasksPool {
     /**
      * Removes the task from the pool by the task id.
      *
-     * @param taskId the id of the task to be removed
+     * @param task the task to be removed
      * @return true if found and removed, false otherwise
      */
-    public boolean removeTask(String taskId) {
-        LOGGER.debug("Going to remove task: {}", taskId);
-        boolean result = false;
-        for (Task task : this.allTasks) {
-            if (task.getId().equals(taskId)) {
-                this.allTasks.remove(task);
-                result = true;
-                break;
-            }
-        }
-        LOGGER.debug(result ? "Task with id: {} removed successfully" : "Task not found. Task Id: {}",
-                taskId, taskId);
-        return result;
+    public boolean removeTask(Task task) {
+        LOGGER.debug("Going to remove task: {}", task.getId());
+        return this.allTasks.remove(task);
     }
 
     public int size() {

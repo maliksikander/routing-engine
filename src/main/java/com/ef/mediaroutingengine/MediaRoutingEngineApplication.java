@@ -7,7 +7,6 @@ import org.springframework.context.ApplicationContext;
 
 @SpringBootApplication
 public class MediaRoutingEngineApplication {
-
     /**
      * application's starting point.
      *
@@ -20,7 +19,7 @@ public class MediaRoutingEngineApplication {
         ApplicationContext applicationContext = SpringApplication.run(MediaRoutingEngineApplication.class, args);
 
         BootUtility bootUtility = applicationContext.getBean(BootUtility.class);
-        bootUtility.loadPools();
         bootUtility.subscribeToStateEventsChannel();
+        bootUtility.loadPools();
     }
 }

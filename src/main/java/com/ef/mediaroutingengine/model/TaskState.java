@@ -1,6 +1,9 @@
 package com.ef.mediaroutingengine.model;
 
-public class TaskState {
+import com.ef.mediaroutingengine.commons.Enums;
+import java.io.Serializable;
+
+public class TaskState implements Serializable {
     private Enums.TaskStateName name;
     private Enums.TaskStateReasonCode reasonCode;
 

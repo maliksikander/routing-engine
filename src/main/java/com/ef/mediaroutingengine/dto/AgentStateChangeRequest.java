@@ -1,11 +1,20 @@
 package com.ef.mediaroutingengine.dto;
 
-import com.ef.mediaroutingengine.model.Enums;
+import com.ef.mediaroutingengine.model.AgentState;
 import java.util.UUID;
 
 public class AgentStateChangeRequest {
     UUID agentId;
-    Enums.AgentStateName state;
+    AgentState state;
+
+    public AgentStateChangeRequest() {
+
+    }
+
+    public AgentStateChangeRequest(UUID agentId, AgentState state) {
+        this.agentId = agentId;
+        this.state = state;
+    }
 
     public UUID getAgentId() {
         return agentId;
@@ -15,11 +24,11 @@ public class AgentStateChangeRequest {
         this.agentId = agentId;
     }
 
-    public Enums.AgentStateName getState() {
+    public AgentState getState() {
         return state;
     }
 
-    public void setState(Enums.AgentStateName state) {
+    public void setState(AgentState state) {
         this.state = state;
     }
 

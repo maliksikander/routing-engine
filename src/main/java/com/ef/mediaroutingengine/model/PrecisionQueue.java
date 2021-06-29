@@ -11,21 +11,17 @@ import org.slf4j.LoggerFactory;
 
 public class PrecisionQueue implements IQueue {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrecisionQueue.class);
+    private final PriorityQueue serviceQueue;
+    private final TaskScheduler taskScheduler;
+    boolean enableReporting;
     private UUID id;
     private String name;
     private MediaRoutingDomain mrd;
-    // TODO: Remove this field. This is now fetched from the channel's configurations
-    private AgentSelectionCriteria agentSelectionCriteria;
     private int serviceLevelType;
     private int serviceLevelThreshold;
     private List<Step> steps;
-
-    private final PriorityQueue serviceQueue;
-    private final TaskScheduler taskScheduler;
-    private final int[] timeouts;
     private Long averageTalkTime = 0L;
     private Long noOfTask = 0L;
-    boolean enableReporting;
 
     /**
      * Parametrized constructor. Constructs a PrecisionQueue object with a PrecisionQueueEntity object.
@@ -36,7 +32,6 @@ public class PrecisionQueue implements IQueue {
         this.id = pqEntity.getId();
         this.name = pqEntity.getName();
         this.mrd = pqEntity.getMrd();
-        this.agentSelectionCriteria = pqEntity.getAgentSelectionCriteria();
         this.serviceLevelType = pqEntity.getServiceLevelType();
         this.serviceLevelThreshold = pqEntity.getServiceLevelThreshold();
         this.steps = toSteps(pqEntity.getSteps());
@@ -45,10 +40,7 @@ public class PrecisionQueue implements IQueue {
         this.serviceQueue = new PriorityQueue();
         this.taskScheduler = taskScheduler;
         this.taskScheduler.init(this.name, this);
-        this.timeouts = new int[10];
-        if (!this.steps.isEmpty()) {
-            this.timeouts[this.steps.size() - 1] = -1; // ignore last step timeout no matter how much is it set
-        }
+
         this.averageTalkTime = 0L;
         this.noOfTask = 0L;
     }
@@ -95,14 +87,6 @@ public class PrecisionQueue implements IQueue {
         this.mrd = mrd;
     }
 
-    public AgentSelectionCriteria getAgentSelectionCriteria() {
-        return agentSelectionCriteria;
-    }
-
-    public void setAgentSelectionCriteria(AgentSelectionCriteria agentSelectionCriteria) {
-        this.agentSelectionCriteria = agentSelectionCriteria;
-    }
-
     public int getServiceLevelType() {
         return serviceLevelType;
     }
@@ -139,7 +123,19 @@ public class PrecisionQueue implements IQueue {
         return taskScheduler;
     }
 
-    public int[] getTimeouts() {
+    /**
+     * Returns the list of timeout of every step in the queue.
+     *
+     * @return the list of timeout of every step in the queue.
+     */
+    public List<Integer> getTimeouts() {
+        List<Integer> timeouts = new ArrayList<>();
+        for (Step step : this.steps) {
+            timeouts.add(step.getTimeout());
+        }
+        if (!timeouts.isEmpty()) {
+            timeouts.set(timeouts.size() - 1, -1);
+        }
         return timeouts;
     }
 
@@ -247,21 +243,6 @@ public class PrecisionQueue implements IQueue {
             return false;
         }
         return this.serviceQueue.remove(task);
-    }
-
-    /**
-     * Removes the task from the queue by the task id.
-     *
-     * @param taskId the id task to be removed
-     * @return true if found and removed, false otherwise
-     */
-    public boolean endTask(String taskId) {
-//        log.debug("Going to remove task from precision queue");
-//        TaskService task = TaskServiceManager.getInstance().getTask(taskId);
-//        boolean result = this.removeTask(task);
-//        log.debug(result ? "Task abandoned from precision queue" : "Task not found in precision queue");
-//        return result;
-        return true;
     }
 
     public boolean isEmpty() {

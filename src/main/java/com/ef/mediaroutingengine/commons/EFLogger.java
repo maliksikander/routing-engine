@@ -26,12 +26,13 @@ public class EFLogger {
 
     /**
      * Common Logger.
+     *
      * @param proceedingJoinPoint join point
      * @return Object
      * @throws Throwable exception
      */
     @Around("appPointcut()")
-    public Object topicManagerLogger(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
+    public Object routingEngineLogger(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
 
         ObjectMapper objectMapper = new ObjectMapper();
         String className = proceedingJoinPoint.getTarget().getClass().toString();

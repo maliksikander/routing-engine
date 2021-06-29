@@ -1,10 +1,11 @@
 package com.ef.mediaroutingengine.services.pools;
 
-import com.ef.mediaroutingengine.model.Enums;
+import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.services.TaskScheduler;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -103,7 +104,7 @@ public class PrecisionQueuesPool {
                 queue.setAverageTalkTime(task.getHandlingTime());
             }
             queue.incrNoOfTask();
-            queue.endTask(task.getId().toString());
+            queue.removeTask(task);
             return true;
         }
         return false;
@@ -111,5 +112,18 @@ public class PrecisionQueuesPool {
 
     public int size() {
         return this.precisionQueues.size();
+    }
+
+    /**
+     * Converts the pool to list of all Precision queues.
+     *
+     * @return list of all precision queues.
+     */
+    public List<PrecisionQueue> toList() {
+        List<PrecisionQueue> precisionQueueList = new ArrayList<>();
+        for (Map.Entry<UUID, PrecisionQueue> entry : this.precisionQueues.entrySet()) {
+            precisionQueueList.add(entry.getValue());
+        }
+        return precisionQueueList;
     }
 }

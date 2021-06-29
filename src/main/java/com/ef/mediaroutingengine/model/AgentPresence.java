@@ -1,12 +1,13 @@
 package com.ef.mediaroutingengine.model;
 
 import com.ef.cim.objectmodel.CCUser;
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class AgentPresence {
+public class AgentPresence implements Serializable {
     private CCUser agent;
     private AgentState state;
     private Timestamp stateChangeTime;
@@ -21,8 +22,9 @@ public class AgentPresence {
 
     /**
      * Parameterized Constructor.
-     * @param agent agent object
-     * @param state state of the agent
+     *
+     * @param agent          agent object
+     * @param state          state of the agent
      * @param agentMrdStates list of mrd states of the agent.
      */
     public AgentPresence(CCUser agent, AgentState state, List<AgentMrdState> agentMrdStates) {
@@ -46,6 +48,7 @@ public class AgentPresence {
 
     public void setState(AgentState state) {
         this.state = state;
+        this.stateChangeTime = new Timestamp(System.currentTimeMillis());
     }
 
     public Timestamp getStateChangeTime() {

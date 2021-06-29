@@ -3,17 +3,14 @@ package com.ef.mediaroutingengine.model;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.mediaroutingengine.dto.AgentMrdStateChangedRequest;
-import com.ef.mediaroutingengine.eventlisteners.AgentMrdStateEvent;
-import com.ef.mediaroutingengine.eventlisteners.GetAgentState;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
+import com.ef.mediaroutingengine.commons.Enums;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
@@ -24,17 +21,10 @@ public class Agent {
 
     private final KeycloakUser keycloakUser;
     private final List<AssociatedRoutingAttribute> associatedRoutingAttributes;
-
-    private Enums.AgentStateName agentStateName;
+    private final Map<UUID, List<Task>> assignedTasks;
+    private AgentState agentState;
     private List<AgentMrdState> agentMrdStates;
-    private Enums.AgentMode agentMode = Enums.AgentMode.NON_ROUTABLE;
     private AtomicInteger numOfTasks;
-    private LocalDateTime lastReadyStateChangeTime;
-    // Todo: Make assigned task a synchronized list
-    private final List<Task> assignedTasks;
-
-    private final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
-    private List<PropertyChangeListener> listeners;
 
     /**
      * Default constructor, An Agent object can only be created from a CCUser object.
@@ -46,38 +36,7 @@ public class Agent {
         this.associatedRoutingAttributes = ccUser.getAssociatedRoutingAttributes();
 
         this.numOfTasks = new AtomicInteger(0);
-        this.lastReadyStateChangeTime = LocalDateTime.of(1990, 4, 2, 12, 1);
-        this.assignedTasks = Collections.synchronizedList(new ArrayList<>());
-
-        this.initialize();
-    }
-
-    private void initialize() {
-        this.listeners = new LinkedList<>();
-        this.listeners.add(new GetAgentState());
-        this.listeners.add(new AgentMrdStateEvent());
-
-        for (PropertyChangeListener listener : this.listeners) {
-            this.changeSupport.addPropertyChangeListener(listener);
-        }
-    }
-
-    /**
-     * Adds a schedule listener to AgentStateEvent objects' property change support.
-     *
-     * @param listener the property change listener to be added
-     * @param name the name of the listener
-     */
-    public void addSchedulerListener(PropertyChangeListener listener, String name) {
-        for (PropertyChangeListener i : this.listeners) {
-            if (i instanceof AgentMrdStateEvent) {
-                ((AgentMrdStateEvent) i).addPropertyChangeListener(listener, name);
-            }
-        }
-    }
-
-    public boolean taskExists(Task task) {
-        return this.assignedTasks.contains(task);
+        this.assignedTasks = new ConcurrentHashMap<>();
     }
 
     /**
@@ -90,15 +49,15 @@ public class Agent {
             LOGGER.debug("Cannot assign task, taskService is null");
             return;
         }
-        if (!taskExists(task)) {
-            this.assignedTasks.add(task);
+        UUID mrdId = task.getMrd().getId();
+        this.assignedTasks.computeIfAbsent(mrdId, k -> Collections.synchronizedList(new ArrayList<>()));
+        List<Task> taskList = this.assignedTasks.get(mrdId);
+        if (!taskList.contains(task)) {
+            taskList.add(task);
         }
+
         LOGGER.debug("Agent Id: {}. Task: {} assigned. Total tasks handling: {}.",
                 this.keycloakUser.getId(), task.getId(), this.assignedTasks.size());
-    }
-
-    public void changeMrdState(AgentMrdStateChangedRequest request) {
-        this.changeSupport.firePropertyChange(Enums.EventName.AGENT_MRD_STATE.name(), null, request);
     }
 
     /**
@@ -107,9 +66,9 @@ public class Agent {
      * @param updated the list of updated Mrd states
      */
     public void setMrdStates(List<AgentMrdState> updated) {
-        for (AgentMrdState newMrdState: updated) {
-            for (AgentMrdState oldMrdState: this.agentMrdStates) {
-                if (oldMrdState.getMrdId().equals(newMrdState.getMrdId())) {
+        for (AgentMrdState newMrdState : updated) {
+            for (AgentMrdState oldMrdState : this.agentMrdStates) {
+                if (oldMrdState.getMrd().equals(newMrdState.getMrd())) {
                     oldMrdState.setState(newMrdState.getState());
                     break;
                 }
@@ -123,17 +82,66 @@ public class Agent {
      * @param task the task to end.
      */
     public void endTask(Task task) {
-        if (taskExists(task)) {
+        UUID mrdId = task.getMrd().getId();
+        List<Task> taskList = this.assignedTasks.get(mrdId);
+        if (taskList.contains(task)) {
             if (task.getStartTime() != null) {
                 task.setHandlingTime(System.currentTimeMillis() - task.getStartTime());
             } else {
                 task.setHandlingTime(0L);
             }
             task.setStartTime(System.currentTimeMillis());
-            this.assignedTasks.remove(task);
+            taskList.remove(task);
         }
-        LOGGER.debug("Agent Id: {}. Task : {} removed. Total tasks handling: {}",
-                this.keycloakUser.getId(), task.getId(), this.assignedTasks.size());
+        LOGGER.debug("Agent Id: {}. Task : {} removed.", this.getId(), task.getId());
+    }
+
+    /**
+     * Returns the total tasks on an agent's mrd.
+     *
+     * @param mrdId id of the mrd
+     * @return total tasks on an agent's mrd
+     */
+    public int getTasksCountFor(UUID mrdId) {
+        List<Task> taskList = this.assignedTasks.get(mrdId);
+        if (taskList == null) {
+            return 0;
+        }
+        return taskList.size();
+    }
+
+    /**
+     * Returns total number of active tasks on an agent's mrd.
+     *
+     * @param mrdId id of the mrd.
+     * @return total number of active tasks on an agent's mrd
+     */
+    public int getNoOfActiveTasks(UUID mrdId) {
+        int noOfActiveTasks = 0;
+        List<Task> taskList = this.assignedTasks.get(mrdId);
+        for (Task task : taskList) {
+            if (task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
+                noOfActiveTasks++;
+            }
+        }
+        return noOfActiveTasks;
+    }
+
+    /**
+     * Return list of all tasks from all MRDs.
+     *
+     * @return list of all tasks from all MRDs
+     */
+    public List<Task> getAllTasks() {
+        List<Task> activeTasks = new ArrayList<>();
+        for (Map.Entry<UUID, List<Task>> entry : this.assignedTasks.entrySet()) {
+            activeTasks.addAll(entry.getValue());
+        }
+        return activeTasks;
+    }
+
+    public void clearAllTasks() {
+        this.assignedTasks.replaceAll((i, v) -> Collections.synchronizedList(new ArrayList<>()));
     }
 
     public UUID getId() {
@@ -144,8 +152,8 @@ public class Agent {
         return this.associatedRoutingAttributes;
     }
 
-    public Enums.AgentStateName getState() {
-        return this.agentStateName;
+    public AgentState getState() {
+        return this.agentState;
     }
 
     /**
@@ -153,16 +161,8 @@ public class Agent {
      *
      * @param state the state to be set
      */
-    public void setState(Enums.AgentStateName state) {
-        this.agentStateName = state;
-        if (state == Enums.AgentStateName.LOGOUT) {
-            synchronized (this.assignedTasks) {
-                this.assignedTasks.clear();
-            }
-        }
-        if (state == Enums.AgentStateName.READY) {
-            this.setReadyStateChangeTime(LocalDateTime.now());
-        }
+    public void setState(AgentState state) {
+        this.agentState = state;
     }
 
     public List<AgentMrdState> getAgentMrdStates() {
@@ -173,20 +173,51 @@ public class Agent {
         this.agentMrdStates = agentMrdStates;
     }
 
-    public Enums.AgentMode getAgentMode() {
-        return agentMode;
+    /**
+     * Returns the Agent Mrd state, null if not found.
+     *
+     * @param mrdId id the mrd.
+     * @return the Agent Mrd state, null if not found.
+     */
+    public AgentMrdState getAgentMrdState(UUID mrdId) {
+        for (AgentMrdState agentMrdState : this.agentMrdStates) {
+            if (agentMrdState.getMrd().getId().equals(mrdId)) {
+                return agentMrdState;
+            }
+        }
+        return null;
     }
 
-    public void setAgentMode(Enums.AgentMode agentMode) {
-        this.agentMode = agentMode;
+    /**
+     * Sets an Agent MRD state.
+     *
+     * @param mrdId             id of the mrd.
+     * @param agentMrdStateName Mrd State to set
+     */
+    public void setAgentMrdState(UUID mrdId, Enums.AgentMrdStateName agentMrdStateName) {
+        // TODO: Change Mrd state list to map.
+        for (AgentMrdState agentMrdState : this.agentMrdStates) {
+            if (agentMrdState.getMrd().equals(mrdId)) {
+                agentMrdState.setState(agentMrdStateName);
+                agentMrdState.setStateChangeTime(LocalDateTime.now());
+                break;
+            }
+        }
     }
 
-    public int getNumOfTasks() {
-        return this.assignedTasks.size();
-    }
-
-    public void setReadyStateChangeTime(LocalDateTime time) {
-        this.lastReadyStateChangeTime = time;
+    /**
+     * Returns the last ready state change time for an associated mrd state.
+     *
+     * @param mrdId id of the mrd
+     * @return the last ready state change time for an associated mrd state, null if id not found
+     */
+    public LocalDateTime getLastReadyStateChangeTimeFor(UUID mrdId) {
+        for (AgentMrdState agentMrdState : this.agentMrdStates) {
+            if (agentMrdState.getMrd().getId().equals(mrdId)) {
+                return agentMrdState.getStateChangeTime();
+            }
+        }
+        return null;
     }
 
     /**

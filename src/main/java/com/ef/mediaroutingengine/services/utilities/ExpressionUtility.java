@@ -75,7 +75,7 @@ public class ExpressionUtility {
         List<Object> postFixList = new ArrayList<>();
         Deque<String> stack = new ArrayDeque<>();
 
-        for (Object infixEntity: infixExpression) {
+        for (Object infixEntity : infixExpression) {
             if (isOperand(infixEntity)) {
                 postFixList.add(infixEntity);
             } else { // An operator or bracket

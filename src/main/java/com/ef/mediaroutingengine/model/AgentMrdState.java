@@ -1,12 +1,13 @@
 package com.ef.mediaroutingengine.model;
 
-import java.sql.Timestamp;
-import java.util.UUID;
+import com.ef.mediaroutingengine.commons.Enums;
+import java.time.LocalDateTime;
 
 public class AgentMrdState {
-    private UUID mrdId;
-    private MrdState state;
-    private Timestamp stateChangeTime;
+    private MediaRoutingDomain mrd;
+    private Enums.AgentMrdStateName state;
+    private LocalDateTime stateChangeTime;
+    private LocalDateTime lastReadyStateChangeTime;
 
     public AgentMrdState() {
 
@@ -14,45 +15,66 @@ public class AgentMrdState {
 
     /**
      * Parameterized Constructor.
-     * @param mrdId id the associated mrd
+     *
+     * @param mrd   id the associated mrd
      * @param state agent's state for the associated mrd
      */
-    public AgentMrdState(UUID mrdId, MrdState state) {
-        this.mrdId = mrdId;
+    public AgentMrdState(MediaRoutingDomain mrd, Enums.AgentMrdStateName state) {
+        this.mrd = mrd;
         this.state = state;
-        this.stateChangeTime = new Timestamp(System.currentTimeMillis());
+        this.stateChangeTime = LocalDateTime.now();
+        this.lastReadyStateChangeTime = LocalDateTime.of(1990, 4, 2, 12, 1);
     }
 
-    public UUID getMrdId() {
-        return mrdId;
+    public MediaRoutingDomain getMrd() {
+        return mrd;
     }
 
-    public void setMrdId(UUID mrdId) {
-        this.mrdId = mrdId;
+    public void setMrd(MediaRoutingDomain mrd) {
+        this.mrd = mrd;
     }
 
-    public MrdState getState() {
+    public Enums.AgentMrdStateName getState() {
         return state;
     }
 
-    public void setState(MrdState state) {
+    /**
+     * Sets the state and the state change time to current time. If state is READY, it sets the
+     * last-ready-state-change-time to current time.
+     *
+     * @param state state to set.
+     */
+    public void setState(Enums.AgentMrdStateName state) {
         this.state = state;
+        this.stateChangeTime = LocalDateTime.now();
+        if (this.state.equals(Enums.AgentMrdStateName.READY)) {
+            this.lastReadyStateChangeTime = this.stateChangeTime;
+        }
     }
 
-    public Timestamp getStateChangeTime() {
+    public LocalDateTime getStateChangeTime() {
         return stateChangeTime;
     }
 
-    public void setStateChangeTime(Timestamp stateChangeTime) {
+    public void setStateChangeTime(LocalDateTime stateChangeTime) {
         this.stateChangeTime = stateChangeTime;
+    }
+
+    public LocalDateTime getLastReadyStateChangeTime() {
+        return lastReadyStateChangeTime;
+    }
+
+    public void setLastReadyStateChangeTime(LocalDateTime lastReadyStateChangeTime) {
+        this.lastReadyStateChangeTime = lastReadyStateChangeTime;
     }
 
     @Override
     public String toString() {
         return "AgentMrdState{"
-                + "mrdId=" + mrdId
+                + "mrd=" + mrd
                 + ", state=" + state
                 + ", stateChangeTime=" + stateChangeTime
+                + ", lastReadyStateChangeTime=" + lastReadyStateChangeTime
                 + '}';
     }
 }

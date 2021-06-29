@@ -1,13 +1,12 @@
 package com.ef.mediaroutingengine.model;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskDto;
-import com.ef.mediaroutingengine.eventlisteners.DispatchEWT;
-import com.ef.mediaroutingengine.eventlisteners.EwtRequestEvent;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -23,20 +22,16 @@ public class Task implements Serializable {
     private final ChannelSession channelSession;
     private final MediaRoutingDomain mrd;
     private final UUID queue;
-
+    private final Timer timer;
+    private final PropertyChangeSupport changeSupport;
     private int priority;
     private TaskState state;
     private UUID assignedTo;
-
-    private final Long enqueueTime;
+    private Long enqueueTime;
     private Long startTime;
     private Long handlingTime;
-
-    private final Timer timer;
-    private int[] timeouts;
+    private List<Integer> timeouts;
     private int currentStep;
-
-    private final PropertyChangeSupport changeSupport;
 
     /**
      * Default constructor.
@@ -51,17 +46,17 @@ public class Task implements Serializable {
         this.queue = queue;
 
         this.priority = 10; // Right now hardcoded at highest priority level
-        this.state = new TaskState(Enums.TaskStateName.CREATED, Enums.TaskStateReasonCode.NONE);
+        this.state = new TaskState(Enums.TaskStateName.QUEUED, null);
         this.enqueueTime = System.currentTimeMillis();
         this.timer = new Timer();
+        this.handlingTime = 0L;
 
         this.changeSupport = new PropertyChangeSupport(this);
-        this.changeSupport.addPropertyChangeListener(new DispatchEWT());
-        this.changeSupport.addPropertyChangeListener(new EwtRequestEvent());
     }
 
     /**
      * Constructor. build object from TaskDto Object.
+     *
      * @param taskDto build object from this dto.
      */
     public Task(TaskDto taskDto) {
@@ -74,11 +69,29 @@ public class Task implements Serializable {
         this.state = taskDto.getState();
         this.assignedTo = taskDto.getAssignedTo();
         this.enqueueTime = taskDto.getEnqueueTime();
+        this.handlingTime = 0L;
 
         this.timer = new Timer();
         this.changeSupport = new PropertyChangeSupport(this);
-        this.changeSupport.addPropertyChangeListener(new DispatchEWT());
-        this.changeSupport.addPropertyChangeListener(new EwtRequestEvent());
+    }
+
+    /**
+     * Copy constructor. Used to make a new task for rerouting.
+     *
+     * @param o the task to be copied
+     */
+    public Task(Task o) {
+        this.id = UUID.randomUUID();
+        this.channelSession = o.getChannelSession();
+        this.mrd = o.getMrd();
+        this.queue = o.getQueue();
+
+        this.priority = o.getPriority();
+        this.state = new TaskState(Enums.TaskStateName.QUEUED, null);
+        this.timer = new Timer();
+        this.handlingTime = 0L;
+
+        this.changeSupport = new PropertyChangeSupport(this);
     }
 
     // +++++++++++++++++++++++++++++++ Accessor Methods ++++++++++++++++++++++++++++++++++++++++++++++
@@ -127,6 +140,10 @@ public class Task implements Serializable {
         return enqueueTime;
     }
 
+    public void setEnqueueTime(Long enqueueTime) {
+        this.enqueueTime = enqueueTime;
+    }
+
     public Long getStartTime() {
         return startTime;
     }
@@ -152,9 +169,9 @@ public class Task implements Serializable {
      *
      * @param timeouts the timeouts array
      */
-    public void setTimeouts(int[] timeouts) {
+    public void setTimeouts(List<Integer> timeouts) {
         this.timeouts = timeouts;
-        if (timeouts.length > 1) {
+        if (timeouts.size() > 1) {
             this.startTimer();
         }
     }
@@ -163,16 +180,13 @@ public class Task implements Serializable {
         return currentStep;
     }
 
-    public String getCustomerName() {
-        return this.channelSession.getLinkedCustomer().getAssociatedCustomer().getFirstName();
-    }
-
     public UUID getTopicId() {
         return this.channelSession.getTopicId();
     }
 
+    // TODO: Implement it correctly
     public UUID getLastAssignedAgentId() {
-        return this.channelSession.getLinkedCustomer().getLastAssignedAgent();
+        return UUID.randomUUID();
     }
 
     public void addPropertyChangeListener(String property, PropertyChangeListener listener) {
@@ -198,7 +212,7 @@ public class Task implements Serializable {
      */
     public void startTimer() {
         try {
-            timer.schedule(new TaskTimer(), this.timeouts[currentStep++] * 1000L);
+            timer.schedule(new TaskTimer(), this.timeouts.get(currentStep++) * 1000L);
         } catch (IllegalArgumentException ex) {
             if (!"Negative delay.".equalsIgnoreCase(ExceptionUtils.getRootCause(ex).getMessage())) {
                 LOGGER.error(ExceptionUtils.getMessage(ex));
@@ -208,10 +222,6 @@ public class Task implements Serializable {
             LOGGER.error(ExceptionUtils.getMessage(ex));
             LOGGER.error(ExceptionUtils.getStackTrace(ex));
         }
-    }
-
-    public void handleEvent(Enums.EventName property, JsonNode node) {
-        this.changeSupport.firePropertyChange(property.name(), null, node);
     }
 
     public void handleTaskRemoveEvent() {

@@ -21,7 +21,7 @@ public class Expression {
             return new ArrayList<>();
         }
         List<Term> elements = new ArrayList<>();
-        for (TermEntity entity: termEntities) {
+        for (TermEntity entity : termEntities) {
             elements.add(new Term(entity));
         }
         return elements;

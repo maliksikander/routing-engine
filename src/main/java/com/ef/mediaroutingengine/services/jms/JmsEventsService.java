@@ -1,11 +1,8 @@
 package com.ef.mediaroutingengine.services.jms;
 
-import com.ef.mediaroutingengine.dto.AgentMrdStateChangedRequest;
-import com.ef.mediaroutingengine.dto.TaskDto;
-import com.ef.mediaroutingengine.eventlisteners.TaskStateEvent;
-import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.Enums;
-import com.ef.mediaroutingengine.services.pools.AgentsPool;
+import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.mediaroutingengine.dto.TaskStateChangeRequest;
+import com.ef.mediaroutingengine.eventlisteners.taskstate.TaskStateListener;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,19 +25,16 @@ public class JmsEventsService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final PropertyChangeSupport propertyChangeSupport;
-    private final AgentsPool agentsPool;
 
     /**
      * Constructor. Loads the required beans.
      *
-     * @param agentsPool Agents pool bean.
-     * @param taskStateEvent Task State event listener.
+     * @param taskStateListener Task State event listener.
      */
     @Autowired
-    public JmsEventsService(AgentsPool agentsPool, TaskStateEvent taskStateEvent) {
-        this.agentsPool = agentsPool;
+    public JmsEventsService(TaskStateListener taskStateListener) {
         this.propertyChangeSupport = new PropertyChangeSupport(this);
-        this.propertyChangeSupport.addPropertyChangeListener(taskStateEvent);
+        this.propertyChangeSupport.addPropertyChangeListener(taskStateListener);
     }
 
     /**
@@ -51,7 +45,8 @@ public class JmsEventsService {
      * @throws JMSException If there is an error in getting the actual object from
      *                      inside the JMS-Message object wrapper
      */
-    public void handleEvent(String event, Message message) throws JMSException, JsonProcessingException {
+    public void handleEvent(Enums.RedisEventName event, Message message)
+            throws JMSException, JsonProcessingException {
         LOGGER.debug("handleEvent method started");
         validateJmsMessageInstance(message);
 
@@ -61,25 +56,11 @@ public class JmsEventsService {
         JsonNode textMessageJson = objectMapper.readTree(textMessageString);
         String dataJsonString = textMessageJson.get("data").toString();
 
-        switch (Enums.RedisEventName.valueOf(event)) {
-            case TASK_STATE_CHANGED:
-                TaskDto taskDto = objectMapper.readValue(dataJsonString, TaskDto.class);
-                propertyChangeSupport.firePropertyChange(Enums.EventName.TASK_STATE.toString(),
-                        null, taskDto);
-                break;
-            case AGENT_STATE_CHANGED:
-                LOGGER.info("Agent state event");
-                break;
-            case AGENT_MRD_STATE_CHANGED:
-                AgentMrdStateChangedRequest request = objectMapper
-                        .readValue(dataJsonString, AgentMrdStateChangedRequest.class);
-                Agent agent = agentsPool.findById(request.getAgentId());
-                if (agent != null) {
-                    agent.changeMrdState(request);
-                }
-                break;
-            default:
-                LOGGER.info("The type of Data is invalid");
+        if (event.equals(Enums.RedisEventName.TASK_STATE_CHANGED)) {
+            TaskStateChangeRequest req = objectMapper.readValue(dataJsonString, TaskStateChangeRequest.class);
+            propertyChangeSupport.firePropertyChange(Enums.EventName.TASK_STATE.toString(), null, req);
+        } else {
+            LOGGER.info("Event: {} is ignored by JMS Listener", event);
         }
 
         LOGGER.debug("handleEvent method ended");

@@ -34,7 +34,7 @@ public class RestRequest {
      * Calls the bot-framework's AgentReserved API.
      *
      * @param topicId id of the JMS topic.
-     * @param agent The agent that has been reserved on this topic.
+     * @param agent   The agent that has been reserved on this topic.
      * @return The HTTP response from the API call.
      */
     public ResponseEntity<String> postAgentReserved(UUID topicId, CCUser agent) {
@@ -61,7 +61,7 @@ public class RestRequest {
      * Calls the bot-framework's Agent-EWT API.
      *
      * @param topicId the id of the topic.
-     * @param ewt the estimated wait time to reserve and agent.
+     * @param ewt     the estimated wait time to reserve and agent.
      * @return The HTTP response from the API call.
      */
     public ResponseEntity<String> postAgentEwt(String topicId, int ewt) {
@@ -75,13 +75,13 @@ public class RestRequest {
      * Calls the Agent-manager's Assign-Task API.
      *
      * @param channelSession the channel-Session
-     * @param agent the agent to assign task to
-     * @param topicId the id of the JMS topic
-     * @param taskId the id of the task
+     * @param agent          the agent to assign task to
+     * @param topicId        the id of the JMS topic
+     * @param taskId         the id of the task
      * @return true if request successful, false otherwise.
      */
     public boolean postAssignTask(ChannelSession channelSession, CCUser agent,
-                                                 UUID topicId, UUID taskId) {
+                                  UUID topicId, UUID taskId) {
         AssignTaskRequest request = new AssignTaskRequest();
         request.setChannelSession(channelSession);
         request.setCcUser(agent);
@@ -101,7 +101,7 @@ public class RestRequest {
      * Calls the Agent manager's Change-State API.
      *
      * @param ccUser The CCUser object whose state is to be changed
-     * @param state The updated state to be changed.
+     * @param state  The updated state to be changed.
      * @return The HTTP response from the API call
      */
     public ResponseEntity<String> postChangeState(CCUser ccUser, String state) {
@@ -116,8 +116,8 @@ public class RestRequest {
      * Makes an httpRequest.
      *
      * @param requestBody The body of the request.
-     * @param uri the uri of the request.
-     * @param httpMethod the http-method e.g. GET, POST, PUT
+     * @param uri         the uri of the request.
+     * @param httpMethod  the http-method e.g. GET, POST, PUT
      * @return The HTTP response from the request.
      */
     public ResponseEntity<String> httpRequest(Object requestBody, String uri,

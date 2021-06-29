@@ -1,14 +1,16 @@
 package com.ef.mediaroutingengine.model;
 
+import com.ef.mediaroutingengine.commons.Enums;
+
 public class AgentState {
     Enums.AgentStateName name;
-    Enums.AgentStateReasonCode reasonCode;
+    ReasonCode reasonCode;
 
     public AgentState() {
 
     }
 
-    public AgentState(Enums.AgentStateName name, Enums.AgentStateReasonCode reasonCode) {
+    public AgentState(Enums.AgentStateName name, ReasonCode reasonCode) {
         this.name = name;
         this.reasonCode = reasonCode;
     }
@@ -21,11 +23,11 @@ public class AgentState {
         this.name = name;
     }
 
-    public Enums.AgentStateReasonCode getReasonCode() {
+    public ReasonCode getReasonCode() {
         return reasonCode;
     }
 
-    public void setReasonCode(Enums.AgentStateReasonCode reasonCode) {
+    public void setReasonCode(ReasonCode reasonCode) {
         this.reasonCode = reasonCode;
     }
 

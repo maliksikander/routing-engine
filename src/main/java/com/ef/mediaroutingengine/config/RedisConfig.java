@@ -20,6 +20,7 @@ public class RedisConfig {
 
     /**
      * Creates a bean of JedisPool.
+     *
      * @return JedisPool
      */
     @Bean

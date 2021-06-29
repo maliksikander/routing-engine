@@ -19,8 +19,6 @@ public class PrecisionQueueEntity {
     private String name;
     @NotNull
     private MediaRoutingDomain mrd;
-    @NotNull
-    private AgentSelectionCriteria agentSelectionCriteria;
     @Min(1)
     private int serviceLevelType;
     @NotNull
@@ -54,14 +52,6 @@ public class PrecisionQueueEntity {
 
     public void setMrd(MediaRoutingDomain mrd) {
         this.mrd = mrd;
-    }
-
-    public AgentSelectionCriteria getAgentSelectionCriteria() {
-        return agentSelectionCriteria;
-    }
-
-    public void setAgentSelectionCriteria(AgentSelectionCriteria agentSelectionCriteria) {
-        this.agentSelectionCriteria = agentSelectionCriteria;
     }
 
     public int getServiceLevelType() {
@@ -106,7 +96,6 @@ public class PrecisionQueueEntity {
                 + "id=" + id
                 + ", name='" + name + '\''
                 + ", mrd=" + mrd
-                + ", agentSelectionCriteria=" + agentSelectionCriteria
                 + ", serviceLevelType=" + serviceLevelType
                 + ", serviceLevelThreshold=" + serviceLevelThreshold
                 + ", steps=" + steps

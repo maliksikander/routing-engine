@@ -1,13 +1,13 @@
 package com.ef.mediaroutingengine.services.utilities;
 
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskDto;
+import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentMrdState;
 import com.ef.mediaroutingengine.model.AgentPresence;
 import com.ef.mediaroutingengine.model.AgentState;
-import com.ef.mediaroutingengine.model.Enums;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
-import com.ef.mediaroutingengine.model.MrdState;
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
@@ -21,7 +21,10 @@ import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import javax.jms.JMSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +95,14 @@ public class BootUtility {
         List<MediaRoutingDomain> mediaRoutingDomains = mediaRoutingDomainRepository.findAll();
         this.mrdPool.loadPoolFrom(mediaRoutingDomains);
 
+        this.loadAgentPresenceDb(mediaRoutingDomains, ccUsers);
+        Map<UUID, AgentPresence> agentPresenceMap = this.getAgentPresenceMap();
+        for (Agent agent : this.agentsPool.toList()) {
+            AgentPresence agentPresence = agentPresenceMap.get(agent.getId());
+            agent.setState(agentPresence.getState());
+            agent.setAgentMrdStates(agentPresence.getAgentMrdStates());
+        }
+
         List<PrecisionQueueEntity> precisionQueueEntities = precisionQueueEntityRepository.findAll();
         this.precisionQueuesPool.loadPoolFrom(precisionQueueEntities);
 
@@ -99,8 +110,6 @@ public class BootUtility {
         for (TaskDto taskDto : taskDtoList) {
             this.tasksPool.enqueueTask(new Task(taskDto));
         }
-
-        this.loadAgentPresenceDb(mediaRoutingDomains, ccUsers);
 
         LOGGER.info("Agents pool size: {}", this.agentsPool.size());
         LOGGER.info("Mrd pool size: {}", this.mrdPool.size());
@@ -113,7 +122,7 @@ public class BootUtility {
      */
     public void subscribeToStateEventsChannel() {
         try {
-            this.jmsCommunicator.init("STATE_CHANGE_CHANNEL");
+            this.jmsCommunicator.init("STATE_CHANNEL");
         } catch (JMSException jmsException) {
             LOGGER.error("JmsException while initializing JMS-Communicator: ", jmsException);
         }
@@ -121,37 +130,44 @@ public class BootUtility {
 
     private void loadAgentPresenceDb(List<MediaRoutingDomain> mediaRoutingDomains, List<CCUser> ccUsers) {
         List<AgentMrdState> agentMrdStates = this.getInitialAgentMrdStates(mediaRoutingDomains);
-        List<AgentPresence> agentPresenceList = this.agentPresenceRepository.findAll();
+        Map<UUID, AgentPresence> agentPresenceMap = this.getAgentPresenceMap();
+        Map<UUID, CCUser> ccUserMap = new HashMap<>();
 
         for (CCUser ccUser : ccUsers) {
-            if (!agentExistsInAgentPresenceDb(ccUser, agentPresenceList)) {
+            ccUserMap.put(ccUser.getId(), ccUser);
+            if (!agentPresenceMap.containsKey(ccUser.getId())) {
                 AgentPresence agentPresence = createAgentPresenceInstance(ccUser, agentMrdStates);
                 // TODO: Add SaveALL feature to the redisDao
+                agentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
                 this.agentPresenceRepository.save(agentPresence.getAgent().getId().toString(), agentPresence);
             }
         }
+
+        agentPresenceMap.forEach((k, v) -> {
+            if (!ccUserMap.containsKey(k)) {
+                this.agentPresenceRepository.deleteById(k.toString());
+            }
+        });
     }
 
     private List<AgentMrdState> getInitialAgentMrdStates(List<MediaRoutingDomain> mediaRoutingDomains) {
         List<AgentMrdState> agentMrdStates = new ArrayList<>();
         for (MediaRoutingDomain mrd : mediaRoutingDomains) {
-            MrdState state = new MrdState(Enums.AgentMrdStateName.NOT_READY, Enums.AgentMrdStateReasonCode.NONE);
-            agentMrdStates.add(new AgentMrdState(mrd.getId(), state));
+            agentMrdStates.add(new AgentMrdState(mrd, Enums.AgentMrdStateName.LOGOUT));
         }
         return agentMrdStates;
     }
 
-    private boolean agentExistsInAgentPresenceDb(CCUser ccUser, List<AgentPresence> agentPresenceList) {
-        for (AgentPresence agentPresence : agentPresenceList) {
-            if (ccUser.equals(agentPresence.getAgent())) {
-                return true;
-            }
+    private Map<UUID, AgentPresence> getAgentPresenceMap() {
+        Map<UUID, AgentPresence> agentPresenceMap = new HashMap<>();
+        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
+            agentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
         }
-        return false;
+        return agentPresenceMap;
     }
 
     private AgentPresence createAgentPresenceInstance(CCUser ccUser, List<AgentMrdState> agentMrdStates) {
-        AgentState state = new AgentState(Enums.AgentStateName.LOGOUT, Enums.AgentStateReasonCode.NONE);
+        AgentState state = new AgentState(Enums.AgentStateName.LOGOUT, null);
         return new AgentPresence(ccUser, state, agentMrdStates);
     }
 

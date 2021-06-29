@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.dto;
 
-import com.ef.mediaroutingengine.model.Enums;
+import com.ef.mediaroutingengine.commons.Enums;
 import java.io.Serializable;
 import java.sql.Timestamp;
 
@@ -8,6 +8,7 @@ public class StateChangeEvent implements Serializable {
     private Enums.RedisEventName name;
     private Serializable data;
     private Timestamp timestamp;
+    private String topicId;
 
     public StateChangeEvent() {
 
@@ -19,10 +20,11 @@ public class StateChangeEvent implements Serializable {
      * @param name event name
      * @param data event data
      */
-    public StateChangeEvent(Enums.RedisEventName name, Serializable data) {
+    public StateChangeEvent(Enums.RedisEventName name, Serializable data, String topicId) {
         this.name = name;
         this.data = data;
         this.timestamp = new Timestamp(System.currentTimeMillis());
+        this.topicId = topicId;
     }
 
     public Enums.RedisEventName getName() {
@@ -49,12 +51,21 @@ public class StateChangeEvent implements Serializable {
         this.timestamp = timestamp;
     }
 
+    public String getTopicId() {
+        return topicId;
+    }
+
+    public void setTopicId(String topicId) {
+        this.topicId = topicId;
+    }
+
     @Override
     public String toString() {
         return "StateChangeEvent{"
                 + "name=" + name
                 + ", data=" + data
                 + ", timestamp=" + timestamp
+                + ", topicId=" + topicId
                 + '}';
     }
 }
