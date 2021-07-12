@@ -26,7 +26,8 @@ maven-validate:
     - mvn validate
     - echo "${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}"
   only:
-    - /^CIM-.*$/
+    - /^.+_f-.+$/
+    - /^.+_b-.+$/
     - merge_requests
   allow_failure: false
 #+==================Runs on Every Commit and merge requests========================+
@@ -39,7 +40,8 @@ maven-compile:
     - mvn compiler:compile
     - mvn compiler:testCompile
   only:
-    - /^CIM-.*$/
+    - /^.+_f-.+$/
+    - /^.+_b-.+$/
     - merge_requests
   allow_failure: false
   cache:
@@ -56,7 +58,8 @@ maven-test:
   script:
     - mvn verify
   only:
-    - /^CIM-.*$/
+    - /^.+_f-.+$/
+    - /^.+_b-.+$/
     - merge_requests
   allow_failure: false
   cache:
@@ -85,7 +88,8 @@ maven-format:
       paths:
           - target/site/
   only:
-    - /^CIM-.*$/
+    - /^.+_f-.+$/
+    - /^.+_b-.+$/
     - merge_requests
   cache:
       key: ${CI_COMMIT_REF_SLUG}
@@ -113,7 +117,8 @@ mvn_artifacts:
        expire_in: 999 yrs
    allow_failure: false
    only:
-   - /^CIM-.*$/
+   - /^.+_f-.+$/
+   - /^.+_b-.+$/
    cache:
        key: ${CI_COMMIT_REF_SLUG}
        paths:
@@ -151,7 +156,8 @@ sonarqube-check:
          paths:
          - .sonar/cache
    only:
-     #- /^CIM-.*$/
+     #- /^.+_f-.+$/
+     #- /^.+_b-.+$/
      - merge_requests
 #+==================Runs on merge requests only========================+
 
@@ -198,7 +204,8 @@ mvn_build:
            - target
    allow_failure: false
    only:
-   #- /^CIM-.*$/
+   #- /^.+_f-.+$/
+   #- /^.+_b-.+$/
    - merge_requests
    cache:
        key: ${CI_COMMIT_REF_SLUG}
@@ -226,7 +233,8 @@ docker_build_branch:
    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$IMAGE_NAME_BRANCH"
    - docker push "$IMAGE_NAME_BRANCH"
  only:
-   - /^CIM-.*$/      
+   - /^.+_f-.+$/
+   - /^.+_b-.+$/
  allow_failure: false
 
 #+==================Runs on merge requests only========================+
@@ -295,7 +303,8 @@ anchore_scan_branch:
     #- image-npm.txt
     #- image-packages.txt
   only:
-    - /^CIM-.*$/
+    - /^.+_f-.+$/
+    - /^.+_b-.+$/
 #+==================Runs on merge requests only========================+
 anchore_scan_merge:
   image: anchore/engine-cli:latest
@@ -365,7 +374,8 @@ container_publish_branch:
     #      docker push "${CI_REGISTRY_IMAGE}:latest"
     #    fi
   only:
-    - /^CIM-.*$/
+    - /^.+_f-.+$/
+    - /^.+_b-.+$/
 
 
 #+==================Runs on merge requests only========================+
