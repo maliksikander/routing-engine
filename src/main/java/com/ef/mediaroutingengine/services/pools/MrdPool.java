@@ -30,6 +30,9 @@ public class MrdPool {
      * @return MRD if found, null otherwise
      */
     public MediaRoutingDomain findById(UUID id) {
+        if (id == null) {
+            return null;
+        }
         return this.mrds.get(id);
     }
 

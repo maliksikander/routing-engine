@@ -65,6 +65,9 @@ public class PrecisionQueuesPool {
     }
 
     public PrecisionQueue findById(UUID id) {
+        if (id == null) {
+            return null;
+        }
         return this.precisionQueues.get(id);
     }
 

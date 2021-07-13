@@ -5,6 +5,7 @@ import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
 import com.ef.mediaroutingengine.dto.AgentStateChangeRequest;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.services.controllerservices.AgentStateService;
+import java.util.concurrent.CompletableFuture;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -33,7 +34,7 @@ public class AgentStateController {
      */
     @PostMapping("/agent-login")
     public ResponseEntity<Object> agentLogin(@RequestBody AgentLoginRequest request) {
-        this.agentStateService.agentLogin(request);
+        CompletableFuture.runAsync(() -> this.agentStateService.agentLogin(request));
         return new ResponseEntity<>(new SuccessResponseBody("Agent login request received"), HttpStatus.OK);
     }
 

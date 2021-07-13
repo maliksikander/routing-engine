@@ -93,14 +93,18 @@ public class AgentMrdStateListener {
 
         Enums.AgentMrdStateName currentState = agentMrdState.getState();
         Enums.AgentMrdStateName newState = delegate.getNewState(agent, agentMrdState);
+        boolean fireEvent = false;
         if (!newState.equals(currentState)) {
             this.updateState(agent, agentMrdState, newState);
             if (newState.equals(Enums.AgentMrdStateName.READY)
                     || newState.equals(Enums.AgentMrdStateName.ACTIVE)) {
-                this.fireStateChangeToTaskSchedulers(agentMrdState);
+                fireEvent = true;
             }
         }
         this.publish(agent);
+        if (fireEvent) {
+            this.fireStateChangeToTaskSchedulers(agentMrdState);
+        }
         LOGGER.debug("Agent State Listener for agent: {}", agent.getId());
     }
 

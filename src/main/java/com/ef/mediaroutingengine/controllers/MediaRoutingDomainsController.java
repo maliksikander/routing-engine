@@ -28,7 +28,7 @@ public class MediaRoutingDomainsController {
         this.service = service;
     }
 
-    @CrossOrigin(origins = "http://localhost:4200")
+    @CrossOrigin(origins = "*")
     @PostMapping(value = "/media-routing-domains", consumes = "application/json",
             produces = "application/json")
     public ResponseEntity<Object> createMediaRoutingDomain(
@@ -36,13 +36,13 @@ public class MediaRoutingDomainsController {
         return new ResponseEntity<>(this.service.create(requestBody), HttpStatus.OK);
     }
 
-    @CrossOrigin(origins = "http://localhost:4200")
+    @CrossOrigin(origins = "*")
     @GetMapping(value = "/media-routing-domains", produces = "application/json")
     public ResponseEntity<Object> retrieveMediaRoutingDomains() {
         return new ResponseEntity<>(this.service.retrieve(), HttpStatus.OK);
     }
 
-    @CrossOrigin(origins = "http://localhost:4200")
+    @CrossOrigin(origins = "*")
     @PutMapping(value = "/media-routing-domains/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateMediaRoutingDomain(
             @Valid @RequestBody MediaRoutingDomain requestBody, @PathVariable UUID id) throws Exception {
@@ -55,7 +55,7 @@ public class MediaRoutingDomainsController {
      * @param id UUID
      * @return ResponseEntity
      */
-    @CrossOrigin(origins = "http://localhost:4200")
+    @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/media-routing-domains/{id}", produces = "application/json")
     public ResponseEntity<Object> deleteMediaRoutingDomain(@PathVariable UUID id) {
         List<PrecisionQueueEntity> precisionQueueEntities = this.service.delete(id);

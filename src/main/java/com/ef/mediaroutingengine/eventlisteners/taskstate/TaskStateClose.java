@@ -35,7 +35,7 @@ public class TaskStateClose implements TaskStateModifier {
     public void updateState(Task task, TaskState state) {
         this.precisionQueuesPool.endTask(task);
 
-        if (state.getReasonCode() == null) {
+        if (state.getReasonCode() == null || !state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA)) {
             this.taskManager.endTaskFromAssignedAgent(task);
             this.tasksRepository.deleteById(task.getId().toString());
             this.tasksPool.removeTask(task);

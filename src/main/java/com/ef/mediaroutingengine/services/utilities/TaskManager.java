@@ -3,8 +3,11 @@ package com.ef.mediaroutingengine.services.utilities;
 import com.ef.mediaroutingengine.commons.EFUtils;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
+import com.ef.mediaroutingengine.dto.AgentStateChangeRequest;
 import com.ef.mediaroutingengine.eventlisteners.agentmrdstate.AgentMrdStateListener;
+import com.ef.mediaroutingengine.eventlisteners.agentstate.AgentStateListener;
 import com.ef.mediaroutingengine.model.Agent;
+import com.ef.mediaroutingengine.model.AgentState;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import java.beans.PropertyChangeEvent;
@@ -45,7 +48,7 @@ public class TaskManager {
 
             UUID mrdId = task.getMrd().getId();
             Enums.AgentMrdStateName currentMrdState = agent.getAgentMrdState(mrdId).getState();
-            int noOfTasks = agent.getTasksCountFor(mrdId);
+            int noOfTasks = agent.getNoOfActiveTasks(mrdId);
 
             if (currentMrdState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY) && noOfTasks < 1) {
                 this.fireAgentMrdChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.NOT_READY, true);
@@ -67,9 +70,9 @@ public class TaskManager {
         UUID assignedTo = task.getAssignedTo();
         Agent agent = this.agentsPool.findById(assignedTo);
         if (agent != null) {
-            agent.endTask(task);
-            UUID mrdId = task.getMrd().getId();
-            this.fireAgentMrdChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.NOT_READY, false);
+            agent.removeReservedTask();
+            AgentState agentState = new AgentState(Enums.AgentStateName.NOT_READY, null);
+            this.fireAgentStateChangeRequest(agent.getId(), agentState);
         }
     }
 
@@ -80,17 +83,19 @@ public class TaskManager {
         listener.propertyChange(evt, async);
     }
 
+    private void fireAgentStateChangeRequest(UUID agentId, AgentState agentState) {
+        PropertyChangeEvent evt = new PropertyChangeEvent(this, Enums.EventName.AGENT_STATE.name(),
+                null, new AgentStateChangeRequest(agentId, agentState));
+        AgentStateListener listener = this.applicationContext.getBean(AgentStateListener.class);
+        listener.propertyChange(evt);
+    }
+
     /**
      * Updates the Agent's MRD state, when task state changes to active.
      *
-     * @param task the mrd state of agent associated to this task is updated.
+     * @param agent agent to b updated
      */
-    public void updateAgentMrdState(Task task) {
-        Agent agent = this.agentsPool.findById(task.getAssignedTo());
-        if (agent == null) {
-            return;
-        }
-        UUID mrdId = task.getMrd().getId();
+    public void updateAgentMrdState(Agent agent, UUID mrdId) {
         int noOfActiveTasks = agent.getNoOfActiveTasks(mrdId);
 
         if (noOfActiveTasks == 1) {

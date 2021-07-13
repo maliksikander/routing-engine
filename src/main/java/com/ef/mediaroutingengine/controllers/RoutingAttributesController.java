@@ -27,20 +27,20 @@ public class RoutingAttributesController {
         this.service = service;
     }
 
-    @CrossOrigin(origins = "http://localhost:4200")
+    @CrossOrigin(origins = "*")
     @PostMapping(value = "/routing-attributes", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> createRoutingAttribute(
             @Valid @RequestBody RoutingAttribute requestBody) {
         return new ResponseEntity<>(this.service.create(requestBody), HttpStatus.OK);
     }
 
-    @CrossOrigin(origins = "http://localhost:4200")
+    @CrossOrigin(origins = "*")
     @GetMapping(value = "/routing-attributes", produces = "application/json")
     public ResponseEntity<Object> retrieveRoutingAttributes() {
         return new ResponseEntity<>(this.service.retrieve(), HttpStatus.OK);
     }
 
-    @CrossOrigin(origins = "http://localhost:4200")
+    @CrossOrigin(origins = "*")
     @PutMapping(value = "/routing-attributes/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateRoutingAttribute(
             @Valid @RequestBody RoutingAttribute requestBody, @PathVariable UUID id) throws Exception {
@@ -53,7 +53,7 @@ public class RoutingAttributesController {
      * @param id UUID
      * @return ResponseEntity
      */
-    @CrossOrigin(origins = "http://localhost:4200")
+    @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/routing-attributes/{id}", produces = "application/json")
     public ResponseEntity<Object> deleteRoutingAttribute(@PathVariable UUID id) {
         RoutingAttributeDeleteConflictResponse deleteConflictResponse = this.service.delete(id);

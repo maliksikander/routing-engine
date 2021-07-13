@@ -31,7 +31,7 @@ public class AgentStateNotReady implements AgentStateDelegate {
             List<AgentMrdState> agentMrdStates = agent.getAgentMrdStates();
             for (AgentMrdState agentMrdState : agentMrdStates) {
                 UUID mrdId = agentMrdState.getMrd().getId();
-                if (agent.getTasksCountFor(mrdId) > 0) {
+                if (agent.getNoOfActiveTasks(mrdId) > 0) {
                     agentMrdState.setState(Enums.AgentMrdStateName.PENDING_NOT_READY);
                 } else {
                     agentMrdState.setState(Enums.AgentMrdStateName.NOT_READY);

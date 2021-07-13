@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.eventlisteners.taskstate;
 
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
+import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
@@ -13,6 +14,7 @@ public class TaskStateModifierFactory {
     private final TasksRepository tasksRepository;
     private final TasksPool tasksPool;
     private final PrecisionQueuesPool precisionQueuesPool;
+    private final AgentsPool agentsPool;
     private final TaskManager taskManager;
 
     /**
@@ -25,11 +27,12 @@ public class TaskStateModifierFactory {
      */
     @Autowired
     public TaskStateModifierFactory(TasksRepository tasksRepository, TasksPool tasksPool,
-                                    PrecisionQueuesPool precisionQueuesPool,
+                                    PrecisionQueuesPool precisionQueuesPool, AgentsPool agentsPool,
                                     TaskManager taskManager) {
         this.tasksRepository = tasksRepository;
         this.tasksPool = tasksPool;
         this.precisionQueuesPool = precisionQueuesPool;
+        this.agentsPool = agentsPool;
         this.taskManager = taskManager;
     }
 
@@ -43,7 +46,7 @@ public class TaskStateModifierFactory {
         if (state.equals(Enums.TaskStateName.CLOSED)) {
             return new TaskStateClose(tasksRepository, precisionQueuesPool, tasksPool, taskManager);
         } else if (state.equals(Enums.TaskStateName.ACTIVE)) {
-            return new TaskStateActive(taskManager);
+            return new TaskStateActive(taskManager, agentsPool, tasksPool);
         } else {
             return new TaskStateOther();
         }

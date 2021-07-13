@@ -26,20 +26,20 @@ public class PrecisionQueueEntityController {
         this.service = service;
     }
 
-    @CrossOrigin(origins = "http://localhost:4200")
+    @CrossOrigin(origins = "*")
     @PostMapping(value = "/precision-queues", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> createPrecisionQueue(
             @Valid @RequestBody PrecisionQueueEntity requestBody) throws Exception {
         return new ResponseEntity<>(this.service.create(requestBody), HttpStatus.OK);
     }
 
-    @CrossOrigin(origins = "http://localhost:4200")
+    @CrossOrigin(origins = "*")
     @GetMapping(value = "/precision-queues", produces = "application/json")
     public ResponseEntity<Object> retrievePrecisionQueues() {
         return new ResponseEntity<>(this.service.retrieve(), HttpStatus.OK);
     }
 
-    @CrossOrigin(origins = "http://localhost:4200")
+    @CrossOrigin(origins = "*")
     @PutMapping(value = "/precision-queues/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updatePrecisionQueue(
             @Valid @RequestBody PrecisionQueueEntity requestBody, @PathVariable UUID id) throws Exception {
@@ -52,7 +52,7 @@ public class PrecisionQueueEntityController {
      * @param id UUID
      * @return ResponseEntity
      */
-    @CrossOrigin(origins = "http://localhost:4200")
+    @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/precision-queues/{id}", produces = "application/json")
     public ResponseEntity<Object> deletePrecisionQueue(@PathVariable UUID id) throws Exception {
         this.service.delete(id);

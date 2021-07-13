@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,10 +20,10 @@ public class Agent {
 
     private final KeycloakUser keycloakUser;
     private final List<AssociatedRoutingAttribute> associatedRoutingAttributes;
-    private final Map<UUID, List<Task>> assignedTasks;
     private AgentState agentState;
     private List<AgentMrdState> agentMrdStates;
-    private AtomicInteger numOfTasks;
+    private final Map<UUID, List<Task>> activeTasks;
+    private Task reservedTask;
 
     /**
      * Default constructor, An Agent object can only be created from a CCUser object.
@@ -34,9 +33,7 @@ public class Agent {
     public Agent(@NotNull CCUser ccUser) {
         this.keycloakUser = ccUser.getKeycloakUser();
         this.associatedRoutingAttributes = ccUser.getAssociatedRoutingAttributes();
-
-        this.numOfTasks = new AtomicInteger(0);
-        this.assignedTasks = new ConcurrentHashMap<>();
+        this.activeTasks = new ConcurrentHashMap<>();
     }
 
     /**
@@ -49,15 +46,16 @@ public class Agent {
             LOGGER.debug("Cannot assign task, taskService is null");
             return;
         }
+        this.removeReservedTask();
         UUID mrdId = task.getMrd().getId();
-        this.assignedTasks.computeIfAbsent(mrdId, k -> Collections.synchronizedList(new ArrayList<>()));
-        List<Task> taskList = this.assignedTasks.get(mrdId);
+        this.activeTasks.computeIfAbsent(mrdId, k -> Collections.synchronizedList(new ArrayList<>()));
+        List<Task> taskList = this.activeTasks.get(mrdId);
         if (!taskList.contains(task)) {
             taskList.add(task);
         }
 
         LOGGER.debug("Agent Id: {}. Task: {} assigned. Total tasks handling: {}.",
-                this.keycloakUser.getId(), task.getId(), this.assignedTasks.size());
+                this.keycloakUser.getId(), task.getId(), this.activeTasks.size());
     }
 
     /**
@@ -83,7 +81,7 @@ public class Agent {
      */
     public void endTask(Task task) {
         UUID mrdId = task.getMrd().getId();
-        List<Task> taskList = this.assignedTasks.get(mrdId);
+        List<Task> taskList = this.activeTasks.get(mrdId);
         if (taskList.contains(task)) {
             if (task.getStartTime() != null) {
                 task.setHandlingTime(System.currentTimeMillis() - task.getStartTime());
@@ -97,34 +95,28 @@ public class Agent {
     }
 
     /**
-     * Returns the total tasks on an agent's mrd.
-     *
-     * @param mrdId id of the mrd
-     * @return total tasks on an agent's mrd
-     */
-    public int getTasksCountFor(UUID mrdId) {
-        List<Task> taskList = this.assignedTasks.get(mrdId);
-        if (taskList == null) {
-            return 0;
-        }
-        return taskList.size();
-    }
-
-    /**
      * Returns total number of active tasks on an agent's mrd.
      *
      * @param mrdId id of the mrd.
      * @return total number of active tasks on an agent's mrd
      */
     public int getNoOfActiveTasks(UUID mrdId) {
-        int noOfActiveTasks = 0;
-        List<Task> taskList = this.assignedTasks.get(mrdId);
-        for (Task task : taskList) {
-            if (task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
-                noOfActiveTasks++;
-            }
+//        int noOfActiveTasks = 0;
+//        List<Task> taskList = this.activeTasks.get(mrdId);
+//        if (taskList == null) {
+//            return noOfActiveTasks;
+//        }
+//        for (Task task : taskList) {
+//            if (task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
+//                noOfActiveTasks++;
+//            }
+//        }
+//        return noOfActiveTasks;
+        List<Task> taskList = this.activeTasks.get(mrdId);
+        if (taskList == null) {
+            return 0;
         }
-        return noOfActiveTasks;
+        return taskList.size();
     }
 
     /**
@@ -133,15 +125,18 @@ public class Agent {
      * @return list of all tasks from all MRDs
      */
     public List<Task> getAllTasks() {
-        List<Task> activeTasks = new ArrayList<>();
-        for (Map.Entry<UUID, List<Task>> entry : this.assignedTasks.entrySet()) {
-            activeTasks.addAll(entry.getValue());
+        List<Task> result = new ArrayList<>();
+        for (Map.Entry<UUID, List<Task>> entry : this.activeTasks.entrySet()) {
+            result.addAll(entry.getValue());
         }
-        return activeTasks;
+        if (reservedTask != null) {
+            result.add(reservedTask);
+        }
+        return result;
     }
 
     public void clearAllTasks() {
-        this.assignedTasks.replaceAll((i, v) -> Collections.synchronizedList(new ArrayList<>()));
+        this.activeTasks.replaceAll((i, v) -> Collections.synchronizedList(new ArrayList<>()));
     }
 
     public UUID getId() {
@@ -203,6 +198,18 @@ public class Agent {
                 break;
             }
         }
+    }
+
+    public void reserveTask(Task task) {
+        this.reservedTask = task;
+    }
+
+    public void removeReservedTask() {
+        this.reservedTask = null;
+    }
+
+    public boolean isTaskReserved() {
+        return this.reservedTask != null;
     }
 
     /**

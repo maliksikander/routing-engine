@@ -66,7 +66,9 @@ public class AgentStateListener implements PropertyChangeListener {
             return;
         }
         boolean stateChanged = delegate.updateState(agent, request.getState());
+        LOGGER.info("Before Publishing state change on JMS");
         this.publish(this.agentPresenceRepository.find(agent.getId().toString()), stateChanged);
+        LOGGER.info("Agent state change request published on JMS");
     }
 
     private void publish(AgentPresence agentPresence, boolean agentStateChanged) {

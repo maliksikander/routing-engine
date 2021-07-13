@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.services;
 
-import com.ef.mediaroutingengine.commons.EFUtils;
+import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentSelectionCriteria;
@@ -12,7 +12,6 @@ import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.utilities.RestRequest;
-import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
@@ -38,14 +37,11 @@ public class TaskScheduler implements PropertyChangeListener {
      */
 
     // Observer pattern
-
-
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskScheduler.class);
     private final TasksPool tasksPool;
     private final AgentsPool agentsPool;
     private final RestRequest restRequest;
     private final TasksRepository tasksRepository;
-    private final TaskManager taskManager;
 
     private PrecisionQueue precisionQueue;
     private boolean isInit;
@@ -60,12 +56,11 @@ public class TaskScheduler implements PropertyChangeListener {
      */
     @Autowired
     public TaskScheduler(TasksPool tasksPool, AgentsPool agentsPool, RestRequest restRequest,
-                         TasksRepository tasksRepository, TaskManager taskManager) {
+                         TasksRepository tasksRepository) {
         this.tasksPool = tasksPool;
         this.agentsPool = agentsPool;
         this.restRequest = restRequest;
         this.tasksRepository = tasksRepository;
-        this.taskManager = taskManager;
     }
 
     /**
@@ -97,10 +92,12 @@ public class TaskScheduler implements PropertyChangeListener {
             if (precisionQueue.isEmpty()) {
                 return;
             }
+            LOGGER.debug("Precision-Queue is not empty | TaskScheduler.propertyChange method");
 
             Task task = precisionQueue.peek();
+            LOGGER.debug("Queue.peek: Task: {} | TaskScheduler.propertyChange method", task.getId());
             synchronized (precisionQueue.getServiceQueue()) {
-                assign(task);
+                reserve(task);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -108,24 +105,24 @@ public class TaskScheduler implements PropertyChangeListener {
         LOGGER.debug("Property changed");
     }
 
-    private void assign(Task task) {
+    private void reserve(Task task) {
+        LOGGER.debug("method started | TaskScheduler.reserve method");
 //        boolean assignedToLastAssignedAgent = this.assignToLastAssignedAgent(task);
         boolean assignedToLastAssignedAgent = false;
         if (!assignedToLastAssignedAgent) {
             for (int i = 0; i < task.getCurrentStep() + 1; i++) {
                 Step step = precisionQueue.getStepAt(i);
                 LOGGER.info("Step: {} searching in queue: {}", i, precisionQueue.getName());
-
-                int leastNoOfTasks = getLowestNumberOfTasksAnAvailableAgentHasIn(step);
-                List<Agent> associatedAgents = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE,
-                        this.precisionQueue.getMrd().getId());
-                Agent agent = this.findAvailableAgentWithLeastTasks(associatedAgents, leastNoOfTasks);
+                Agent agent = this.getAvailableAgentWithLeastActiveTasks(step);
                 if (agent != null) {
+                    LOGGER.debug("Agent: {} is available to schedule task | TaskScheduler.reserve method",
+                            agent.getId());
                     this.assignTaskTo(agent, task);
                     break;
                 }
             }
         }
+        LOGGER.debug("method ended | TaskScheduler.reserve method");
     }
 
     private void listenToTaskPropertyChangesIfNewTaskEventFired(PropertyChangeEvent evt) {
@@ -148,38 +145,39 @@ public class TaskScheduler implements PropertyChangeListener {
         }
     }
 
-    private boolean isActiveOrReady(Agent agent) {
+    private boolean isAvailable(Agent agent) {
         UUID mrdId = this.precisionQueue.getMrd().getId();
         Enums.AgentStateName agentState = agent.getState().getName();
         Enums.AgentMrdStateName mrdState = agent.getAgentMrdState(mrdId).getState();
 
+        // (Agent State is ready) AND (AgnetMRrdState is ready OR active) AND (No task is reserved for this agent)
+        // Only one task can be *reserved* for an Agent at a time.
         return agentState.equals(Enums.AgentStateName.READY)
                 && (mrdState.equals(Enums.AgentMrdStateName.ACTIVE)
                 || mrdState.equals(Enums.AgentMrdStateName.READY))
-                && agent.getTasksCountFor(mrdId) < EFUtils.MAX_TASKS;
+                && !agent.isTaskReserved();
     }
 
-    private boolean isActiveOrReadyAndHasLowestTasks(Agent agent, int lowestTasks) {
-        int noOfTasksOnMrd = agent.getTasksCountFor(this.precisionQueue.getMrd().getId());
-        return isActiveOrReady(agent) && noOfTasksOnMrd == lowestTasks;
-    }
-
-    private int getLowestNumberOfTasksAnAvailableAgentHasIn(Step step) {
+    private Agent getAvailableAgentWithLeastActiveTasks(Step step) {
+        List<Agent> sortedAgentList = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE,
+                this.precisionQueue.getMrd().getId());
         int lowestNumberOfTasks = Integer.MAX_VALUE;
-        for (Agent agent : step.getAssociatedAgents()) {
-            int noOfTasksOnMrd = agent.getTasksCountFor(this.precisionQueue.getMrd().getId());
-            if (isActiveOrReady(agent) && noOfTasksOnMrd < lowestNumberOfTasks) {
+        Agent result = null;
+        for (Agent agent : sortedAgentList) {
+            int noOfTasksOnMrd = agent.getNoOfActiveTasks(this.precisionQueue.getMrd().getId());
+            if (isAvailable(agent) && noOfTasksOnMrd < lowestNumberOfTasks) {
                 lowestNumberOfTasks = noOfTasksOnMrd;
+                result = agent;
             }
         }
-        return lowestNumberOfTasks;
+        return result;
     }
 
     private boolean assignToLastAssignedAgent(Task task) {
         UUID lastAssignedAgentId = task.getLastAssignedAgentId();
         if (lastAssignedAgentId != null) {
             Agent agent = this.agentsPool.findById(lastAssignedAgentId);
-            if (agent != null && isActiveOrReady(agent)) {
+            if (agent != null && isAvailable(agent)) {
                 assignTaskTo(agent, task);
                 return true;
             }
@@ -187,35 +185,30 @@ public class TaskScheduler implements PropertyChangeListener {
         return false;
     }
 
-    private Agent findAvailableAgentWithLeastTasks(List<Agent> agents, int lowestTasks) {
-        for (Agent agent : agents) {
-            if (isActiveOrReadyAndHasLowestTasks(agent, lowestTasks)) {
-                return agent;
-            }
-        }
-        return null;
-    }
-
-    private boolean assignTaskTo(Agent agent, Task task) {
+    private void assignTaskTo(Agent agent, Task task) {
+        LOGGER.debug("method started | TaskScheduler.assignTaskTo method");
         try {
-//            CCUser ccUser = agent.toCcUser();
-//            boolean isAssigned = this.restRequest.postAssignTask(task.getChannelSession(),
-//                    ccUser, task.getTopicId(), task.getId());
-            boolean isAssigned = true;
-            if (isAssigned) {
+            if (task.isAgentRequestTimeout()) {
+                LOGGER.debug("AgentRequestTtlTimeout method returning.. | TaskScheduler.assignTaskTo method");
+                return;
+            }
+            CCUser ccUser = agent.toCcUser();
+            boolean isReserved = this.restRequest.postAssignTask(task.getChannelSession(), ccUser,
+                    task.getTopicId(), task.getId());
+            if (isReserved) {
+                LOGGER.debug("Task Assigned to agent in Agent-Manager | TaskScheduler.assignTaskTo method");
                 this.changeStateOf(task, new TaskState(Enums.TaskStateName.RESERVED, null), agent.getId());
                 precisionQueue.dequeue();
-                agent.assignTask(task);
-                //this.restRequest.postAgentReserved(task.getTopicId(), ccUser);
+                agent.reserveTask(task);
+                this.restRequest.postAgentReserved(task.getTopicId(), ccUser);
                 task.handleTaskRemoveEvent();
                 task.removePropertyChangeListener(Enums.EventName.TIMER.name(), this);
                 task.removePropertyChangeListener(Enums.EventName.TASK_REMOVED.name(), this);
-                return true;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return false;
+        LOGGER.debug("method ended | TaskScheduler.assignTaskTo method");
     }
 
     private void changeStateOf(Task task, TaskState state, UUID agentId) {

@@ -32,6 +32,7 @@ public class Task implements Serializable {
     private Long handlingTime;
     private List<Integer> timeouts;
     private int currentStep;
+    private boolean agentRequestTimeout;
 
     /**
      * Default constructor.
@@ -50,6 +51,7 @@ public class Task implements Serializable {
         this.enqueueTime = System.currentTimeMillis();
         this.timer = new Timer();
         this.handlingTime = 0L;
+        this.agentRequestTimeout = false;
 
         this.changeSupport = new PropertyChangeSupport(this);
     }
@@ -226,6 +228,14 @@ public class Task implements Serializable {
 
     public void handleTaskRemoveEvent() {
         this.changeSupport.firePropertyChange(Enums.EventName.TASK_REMOVED.name(), null, "");
+    }
+
+    public void agentRequestTimeout() {
+        this.agentRequestTimeout = true;
+    }
+
+    public boolean isAgentRequestTimeout() {
+        return this.agentRequestTimeout;
     }
 
     @Override

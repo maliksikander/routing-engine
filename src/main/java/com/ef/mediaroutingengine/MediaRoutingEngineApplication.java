@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine;
 
-import com.ef.mediaroutingengine.services.utilities.BootUtility;
+import com.ef.mediaroutingengine.bootstrap.Bootstrap;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
@@ -18,8 +18,8 @@ public class MediaRoutingEngineApplication {
 
         ApplicationContext applicationContext = SpringApplication.run(MediaRoutingEngineApplication.class, args);
 
-        BootUtility bootUtility = applicationContext.getBean(BootUtility.class);
-        bootUtility.subscribeToStateEventsChannel();
-        bootUtility.loadPools();
+        Bootstrap bootstrap = applicationContext.getBean(Bootstrap.class);
+        bootstrap.subscribeToStateEventsChannel();
+        bootstrap.loadPools();
     }
 }
