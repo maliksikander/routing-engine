@@ -64,6 +64,12 @@ public class PrecisionQueuesPool {
         return null;
     }
 
+    /**
+     * Return PrecisionQueue with the id in the parameter. Return null if id not found or id is null.
+     *
+     * @param id Precision Queue with this id will be searched and returned.
+     * @return Precision Queue if found, null otherwise
+     */
     public PrecisionQueue findById(UUID id) {
         if (id == null) {
             return null;

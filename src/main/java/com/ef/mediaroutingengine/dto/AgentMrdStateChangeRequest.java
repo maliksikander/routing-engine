@@ -10,7 +10,7 @@ import java.util.UUID;
  */
 public class AgentMrdStateChangeRequest {
     /**
-     * Id of the agent, for which the MRD-state-change is requested
+     * Id of the agent, for which the MRD-state-change is requested.
      */
     UUID agentId;
     /**
@@ -18,7 +18,7 @@ public class AgentMrdStateChangeRequest {
      */
     UUID mrdId;
     /**
-     * The New Agent-MRD-State requested
+     * The New Agent-MRD-State requested.
      */
     Enums.AgentMrdStateName state;
 

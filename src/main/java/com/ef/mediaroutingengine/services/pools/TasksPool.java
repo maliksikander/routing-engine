@@ -352,6 +352,11 @@ public class TasksPool {
         return this.allTasks.remove(task);
     }
 
+    /**
+     * Cancels the Agent-Request-Ttl-Task for the topicId in the parameter if the timer is running.
+     *
+     * @param topicId timer task for this topicId is cancelled.
+     */
     public void cancelAgentRequestTtlTimerTask(UUID topicId) {
         RequestTtlTimer requestTtlTimer = this.requestTtlTimers.get(topicId);
         if (requestTtlTimer == null) {
@@ -372,6 +377,11 @@ public class TasksPool {
         return this.allTasks.size();
     }
 
+    /**
+     * Returns all Active Agent-Request-Ttl timers.
+     *
+     * @return list of Active Agent-Request-Ttl timers.
+     */
     public List<UUID> getAllActiveTimers() {
         List<UUID> result = new ArrayList<>();
         for (Map.Entry<UUID, RequestTtlTimer> entry: this.requestTtlTimers.entrySet()) {

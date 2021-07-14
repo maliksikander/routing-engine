@@ -9,7 +9,7 @@ import java.util.UUID;
  */
 public class AgentLoginRequest {
     /**
-     * Id of the agent to login
+     * Id of the agent to login.
      */
     private UUID agentId;
 
