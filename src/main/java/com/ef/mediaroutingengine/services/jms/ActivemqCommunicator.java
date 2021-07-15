@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class ActivemqCommunicator implements JmsCommunicator {
     private static final Logger LOGGER = LoggerFactory.getLogger(ActivemqCommunicator.class);
-    private static final String SUBSCRIBER_NAME = "ROUTING-ENGINE-SUBSCRIBER";
+    private static final String SUBSCRIBER_NAME = "ROUTING-ENGINE-SUBSCRIBER-2";
     private final JmsEventsService jmsEventsService;
     Connection connection;
     MessageProducer publisher;

@@ -63,15 +63,15 @@ public class Bootstrap {
      */
     @Autowired
     public Bootstrap(AgentsRepository agentsRepository,
-                       MediaRoutingDomainRepository mediaRoutingDomainRepository,
-                       PrecisionQueueEntityRepository precisionQueueEntityRepository,
-                       TasksRepository tasksRepository,
-                       AgentPresenceRepository agentPresenceRepository,
-                       AgentsPool agentsPool,
-                       MrdPool mrdPool,
-                       PrecisionQueuesPool precisionQueuesPool,
-                       TasksPool tasksPool,
-                       JmsCommunicator jmsCommunicator) {
+                     MediaRoutingDomainRepository mediaRoutingDomainRepository,
+                     PrecisionQueueEntityRepository precisionQueueEntityRepository,
+                     TasksRepository tasksRepository,
+                     AgentPresenceRepository agentPresenceRepository,
+                     AgentsPool agentsPool,
+                     MrdPool mrdPool,
+                     PrecisionQueuesPool precisionQueuesPool,
+                     TasksPool tasksPool,
+                     JmsCommunicator jmsCommunicator) {
         this.agentsRepository = agentsRepository;
         this.mediaRoutingDomainRepository = mediaRoutingDomainRepository;
         this.precisionQueueEntityRepository = precisionQueueEntityRepository;
@@ -88,26 +88,30 @@ public class Bootstrap {
      * Loads All Pools at start of the application.
      */
     public void loadPools() {
-        //TODO: Load Agent / Agent MRD states from Redis.
         List<CCUser> ccUsers = agentsRepository.findAll();
         this.agentsPool.loadPoolFrom(ccUsers);
 
         List<MediaRoutingDomain> mediaRoutingDomains = mediaRoutingDomainRepository.findAll();
         this.mrdPool.loadPoolFrom(mediaRoutingDomains);
 
-        this.loadAgentPresenceDb(mediaRoutingDomains, ccUsers);
-        Map<UUID, AgentPresence> agentPresenceMap = this.getAgentPresenceMap();
-        for (Agent agent : this.agentsPool.toList()) {
-            AgentPresence agentPresence = agentPresenceMap.get(agent.getId());
-            agent.setState(agentPresence.getState());
-            agent.setAgentMrdStates(agentPresence.getAgentMrdStates());
-        }
+        // Update Agent and AgentMRD states after MRD pool is loaded as it is required for agent-mrd states.
+        this.updateAgentStates();
 
+        // Load Precision-Queue pool. Requires Agents pool to be loaded first.
         List<PrecisionQueueEntity> precisionQueueEntities = precisionQueueEntityRepository.findAll();
         this.precisionQueuesPool.loadPoolFrom(precisionQueueEntities);
 
         List<TaskDto> taskDtoList = this.tasksRepository.findAll();
         for (TaskDto taskDto : taskDtoList) {
+            Task task = new Task(taskDto);
+            Agent agent = this.agentsPool.findById(task.getAssignedTo());
+            if (agent != null) {
+                if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
+                    agent.reserveTask(task);
+                } else if (task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
+                    agent.addActiveTask(task);
+                }
+            }
             this.tasksPool.enqueueTask(new Task(taskDto));
         }
 
@@ -128,47 +132,64 @@ public class Bootstrap {
         }
     }
 
-    private void loadAgentPresenceDb(List<MediaRoutingDomain> mediaRoutingDomains, List<CCUser> ccUsers) {
-        List<AgentMrdState> agentMrdStates = this.getInitialAgentMrdStates(mediaRoutingDomains);
-        Map<UUID, AgentPresence> agentPresenceMap = this.getAgentPresenceMap();
-        Map<UUID, CCUser> ccUserMap = new HashMap<>();
-
-        for (CCUser ccUser : ccUsers) {
-            ccUserMap.put(ccUser.getId(), ccUser);
-            if (!agentPresenceMap.containsKey(ccUser.getId())) {
-                AgentPresence agentPresence = createAgentPresenceInstance(ccUser, agentMrdStates);
-                // TODO: Add SaveALL feature to the redisDao
-                agentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
-                this.agentPresenceRepository.save(agentPresence.getAgent().getId().toString(), agentPresence);
-            }
-        }
-
-        agentPresenceMap.forEach((k, v) -> {
-            if (!ccUserMap.containsKey(k)) {
-                this.agentPresenceRepository.deleteById(k.toString());
-            }
-        });
-    }
-
     private List<AgentMrdState> getInitialAgentMrdStates(List<MediaRoutingDomain> mediaRoutingDomains) {
         List<AgentMrdState> agentMrdStates = new ArrayList<>();
         for (MediaRoutingDomain mrd : mediaRoutingDomains) {
-            agentMrdStates.add(new AgentMrdState(mrd, Enums.AgentMrdStateName.LOGOUT));
+            agentMrdStates.add(new AgentMrdState(mrd, Enums.AgentMrdStateName.NOT_READY));
         }
         return agentMrdStates;
     }
 
-    private Map<UUID, AgentPresence> getAgentPresenceMap() {
-        Map<UUID, AgentPresence> agentPresenceMap = new HashMap<>();
-        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
-            agentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
+    private Map<UUID, AgentPresence> getCurrentAgentPresenceMap() {
+        List<AgentPresence> currentAgentPresenceList = this.agentPresenceRepository.findAll();
+        for (AgentPresence agentPresence : currentAgentPresenceList) {
+            this.agentPresenceRepository.deleteById(agentPresence.getAgent().getId().toString());
         }
-        return agentPresenceMap;
+        Map<UUID, AgentPresence> currentAgentPresenceMap = new HashMap<>();
+        for (AgentPresence agentPresence : currentAgentPresenceList) {
+            currentAgentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
+        }
+        return currentAgentPresenceMap;
     }
 
-    private AgentPresence createAgentPresenceInstance(CCUser ccUser, List<AgentMrdState> agentMrdStates) {
-        AgentState state = new AgentState(Enums.AgentStateName.LOGOUT, null);
-        return new AgentPresence(ccUser, state, agentMrdStates);
+    private void updateMrdStateFromAgentPresence(AgentMrdState agentMrdStateInAgentPresence,
+                                                 List<AgentMrdState> agentMrdStates) {
+        for (int i = 0; i < agentMrdStates.size(); i++) {
+            AgentMrdState agentMrdStateInList = agentMrdStates.get(i);
+            if (agentMrdStateInAgentPresence.getMrd().getId().equals(agentMrdStateInList.getMrd().getId())) {
+                agentMrdStateInAgentPresence.setMrd(agentMrdStateInList.getMrd());
+                agentMrdStates.set(i, agentMrdStateInAgentPresence);
+                break;
+            }
+        }
+    }
+
+    private void updateAgentStates() {
+        Map<UUID, AgentPresence> currentAgentPresenceMap = this.getCurrentAgentPresenceMap();
+        List<AgentPresence> updatedAgentPresenceList = new ArrayList<>();
+        for (Agent agent : this.agentsPool.toList()) {
+            AgentState agentState;
+            List<AgentMrdState> agentMrdStates = getInitialAgentMrdStates(this.mrdPool.findAll());
+
+            AgentPresence agentPresence = currentAgentPresenceMap.get(agent.getId());
+            if (agentPresence != null) {
+                agentState = agentPresence.getState();
+                for (AgentMrdState agentMrdState : agentPresence.getAgentMrdStates()) {
+                    this.updateMrdStateFromAgentPresence(agentMrdState, agentMrdStates);
+                }
+                agentPresence.setAgent(agent.toCcUser());
+                agentPresence.setAgentMrdStates(agentMrdStates);
+            } else {
+                agentState = new AgentState(Enums.AgentStateName.LOGOUT, null);
+                agentPresence = new AgentPresence(agent.toCcUser(), agentState, agentMrdStates);
+            }
+            agent.setState(agentState);
+            agent.setAgentMrdStates(agentMrdStates);
+            updatedAgentPresenceList.add(agentPresence);
+        }
+        for (AgentPresence agentPresence : updatedAgentPresenceList) {
+            this.agentPresenceRepository.save(agentPresence.getAgent().getId().toString(), agentPresence);
+        }
     }
 }
 

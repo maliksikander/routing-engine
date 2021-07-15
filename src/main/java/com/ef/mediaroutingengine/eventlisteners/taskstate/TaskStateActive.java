@@ -22,8 +22,8 @@ public class TaskStateActive implements TaskStateModifier {
      * Default Constructor. Loads the dependencies.
      *
      * @param taskManager handles the Agent-state changes on Task state change.
-     * @param agentsPool pool of all agents
-     * @param tasksPool pool of all tasks
+     * @param agentsPool  pool of all agents
+     * @param tasksPool   pool of all tasks
      */
     @Autowired
     public TaskStateActive(TaskManager taskManager, AgentsPool agentsPool, TasksPool tasksPool) {

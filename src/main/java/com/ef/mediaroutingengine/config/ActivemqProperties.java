@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "amq")
 public class ActivemqProperties {
     private static final Logger LOGGER = LoggerFactory.getLogger(ActivemqProperties.class);
-    private static final String CLIENT_ID = "ROUTING-ENGINE-CLIENT";
+    private static final String CLIENT_ID = "ROUTING-ENGINE-CLIENT-2";
 
     private String transport;
     @Value("${spring.activemq.broker-url}")

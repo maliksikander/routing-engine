@@ -201,7 +201,7 @@ public class TaskScheduler implements PropertyChangeListener {
                 precisionQueue.dequeue();
                 agent.reserveTask(task);
                 this.restRequest.postAgentReserved(task.getTopicId(), ccUser);
-                task.handleTaskRemoveEvent();
+//                task.handleTaskRemoveEvent();
                 task.removePropertyChangeListener(Enums.EventName.TIMER.name(), this);
                 task.removePropertyChangeListener(Enums.EventName.TASK_REMOVED.name(), this);
             }

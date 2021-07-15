@@ -96,7 +96,7 @@ public class RedisClientImpl implements RedisClient {
     /**
      * Sets multiple json object along with storing their keys in a set.
      *
-     * @param type the type of the field or the name of the set.
+     * @param type        the type of the field or the name of the set.
      * @param jsonObjects Map of keys and their correspondent json objects.
      * @return true if operation successful, false otherwise.
      */

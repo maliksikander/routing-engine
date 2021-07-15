@@ -37,6 +37,7 @@ public class Enums {
         TIMER,
         TASK_STATE,
         CONFERENCE,
+        TASK_ACCEPTED
     }
 
     public enum CommandProperties {

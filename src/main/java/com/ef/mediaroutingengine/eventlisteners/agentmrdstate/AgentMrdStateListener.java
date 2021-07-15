@@ -82,6 +82,7 @@ public class AgentMrdStateListener {
         if (agentMrdState == null) {
             LOGGER.error("Could not find MRD with id: {} associated with agent: {}", request.getMrdId(),
                     request.getAgentId());
+            this.publish(agent);
             return;
         }
 

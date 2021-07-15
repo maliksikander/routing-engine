@@ -20,9 +20,9 @@ public class Agent {
 
     private final KeycloakUser keycloakUser;
     private final List<AssociatedRoutingAttribute> associatedRoutingAttributes;
+    private final Map<UUID, List<Task>> activeTasks;
     private AgentState agentState;
     private List<AgentMrdState> agentMrdStates;
-    private final Map<UUID, List<Task>> activeTasks;
     private Task reservedTask;
 
     /**
@@ -47,15 +47,23 @@ public class Agent {
             return;
         }
         this.removeReservedTask();
+        this.addActiveTask(task);
+        LOGGER.debug("Agent Id: {}. Task: {} assigned. Total tasks handling: {}.",
+                this.keycloakUser.getId(), task.getId(), this.activeTasks.size());
+    }
+
+    /**
+     * Add a task to the Active tasks list.
+     *
+     * @param task task to be added
+     */
+    public void addActiveTask(Task task) {
         UUID mrdId = task.getMrd().getId();
         this.activeTasks.computeIfAbsent(mrdId, k -> Collections.synchronizedList(new ArrayList<>()));
         List<Task> taskList = this.activeTasks.get(mrdId);
         if (!taskList.contains(task)) {
             taskList.add(task);
         }
-
-        LOGGER.debug("Agent Id: {}. Task: {} assigned. Total tasks handling: {}.",
-                this.keycloakUser.getId(), task.getId(), this.activeTasks.size());
     }
 
     /**
@@ -191,8 +199,11 @@ public class Agent {
      */
     public void setAgentMrdState(UUID mrdId, Enums.AgentMrdStateName agentMrdStateName) {
         // TODO: Change Mrd state list to map.
+        if (this.agentMrdStates == null) {
+            this.agentMrdStates = new ArrayList<>();
+        }
         for (AgentMrdState agentMrdState : this.agentMrdStates) {
-            if (agentMrdState.getMrd().equals(mrdId)) {
+            if (agentMrdState.getMrd().getId().equals(mrdId)) {
                 agentMrdState.setState(agentMrdStateName);
                 agentMrdState.setStateChangeTime(LocalDateTime.now());
                 break;

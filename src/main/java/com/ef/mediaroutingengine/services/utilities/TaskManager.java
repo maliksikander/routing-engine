@@ -8,8 +8,10 @@ import com.ef.mediaroutingengine.eventlisteners.agentmrdstate.AgentMrdStateListe
 import com.ef.mediaroutingengine.eventlisteners.agentstate.AgentStateListener;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentState;
+import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
+import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import java.beans.PropertyChangeEvent;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +26,7 @@ public class TaskManager {
     /**
      * Default Constructor. Loads the dependencies.
      *
-     * @param agentsPool pool of all agents.
+     * @param agentsPool         pool of all agents.
      * @param applicationContext to get beans at runtime.
      */
     @Autowired
@@ -97,11 +99,20 @@ public class TaskManager {
      */
     public void updateAgentMrdState(Agent agent, UUID mrdId) {
         int noOfActiveTasks = agent.getNoOfActiveTasks(mrdId);
-
         if (noOfActiveTasks == 1) {
             this.fireAgentMrdChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.ACTIVE, false);
         } else if (noOfActiveTasks == EFUtils.MAX_TASKS) {
             this.fireAgentMrdChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.BUSY, false);
+        }
+        if (noOfActiveTasks > 1) {
+            PrecisionQueuesPool precisionQueuesPool = applicationContext.getBean(PrecisionQueuesPool.class);
+            for (PrecisionQueue precisionQueue : precisionQueuesPool.toList()) {
+                if (precisionQueue.getMrd().getId().equals(mrdId)) {
+                    PropertyChangeEvent evt = new PropertyChangeEvent(this,
+                            Enums.EventName.TASK_ACCEPTED.name(), null, "");
+                    precisionQueue.getTaskScheduler().propertyChange(evt);
+                }
+            }
         }
     }
 }
