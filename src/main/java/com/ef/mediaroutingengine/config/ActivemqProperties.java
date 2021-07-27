@@ -295,7 +295,8 @@ public class ActivemqProperties {
      * Creates and returns a JMS-Connection object for SSL protocol.
      *
      * @return JMS -Connection object with protocol type: SSL
-     * @throws Exception if there is an issue with creating absolute paths for trustStore or keyStore, or their                   is an issue with creating the Connection object from the ConnectionFactory
+     * @throws Exception if there is an issue with creating absolute paths for trustStore or keyStore, or their
+     *                   is an issue with creating the Connection object from the ConnectionFactory
      */
     private Connection createSslConnection() throws Exception {
         LOGGER.debug("Creating Connection object for SSL protocol");

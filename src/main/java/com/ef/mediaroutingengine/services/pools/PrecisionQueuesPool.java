@@ -1,6 +1,5 @@
 package com.ef.mediaroutingengine.services.pools;
 
-import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Task;

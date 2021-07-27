@@ -52,7 +52,8 @@ public class PriorityQueue {
     /**
      * Dequeue task service.
      *
-     * @param poll Task will be removed from queue if poll is true (queue poll operation),             task will not be removed from queue otherwise (queue peek operation)
+     * @param poll Task will be removed from queue if poll is true (queue poll operation), task will not be
+     *             removed from queue otherwise (queue peek operation)
      * @return the task service in both cases (poll or peak), returns null if task not found
      */
     public Task dequeue(boolean poll) {

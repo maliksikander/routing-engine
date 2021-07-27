@@ -251,7 +251,7 @@ public class RedisClientImpl implements RedisClient {
                 return false;
             }
             transaction = conn.multi();
-            for (String id: idList) {
+            for (String id : idList) {
                 transaction.sendCommand(Command.DEL, SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH));
             }
             transaction.del(type);

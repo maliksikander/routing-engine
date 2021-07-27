@@ -24,7 +24,7 @@ public class ExpressionUtility {
      * Evaluates a postfix expression to evaluate agents associated with a Precision-Queue's Step.
      * It converts the infix expression to a postfix expression and evaluates the postfix expression.
      *
-     * @param infixExpression list of infix expression's operands (list of CCUsers), operators (AND, OR)                        and brackets
+     * @param infixExpression list of infix expression's operands (list of CCUsers), operators (AND, OR) and brackets
      * @return list of associated-agents.
      */
     public static List<Agent> evaluateInfix(@NotNull List<Object> infixExpression) {

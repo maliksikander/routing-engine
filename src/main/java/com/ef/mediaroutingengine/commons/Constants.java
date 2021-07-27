@@ -5,13 +5,6 @@ package com.ef.mediaroutingengine.commons;
  */
 public class Constants {
     /**
-     * Instantiates a new Constants.
-     */
-    private Constants() {
-
-    }
-
-    /**
      * Used for Logging at the start of a method.
      */
     public static final String METHOD_STARTED = "method started";
@@ -23,4 +16,11 @@ public class Constants {
      * Maximum number of tasks an Agent can handle on each MRD.
      */
     public static final int MAX_TASKS = 5;
+
+    /**
+     * Instantiates a new Constants.
+     */
+    private Constants() {
+
+    }
 }

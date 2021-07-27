@@ -5,7 +5,6 @@ import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.mediaroutingengine.config.AssignResourceProperties;
 import com.ef.mediaroutingengine.dto.AgentReservedRequest;
 import com.ef.mediaroutingengine.dto.AssignTaskRequest;
-import com.ef.mediaroutingengine.dto.ChangeStateRequest;
 import java.time.Duration;
 import java.util.UUID;
 import org.json.JSONObject;

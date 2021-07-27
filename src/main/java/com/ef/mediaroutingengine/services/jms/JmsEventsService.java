@@ -51,7 +51,8 @@ public class JmsEventsService {
      *
      * @param event   String object. The name of the incoming event
      * @param message JMS-Message. the actual message object
-     * @throws JMSException            If there is an error in getting the actual object from                      inside the JMS-Message object wrapper
+     * @throws JMSException            If there is an error in getting the actual object from
+     *                                 inside the JMS-Message object wrapper
      * @throws JsonProcessingException the json processing exception
      */
     public void handleEvent(Enums.JmsEventName event, Message message)

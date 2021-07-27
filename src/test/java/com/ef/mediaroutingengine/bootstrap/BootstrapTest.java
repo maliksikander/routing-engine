@@ -64,13 +64,13 @@ class BootstrapTest {
         assertTrue(isSubscribed);
     }
 
-    @Test
-    void testLoadPool_AgentsLoadedWithInitialState_whenNoAgentInAgentPresenceRepository() {
-        List<CCUser> ccUsers = this.getCcUsers(3);
-        when(this.agentsRepository.findAll()).thenReturn(ccUsers);
-        List<MediaRoutingDomain> mrdList = this.getMrdList(1);
-        when(this.mediaRoutingDomainRepository.findAll()).thenReturn(mrdList);
-    }
+//    @Test
+//    void testLoadPool_AgentsLoadedWithInitialState_whenNoAgentInAgentPresenceRepository() {
+//        List<CCUser> ccUsers = this.getCcUsers(3);
+//        when(this.agentsRepository.findAll()).thenReturn(ccUsers);
+//        List<MediaRoutingDomain> mrdList = this.getMrdList(1);
+//        when(this.mediaRoutingDomainRepository.findAll()).thenReturn(mrdList);
+//    }
 
     private List<CCUser> getCcUsers(int noOfCcUsers) {
         List<CCUser> result = new ArrayList<>();

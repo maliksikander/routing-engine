@@ -58,7 +58,7 @@ public class RedisJsonDao<T> {
     public boolean saveAllByKeyValueMap(Map<String, T> keyValueMap) {
         List<String> idList = new ArrayList<>();
         List<Object> objectList = new ArrayList<>();
-        for (Map.Entry<String, T> entry: keyValueMap.entrySet()) {
+        for (Map.Entry<String, T> entry : keyValueMap.entrySet()) {
             idList.add(entry.getKey());
             objectList.add(entry.getValue());
         }
