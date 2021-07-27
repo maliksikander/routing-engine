@@ -18,14 +18,31 @@ import redis.clients.jedis.Transaction;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.util.SafeEncoder;
 
+/**
+ * The type Redis client.
+ */
 @Service
 public class RedisClientImpl implements RedisClient {
 
+    /**
+     * The constant objectMapper.
+     */
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    /**
+     * The constant JSON_ROOT_PATH.
+     */
     private static final String JSON_ROOT_PATH = ".";
+    /**
+     * The Jedis pool.
+     */
     private final JedisPool jedisPool;
 
 
+    /**
+     * Instantiates a new Redis client.
+     *
+     * @param jedisPool the jedis pool
+     */
     @Autowired
     public RedisClientImpl(JedisPool jedisPool) {
         this.jedisPool = jedisPool;
@@ -82,6 +99,30 @@ public class RedisClientImpl implements RedisClient {
             transaction.sadd(type, id);
             String value = objectMapper.writeValueAsString(object);
             transaction.sendCommand(Command.SET, SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH, value));
+            transaction.exec();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.discard();
+            }
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean setAllJsonForType(String type, List<String> idList, List<Object> objectList) {
+        Transaction transaction = null;
+        try (Jedis conn = getConnection()) {
+            transaction = conn.multi();
+            for (int i = 0; i < idList.size(); i++) {
+                String id = idList.get(i);
+                Object object = objectList.get(i);
+
+                transaction.sadd(type, id);
+                String value = objectMapper.writeValueAsString(object);
+                transaction.sendCommand(Command.SET, SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH, value));
+            }
             transaction.exec();
             return true;
         } catch (Exception e) {
@@ -202,6 +243,30 @@ public class RedisClientImpl implements RedisClient {
     }
 
     @Override
+    public boolean delAllJsonForType(String type) {
+        Transaction transaction = null;
+        try (Jedis conn = getConnection()) {
+            Set<String> idList = conn.smembers(type);
+            if (idList == null) {
+                return false;
+            }
+            transaction = conn.multi();
+            for (String id: idList) {
+                transaction.sendCommand(Command.DEL, SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH));
+            }
+            transaction.del(type);
+            transaction.exec();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.discard();
+            }
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
     public Long SADD(String key, String member) {
         try (Jedis conn = getConnection()) {
             return conn.sadd(key, member);
@@ -253,22 +318,60 @@ public class RedisClientImpl implements RedisClient {
         }
     }
 
+    /**
+     * Gets connection.
+     *
+     * @return the connection
+     */
     private Jedis getConnection() {
         return this.jedisPool.getResource();
     }
 
+    /**
+     * Gets key.
+     *
+     * @param type the type
+     * @param id   the id
+     * @return the key
+     */
     private String getKey(String type, String id) {
         return type + ":" + id;
     }
 
+    /**
+     * The enum Command.
+     */
     private enum Command implements ProtocolCommand {
+        /**
+         * Del command.
+         */
         DEL("JSON.DEL"),
+        /**
+         * Get command.
+         */
         GET("JSON.GET"),
+        /**
+         * Set command.
+         */
         SET("JSON.SET"),
+        /**
+         * Mget command.
+         */
         MGET("JSON.MGET"),
+        /**
+         * Type command.
+         */
         TYPE("JSON.TYPE");
+        /**
+         * The Raw.
+         */
         private final byte[] raw;
 
+        /**
+         * Instantiates a new Command.
+         *
+         * @param alt the alt
+         */
         Command(String alt) {
             raw = SafeEncoder.encode(alt);
         }

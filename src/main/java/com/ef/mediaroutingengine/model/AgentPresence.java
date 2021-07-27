@@ -7,10 +7,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * The type Agent presence.
+ */
 public class AgentPresence implements Serializable {
+    /**
+     * The Agent.
+     */
     private CCUser agent;
+    /**
+     * The State.
+     */
     private AgentState state;
+    /**
+     * The State change time.
+     */
     private Timestamp stateChangeTime;
+    /**
+     * The Agent mrd states.
+     */
     private List<AgentMrdState> agentMrdStates;
 
     /**
@@ -34,35 +49,75 @@ public class AgentPresence implements Serializable {
         this.agentMrdStates = agentMrdStates;
     }
 
+    /**
+     * Gets agent.
+     *
+     * @return the agent
+     */
     public CCUser getAgent() {
         return agent;
     }
 
+    /**
+     * Sets agent.
+     *
+     * @param agent the agent
+     */
     public void setAgent(CCUser agent) {
         this.agent = agent;
     }
 
+    /**
+     * Gets state.
+     *
+     * @return the state
+     */
     public AgentState getState() {
         return state;
     }
 
+    /**
+     * Sets state.
+     *
+     * @param state the state
+     */
     public void setState(AgentState state) {
         this.state = state;
         this.stateChangeTime = new Timestamp(System.currentTimeMillis());
     }
 
+    /**
+     * Gets state change time.
+     *
+     * @return the state change time
+     */
     public Timestamp getStateChangeTime() {
         return stateChangeTime;
     }
 
+    /**
+     * Sets state change time.
+     *
+     * @param stateChangeTime the state change time
+     */
     public void setStateChangeTime(Timestamp stateChangeTime) {
         this.stateChangeTime = stateChangeTime;
     }
 
+    /**
+     * Gets agent mrd states.
+     *
+     * @return the agent mrd states
+     */
     public List<AgentMrdState> getAgentMrdStates() {
         return agentMrdStates;
     }
 
+    /**
+     * Sets agent mrd states.
+     *
+     * @param agentMrdStates the agent mrd states
+     */
     public void setAgentMrdStates(List<AgentMrdState> agentMrdStates) {
         this.agentMrdStates = agentMrdStates;
     }

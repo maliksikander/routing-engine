@@ -12,12 +12,27 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Agent state logout.
+ */
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AgentStateLogout implements AgentStateDelegate {
+    /**
+     * The Agent presence repository.
+     */
     private final AgentPresenceRepository agentPresenceRepository;
+    /**
+     * The Tasks pool.
+     */
     private final TasksPool tasksPool;
 
+    /**
+     * Instantiates a new Agent state logout.
+     *
+     * @param agentPresenceRepository the agent presence repository
+     * @param tasksPool               the tasks pool
+     */
     @Autowired
     public AgentStateLogout(AgentPresenceRepository agentPresenceRepository, TasksPool tasksPool) {
         this.agentPresenceRepository = agentPresenceRepository;
@@ -36,6 +51,11 @@ public class AgentStateLogout implements AgentStateDelegate {
         return true;
     }
 
+    /**
+     * Reroute all tasks of.
+     *
+     * @param agent the agent
+     */
     private void rerouteAllTasksOf(Agent agent) {
         for (Task task : agent.getAllTasks()) {
             this.tasksPool.rerouteTask(task);

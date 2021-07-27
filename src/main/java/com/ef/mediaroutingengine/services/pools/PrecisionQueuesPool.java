@@ -12,38 +12,41 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.stereotype.Repository;
 
+/**
+ * The type Precision queues pool.
+ */
 @Repository
 public class PrecisionQueuesPool {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PrecisionQueuesPool.class);
-
-    private final AgentsPool agentsPool;
-    private final Map<UUID, PrecisionQueue> precisionQueues;
-
     /**
-     * Constructor. Autowired, loads the beans.
-     *
-     * @param agentsPool all agents
+     * The constant LOGGER.
      */
-    @Autowired
-    public PrecisionQueuesPool(AgentsPool agentsPool) {
-        this.agentsPool = agentsPool;
-        this.precisionQueues = new ConcurrentHashMap<>();
-    }
+    private static final Logger LOGGER = LoggerFactory.getLogger(PrecisionQueuesPool.class);
+    /**
+     * The Precision queues.
+     */
+    private final Map<UUID, PrecisionQueue> precisionQueues = new ConcurrentHashMap<>();
 
     /**
      * Loads all the precision queues from DB.
+     *
+     * @param precisionQueueEntities the precision queue entities
+     * @param agentsPool             the agents pool
      */
-    public void loadPoolFrom(List<PrecisionQueueEntity> precisionQueueEntities) {
+    public void loadPoolFrom(List<PrecisionQueueEntity> precisionQueueEntities, AgentsPool agentsPool) {
         for (PrecisionQueueEntity entity : precisionQueueEntities) {
-            PrecisionQueue precisionQueue = new PrecisionQueue(entity, this.agentsPool, getTaskSchedulerBean());
+            PrecisionQueue precisionQueue = new PrecisionQueue(entity, agentsPool, getTaskSchedulerBean());
             this.precisionQueues.put(precisionQueue.getId(), precisionQueue);
         }
     }
 
+    /**
+     * Gets task scheduler bean.
+     *
+     * @return the task scheduler bean
+     */
     @Lookup
     public TaskScheduler getTaskSchedulerBean() {
         return null;
@@ -77,10 +80,6 @@ public class PrecisionQueuesPool {
         return this.precisionQueues.get(id);
     }
 
-    public PrecisionQueue getDefaultQueue() {
-        return this.findByName(Enums.DefaultQueue.DEFAULT_PRECISION_QUEUE.name());
-    }
-
     /**
      * Removes precision-queue from the redis-cache if id found.
      *
@@ -92,6 +91,13 @@ public class PrecisionQueuesPool {
         return removed != null;
     }
 
+    /**
+     * Calculate avg talk time of long.
+     *
+     * @param queue the queue
+     * @param task  the task
+     * @return the long
+     */
     private long calculateAvgTalkTimeOf(PrecisionQueue queue, Task task) {
         long currentTotalTalkTime = queue.getAverageTalkTime() * queue.getNoOfTask();
         long newTotalTalkTime = currentTotalTalkTime + task.getHandlingTime();
@@ -119,6 +125,11 @@ public class PrecisionQueuesPool {
         return false;
     }
 
+    /**
+     * Size int.
+     *
+     * @return the int
+     */
     public int size() {
         return this.precisionQueues.size();
     }

@@ -15,23 +15,74 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The type Task.
+ */
 public class Task implements Serializable {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(Task.class);
 
+    /**
+     * The Id.
+     */
     private final UUID id;
+    /**
+     * The Channel session.
+     */
     private final ChannelSession channelSession;
+    /**
+     * The Mrd.
+     */
     private final MediaRoutingDomain mrd;
+    /**
+     * The Queue.
+     */
     private final UUID queue;
+    /**
+     * The Timer.
+     */
     private final Timer timer;
+    /**
+     * The Change support.
+     */
     private final PropertyChangeSupport changeSupport;
+    /**
+     * The Priority.
+     */
     private int priority;
+    /**
+     * The State.
+     */
     private TaskState state;
+    /**
+     * The Assigned to.
+     */
     private UUID assignedTo;
+    /**
+     * The Enqueue time.
+     */
     private Long enqueueTime;
+    /**
+     * The Start time.
+     */
     private Long startTime;
+    /**
+     * The Handling time.
+     */
     private Long handlingTime;
+    /**
+     * The Timeouts.
+     */
     private List<Integer> timeouts;
+    /**
+     * The Current step.
+     */
     private int currentStep;
+    /**
+     * The Agent request timeout.
+     */
     private boolean agentRequestTimeout;
 
     /**
@@ -39,6 +90,7 @@ public class Task implements Serializable {
      *
      * @param channelSession the channel session in request
      * @param mrd            associated media routing domain
+     * @param queue          the queue
      */
     public Task(ChannelSession channelSession, MediaRoutingDomain mrd, UUID queue) {
         this.id = UUID.randomUUID();
@@ -98,70 +150,155 @@ public class Task implements Serializable {
 
     // +++++++++++++++++++++++++++++++ Accessor Methods ++++++++++++++++++++++++++++++++++++++++++++++
 
+    /**
+     * Gets id.
+     *
+     * @return the id
+     */
     public UUID getId() {
         return this.id;
     }
 
+    /**
+     * Gets channel session.
+     *
+     * @return the channel session
+     */
     public ChannelSession getChannelSession() {
         return channelSession;
     }
 
+    /**
+     * Gets mrd.
+     *
+     * @return the mrd
+     */
     public MediaRoutingDomain getMrd() {
         return this.mrd;
     }
 
+    /**
+     * Gets queue.
+     *
+     * @return the queue
+     */
     public UUID getQueue() {
         return this.queue;
     }
 
+    /**
+     * Gets priority.
+     *
+     * @return the priority
+     */
     public int getPriority() {
         return this.priority;
     }
 
+    /**
+     * Sets priority.
+     *
+     * @param priority the priority
+     */
     public void setPriority(int priority) {
         this.priority = priority;
     }
 
+    /**
+     * Gets task state.
+     *
+     * @return the task state
+     */
     public TaskState getTaskState() {
         return this.state;
     }
 
+    /**
+     * Sets task state.
+     *
+     * @param state the state
+     */
     public void setTaskState(TaskState state) {
         this.state = state;
     }
 
+    /**
+     * Gets assigned to.
+     *
+     * @return the assigned to
+     */
     public UUID getAssignedTo() {
         return assignedTo;
     }
 
+    /**
+     * Sets assigned to.
+     *
+     * @param assignedTo the assigned to
+     */
     public void setAssignedTo(UUID assignedTo) {
         this.assignedTo = assignedTo;
     }
 
+    /**
+     * Gets enqueue time.
+     *
+     * @return the enqueue time
+     */
     public Long getEnqueueTime() {
         return enqueueTime;
     }
 
+    /**
+     * Sets enqueue time.
+     *
+     * @param enqueueTime the enqueue time
+     */
     public void setEnqueueTime(Long enqueueTime) {
         this.enqueueTime = enqueueTime;
     }
 
+    /**
+     * Gets start time.
+     *
+     * @return the start time
+     */
     public Long getStartTime() {
         return startTime;
     }
 
+    /**
+     * Sets start time.
+     *
+     * @param startTime the start time
+     */
     public void setStartTime(Long startTime) {
         this.startTime = startTime;
     }
 
+    /**
+     * Gets handling time.
+     *
+     * @return the handling time
+     */
     public Long getHandlingTime() {
         return handlingTime;
     }
 
+    /**
+     * Sets handling time.
+     *
+     * @param handlingTime the handling time
+     */
     public void setHandlingTime(Long handlingTime) {
         this.handlingTime = handlingTime + this.handlingTime;
     }
 
+    /**
+     * Gets timer.
+     *
+     * @return the timer
+     */
     public Timer getTimer() {
         return this.timer;
     }
@@ -178,31 +315,68 @@ public class Task implements Serializable {
         }
     }
 
+    /**
+     * Gets current step.
+     *
+     * @return the current step
+     */
     public int getCurrentStep() {
         return currentStep;
     }
 
+    /**
+     * Gets topic id.
+     *
+     * @return the topic id
+     */
     public UUID getTopicId() {
         return this.channelSession.getTopicId();
     }
 
-    // TODO: Implement it correctly
+    /**
+     * Gets last assigned agent id.
+     *
+     * @return the last assigned agent id
+     */
+// TODO: Implement it correctly
     public UUID getLastAssignedAgentId() {
         return UUID.randomUUID();
     }
 
+    /**
+     * Add property change listener.
+     *
+     * @param property the property
+     * @param listener the listener
+     */
     public void addPropertyChangeListener(String property, PropertyChangeListener listener) {
         this.changeSupport.addPropertyChangeListener(property, listener);
     }
 
+    /**
+     * Add property change listener.
+     *
+     * @param listener the listener
+     */
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         this.changeSupport.addPropertyChangeListener(listener);
     }
 
+    /**
+     * Remove property change listener.
+     *
+     * @param property the property
+     * @param listener the listener
+     */
     public void removePropertyChangeListener(String property, PropertyChangeListener listener) {
         this.changeSupport.removePropertyChangeListener(property, listener);
     }
 
+    /**
+     * Remove property change listener.
+     *
+     * @param listener the listener
+     */
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         this.changeSupport.removePropertyChangeListener(listener);
     }
@@ -226,14 +400,25 @@ public class Task implements Serializable {
         }
     }
 
+    /**
+     * Handle task remove event.
+     */
     public void handleTaskRemoveEvent() {
         this.changeSupport.firePropertyChange(Enums.EventName.TASK_REMOVED.name(), null, "");
     }
 
+    /**
+     * Agent request timeout.
+     */
     public void agentRequestTimeout() {
         this.agentRequestTimeout = true;
     }
 
+    /**
+     * Is agent request timeout boolean.
+     *
+     * @return the boolean
+     */
     public boolean isAgentRequestTimeout() {
         return this.agentRequestTimeout;
     }
@@ -262,7 +447,10 @@ public class Task implements Serializable {
         return result;
     }
 
-    // +++++++++++++++++++++++++++++++ TaskTimer class ++++++++++++++++++++++++++++++++++++++++++++
+    /**
+     * The type Task timer.
+     */
+// +++++++++++++++++++++++++++++++ TaskTimer class ++++++++++++++++++++++++++++++++++++++++++++
     private class TaskTimer extends TimerTask {
 
         public void run() {

@@ -16,21 +16,32 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Rest-Controller for the Agent login, Agent state and Agent-MRD state APIs.
+ */
 @RestController
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AgentStateController {
+    /**
+     * The API calls are passed to this service for processing.
+     */
     private final AgentStateService agentStateService;
 
+    /**
+     * Default Constructor. Loads the required beans.
+     *
+     * @param agentStateService handles the actual processing for the API calls.
+     */
     @Autowired
     public AgentStateController(AgentStateService agentStateService) {
         this.agentStateService = agentStateService;
     }
 
     /**
-     * Handles the Agents Login request from Agent Manager.
+     * Handles the Agent-Login request from Agent Manager.
      *
      * @param request AgentLoginRequest Dto
-     * @return ResponseEntity
+     * @return ResponseEntity response entity
      */
     @PostMapping("/agent-login")
     public ResponseEntity<Object> agentLogin(@RequestBody AgentLoginRequest request) {
@@ -38,6 +49,12 @@ public class AgentStateController {
         return new ResponseEntity<>(new SuccessResponseBody("Agent login request received"), HttpStatus.OK);
     }
 
+    /**
+     * Handles the Agent-State change request from Agent Manager.
+     *
+     * @param request AgentStateChangeRequest Dto
+     * @return ResponseEntity response entity
+     */
     @PutMapping("/agent-state")
     public ResponseEntity<Object> agentState(@RequestBody AgentStateChangeRequest request) {
         this.agentStateService.agentState(request);
@@ -45,7 +62,7 @@ public class AgentStateController {
     }
 
     /**
-     * API to change the Agent MRD state.
+     * Handles the Agent-MRD-State change request from Agent Manager.
      *
      * @param request AgentMrdStateChangeRequest DTO
      * @return Success response if request received successfully.

@@ -2,8 +2,12 @@ package com.ef.mediaroutingengine.services.redis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+/**
+ * The interface Redis client.
+ */
 public interface RedisClient {
 
 
@@ -12,34 +16,71 @@ public interface RedisClient {
      *
      * @param key    String
      * @param object Object
+     * @return the json
      */
     boolean setJson(String key, Object object);
 
+    /**
+     * Sets json.
+     *
+     * @param key    the key
+     * @param path   the path
+     * @param object the object
+     * @return the json
+     */
     boolean setJson(String key, String path, Object object);
 
+    /**
+     * Sets json with set.
+     *
+     * @param type   the type
+     * @param id     the id
+     * @param object the object
+     * @return the json with set
+     */
     boolean setJsonWithSet(String type, String id, Object object);
+
+    /**
+     * Sets all json for type.
+     *
+     * @param type       the type
+     * @param idList     the id list
+     * @param objectList the object list
+     * @return the all json for type
+     */
+    boolean setAllJsonForType(String type, List<String> idList, List<Object> objectList);
 
     /**
      * Returns the Object associated with the key. If the key does not exist, the special value nil
      * is returned. If the value stored by key is not of Object type, an error is returned, because
      * GET JSON can only be used to process give Object.
      *
+     * @param <T>   type T
      * @param key   String
      * @param clazz class type T
-     * @param <T>   type T
-     * @return T
+     * @return T json
      */
     <T> T getJson(String key, Class<T> clazz);
 
+    /**
+     * Gets json array.
+     *
+     * @param <T>   the type parameter
+     * @param key   the key
+     * @param clazz the clazz
+     * @return the json array
+     * @throws JsonProcessingException the json processing exception
+     */
     <T> List<T> getJsonArray(String key, Class<T> clazz) throws JsonProcessingException;
 
     /**
      * Get the list Objects associated with the keys.  If any key does not exist, the special value
      * nil is returned.
      *
-     * @param keys String
-     * @param <T>  type T
-     * @return T
+     * @param <T>   type T
+     * @param clazz the clazz
+     * @param keys  String
+     * @return T list
      */
     <T> List<T> multiGetJson(Class<T> clazz, String... keys);
 
@@ -47,17 +88,33 @@ public interface RedisClient {
      * Delete an object associated given key.
      *
      * @param key String
-     * @return Long
+     * @return Long long
      */
     Long delJson(String key);
 
+    /**
+     * Del json with set boolean.
+     *
+     * @param type the type
+     * @param id   the id
+     * @return the boolean
+     */
     boolean delJsonWithSet(String type, String id);
+
+    /**
+     * Del all json for type boolean.
+     *
+     * @param type the type
+     * @return the boolean
+     */
+    boolean delAllJsonForType(String type);
 
     /**
      * Adds one or more members to a set.
      *
      * @param key    String
      * @param member String
+     * @return the long
      */
     Long SADD(String key, String member);
 
@@ -74,7 +131,7 @@ public interface RedisClient {
      *
      * @param key    String
      * @param member String
-     * @return Long
+     * @return Long long
      */
     Long SREM(String key, String... member);
 
@@ -91,7 +148,7 @@ public interface RedisClient {
      * Get value associated with key.
      *
      * @param key String
-     * @return String
+     * @return String string
      */
     String get(String key);
 
@@ -99,11 +156,16 @@ public interface RedisClient {
      * Delete an value associated given key.
      *
      * @param key String
-     * @return Long
+     * @return Long long
      */
-
     Long del(String key);
 
+    /**
+     * Exists boolean.
+     *
+     * @param key the key
+     * @return the boolean
+     */
     boolean exists(String key);
 }
 

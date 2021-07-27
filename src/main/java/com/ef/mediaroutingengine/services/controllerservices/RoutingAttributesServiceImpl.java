@@ -18,11 +18,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * The type Routing attributes service.
+ */
 @Service
 public class RoutingAttributesServiceImpl implements RoutingAttributesService {
 
+    /**
+     * The Repository.
+     */
     private final RoutingAttributeRepository repository;
+    /**
+     * The Precision queue entity repository.
+     */
     private final PrecisionQueueEntityRepository precisionQueueEntityRepository;
+    /**
+     * The Agents repository.
+     */
     private final AgentsRepository agentsRepository;
 
     /**
@@ -85,6 +97,12 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
         return response;
     }
 
+    /**
+     * Update precision queues.
+     *
+     * @param routingAttribute the routing attribute
+     * @param id               the id
+     */
     private void updatePrecisionQueues(RoutingAttribute routingAttribute, UUID id) {
         List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueEntityRepository
                 .findByRoutingAttributeId(id);
@@ -120,6 +138,12 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
         }
     }
 
+    /**
+     * Update agents.
+     *
+     * @param routingAttribute the routing attribute
+     * @param id               the id
+     */
     private void updateAgents(RoutingAttribute routingAttribute, UUID id) {
         List<CCUser> agents = this.agentsRepository.findByRoutingAttributeId(id);
         if (agents == null || agents.isEmpty()) {

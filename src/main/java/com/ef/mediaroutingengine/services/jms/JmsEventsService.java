@@ -21,9 +21,18 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class JmsEventsService {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(JmsEventsService.class);
 
+    /**
+     * The Object mapper.
+     */
     private final ObjectMapper objectMapper = new ObjectMapper();
+    /**
+     * The Property change support.
+     */
     private final PropertyChangeSupport propertyChangeSupport;
 
     /**
@@ -42,10 +51,10 @@ public class JmsEventsService {
      *
      * @param event   String object. The name of the incoming event
      * @param message JMS-Message. the actual message object
-     * @throws JMSException If there is an error in getting the actual object from
-     *                      inside the JMS-Message object wrapper
+     * @throws JMSException            If there is an error in getting the actual object from                      inside the JMS-Message object wrapper
+     * @throws JsonProcessingException the json processing exception
      */
-    public void handleEvent(Enums.RedisEventName event, Message message)
+    public void handleEvent(Enums.JmsEventName event, Message message)
             throws JMSException, JsonProcessingException {
         LOGGER.debug("handleEvent method started");
         validateJmsMessageInstance(message);
@@ -56,7 +65,7 @@ public class JmsEventsService {
         JsonNode textMessageJson = objectMapper.readTree(textMessageString);
         String dataJsonString = textMessageJson.get("data").toString();
 
-        if (event.equals(Enums.RedisEventName.TASK_STATE_CHANGED)) {
+        if (event.equals(Enums.JmsEventName.TASK_STATE_CHANGED)) {
             TaskStateChangeRequest req = objectMapper.readValue(dataJsonString, TaskStateChangeRequest.class);
             propertyChangeSupport.firePropertyChange(Enums.EventName.TASK_STATE.toString(), null, req);
         } else {

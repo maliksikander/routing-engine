@@ -11,11 +11,26 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Task state active.
+ */
 @Service
 public class TaskStateActive implements TaskStateModifier {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskStateActive.class);
+    /**
+     * The Task manager.
+     */
     private final TaskManager taskManager;
+    /**
+     * The Agents pool.
+     */
     private final AgentsPool agentsPool;
+    /**
+     * The Tasks pool.
+     */
     private final TasksPool tasksPool;
 
     /**

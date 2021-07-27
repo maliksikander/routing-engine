@@ -9,12 +9,30 @@ import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Task state modifier factory.
+ */
 @Service
 public class TaskStateModifierFactory {
+    /**
+     * The Tasks repository.
+     */
     private final TasksRepository tasksRepository;
+    /**
+     * The Tasks pool.
+     */
     private final TasksPool tasksPool;
+    /**
+     * The Precision queues pool.
+     */
     private final PrecisionQueuesPool precisionQueuesPool;
+    /**
+     * The Agents pool.
+     */
     private final AgentsPool agentsPool;
+    /**
+     * The Task manager.
+     */
     private final TaskManager taskManager;
 
     /**
@@ -23,6 +41,7 @@ public class TaskStateModifierFactory {
      * @param tasksRepository     Tasks Repository DAO
      * @param tasksPool           pool of all tasks
      * @param precisionQueuesPool pool of all precision queues
+     * @param agentsPool          the agents pool
      * @param taskManager         Manages the Agent/Agent-MRD state changes on task state changes.
      */
     @Autowired

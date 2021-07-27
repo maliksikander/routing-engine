@@ -4,6 +4,9 @@ import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentMrdState;
 
+/**
+ * The type Mrd state not ready.
+ */
 public class MrdStateNotReady implements MrdStateDelegate {
 
     @Override

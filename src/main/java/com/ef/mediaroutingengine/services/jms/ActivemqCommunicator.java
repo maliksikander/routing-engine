@@ -27,14 +27,41 @@ import org.springframework.stereotype.Service;
 @Service
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class ActivemqCommunicator implements JmsCommunicator {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(ActivemqCommunicator.class);
-    private static final String SUBSCRIBER_NAME = "ROUTING-ENGINE-SUBSCRIBER-2";
+    /**
+     * The constant SUBSCRIBER_NAME.
+     */
+    private static final String SUBSCRIBER_NAME = "ROUTING-ENGINE-SUBSCRIBER";
+    /**
+     * The Jms events service.
+     */
     private final JmsEventsService jmsEventsService;
+    /**
+     * The Connection.
+     */
     Connection connection;
+    /**
+     * The Publisher.
+     */
     MessageProducer publisher;
+    /**
+     * The Subscriber session.
+     */
     private Session subscriberSession;
+    /**
+     * The Publisher session.
+     */
     private Session publisherSession;
+    /**
+     * The Subscriber.
+     */
     private MessageConsumer subscriber;
+    /**
+     * The Topic name.
+     */
     private String topicName;
 
     /**
@@ -45,6 +72,10 @@ public class ActivemqCommunicator implements JmsCommunicator {
      * <p>Sets the broker_url for the amq connection using the activemq's
      * 'failover' transport
      * //* @param amqProperties carries all the system defined activemq properties.
+     *
+     * @param connection       the connection
+     * @param jmsEventsService the jms events service
+     * @throws JMSException the jms exception
      */
     @Autowired
     public ActivemqCommunicator(Connection connection, JmsEventsService jmsEventsService) throws JMSException {
@@ -79,7 +110,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
     }
 
     @Override
-    public void publish(Serializable message, Enums.RedisEventName eventName)
+    public void publish(Serializable message, Enums.JmsEventName eventName)
             throws JMSException, JsonProcessingException {
         LOGGER.debug("method started");
 
@@ -130,7 +161,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
     public void onMessage(Message message) {
         LOGGER.debug("ActivemqServiceImpl.onMessage method started");
         try {
-            Enums.RedisEventName event = Enums.RedisEventName.valueOf(message.getJMSType());
+            Enums.JmsEventName event = Enums.JmsEventName.valueOf(message.getJMSType());
             System.out.println("*******************************");
             System.out.println("JMS EVENT: " + event + " received");
             System.out.println("*******************************");

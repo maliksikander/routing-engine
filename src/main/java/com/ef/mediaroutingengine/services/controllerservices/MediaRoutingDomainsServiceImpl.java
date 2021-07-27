@@ -11,10 +11,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * The type Media routing domains service.
+ */
 @Service
 public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsService {
 
+    /**
+     * The Repository.
+     */
     private final MediaRoutingDomainRepository repository;
+    /**
+     * The Precision queue entity repository.
+     */
     private final PrecisionQueueEntityRepository precisionQueueEntityRepository;
 
     /**
@@ -65,6 +74,12 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         return precisionQueueEntities;
     }
 
+    /**
+     * Update precision queues.
+     *
+     * @param mediaRoutingDomain the media routing domain
+     * @param id                 the id
+     */
     private void updatePrecisionQueues(MediaRoutingDomain mediaRoutingDomain, UUID id) {
         List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueEntityRepository.findByMrdId(id);
         if (precisionQueueEntities != null && !precisionQueueEntities.isEmpty()) {

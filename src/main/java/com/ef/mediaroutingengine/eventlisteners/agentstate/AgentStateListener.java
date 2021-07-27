@@ -18,13 +18,31 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Agent state listener.
+ */
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AgentStateListener implements PropertyChangeListener {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentStateListener.class);
+    /**
+     * The Agents pool.
+     */
     private final AgentsPool agentsPool;
+    /**
+     * The Agent presence repository.
+     */
     private final AgentPresenceRepository agentPresenceRepository;
+    /**
+     * The Jms communicator.
+     */
     private final JmsCommunicator jmsCommunicator;
+    /**
+     * The Factory.
+     */
     private final AgentStateDelegateFactory factory;
 
     /**
@@ -32,6 +50,8 @@ public class AgentStateListener implements PropertyChangeListener {
      *
      * @param agentsPool              pool of all agents
      * @param agentPresenceRepository agent presence repository DAO
+     * @param jmsCommunicator         the jms communicator
+     * @param factory                 the factory
      */
     @Autowired
     public AgentStateListener(AgentsPool agentsPool, AgentPresenceRepository agentPresenceRepository,
@@ -51,6 +71,11 @@ public class AgentStateListener implements PropertyChangeListener {
         LOGGER.debug("Method ended");
     }
 
+    /**
+     * Async property change.
+     *
+     * @param evt the evt
+     */
     private void asyncPropertyChange(PropertyChangeEvent evt) {
         LOGGER.info("Property change event: {} called", evt.getPropertyName());
         AgentStateChangeRequest request = (AgentStateChangeRequest) evt.getNewValue();
@@ -71,10 +96,16 @@ public class AgentStateListener implements PropertyChangeListener {
         LOGGER.info("Agent state change request published on JMS");
     }
 
+    /**
+     * Publish.
+     *
+     * @param agentPresence     the agent presence
+     * @param agentStateChanged the agent state changed
+     */
     private void publish(AgentPresence agentPresence, boolean agentStateChanged) {
         AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, agentStateChanged);
         try {
-            jmsCommunicator.publish(res, Enums.RedisEventName.AGENT_STATE_CHANGED);
+            jmsCommunicator.publish(res, Enums.JmsEventName.AGENT_STATE_CHANGED);
         } catch (Exception e) {
             e.printStackTrace();
         }

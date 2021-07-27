@@ -11,10 +11,21 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * The type Mock utilities.
+ */
 @RestController
 public class MockUtilities {
+    /**
+     * The Agents pool.
+     */
     private final AgentsPool agentsPool;
 
+    /**
+     * Instantiates a new Mock utilities.
+     *
+     * @param agentsPool the agents pool
+     */
     @Autowired
     public MockUtilities(AgentsPool agentsPool) {
         this.agentsPool = agentsPool;

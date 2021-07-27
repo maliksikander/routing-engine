@@ -8,10 +8,25 @@ import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
 
+/**
+ * The type Task state close.
+ */
 public class TaskStateClose implements TaskStateModifier {
+    /**
+     * The Tasks repository.
+     */
     private final TasksRepository tasksRepository;
+    /**
+     * The Precision queues pool.
+     */
     private final PrecisionQueuesPool precisionQueuesPool;
+    /**
+     * The Tasks pool.
+     */
     private final TasksPool tasksPool;
+    /**
+     * The Task manager.
+     */
     private final TaskManager taskManager;
 
     /**

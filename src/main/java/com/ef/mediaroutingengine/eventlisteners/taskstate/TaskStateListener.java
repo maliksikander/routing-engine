@@ -13,17 +13,30 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Task state listener.
+ */
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class TaskStateListener implements PropertyChangeListener {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskStateListener.class);
+    /**
+     * The Tasks pool.
+     */
     private final TasksPool tasksPool;
+    /**
+     * The Factory.
+     */
     private final TaskStateModifierFactory factory;
 
     /**
      * Default constructor. Autowired -> loads the beans.
      *
      * @param tasksPool the service that handles tasks flow
+     * @param factory   the factory
      */
     @Autowired
     public TaskStateListener(TasksPool tasksPool, TaskStateModifierFactory factory) {

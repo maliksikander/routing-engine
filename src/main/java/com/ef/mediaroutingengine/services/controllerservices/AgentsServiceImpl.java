@@ -13,10 +13,19 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Agents service.
+ */
 @Service
 public class AgentsServiceImpl implements AgentsService {
 
+    /**
+     * The Repository.
+     */
     private final AgentsRepository repository;
+    /**
+     * The Routing attribute repository.
+     */
     private final RoutingAttributeRepository routingAttributeRepository;
 
     /**
@@ -63,6 +72,11 @@ public class AgentsServiceImpl implements AgentsService {
         this.repository.deleteById(id);
     }
 
+    /**
+     * Gets routing attributes from db.
+     *
+     * @return the routing attributes from db
+     */
     private Map<UUID, RoutingAttribute> getRoutingAttributesFromDB() {
         List<RoutingAttribute> routingAttributes = routingAttributeRepository.findAll();
         Map<UUID, RoutingAttribute> routingAttributeMap = new HashMap<>();
@@ -72,6 +86,11 @@ public class AgentsServiceImpl implements AgentsService {
         return routingAttributeMap;
     }
 
+    /**
+     * Validate and set routing attributes.
+     *
+     * @param agent the agent
+     */
     private void validateAndSetRoutingAttributes(CCUser agent) {
         List<AssociatedRoutingAttribute> associatedRoutingAttributes = agent.getAssociatedRoutingAttributes();
         if (associatedRoutingAttributes == null || associatedRoutingAttributes.isEmpty()) {

@@ -17,8 +17,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class EFLogger {
 
+    /**
+     * The Logger.
+     */
     Logger logger = LoggerFactory.getLogger(EFLogger.class);
 
+    /**
+     * App pointcut.
+     */
     @Pointcut(value = "execution(* com.ef.mediaroutingengine.controllers.*.*(..) )")
     public void appPointcut() {
         // This method is kept empty on purpose
@@ -28,7 +34,7 @@ public class EFLogger {
      * Common Logger.
      *
      * @param proceedingJoinPoint join point
-     * @return Object
+     * @return Object object
      * @throws Throwable exception
      */
     @Around("appPointcut()")

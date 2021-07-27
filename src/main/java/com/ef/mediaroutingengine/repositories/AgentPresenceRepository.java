@@ -11,9 +11,17 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+/**
+ * The type Agent presence repository.
+ */
 @Component
 public class AgentPresenceRepository extends RedisJsonDao<AgentPresence> {
 
+    /**
+     * Instantiates a new Agent presence repository.
+     *
+     * @param redisClient the redis client
+     */
     @Autowired
     public AgentPresenceRepository(RedisClient redisClient) {
         super(redisClient, "agentPresence");
@@ -32,6 +40,13 @@ public class AgentPresenceRepository extends RedisJsonDao<AgentPresence> {
         return this.updateField(id, ".stateChangeTime", new Timestamp(System.currentTimeMillis()));
     }
 
+    /**
+     * Update agent mrd state list boolean.
+     *
+     * @param agentId        the agent id
+     * @param agentMrdStates the agent mrd states
+     * @return the boolean
+     */
     public boolean updateAgentMrdStateList(UUID agentId, List<AgentMrdState> agentMrdStates) {
         return this.updateField(agentId.toString(), ".agentMrdStates", agentMrdStates);
     }

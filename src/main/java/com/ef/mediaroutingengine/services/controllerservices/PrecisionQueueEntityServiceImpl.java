@@ -18,11 +18,23 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Precision queue entity service.
+ */
 @Service
 public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityService {
 
+    /**
+     * The Repository.
+     */
     private final PrecisionQueueEntityRepository repository;
+    /**
+     * The Mrd repository.
+     */
     private final MediaRoutingDomainRepository mrdRepository;
+    /**
+     * The Routing attribute repository.
+     */
     private final RoutingAttributeRepository routingAttributeRepository;
 
     /**
@@ -72,6 +84,11 @@ public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityServ
         this.repository.deleteById(id);
     }
 
+    /**
+     * Validate and set mrd.
+     *
+     * @param pq the pq
+     */
     private void validateAndSetMRD(PrecisionQueueEntity pq) {
         NotFoundException notFoundException = new NotFoundException(
                 "Could not find media-routing-domain resource");
@@ -87,6 +104,11 @@ public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityServ
         pq.setMrd(optionalMrd.get());
     }
 
+    /**
+     * Retrieve routing attributes map.
+     *
+     * @return the map
+     */
     private Map<UUID, RoutingAttribute> retrieveRoutingAttributes() {
         List<RoutingAttribute> routingAttributes = routingAttributeRepository.findAll();
         Map<UUID, RoutingAttribute> routingAttributeMap = new HashMap<>();
@@ -96,6 +118,11 @@ public class PrecisionQueueEntityServiceImpl implements PrecisionQueueEntityServ
         return routingAttributeMap;
     }
 
+    /**
+     * Validate and set routing attributes.
+     *
+     * @param pq the pq
+     */
     private void validateAndSetRoutingAttributes(PrecisionQueueEntity pq) {
         List<StepEntity> stepEntities = pq.getSteps();
         if (stepEntities == null || stepEntities.isEmpty()) {

@@ -10,10 +10,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+/**
+ * The type Base exception handler.
+ */
 public class BaseExceptionHandler extends ResponseEntityExceptionHandler {
 
+    /**
+     * The Message source.
+     */
     protected MessageSource messageSource;
 
+    /**
+     * Instantiates a new Base exception handler.
+     */
     public BaseExceptionHandler() {
         super();
     }
@@ -22,7 +31,8 @@ public class BaseExceptionHandler extends ResponseEntityExceptionHandler {
      * Build the response body in case of error.
      *
      * @param errorResponseBody ErrorResponseBody
-     * @return ResponseEntity
+     * @param httpStatus        the http status
+     * @return ResponseEntity response entity
      */
     protected ResponseEntity<Object> buildResponseEntity(ErrorResponseBody errorResponseBody,
                                                          HttpStatus httpStatus) {
@@ -34,7 +44,7 @@ public class BaseExceptionHandler extends ResponseEntityExceptionHandler {
      *
      * @param ex   exception
      * @param args list of objects
-     * @return String
+     * @return String translated message
      */
     protected String getTranslatedMessage(Exception ex, Object[] args) {
         return getTranslatedMessage(ex.getMessage(), args);
@@ -44,7 +54,7 @@ public class BaseExceptionHandler extends ResponseEntityExceptionHandler {
      * Retrieves translated error message.
      *
      * @param objectError ObjectError.
-     * @return String
+     * @return String translated message
      */
     protected String getTranslatedMessage(ObjectError objectError) {
         Locale locale = LocaleContextHolder.getLocale();
@@ -56,7 +66,7 @@ public class BaseExceptionHandler extends ResponseEntityExceptionHandler {
      *
      * @param message String
      * @param args    list of objects
-     * @return String
+     * @return String translated message
      */
     protected String getTranslatedMessage(@Nullable String message, Object[] args) {
 

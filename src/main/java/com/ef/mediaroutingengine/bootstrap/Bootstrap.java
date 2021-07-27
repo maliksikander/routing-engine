@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.bootstrap;
 
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.model.Agent;
@@ -31,30 +32,66 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+/**
+ * The Bootstrap service is triggerred when the Routing-Engine starts. It loads the routing-engine's
+ * in-memory pools and Object states from the Configuration DB and Redis shared DB.
+ * It also subscribes to the JMS topic to communicate state changes with Agent-Manager.
+ */
 @Service
 public class Bootstrap {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(Bootstrap.class);
-
+    /**
+     * Agents collection DAO for the Configuration DB.
+     */
     private final AgentsRepository agentsRepository;
+    /**
+     * Media-Routing_Domains collection DAO for the Configuration DB.
+     */
     private final MediaRoutingDomainRepository mediaRoutingDomainRepository;
+    /**
+     * Precision-Queues collection DAO for the Configuration DB.
+     */
     private final PrecisionQueueEntityRepository precisionQueueEntityRepository;
+    /**
+     * Tasks collection DAO for Redis DB.
+     */
     private final TasksRepository tasksRepository;
+    /**
+     * Agent-Presence collection DAO for the Redis DB.
+     */
     private final AgentPresenceRepository agentPresenceRepository;
-
+    /**
+     * In-memory pool of all agents.
+     */
     private final AgentsPool agentsPool;
+    /**
+     * In-memory pool of all MRDs.
+     */
     private final MrdPool mrdPool;
+    /**
+     * In-memory pool of all Precision-Queues.
+     */
     private final PrecisionQueuesPool precisionQueuesPool;
+    /**
+     * In-memory pool of all Tasks.
+     */
     private final TasksPool tasksPool;
-
+    /**
+     * Used here to Subscribe to the JMS Topic to communicate state changes with Agent-Manager.
+     */
     private final JmsCommunicator jmsCommunicator;
 
     /**
-     * Constructor. Loads the required beans.
+     * Default Constructor. Loads the dependency beans.
      *
      * @param agentsRepository               Agents config repository DAO
      * @param mediaRoutingDomainRepository   Media-routing-domains config repository DAO
      * @param precisionQueueEntityRepository Precision-Queues config repository DAO
      * @param tasksRepository                Tasks Repository DAO
+     * @param agentPresenceRepository        AgentPresence Repository DAO
      * @param agentsPool                     Agents Pool bean
      * @param mrdPool                        MRD Pool bean
      * @param precisionQueuesPool            Precision-Queues Pool bean
@@ -85,53 +122,99 @@ public class Bootstrap {
     }
 
     /**
-     * Loads All Pools at start of the application.
+     * Subscribes to state change Events JMS Topic to communicate state change with Agent-Manager.
+     *
+     * @return the boolean
+     */
+    public boolean subscribeToStateEventsChannel() {
+        try {
+            this.jmsCommunicator.init("STATE_CHANNEL");
+            LOGGER.info("JMS topic subscribed successfully");
+            return true;
+        } catch (JMSException jmsException) {
+            LOGGER.error("JmsException while initializing JMS-Communicator: ", jmsException);
+        }
+        LOGGER.debug("Failed to subscribe JMS topic ");
+        return false;
+    }
+
+    /**
+     * Loads the 'Agent', 'MRD', and 'Precision-Queue' in-memory pools from the configuration DB. Loads the
+     * Agent and Agent-MRD states of Agents present in the REDIS AgentPresence DB. Initializes
+     * the in-memory Task pool and loads the Tasks present in the REDIS Tasks DB at the time of startup.
      */
     public void loadPools() {
+        LOGGER.debug(Constants.METHOD_STARTED);
+
         List<CCUser> ccUsers = agentsRepository.findAll();
         this.agentsPool.loadPoolFrom(ccUsers);
+        LOGGER.debug("Agents pool loaded");
 
         List<MediaRoutingDomain> mediaRoutingDomains = mediaRoutingDomainRepository.findAll();
         this.mrdPool.loadPoolFrom(mediaRoutingDomains);
-
-        // Update Agent and AgentMRD states after MRD pool is loaded as it is required for agent-mrd states.
-        this.updateAgentStates();
-
-        // Load Precision-Queue pool. Requires Agents pool to be loaded first.
+        LOGGER.debug("MRDs pool loaded");
+        // Set Agent and AgentMRD states after MRD pool is loaded as it is required for agent-mrd states.
+        this.setAgentStates();
+        /*
+        Load Precision-Queue pool. Requires Agents pool to be loaded first to evaluate the Agents
+        associated to steps in the Precision-Queue.
+         */
         List<PrecisionQueueEntity> precisionQueueEntities = precisionQueueEntityRepository.findAll();
-        this.precisionQueuesPool.loadPoolFrom(precisionQueueEntities);
+        this.precisionQueuesPool.loadPoolFrom(precisionQueueEntities, this.agentsPool);
+        LOGGER.debug("Precision-Queues pool loaded");
 
+        /*
+        Load the in-memory Tasks pool from REDIS.
+        Associate tasks to the (in-memory) Agents, if a task has been previously assigned to an agent.
+        (Requires Agent pool to be loaded first ^)
+        Requires Precision-Queue pool to be loaded first as it enqueues the Tasks with QUEUED state
+         */
         List<TaskDto> taskDtoList = this.tasksRepository.findAll();
         for (TaskDto taskDto : taskDtoList) {
             Task task = new Task(taskDto);
-            Agent agent = this.agentsPool.findById(task.getAssignedTo());
-            if (agent != null) {
-                if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
-                    agent.reserveTask(task);
-                } else if (task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
-                    agent.addActiveTask(task);
-                }
-            }
-            this.tasksPool.enqueueTask(new Task(taskDto));
+            this.associateTaskWithAgent(task);
+            this.tasksPool.enqueueTask(task);
         }
 
         LOGGER.info("Agents pool size: {}", this.agentsPool.size());
         LOGGER.info("Mrd pool size: {}", this.mrdPool.size());
         LOGGER.info("Precision-Queues pool size: {}", this.precisionQueuesPool.size());
         LOGGER.info("Task pool size: {}", this.tasksPool.size());
+
+        LOGGER.debug(Constants.METHOD_ENDED);
     }
 
     /**
-     * Subscribes to state change Events JMS Topic.
+     * Adds a task to the Agent's active tasks list or reserved task object (depending on the task state).
+     * This agent should be assigned to the task previously.
+     *
+     * @param task the task to be associated with the agent
      */
-    public void subscribeToStateEventsChannel() {
-        try {
-            this.jmsCommunicator.init("STATE_CHANNEL");
-        } catch (JMSException jmsException) {
-            LOGGER.error("JmsException while initializing JMS-Communicator: ", jmsException);
+    private void associateTaskWithAgent(Task task) {
+        LOGGER.debug(Constants.METHOD_STARTED);
+        Agent agent = this.agentsPool.findById(task.getAssignedTo());
+        if (agent != null) {
+            LOGGER.debug("Agent: {} assigned to the Task found", agent.getId());
+            if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
+                agent.reserveTask(task);
+                LOGGER.debug("Task: {} reserved for Agent: {}", task.getId(), agent.getId());
+            } else if (task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
+                agent.addActiveTask(task);
+                LOGGER.debug("Task: {} added to the Agent: {} active tasks list", task.getId(), agent.getId());
+            }
+        } else {
+            LOGGER.debug("No agent assigned to Task: {}", task.getId());
         }
+        LOGGER.debug(Constants.METHOD_ENDED);
     }
 
+    /**
+     * Returns the List of AgentMrdStates with initial state set (NOT_READY)
+     * for each MRD in the parameter list.
+     *
+     * @param mediaRoutingDomains list of MRDs for which the AgentMrdState is required.
+     * @return List of AgentMrdStates which state set to an initial value (NOT_READY)
+     */
     private List<AgentMrdState> getInitialAgentMrdStates(List<MediaRoutingDomain> mediaRoutingDomains) {
         List<AgentMrdState> agentMrdStates = new ArrayList<>();
         for (MediaRoutingDomain mrd : mediaRoutingDomains) {
@@ -140,11 +223,15 @@ public class Bootstrap {
         return agentMrdStates;
     }
 
+    /**
+     * Gets AgentPresence list from Redis AgentPresence Collection and converts it to a Map of
+     * agentId:AgentPresence.
+     *
+     * @return Map of AgentPresence Objects with agentId as the key.
+     */
     private Map<UUID, AgentPresence> getCurrentAgentPresenceMap() {
         List<AgentPresence> currentAgentPresenceList = this.agentPresenceRepository.findAll();
-        for (AgentPresence agentPresence : currentAgentPresenceList) {
-            this.agentPresenceRepository.deleteById(agentPresence.getAgent().getId().toString());
-        }
+        LOGGER.debug("Fetched List of all AgentPresence objects from Redis Collection successfully");
         Map<UUID, AgentPresence> currentAgentPresenceMap = new HashMap<>();
         for (AgentPresence agentPresence : currentAgentPresenceList) {
             currentAgentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
@@ -152,6 +239,14 @@ public class Bootstrap {
         return currentAgentPresenceMap;
     }
 
+    /**
+     * Checks if the AgentMRDState found from an AgentPresence Object in Redis exists in the
+     * AgentMrdStateList. If so it updates the Agent-MRD-state object present in the list with
+     * the one fetched from the Agent-Presence.
+     *
+     * @param agentMrdStateInAgentPresence Agent-MRD-state found in AgentPresence collection for an Agent
+     * @param agentMrdStates               List of AgentMrdStates that needs to be updated if Mrd-State found.
+     */
     private void updateMrdStateFromAgentPresence(AgentMrdState agentMrdStateInAgentPresence,
                                                  List<AgentMrdState> agentMrdStates) {
         for (int i = 0; i < agentMrdStates.size(); i++) {
@@ -164,14 +259,23 @@ public class Bootstrap {
         }
     }
 
-    private void updateAgentStates() {
+    /**
+     * Sets the Agent and Agent-MRD states of the agents in the in-memory Agents-pool. If a new agent is found
+     * that has not been present in the AgentPresence Redis Collection previously, the 'initial' Agent /
+     * Agent-MRD states will be set for this agent. If the agent is already present in the AgentPresence
+     * collection, the 'previous' states will be fetched from the Redis collection and set for this agent.
+     */
+    private void setAgentStates() {
         Map<UUID, AgentPresence> currentAgentPresenceMap = this.getCurrentAgentPresenceMap();
-        List<AgentPresence> updatedAgentPresenceList = new ArrayList<>();
+        // AgentPresence Repository is flushed so that newly-updated, fresh Objects are added.
+        this.agentPresenceRepository.deleteAll();
+        LOGGER.debug("AgentPresence Repository flushed successfully.");
+        Map<String, AgentPresence> updatedAgentPresenceMap = new HashMap<>();
         for (Agent agent : this.agentsPool.toList()) {
             AgentState agentState;
             List<AgentMrdState> agentMrdStates = getInitialAgentMrdStates(this.mrdPool.findAll());
-
             AgentPresence agentPresence = currentAgentPresenceMap.get(agent.getId());
+
             if (agentPresence != null) {
                 agentState = agentPresence.getState();
                 for (AgentMrdState agentMrdState : agentPresence.getAgentMrdStates()) {
@@ -185,11 +289,11 @@ public class Bootstrap {
             }
             agent.setState(agentState);
             agent.setAgentMrdStates(agentMrdStates);
-            updatedAgentPresenceList.add(agentPresence);
+            updatedAgentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
         }
-        for (AgentPresence agentPresence : updatedAgentPresenceList) {
-            this.agentPresenceRepository.save(agentPresence.getAgent().getId().toString(), agentPresence);
-        }
+        LOGGER.debug("Agent states for agents in in-memory pool set successfully");
+        this.agentPresenceRepository.saveAllByKeyValueMap(updatedAgentPresenceMap);
+        LOGGER.debug("AgentPresence Repository loaded successfully");
     }
 }
 

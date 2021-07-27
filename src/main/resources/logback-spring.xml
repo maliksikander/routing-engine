@@ -3,7 +3,7 @@
     <appender class="ch.qos.logback.core.ConsoleAppender" name="Console">
         <layout class="ch.qos.logback.classic.PatternLayout">
             <Pattern>
-                %d{yyyy-MM-dd HH:mm:ss,SSS} | %-5p | %m |%M Line:%L| %t%n
+                %d{yyyy-MM-dd HH:mm:ss,SSS} | %-5p | %m | %class{0}->%M Line:%L | %t%n
             </Pattern>
         </layout>
     </appender>

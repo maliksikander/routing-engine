@@ -21,15 +21,36 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+/**
+ * The type Agent mrd state listener.
+ */
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AgentMrdStateListener {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentMrdStateListener.class);
 
+    /**
+     * The Agents pool.
+     */
     private final AgentsPool agentsPool;
+    /**
+     * The Precision queues.
+     */
     private final List<PrecisionQueue> precisionQueues;
+    /**
+     * The Agent presence repository.
+     */
     private final AgentPresenceRepository agentPresenceRepository;
+    /**
+     * The Jms communicator.
+     */
     private final JmsCommunicator jmsCommunicator;
+    /**
+     * The Factory.
+     */
     private final MrdStateDelegateFactory factory;
 
     /**
@@ -62,13 +83,20 @@ public class AgentMrdStateListener {
     public void propertyChange(PropertyChangeEvent evt, boolean async) {
         if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.AGENT_MRD_STATE.name())) {
             if (async) {
+                LOGGER.debug("Agent mrd state listener called asynchronously");
                 CompletableFuture.runAsync(() -> this.asyncPropertyChange(evt));
             } else {
+                LOGGER.debug("Agent mrd state listener called synchronously");
                 this.asyncPropertyChange(evt);
             }
         }
     }
 
+    /**
+     * Async property change.
+     *
+     * @param evt the property change event
+     */
     private void asyncPropertyChange(PropertyChangeEvent evt) {
         AgentMrdStateChangeRequest request = (AgentMrdStateChangeRequest) evt.getNewValue();
         Agent agent = this.agentsPool.findById(request.getAgentId());
@@ -97,33 +125,53 @@ public class AgentMrdStateListener {
         boolean fireEvent = false;
         if (!newState.equals(currentState)) {
             this.updateState(agent, agentMrdState, newState);
+            LOGGER.debug("Agent-Mrd state for agent: {} updated to: {}", agent.getId(), newState);
             if (newState.equals(Enums.AgentMrdStateName.READY)
                     || newState.equals(Enums.AgentMrdStateName.ACTIVE)) {
                 fireEvent = true;
             }
         }
         this.publish(agent);
+        LOGGER.debug("Updated AgentPresence for agent: {} published on topic", agent.getId());
         if (fireEvent) {
+            LOGGER.debug("Task Schedulers for MRD: {} triggerred by agent mrd state change to: {}",
+                    agentMrdState.getMrd().getId(), newState);
             this.fireStateChangeToTaskSchedulers(agentMrdState);
         }
-        LOGGER.debug("Agent State Listener for agent: {}", agent.getId());
     }
 
+    /**
+     * Update Agent-MRD state in in-memory object as well as as in Redis collection.
+     *
+     * @param agent         the agent
+     * @param agentMrdState the agent mrd state
+     * @param state         the state
+     */
     private void updateState(Agent agent, AgentMrdState agentMrdState, Enums.AgentMrdStateName state) {
         agentMrdState.setState(state);
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
     }
 
+    /**
+     * Publishes updated Agent-Presence on JMS-topic.
+     *
+     * @param agent the agent
+     */
     private void publish(Agent agent) {
         try {
             AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId().toString());
             AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, false);
-            jmsCommunicator.publish(res, Enums.RedisEventName.AGENT_STATE_CHANGED);
+            jmsCommunicator.publish(res, Enums.JmsEventName.AGENT_STATE_CHANGED);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Fire state change to task schedulers.
+     *
+     * @param agentMrdState the agent mrd state
+     */
     private void fireStateChangeToTaskSchedulers(AgentMrdState agentMrdState) {
         String eventName = "AGENT_MRD_STATE_" + agentMrdState.getState().name();
         for (PrecisionQueue precisionQueue : this.precisionQueues) {

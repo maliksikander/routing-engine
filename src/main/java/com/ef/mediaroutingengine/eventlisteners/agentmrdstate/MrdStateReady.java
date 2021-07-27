@@ -1,10 +1,13 @@
 package com.ef.mediaroutingengine.eventlisteners.agentmrdstate;
 
-import com.ef.mediaroutingengine.commons.EFUtils;
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentMrdState;
 
+/**
+ * The type Mrd state ready.
+ */
 public class MrdStateReady implements MrdStateDelegate {
 
     @Override
@@ -19,7 +22,7 @@ public class MrdStateReady implements MrdStateDelegate {
             } else if (currentState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY)) {
                 if (agent.getNoOfActiveTasks(agentMrdState.getMrd().getId()) < 1) {
                     return Enums.AgentMrdStateName.READY;
-                } else if (agent.getNoOfActiveTasks(agentMrdState.getMrd().getId()) == EFUtils.MAX_TASKS) {
+                } else if (agent.getNoOfActiveTasks(agentMrdState.getMrd().getId()) == Constants.MAX_TASKS) {
                     return Enums.AgentMrdStateName.BUSY;
                 } else {
                     return Enums.AgentMrdStateName.ACTIVE;

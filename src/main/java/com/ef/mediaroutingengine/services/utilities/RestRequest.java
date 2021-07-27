@@ -21,10 +21,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * The type Rest request.
+ */
 @Service
 public class RestRequest {
+    /**
+     * The Config.
+     */
     private final AssignResourceProperties config;
 
+    /**
+     * Instantiates a new Rest request.
+     *
+     * @param config the config
+     */
     @Autowired
     public RestRequest(AssignResourceProperties config) {
         this.config = config;
@@ -58,20 +69,6 @@ public class RestRequest {
     }
 
     /**
-     * Calls the bot-framework's Agent-EWT API.
-     *
-     * @param topicId the id of the topic.
-     * @param ewt     the estimated wait time to reserve and agent.
-     * @return The HTTP response from the API call.
-     */
-    public ResponseEntity<String> postAgentEwt(String topicId, int ewt) {
-        JSONObject requestBody = new JSONObject();
-        requestBody.put("topicId", topicId);
-        requestBody.put("ewt", ewt);
-        return this.httpRequest(requestBody, config.getAgentEwtUri(), HttpMethod.POST);
-    }
-
-    /**
      * Calls the Agent-manager's Assign-Task API.
      *
      * @param channelSession the channel-Session
@@ -95,21 +92,6 @@ public class RestRequest {
             e.printStackTrace();
             return false;
         }
-    }
-
-    /**
-     * Calls the Agent manager's Change-State API.
-     *
-     * @param ccUser The CCUser object whose state is to be changed
-     * @param state  The updated state to be changed.
-     * @return The HTTP response from the API call
-     */
-    public ResponseEntity<String> postChangeState(CCUser ccUser, String state) {
-        ChangeStateRequest request = new ChangeStateRequest();
-        request.setCcUser(ccUser);
-        request.setState(state);
-
-        return httpRequest(request, this.config.getChangeStateUri(), HttpMethod.PUT);
     }
 
     /**

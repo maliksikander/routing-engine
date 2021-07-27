@@ -16,7 +16,7 @@ public class AgentLoginRequest {
     /**
      * Returns the value of the agentId.
      *
-     * @return the vlaue of the agentId, an {@link UUID UUID} object, or null
+     * @return the value of the agentId, an {@link UUID UUID} object, or null
      */
     public UUID getAgentId() {
         return agentId;

@@ -3,12 +3,30 @@ package com.ef.mediaroutingengine.model;
 import com.ef.mediaroutingengine.commons.Enums;
 import java.time.LocalDateTime;
 
+/**
+ * The type Agent mrd state.
+ */
 public class AgentMrdState {
+    /**
+     * The Mrd.
+     */
     private MediaRoutingDomain mrd;
+    /**
+     * The State.
+     */
     private Enums.AgentMrdStateName state;
+    /**
+     * The State change time.
+     */
     private LocalDateTime stateChangeTime;
+    /**
+     * The Last ready state change time.
+     */
     private LocalDateTime lastReadyStateChangeTime;
 
+    /**
+     * Instantiates a new Agent mrd state.
+     */
     public AgentMrdState() {
 
     }
@@ -26,14 +44,29 @@ public class AgentMrdState {
         this.lastReadyStateChangeTime = LocalDateTime.of(1990, 4, 2, 12, 1);
     }
 
+    /**
+     * Gets mrd.
+     *
+     * @return the mrd
+     */
     public MediaRoutingDomain getMrd() {
         return mrd;
     }
 
+    /**
+     * Sets mrd.
+     *
+     * @param mrd the mrd
+     */
     public void setMrd(MediaRoutingDomain mrd) {
         this.mrd = mrd;
     }
 
+    /**
+     * Gets state.
+     *
+     * @return the state
+     */
     public Enums.AgentMrdStateName getState() {
         return state;
     }
@@ -52,18 +85,38 @@ public class AgentMrdState {
         }
     }
 
+    /**
+     * Gets state change time.
+     *
+     * @return the state change time
+     */
     public LocalDateTime getStateChangeTime() {
         return stateChangeTime;
     }
 
+    /**
+     * Sets state change time.
+     *
+     * @param stateChangeTime the state change time
+     */
     public void setStateChangeTime(LocalDateTime stateChangeTime) {
         this.stateChangeTime = stateChangeTime;
     }
 
+    /**
+     * Gets last ready state change time.
+     *
+     * @return the last ready state change time
+     */
     public LocalDateTime getLastReadyStateChangeTime() {
         return lastReadyStateChangeTime;
     }
 
+    /**
+     * Sets last ready state change time.
+     *
+     * @param lastReadyStateChangeTime the last ready state change time
+     */
     public void setLastReadyStateChangeTime(LocalDateTime lastReadyStateChangeTime) {
         this.lastReadyStateChangeTime = lastReadyStateChangeTime;
     }

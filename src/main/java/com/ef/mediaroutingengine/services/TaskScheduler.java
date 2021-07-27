@@ -23,6 +23,9 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Task scheduler.
+ */
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class TaskScheduler implements PropertyChangeListener {
@@ -36,14 +39,35 @@ public class TaskScheduler implements PropertyChangeListener {
     Task: Timer, RemoveTask,
      */
 
-    // Observer pattern
+    /**
+     * The constant LOGGER.
+     */
+// Observer pattern
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskScheduler.class);
+    /**
+     * The Tasks pool.
+     */
     private final TasksPool tasksPool;
+    /**
+     * The Agents pool.
+     */
     private final AgentsPool agentsPool;
+    /**
+     * The Rest request.
+     */
     private final RestRequest restRequest;
+    /**
+     * The Tasks repository.
+     */
     private final TasksRepository tasksRepository;
 
+    /**
+     * The Precision queue.
+     */
     private PrecisionQueue precisionQueue;
+    /**
+     * The Is init.
+     */
     private boolean isInit;
 
     /**
@@ -78,6 +102,11 @@ public class TaskScheduler implements PropertyChangeListener {
         }
     }
 
+    /**
+     * Subscribe task property change support after failover.
+     *
+     * @param task the task
+     */
     public void subscribeTaskPropertyChangeSupportAfterFailover(Task task) {
         task.addPropertyChangeListener(this);
     }
@@ -105,6 +134,11 @@ public class TaskScheduler implements PropertyChangeListener {
         LOGGER.debug("Property changed");
     }
 
+    /**
+     * Reserve.
+     *
+     * @param task the task
+     */
     private void reserve(Task task) {
         LOGGER.debug("method started | TaskScheduler.reserve method");
 //        boolean assignedToLastAssignedAgent = this.assignToLastAssignedAgent(task);
@@ -125,6 +159,11 @@ public class TaskScheduler implements PropertyChangeListener {
         LOGGER.debug("method ended | TaskScheduler.reserve method");
     }
 
+    /**
+     * Listen to task property changes if new task event fired.
+     *
+     * @param evt the evt
+     */
     private void listenToTaskPropertyChangesIfNewTaskEventFired(PropertyChangeEvent evt) {
         if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.NEW_TASK.name())) {
             Task task = (Task) evt.getNewValue();
@@ -133,6 +172,11 @@ public class TaskScheduler implements PropertyChangeListener {
         }
     }
 
+    /**
+     * Start next step timer if timer event fired.
+     *
+     * @param evt the evt
+     */
     private void startNextStepTimerIfTimerEventFired(PropertyChangeEvent evt) {
         if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.TIMER.name())) {
             Task task = (Task) evt.getNewValue();
@@ -145,6 +189,12 @@ public class TaskScheduler implements PropertyChangeListener {
         }
     }
 
+    /**
+     * Is available boolean.
+     *
+     * @param agent the agent
+     * @return the boolean
+     */
     private boolean isAvailable(Agent agent) {
         UUID mrdId = this.precisionQueue.getMrd().getId();
         Enums.AgentStateName agentState = agent.getState().getName();
@@ -158,6 +208,12 @@ public class TaskScheduler implements PropertyChangeListener {
                 && !agent.isTaskReserved();
     }
 
+    /**
+     * Gets available agent with least active tasks.
+     *
+     * @param step the step
+     * @return the available agent with least active tasks
+     */
     private Agent getAvailableAgentWithLeastActiveTasks(Step step) {
         List<Agent> sortedAgentList = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE,
                 this.precisionQueue.getMrd().getId());
@@ -173,6 +229,12 @@ public class TaskScheduler implements PropertyChangeListener {
         return result;
     }
 
+    /**
+     * Assign to last assigned agent boolean.
+     *
+     * @param task the task
+     * @return the boolean
+     */
     private boolean assignToLastAssignedAgent(Task task) {
         UUID lastAssignedAgentId = task.getLastAssignedAgentId();
         if (lastAssignedAgentId != null) {
@@ -185,6 +247,12 @@ public class TaskScheduler implements PropertyChangeListener {
         return false;
     }
 
+    /**
+     * Assign task to.
+     *
+     * @param agent the agent
+     * @param task  the task
+     */
     private void assignTaskTo(Agent agent, Task task) {
         LOGGER.debug("method started | TaskScheduler.assignTaskTo method");
         try {
@@ -211,6 +279,13 @@ public class TaskScheduler implements PropertyChangeListener {
         LOGGER.debug("method ended | TaskScheduler.assignTaskTo method");
     }
 
+    /**
+     * Change state of.
+     *
+     * @param task    the task
+     * @param state   the state
+     * @param agentId the agent id
+     */
     private void changeStateOf(Task task, TaskState state, UUID agentId) {
         task.setTaskState(state);
         this.tasksRepository.changeState(task.getId(), state);

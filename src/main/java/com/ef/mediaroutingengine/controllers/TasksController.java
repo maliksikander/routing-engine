@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,11 +18,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Get Tasks Rest Controller.
+ */
 @RestController
 @RequestMapping("tasks")
 public class TasksController {
+    /**
+     * In-memory pool of all tasks.
+     */
     private final TasksPool tasksPool;
 
+    /**
+     * Default Constructor. Loads the dependency beans.
+     *
+     * @param tasksPool in-memory pool of all tasks
+     */
     @Autowired
     public TasksController(TasksPool tasksPool) {
         this.tasksPool = tasksPool;

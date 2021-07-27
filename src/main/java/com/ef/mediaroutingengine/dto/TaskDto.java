@@ -7,16 +7,46 @@ import com.ef.mediaroutingengine.model.TaskState;
 import java.io.Serializable;
 import java.util.UUID;
 
+/**
+ * The type Task dto.
+ */
 public class TaskDto implements Serializable {
+    /**
+     * The Id.
+     */
     private UUID id;
+    /**
+     * The Channel session.
+     */
     private ChannelSession channelSession;
+    /**
+     * The Mrd.
+     */
     private MediaRoutingDomain mrd;
+    /**
+     * The Queue.
+     */
     private UUID queue;
+    /**
+     * The Priority.
+     */
     private int priority;
+    /**
+     * The State.
+     */
     private TaskState state;
+    /**
+     * The Assigned to.
+     */
     private UUID assignedTo;
+    /**
+     * The Enqueue time.
+     */
     private Long enqueueTime;
 
+    /**
+     * Instantiates a new Task dto.
+     */
     public TaskDto() {
 
     }
@@ -37,62 +67,137 @@ public class TaskDto implements Serializable {
         this.enqueueTime = task.getEnqueueTime();
     }
 
+    /**
+     * Gets id.
+     *
+     * @return the id
+     */
     public UUID getId() {
         return id;
     }
 
+    /**
+     * Sets id.
+     *
+     * @param id the id
+     */
     public void setId(UUID id) {
         this.id = id;
     }
 
+    /**
+     * Gets mrd.
+     *
+     * @return the mrd
+     */
     public MediaRoutingDomain getMrd() {
         return mrd;
     }
 
+    /**
+     * Sets mrd.
+     *
+     * @param mrd the mrd
+     */
     public void setMrd(MediaRoutingDomain mrd) {
         this.mrd = mrd;
     }
 
+    /**
+     * Gets queue.
+     *
+     * @return the queue
+     */
     public UUID getQueue() {
         return queue;
     }
 
+    /**
+     * Sets queue.
+     *
+     * @param queue the queue
+     */
     public void setQueue(UUID queue) {
         this.queue = queue;
     }
 
+    /**
+     * Gets priority.
+     *
+     * @return the priority
+     */
     public int getPriority() {
         return priority;
     }
 
+    /**
+     * Sets priority.
+     *
+     * @param priority the priority
+     */
     public void setPriority(int priority) {
         this.priority = priority;
     }
 
+    /**
+     * Gets state.
+     *
+     * @return the state
+     */
     public TaskState getState() {
         return state;
     }
 
+    /**
+     * Sets state.
+     *
+     * @param state the state
+     */
     public void setState(TaskState state) {
         this.state = state;
     }
 
+    /**
+     * Gets assigned to.
+     *
+     * @return the assigned to
+     */
     public UUID getAssignedTo() {
         return assignedTo;
     }
 
+    /**
+     * Sets assigned to.
+     *
+     * @param assignedTo the assigned to
+     */
     public void setAssignedTo(UUID assignedTo) {
         this.assignedTo = assignedTo;
     }
 
+    /**
+     * Gets channel session.
+     *
+     * @return the channel session
+     */
     public ChannelSession getChannelSession() {
         return channelSession;
     }
 
+    /**
+     * Sets channel session.
+     *
+     * @param channelSession the channel session
+     */
     public void setChannelSession(ChannelSession channelSession) {
         this.channelSession = channelSession;
     }
 
+    /**
+     * Gets enqueue time.
+     *
+     * @return the enqueue time
+     */
     public Long getEnqueueTime() {
         return enqueueTime;
     }

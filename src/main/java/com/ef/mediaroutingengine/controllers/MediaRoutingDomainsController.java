@@ -7,6 +7,8 @@ import com.ef.mediaroutingengine.services.controllerservices.MediaRoutingDomains
 import java.util.List;
 import java.util.UUID;
 import javax.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,15 +21,36 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Rest-Controller for the Media-routing-domains CRUD APIs.
+ */
 @RestController
 public class MediaRoutingDomainsController {
+    /**
+     * Logger.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(MediaRoutingDomainsController.class);
+    /**
+     * The API calls are passed to this service for processing.
+     */
     private final MediaRoutingDomainsService service;
 
+    /**
+     * Default Constructor. Loads the required dependency beans.
+     *
+     * @param service handles the actual processing for the API calls.
+     */
     @Autowired
     public MediaRoutingDomainsController(MediaRoutingDomainsService service) {
         this.service = service;
     }
 
+    /**
+     * Create-MRD API handler. Creates a new MRD and sends back the API response.
+     *
+     * @param requestBody a MediaRoutingDomain object
+     * @return the newly created MRD as the response-body with status-code 200.
+     */
     @CrossOrigin(origins = "*")
     @PostMapping(value = "/media-routing-domains", consumes = "application/json",
             produces = "application/json")
@@ -36,12 +59,26 @@ public class MediaRoutingDomainsController {
         return new ResponseEntity<>(this.service.create(requestBody), HttpStatus.OK);
     }
 
+    /**
+     * Retrieve-MRDs API handler. Returns the list of all MRDs in the config DB.
+     *
+     * @return list of all MRDs as response-body with status-code 200.
+     */
     @CrossOrigin(origins = "*")
     @GetMapping(value = "/media-routing-domains", produces = "application/json")
     public ResponseEntity<Object> retrieveMediaRoutingDomains() {
         return new ResponseEntity<>(this.service.retrieve(), HttpStatus.OK);
     }
 
+    /**
+     * Update-MRD API handler. Updates an Existing MRD. Returns 404 Not-Found if the requested MRD
+     * is not found.
+     *
+     * @param requestBody updated values of the MRD.
+     * @param id          id of the MRD to update.
+     * @return the updated MRD as response-body with status-code 200.
+     * @throws Exception In case an MRD is not found or depended data is inconsistent.
+     */
     @CrossOrigin(origins = "*")
     @PutMapping(value = "/media-routing-domains/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateMediaRoutingDomain(
@@ -50,16 +87,19 @@ public class MediaRoutingDomainsController {
     }
 
     /**
-     * Delete a mrd.
+     * Delete-MRD API handler. Deletes an existing MRD. Returns 404 if the requested MRD is not found.
+     * Returns HttpStatus-Conflict without deleting the MRD if the MRD is associated to any precision-queue.
+     * In this case the list of precision-queues to which the MRD is associated is returned as response-body.
      *
-     * @param id UUID
-     * @return ResponseEntity
+     * @param id UUID of the MRD to be deleted
+     * @return 200 on successful deletion, 404 if MRD is not found, 409 if MRD is associated with any queue.
      */
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/media-routing-domains/{id}", produces = "application/json")
     public ResponseEntity<Object> deleteMediaRoutingDomain(@PathVariable UUID id) {
         List<PrecisionQueueEntity> precisionQueueEntities = this.service.delete(id);
         if (!precisionQueueEntities.isEmpty()) {
+            LOGGER.debug("Could not delete MRD: {}. It is associated with one or more Queues", id);
             return new ResponseEntity<>(precisionQueueEntities, HttpStatus.CONFLICT);
         }
         SuccessResponseBody responseBody = new SuccessResponseBody("Successfully Deleted");

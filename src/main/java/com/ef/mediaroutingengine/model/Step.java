@@ -8,12 +8,30 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The type Step.
+ */
 public class Step {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(Step.class);
+    /**
+     * The Expressions.
+     */
     private List<Expression> expressions;
+    /**
+     * The Timeout.
+     */
     private int timeout;
+    /**
+     * The Associated agents.
+     */
     private List<Agent> associatedAgents;
 
+    /**
+     * Instantiates a new Step.
+     */
     public Step() {
         this.expressions = new ArrayList<>();
         this.associatedAgents = new ArrayList<>();
@@ -30,6 +48,12 @@ public class Step {
         this.associatedAgents = new ArrayList<>();
     }
 
+    /**
+     * To expressions list.
+     *
+     * @param expressionEntities the expression entities
+     * @return the list
+     */
     private List<Expression> toExpressions(List<ExpressionEntity> expressionEntities) {
         if (expressionEntities == null) {
             return new ArrayList<>();
@@ -41,26 +65,57 @@ public class Step {
         return elements;
     }
 
+    /**
+     * Gets expressions.
+     *
+     * @return the expressions
+     */
     public List<Expression> getExpressions() {
         return expressions;
     }
 
+    /**
+     * Sets expressions.
+     *
+     * @param expressions the expressions
+     */
     public void setExpressions(List<Expression> expressions) {
         this.expressions = expressions;
     }
 
+    /**
+     * Gets timeout.
+     *
+     * @return the timeout
+     */
     public int getTimeout() {
         return timeout;
     }
 
+    /**
+     * Sets timeout.
+     *
+     * @param timeout the timeout
+     */
     public void setTimeout(int timeout) {
         this.timeout = timeout;
     }
 
+    /**
+     * Evaluate associated agents.
+     *
+     * @param allAgents the all agents
+     */
     public void evaluateAssociatedAgents(List<Agent> allAgents) {
         this.associatedAgents = ExpressionUtility.evaluateInfix(getInfixExpression(allAgents));
     }
 
+    /**
+     * Gets infix expression.
+     *
+     * @param allAgents the all agents
+     * @return the infix expression
+     */
     private List<Object> getInfixExpression(List<Agent> allAgents) {
         List<Object> infixExpression = new ArrayList<>();
 
@@ -76,6 +131,13 @@ public class Step {
         return infixExpression;
     }
 
+    /**
+     * Gets term infix expression.
+     *
+     * @param expression the expression
+     * @param allAgents  the all agents
+     * @return the term infix expression
+     */
     private List<Object> getTermInfixExpression(Expression expression, List<Agent> allAgents) {
         List<Object> infixExpression = new ArrayList<>();
         for (Term term : expression.getTerms()) {
@@ -87,6 +149,11 @@ public class Step {
         return infixExpression;
     }
 
+    /**
+     * Gets associated agents.
+     *
+     * @return the associated agents
+     */
     public List<Agent> getAssociatedAgents() {
         return associatedAgents;
     }
@@ -116,6 +183,7 @@ public class Step {
      * Sorts and returns the associated agent list by Agent-Selection-Criteria.
      *
      * @param agentSelectionCriteria The selection criteria on which to sort the agents
+     * @param mrdId                  the mrd id
      * @return the sorted or ordered associated agents list.
      */
     public List<Agent> orderAgentsBy(AgentSelectionCriteria agentSelectionCriteria, UUID mrdId) {
@@ -132,6 +200,12 @@ public class Step {
         }
     }
 
+    /**
+     * Sort as longest available list.
+     *
+     * @param mrdId the mrd id
+     * @return the list
+     */
     private List<Agent> sortAsLongestAvailable(UUID mrdId) {
         List<Agent> sorted = new ArrayList<>(this.associatedAgents);
         sorted.sort(Comparator.comparing((Agent o) -> o.getLastReadyStateChangeTimeFor(mrdId)));

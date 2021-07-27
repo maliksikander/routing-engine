@@ -37,7 +37,20 @@ public interface JmsCommunicator extends MessageListener, ExceptionListener {
      */
     void stop() throws JMSException;
 
+    /**
+     * Gets topic.
+     *
+     * @return the topic
+     */
     String getTopic();
 
-    void publish(Serializable message, Enums.RedisEventName eventName) throws JMSException, JsonProcessingException;
+    /**
+     * Publish.
+     *
+     * @param message   the message
+     * @param eventName the event name
+     * @throws JMSException            the jms exception
+     * @throws JsonProcessingException the json processing exception
+     */
+    void publish(Serializable message, Enums.JmsEventName eventName) throws JMSException, JsonProcessingException;
 }

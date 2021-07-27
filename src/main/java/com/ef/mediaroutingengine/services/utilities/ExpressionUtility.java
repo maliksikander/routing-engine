@@ -8,8 +8,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
+/**
+ * The type Expression utility.
+ */
 public class ExpressionUtility {
 
+    /**
+     * Instantiates a new Expression utility.
+     */
     private ExpressionUtility() {
 
     }
@@ -18,8 +24,7 @@ public class ExpressionUtility {
      * Evaluates a postfix expression to evaluate agents associated with a Precision-Queue's Step.
      * It converts the infix expression to a postfix expression and evaluates the postfix expression.
      *
-     * @param infixExpression list of infix expression's operands (list of CCUsers), operators (AND, OR)
-     *                        and brackets
+     * @param infixExpression list of infix expression's operands (list of CCUsers), operators (AND, OR)                        and brackets
      * @return list of associated-agents.
      */
     public static List<Agent> evaluateInfix(@NotNull List<Object> infixExpression) {
@@ -96,10 +101,22 @@ public class ExpressionUtility {
         return postFixList;
     }
 
+    /**
+     * Is operand boolean.
+     *
+     * @param infixEntity the infix entity
+     * @return the boolean
+     */
     private static boolean isOperand(Object infixEntity) {
         return infixEntity.getClass().equals(ArrayList.class);
     }
 
+    /**
+     * Pop until stack element is opening bracket list.
+     *
+     * @param stack the stack
+     * @return the list
+     */
     private static List<Object> popUntilStackElementIsOpeningBracket(Deque<String> stack) {
         List<Object> elements = new ArrayList<>();
         while (!stack.isEmpty() && !stack.peek().equals("(")) {
@@ -108,6 +125,12 @@ public class ExpressionUtility {
         return elements;
     }
 
+    /**
+     * Precedence int.
+     *
+     * @param operator the operator
+     * @return the int
+     */
     private static int precedence(String operator) {
         switch (operator.toUpperCase()) {
             case "AND":
@@ -119,6 +142,13 @@ public class ExpressionUtility {
         }
     }
 
+    /**
+     * Pop until precedence greater than stack element list.
+     *
+     * @param operator the operator
+     * @param stack    the stack
+     * @return the list
+     */
     private static List<Object> popUntilPrecedenceGreaterThanStackElement(String operator, Deque<String> stack) {
         List<Object> elements = new ArrayList<>();
         while (!stack.isEmpty() && precedence(operator) <= precedence(stack.peek())) {
@@ -127,6 +157,12 @@ public class ExpressionUtility {
         return elements;
     }
 
+    /**
+     * Pop all list.
+     *
+     * @param stack the stack
+     * @return the list
+     */
     private static List<Object> popAll(Deque<String> stack) {
         List<Object> elements = new ArrayList<>();
         while (!stack.isEmpty()) {
@@ -138,10 +174,24 @@ public class ExpressionUtility {
         return elements;
     }
 
+    /**
+     * Intersection list.
+     *
+     * @param a the a
+     * @param b the b
+     * @return the list
+     */
     private static List<Agent> intersection(List<Agent> a, List<Agent> b) {
         return a.stream().distinct().filter(b::contains).collect(Collectors.toList());
     }
 
+    /**
+     * Union list.
+     *
+     * @param a the a
+     * @param b the b
+     * @return the list
+     */
     private static List<Agent> union(List<Agent> a, List<Agent> b) {
         List<Agent> unionList = new ArrayList<>(a);
         unionList.addAll(b);

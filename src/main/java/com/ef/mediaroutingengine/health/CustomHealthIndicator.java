@@ -4,9 +4,15 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 
+/**
+ * The type Custom health indicator.
+ */
 @Component
 public class CustomHealthIndicator implements HealthIndicator {
 
+    /**
+     * The constant MESSAGE_KEY.
+     */
     private static final String MESSAGE_KEY = "Service A";
 
     @Override
@@ -18,6 +24,11 @@ public class CustomHealthIndicator implements HealthIndicator {
         return Health.up().withDetail(MESSAGE_KEY, "Available").build();
     }
 
+    /**
+     * Is running service a boolean.
+     *
+     * @return the boolean
+     */
     private Boolean isRunningServiceA() {
         // Logic Skipped
         return true;

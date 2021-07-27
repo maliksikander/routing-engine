@@ -11,10 +11,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * The type Mock jms publisher.
+ */
 @RestController
 public class MockJmsPublisher {
+    /**
+     * The Jms communicator.
+     */
     private final JmsCommunicator jmsCommunicator;
 
+    /**
+     * Instantiates a new Mock jms publisher.
+     *
+     * @param jmsCommunicator the jms communicator
+     */
     @Autowired
     public MockJmsPublisher(JmsCommunicator jmsCommunicator) {
         this.jmsCommunicator = jmsCommunicator;
@@ -29,7 +40,7 @@ public class MockJmsPublisher {
      */
     @GetMapping("/jms-publish")
     public ResponseEntity<Object> jmsPublish() throws JMSException, JsonProcessingException {
-        Enums.RedisEventName event = Enums.RedisEventName.AGENT_STATE_CHANGED;
+        Enums.JmsEventName event = Enums.JmsEventName.AGENT_STATE_CHANGED;
         StateChangeEvent stateChangeEvent = new StateChangeEvent(event, "state", "STATE_CHANNEL");
         this.jmsCommunicator.publish(stateChangeEvent, event);
         return new ResponseEntity<>("Success", HttpStatus.OK);

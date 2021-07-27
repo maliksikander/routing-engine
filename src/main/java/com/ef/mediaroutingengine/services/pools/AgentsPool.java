@@ -12,9 +12,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Agents pool.
+ */
 @Service
 public class AgentsPool {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentsPool.class);
+    /**
+     * The Agents.
+     */
     private final Map<UUID, Agent> agents = new ConcurrentHashMap<>();
 
     /**
@@ -84,6 +93,11 @@ public class AgentsPool {
         return agentList;
     }
 
+    /**
+     * Size int.
+     *
+     * @return the int
+     */
     public int size() {
         return this.agents.size();
     }

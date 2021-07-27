@@ -23,14 +23,25 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 
+/**
+ * The type Rest response entity exception handler.
+ */
 @ControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
 
+    /**
+     * Instantiates a new Rest response entity exception handler.
+     */
     public RestResponseEntityExceptionHandler() {
         super();
     }
 
+    /**
+     * Instantiates a new Rest response entity exception handler.
+     *
+     * @param messageSource the message source
+     */
     @Autowired
     public RestResponseEntityExceptionHandler(MessageSource messageSource) {
         this.messageSource = messageSource;
@@ -78,6 +89,12 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
         return buildResponseEntity(responseBody, HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Handle method argument type mismatch exception response entity.
+     *
+     * @param ex the ex
+     * @return the response entity
+     */
     @ExceptionHandler({MethodArgumentTypeMismatchException.class})
     protected ResponseEntity<Object> handleMethodArgumentTypeMismatchException(
             MethodArgumentTypeMismatchException ex) {
@@ -86,6 +103,12 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
         return buildResponseEntity(responseBody, HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Handle access denied exception response entity.
+     *
+     * @param ex the ex
+     * @return the response entity
+     */
     @ExceptionHandler({AccessDeniedException.class})
     protected ResponseEntity<Object> handleAccessDeniedException(final AccessDeniedException ex) {
 
@@ -101,6 +124,12 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
         return buildResponseEntity(errorResponseBody, HttpStatus.FORBIDDEN);
     }
 
+    /**
+     * Handle authentication exception response entity.
+     *
+     * @param ex the ex
+     * @return the response entity
+     */
     @ExceptionHandler({AuthenticationException.class})
     protected ResponseEntity<Object> handleAuthenticationException(
             final AuthenticationException ex) {
@@ -115,7 +144,7 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
      * Handles not-found exception.
      *
      * @param ex NotFoundException
-     * @return ResponseEntity
+     * @return ResponseEntity response entity
      */
     @ExceptionHandler({NotFoundException.class})
     public ResponseEntity<Object> handleNotFoundException(final NotFoundException ex) {
@@ -172,7 +201,8 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
     /**
      * Handles Constraint Violation Exception.
      *
-     * @param ex ConstraintViolationException object
+     * @param ex      ConstraintViolationException object
+     * @param request the request
      * @return ResponseEntity object
      */
     @ExceptionHandler({ConstraintViolationException.class})

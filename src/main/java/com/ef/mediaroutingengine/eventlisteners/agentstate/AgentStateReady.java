@@ -9,11 +9,22 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Agent state ready.
+ */
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AgentStateReady implements AgentStateDelegate {
+    /**
+     * The Agent presence repository.
+     */
     private final AgentPresenceRepository agentPresenceRepository;
 
+    /**
+     * Instantiates a new Agent state ready.
+     *
+     * @param agentPresenceRepository the agent presence repository
+     */
     @Autowired
     public AgentStateReady(AgentPresenceRepository agentPresenceRepository) {
         this.agentPresenceRepository = agentPresenceRepository;

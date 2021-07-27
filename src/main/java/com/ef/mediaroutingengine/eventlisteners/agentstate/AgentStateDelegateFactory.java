@@ -6,12 +6,27 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Agent state delegate factory.
+ */
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AgentStateDelegateFactory {
+    /**
+     * The Agent state not ready.
+     */
     private final AgentStateNotReady agentStateNotReady;
+    /**
+     * The Agent state ready.
+     */
     private final AgentStateReady agentStateReady;
+    /**
+     * The Agent state login.
+     */
     private final AgentStateLogin agentStateLogin;
+    /**
+     * The Agent state logout.
+     */
     private final AgentStateLogout agentStateLogout;
 
     /**

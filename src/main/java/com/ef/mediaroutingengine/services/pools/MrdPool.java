@@ -8,8 +8,14 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Mrd pool.
+ */
 @Service
 public class MrdPool {
+    /**
+     * The Mrds.
+     */
     private final Map<UUID, MediaRoutingDomain> mrds = new ConcurrentHashMap<>();
 
     /**
@@ -47,6 +53,11 @@ public class MrdPool {
         return mediaRoutingDomains;
     }
 
+    /**
+     * Size int.
+     *
+     * @return the int
+     */
     public int size() {
         return this.mrds.size();
     }

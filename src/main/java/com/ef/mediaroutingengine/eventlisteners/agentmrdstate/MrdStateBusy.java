@@ -4,6 +4,9 @@ import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentMrdState;
 
+/**
+ * The type Mrd state busy.
+ */
 public class MrdStateBusy implements MrdStateDelegate {
     @Override
     public Enums.AgentMrdStateName getNewState(Agent agent, AgentMrdState agentMrdState) {

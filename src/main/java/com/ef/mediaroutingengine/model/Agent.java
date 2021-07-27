@@ -15,14 +15,38 @@ import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The type Agent.
+ */
 public class Agent {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(Agent.class);
 
+    /**
+     * The Keycloak user.
+     */
     private final KeycloakUser keycloakUser;
+    /**
+     * The Associated routing attributes.
+     */
     private final List<AssociatedRoutingAttribute> associatedRoutingAttributes;
+    /**
+     * The Active tasks.
+     */
     private final Map<UUID, List<Task>> activeTasks;
+    /**
+     * The Agent state.
+     */
     private AgentState agentState;
+    /**
+     * The Agent mrd states.
+     */
     private List<AgentMrdState> agentMrdStates;
+    /**
+     * The Reserved task.
+     */
     private Task reservedTask;
 
     /**
@@ -143,18 +167,36 @@ public class Agent {
         return result;
     }
 
+    /**
+     * Clear all tasks.
+     */
     public void clearAllTasks() {
         this.activeTasks.replaceAll((i, v) -> Collections.synchronizedList(new ArrayList<>()));
     }
 
+    /**
+     * Gets id.
+     *
+     * @return the id
+     */
     public UUID getId() {
         return this.keycloakUser.getId();
     }
 
+    /**
+     * Gets associated routing attributes.
+     *
+     * @return the associated routing attributes
+     */
     public List<AssociatedRoutingAttribute> getAssociatedRoutingAttributes() {
         return this.associatedRoutingAttributes;
     }
 
+    /**
+     * Gets state.
+     *
+     * @return the state
+     */
     public AgentState getState() {
         return this.agentState;
     }
@@ -168,10 +210,20 @@ public class Agent {
         this.agentState = state;
     }
 
+    /**
+     * Gets agent mrd states.
+     *
+     * @return the agent mrd states
+     */
     public List<AgentMrdState> getAgentMrdStates() {
         return agentMrdStates;
     }
 
+    /**
+     * Sets agent mrd states.
+     *
+     * @param agentMrdStates the agent mrd states
+     */
     public void setAgentMrdStates(List<AgentMrdState> agentMrdStates) {
         this.agentMrdStates = agentMrdStates;
     }
@@ -211,14 +263,27 @@ public class Agent {
         }
     }
 
+    /**
+     * Reserve task.
+     *
+     * @param task the task
+     */
     public void reserveTask(Task task) {
         this.reservedTask = task;
     }
 
+    /**
+     * Remove reserved task.
+     */
     public void removeReservedTask() {
         this.reservedTask = null;
     }
 
+    /**
+     * Is task reserved boolean.
+     *
+     * @return the boolean
+     */
     public boolean isTaskReserved() {
         return this.reservedTask != null;
     }

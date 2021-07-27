@@ -11,11 +11,22 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * The type Mock task dao.
+ */
 @RestController
 public class MockTaskDao {
+    /**
+     * The Tasks repository.
+     */
     @Autowired
     private TasksRepository tasksRepository;
 
+    /**
+     * Gets all tasks.
+     *
+     * @return the all tasks
+     */
     @GetMapping("/get-all-tasks")
     public ResponseEntity<Object> getAllTasks() {
         return new ResponseEntity<>(this.tasksRepository.findAll(), HttpStatus.OK);
@@ -36,6 +47,12 @@ public class MockTaskDao {
         return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 
+    /**
+     * Delete response entity.
+     *
+     * @param id the id
+     * @return the response entity
+     */
     @GetMapping("task-dao/delete")
     public ResponseEntity<Object> delete(@RequestParam String id) {
         return new ResponseEntity<>("Success", HttpStatus.OK);

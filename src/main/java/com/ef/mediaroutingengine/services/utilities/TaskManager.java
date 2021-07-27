@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.services.utilities;
 
-import com.ef.mediaroutingengine.commons.EFUtils;
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
 import com.ef.mediaroutingengine.dto.AgentStateChangeRequest;
@@ -18,9 +18,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Task manager.
+ */
 @Service
 public class TaskManager {
+    /**
+     * The Application context.
+     */
     private final ApplicationContext applicationContext;
+    /**
+     * The Agents pool.
+     */
     private final AgentsPool agentsPool;
 
     /**
@@ -78,6 +87,14 @@ public class TaskManager {
         }
     }
 
+    /**
+     * Fire agent mrd change request.
+     *
+     * @param agentId the agent id
+     * @param mrdId   the mrd id
+     * @param state   the state
+     * @param async   the async
+     */
     private void fireAgentMrdChangeRequest(UUID agentId, UUID mrdId, Enums.AgentMrdStateName state, boolean async) {
         PropertyChangeEvent evt = new PropertyChangeEvent(this, Enums.EventName.AGENT_MRD_STATE.name(),
                 null, new AgentMrdStateChangeRequest(agentId, mrdId, state));
@@ -85,6 +102,12 @@ public class TaskManager {
         listener.propertyChange(evt, async);
     }
 
+    /**
+     * Fire agent state change request.
+     *
+     * @param agentId    the agent id
+     * @param agentState the agent state
+     */
     private void fireAgentStateChangeRequest(UUID agentId, AgentState agentState) {
         PropertyChangeEvent evt = new PropertyChangeEvent(this, Enums.EventName.AGENT_STATE.name(),
                 null, new AgentStateChangeRequest(agentId, agentState));
@@ -96,12 +119,13 @@ public class TaskManager {
      * Updates the Agent's MRD state, when task state changes to active.
      *
      * @param agent agent to b updated
+     * @param mrdId the mrd id
      */
     public void updateAgentMrdState(Agent agent, UUID mrdId) {
         int noOfActiveTasks = agent.getNoOfActiveTasks(mrdId);
         if (noOfActiveTasks == 1) {
             this.fireAgentMrdChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.ACTIVE, false);
-        } else if (noOfActiveTasks == EFUtils.MAX_TASKS) {
+        } else if (noOfActiveTasks == Constants.MAX_TASKS) {
             this.fireAgentMrdChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.BUSY, false);
         }
         if (noOfActiveTasks > 1) {

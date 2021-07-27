@@ -18,13 +18,31 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Agent state login.
+ */
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AgentStateLogin implements AgentStateDelegate {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentStateLogin.class);
+    /**
+     * The Agent presence repository.
+     */
     private final AgentPresenceRepository agentPresenceRepository;
+    /**
+     * The Jms communicator.
+     */
     private final JmsCommunicator jmsCommunicator;
 
+    /**
+     * Instantiates a new Agent state login.
+     *
+     * @param agentPresenceRepository the agent presence repository
+     * @param jmsCommunicator         the jms communicator
+     */
     @Autowired
     public AgentStateLogin(AgentPresenceRepository agentPresenceRepository,
                            JmsCommunicator jmsCommunicator) {
@@ -46,6 +64,13 @@ public class AgentStateLogin implements AgentStateDelegate {
         return false;
     }
 
+    /**
+     * Logout to login.
+     *
+     * @param agent         the agent
+     * @param agentPresence the agent presence
+     * @param state         the state
+     */
     private void logoutToLogin(Agent agent, AgentPresence agentPresence, AgentState state) {
         agent.setState(state);
         List<AgentMrdState> agentMrdStates = new ArrayList<>();
@@ -60,6 +85,12 @@ public class AgentStateLogin implements AgentStateDelegate {
         this.publish(agentPresence);
     }
 
+    /**
+     * Login to not ready.
+     *
+     * @param agent the agent
+     * @param state the state
+     */
     private void loginToNotReady(Agent agent, AgentState state) {
         agent.setState(state);
         List<AgentMrdState> agentMrdStates = new ArrayList<>();
@@ -71,6 +102,12 @@ public class AgentStateLogin implements AgentStateDelegate {
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agentMrdStates);
     }
 
+    /**
+     * Add to add presence db if does not exist agent presence.
+     *
+     * @param agent the agent
+     * @return the agent presence
+     */
     private AgentPresence addToAddPresenceDbIfDoesNotExist(Agent agent) {
         AgentPresence agentPresence = agentPresenceRepository.find(agent.getId().toString());
         if (agentPresence == null) {
@@ -80,10 +117,15 @@ public class AgentStateLogin implements AgentStateDelegate {
         return agentPresence;
     }
 
+    /**
+     * Publish.
+     *
+     * @param agentPresence the agent presence
+     */
     private void publish(AgentPresence agentPresence) {
         AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, true);
         try {
-            jmsCommunicator.publish(res, Enums.RedisEventName.AGENT_STATE_CHANGED);
+            jmsCommunicator.publish(res, Enums.JmsEventName.AGENT_STATE_CHANGED);
         } catch (Exception e) {
             e.printStackTrace();
         }

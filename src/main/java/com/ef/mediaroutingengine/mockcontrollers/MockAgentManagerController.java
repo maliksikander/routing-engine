@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * The type Mock agent manager controller.
+ */
 @RestController
 public class MockAgentManagerController {
 
@@ -17,7 +20,7 @@ public class MockAgentManagerController {
      * Mock of agent-manager's change-state API.
      *
      * @param request changeStateRequest
-     * @return ResponseEntity
+     * @return ResponseEntity response entity
      */
     @PutMapping(value = "/mockAgentManager/state", consumes = "application/json", produces = "application/json")
     public ResponseEntity<String> changeState(@RequestBody ChangeStateRequest request) {
@@ -36,7 +39,7 @@ public class MockAgentManagerController {
      * Mock of agent-manager's assign-task api.
      *
      * @param request AssignTaskRequest.
-     * @return ResponseEntity
+     * @return ResponseEntity response entity
      */
     @PostMapping(value = "/mockAgentManager/agent/task", consumes = "application/json", produces = "application/json")
     public ResponseEntity<String> assignTask(@RequestBody AssignTaskRequest request) {
@@ -48,6 +51,11 @@ public class MockAgentManagerController {
         return new ResponseEntity<>(responseBody.toString(), HttpStatus.ACCEPTED);
     }
 
+    /**
+     * Success response body string.
+     *
+     * @return the string
+     */
     private String successResponseBody() {
         JSONObject responseBody = new JSONObject();
         responseBody.put("task", "changeAgentState");
@@ -57,6 +65,11 @@ public class MockAgentManagerController {
         return responseBody.toString();
     }
 
+    /**
+     * Invalid data response body string.
+     *
+     * @return the string
+     */
     private String invalidDataResponseBody() {
         JSONObject responseBody = new JSONObject();
         responseBody.put("task", "changeAgentState");
@@ -66,6 +79,11 @@ public class MockAgentManagerController {
         return responseBody.toString();
     }
 
+    /**
+     * Agent unavailable response body string.
+     *
+     * @return the string
+     */
     private String agentUnavailableResponseBody() {
         JSONObject responseBody = new JSONObject();
         responseBody.put("task", "changeAgentState");
@@ -75,6 +93,11 @@ public class MockAgentManagerController {
         return responseBody.toString();
     }
 
+    /**
+     * Custom error response body string.
+     *
+     * @return the string
+     */
     private String customErrorResponseBody() {
         JSONObject responseBody = new JSONObject();
         responseBody.put("task", "changeAgentState");

@@ -13,12 +13,26 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+/**
+ * The type Agent state not ready.
+ */
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AgentStateNotReady implements AgentStateDelegate {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentStateNotReady.class);
+    /**
+     * The Agent presence repository.
+     */
     private final AgentPresenceRepository agentPresenceRepository;
 
+    /**
+     * Instantiates a new Agent state not ready.
+     *
+     * @param agentPresenceRepository the agent presence repository
+     */
     public AgentStateNotReady(AgentPresenceRepository agentPresenceRepository) {
         this.agentPresenceRepository = agentPresenceRepository;
     }
