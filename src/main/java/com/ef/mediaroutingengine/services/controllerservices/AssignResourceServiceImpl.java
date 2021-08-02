@@ -66,6 +66,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         LOGGER.debug("MRD validated in Assign-Resource API request");
         PrecisionQueue queue = this.validateAndGetQueue(channelSession, request.getQueue(), mrd.getId());
         LOGGER.debug("PrecisionQueue validated in Assign-Resource API request");
+        // TODO: Executer service .. don't use completableFuture!
         CompletableFuture.runAsync(() -> this.tasksPool.enqueueTask(channelSession, queue, mrd));
         LOGGER.debug("Task enqueued");
         LOGGER.debug(Constants.METHOD_ENDED);

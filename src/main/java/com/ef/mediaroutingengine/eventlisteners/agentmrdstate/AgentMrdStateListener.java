@@ -33,23 +33,23 @@ public class AgentMrdStateListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentMrdStateListener.class);
 
     /**
-     * The Agents pool.
+     * In-memory pool of all Agents.
      */
     private final AgentsPool agentsPool;
     /**
-     * The Precision queues.
+     * In-memory pool of all Precision queues.
      */
     private final List<PrecisionQueue> precisionQueues;
     /**
-     * The Agent presence repository.
+     * The Agent presence repository DAO.
      */
     private final AgentPresenceRepository agentPresenceRepository;
     /**
-     * The Jms communicator.
+     * The Jms communicator to publish agent presence on topic.
      */
     private final JmsCommunicator jmsCommunicator;
     /**
-     * The Factory.
+     * Creates and return the appropriate state change delegate.
      */
     private final MrdStateDelegateFactory factory;
 
@@ -116,7 +116,7 @@ public class AgentMrdStateListener {
 
         MrdStateDelegate delegate = this.factory.getDelegate(request.getState());
         if (delegate == null) {
-            LOGGER.warn("Incorrect Agent mrd state requested: {}", request.getState());
+            LOGGER.warn("Requested Agent-MRD state: {} is invalid", request.getState());
             return;
         }
 
@@ -125,7 +125,8 @@ public class AgentMrdStateListener {
         boolean fireEvent = false;
         if (!newState.equals(currentState)) {
             this.updateState(agent, agentMrdState, newState);
-            LOGGER.debug("Agent-Mrd state for agent: {} updated to: {}", agent.getId(), newState);
+            LOGGER.debug("Agent-Mrd state for agent: {} updated to: {} from: {}", agent.getId(), newState,
+                    currentState);
             if (newState.equals(Enums.AgentMrdStateName.READY)
                     || newState.equals(Enums.AgentMrdStateName.ACTIVE)) {
                 fireEvent = true;
@@ -139,7 +140,7 @@ public class AgentMrdStateListener {
             this.fireStateChangeToTaskSchedulers(agentMrdState);
         }
     }
-
+    
     /**
      * Update Agent-MRD state in in-memory object as well as as in Redis collection.
      *
@@ -181,5 +182,4 @@ public class AgentMrdStateListener {
             }
         }
     }
-
 }
