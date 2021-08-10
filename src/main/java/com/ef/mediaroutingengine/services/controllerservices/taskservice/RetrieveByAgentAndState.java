@@ -1,0 +1,53 @@
+package com.ef.mediaroutingengine.services.controllerservices.taskservice;
+
+import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.mediaroutingengine.dto.TaskDto;
+import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.services.pools.TasksPool;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * The type Retrieve by agent and state.
+ */
+public class RetrieveByAgentAndState implements TasksRetriever {
+    /**
+     * The Tasks pool.
+     */
+    private final TasksPool tasksPool;
+    /**
+     * The Agent id.
+     */
+    private final UUID agentId;
+    /**
+     * The State name.
+     */
+    private final Enums.TaskStateName stateName;
+
+    /**
+     * Instantiates a new Retrieve by agent and state.
+     *
+     * @param tasksPool the tasks pool
+     * @param agentId   the agent id
+     * @param stateName the state name
+     */
+    public RetrieveByAgentAndState(TasksPool tasksPool, UUID agentId, Enums.TaskStateName stateName) {
+        this.tasksPool = tasksPool;
+        this.agentId = agentId;
+        this.stateName = stateName;
+    }
+
+    @Override
+    public List<TaskDto> findTasks() {
+        List<TaskDto> result = new ArrayList<>();
+        for (Task task : tasksPool.findAll()) {
+            UUID assignedTo = task.getAssignedTo();
+            if (assignedTo != null && assignedTo.equals(this.agentId)
+                    && task.getTaskState().getName().equals(this.stateName)) {
+                result.add(new TaskDto(task));
+            }
+        }
+        return result;
+    }
+}

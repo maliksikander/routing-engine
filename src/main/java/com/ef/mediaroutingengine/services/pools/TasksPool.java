@@ -1,6 +1,8 @@
 package com.ef.mediaroutingengine.services.pools;
 
+import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Task;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -100,6 +102,27 @@ public class TasksPool {
             }
         }
         return null;
+    }
+
+    public List<Task> findByAgent(UUID agentId) {
+        List<Task> result = new ArrayList<>();
+        for (Task task: this.allTasks) {
+            UUID assignedTo = task.getAssignedTo();
+            if (assignedTo != null && assignedTo.equals(agentId)) {
+                result.add(task);
+            }
+        }
+        return result;
+    }
+
+    public List<Task> findByStateName(Enums.TaskStateName stateName) {
+        List<Task> result = new ArrayList<>();
+        for (Task task: this.allTasks) {
+            if (task.getTaskState().getName().equals(stateName)) {
+                result.add(task);
+            }
+        }
+        return result;
     }
 
     /**
