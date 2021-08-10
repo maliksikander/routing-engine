@@ -4,7 +4,6 @@ import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
-import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,10 +17,6 @@ public class TaskStateModifierFactory {
      * The Tasks repository.
      */
     private final TasksRepository tasksRepository;
-    /**
-     * The Tasks pool.
-     */
-    private final TasksPool tasksPool;
     /**
      * The Precision queues pool.
      */
@@ -39,17 +34,14 @@ public class TaskStateModifierFactory {
      * Default constructor. Loads the dependencies.
      *
      * @param tasksRepository     Tasks Repository DAO
-     * @param tasksPool           pool of all tasks
      * @param precisionQueuesPool pool of all precision queues
      * @param agentsPool          the agents pool
      * @param taskManager         Manages the Agent/Agent-MRD state changes on task state changes.
      */
     @Autowired
-    public TaskStateModifierFactory(TasksRepository tasksRepository, TasksPool tasksPool,
-                                    PrecisionQueuesPool precisionQueuesPool, AgentsPool agentsPool,
-                                    TaskManager taskManager) {
+    public TaskStateModifierFactory(TasksRepository tasksRepository, PrecisionQueuesPool precisionQueuesPool,
+                                    AgentsPool agentsPool, TaskManager taskManager) {
         this.tasksRepository = tasksRepository;
-        this.tasksPool = tasksPool;
         this.precisionQueuesPool = precisionQueuesPool;
         this.agentsPool = agentsPool;
         this.taskManager = taskManager;
@@ -63,9 +55,9 @@ public class TaskStateModifierFactory {
      */
     public TaskStateModifier getModifier(Enums.TaskStateName state) {
         if (state.equals(Enums.TaskStateName.CLOSED)) {
-            return new TaskStateClose(tasksRepository, precisionQueuesPool, tasksPool, taskManager);
+            return new TaskStateClose(tasksRepository, precisionQueuesPool, taskManager);
         } else if (state.equals(Enums.TaskStateName.ACTIVE)) {
-            return new TaskStateActive(taskManager, agentsPool, tasksPool);
+            return new TaskStateActive(taskManager, agentsPool);
         } else {
             return new TaskStateOther();
         }

@@ -4,7 +4,6 @@ import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
-import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,23 +27,17 @@ public class TaskStateActive implements TaskStateModifier {
      * The Agents pool.
      */
     private final AgentsPool agentsPool;
-    /**
-     * The Tasks pool.
-     */
-    private final TasksPool tasksPool;
 
     /**
      * Default Constructor. Loads the dependencies.
      *
      * @param taskManager handles the Agent-state changes on Task state change.
      * @param agentsPool  pool of all agents
-     * @param tasksPool   pool of all tasks
      */
     @Autowired
-    public TaskStateActive(TaskManager taskManager, AgentsPool agentsPool, TasksPool tasksPool) {
+    public TaskStateActive(TaskManager taskManager, AgentsPool agentsPool) {
         this.taskManager = taskManager;
         this.agentsPool = agentsPool;
-        this.tasksPool = tasksPool;
     }
 
     @Override
@@ -56,8 +49,8 @@ public class TaskStateActive implements TaskStateModifier {
         }
         task.setTaskState(state);
         task.setStartTime(System.currentTimeMillis());
-        this.tasksPool.cancelAgentRequestTtlTimerTask(task.getTopicId());
-        this.tasksPool.removeAgentRequestTtlTimerTask(task.getTopicId());
+        this.taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
+        this.taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
         agent.assignTask(task);
         this.taskManager.updateAgentMrdState(agent, task.getMrd().getId());
     }

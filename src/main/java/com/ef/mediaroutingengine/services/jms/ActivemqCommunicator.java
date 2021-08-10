@@ -1,7 +1,12 @@
 package com.ef.mediaroutingengine.services.jms;
 
+import com.ef.cim.objectmodel.CimEvent;
+import com.ef.cim.objectmodel.CimEventName;
+import com.ef.cim.objectmodel.CimEventType;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.StateChangeEvent;
+import com.ef.mediaroutingengine.dto.TaskDto;
+import com.ef.mediaroutingengine.model.Task;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -126,6 +131,28 @@ public class ActivemqCommunicator implements JmsCommunicator {
 
         LOGGER.info("Text Message: '{}' published on topic: '{}'", messageStr, this.topicName);
         LOGGER.debug("method ended");
+    }
+
+    @Override
+    public void publishTaskStateChangeForReporting(Task task) {
+        String topic = task.getTopicId().toString();
+        try (Session session = this.connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                MessageProducer producer = session.createProducer(session.createTopic(topic))) {
+
+            String messageStr = this.getSerializedCimEvent(new TaskDto(task));
+            TextMessage messageToSend = session.createTextMessage();
+            messageToSend.setText(messageStr);
+            messageToSend.setJMSType(CimEventName.TASK_STATE_CHANGED.name());
+
+            producer.send(messageToSend);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getSerializedCimEvent(Serializable message) throws JsonProcessingException {
+        CimEvent cimEvent = new CimEvent(message, CimEventName.TASK_STATE_CHANGED, CimEventType.NOTIFICATION);
+        return new ObjectMapper().writeValueAsString(cimEvent);
     }
 
     @Override

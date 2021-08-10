@@ -140,7 +140,7 @@ public class Task implements Serializable {
         this.mrd = o.getMrd();
         this.queue = o.getQueue();
 
-        this.priority = o.getPriority();
+        this.priority = 11;
         this.state = new TaskState(Enums.TaskStateName.QUEUED, null);
         this.timer = new Timer();
         this.handlingTime = 0L;

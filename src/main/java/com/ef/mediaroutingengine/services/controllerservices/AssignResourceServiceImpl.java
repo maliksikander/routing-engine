@@ -8,6 +8,7 @@ import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
+import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
@@ -28,10 +29,8 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * The constant LOGGER.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(AssignResourceServiceImpl.class);
-    /**
-     * The Tasks pool.
-     */
-    private final TasksPool tasksPool;
+
+    private final TaskManager taskManager;
     /**
      * The Precision queues pool.
      */
@@ -44,14 +43,14 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     /**
      * Default constructor. Loads the dependencies.
      *
-     * @param tasksPool           pool of all tasks.
      * @param precisionQueuesPool the precision queues pool
      * @param mrdPool             the mrd pool
      */
     @Autowired
-    public AssignResourceServiceImpl(TasksPool tasksPool, PrecisionQueuesPool precisionQueuesPool,
+    public AssignResourceServiceImpl(TaskManager taskManager,
+                                     PrecisionQueuesPool precisionQueuesPool,
                                      MrdPool mrdPool) {
-        this.tasksPool = tasksPool;
+        this.taskManager = taskManager;
         this.precisionQueuesPool = precisionQueuesPool;
         this.mrdPool = mrdPool;
     }
@@ -67,7 +66,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         PrecisionQueue queue = this.validateAndGetQueue(channelSession, request.getQueue(), mrd.getId());
         LOGGER.debug("PrecisionQueue validated in Assign-Resource API request");
         // TODO: Executer service .. don't use completableFuture!
-        CompletableFuture.runAsync(() -> this.tasksPool.enqueueTask(channelSession, queue, mrd));
+        CompletableFuture.runAsync(() -> this.taskManager.enqueueTask(channelSession, queue, mrd));
         LOGGER.debug("Task enqueued");
         LOGGER.debug(Constants.METHOD_ENDED);
         return "The request is received Successfully";

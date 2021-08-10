@@ -21,6 +21,7 @@ import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
+import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -79,6 +80,7 @@ public class Bootstrap {
      * In-memory pool of all Tasks.
      */
     private final TasksPool tasksPool;
+    private final TaskManager taskManager;
     /**
      * Used here to Subscribe to the JMS Topic to communicate state changes with Agent-Manager.
      */
@@ -108,6 +110,7 @@ public class Bootstrap {
                      MrdPool mrdPool,
                      PrecisionQueuesPool precisionQueuesPool,
                      TasksPool tasksPool,
+                     TaskManager taskManager,
                      JmsCommunicator jmsCommunicator) {
         this.agentsRepository = agentsRepository;
         this.mediaRoutingDomainRepository = mediaRoutingDomainRepository;
@@ -118,6 +121,7 @@ public class Bootstrap {
         this.mrdPool = mrdPool;
         this.precisionQueuesPool = precisionQueuesPool;
         this.tasksPool = tasksPool;
+        this.taskManager = taskManager;
         this.jmsCommunicator = jmsCommunicator;
     }
 
@@ -173,7 +177,7 @@ public class Bootstrap {
         for (TaskDto taskDto : taskDtoList) {
             Task task = new Task(taskDto);
             this.associateTaskWithAgent(task);
-            this.tasksPool.enqueueTask(task);
+            this.taskManager.enqueueTask(task);
         }
 
         LOGGER.info("Agents pool size: {}", this.agentsPool.size());

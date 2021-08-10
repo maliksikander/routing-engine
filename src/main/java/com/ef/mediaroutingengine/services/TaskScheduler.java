@@ -9,9 +9,10 @@ import com.ef.mediaroutingengine.model.Step;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
+import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
-import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.utilities.RestRequest;
+import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
@@ -45,13 +46,10 @@ public class TaskScheduler implements PropertyChangeListener {
 // Observer pattern
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskScheduler.class);
     /**
-     * The Tasks pool.
-     */
-    private final TasksPool tasksPool;
-    /**
      * The Agents pool.
      */
     private final AgentsPool agentsPool;
+    private final TaskManager taskManager;
     /**
      * The Rest request.
      */
@@ -70,21 +68,24 @@ public class TaskScheduler implements PropertyChangeListener {
      */
     private boolean isInit;
 
+    private final JmsCommunicator jmsCommunicator;
+
     /**
      * Constructor.
      *
-     * @param tasksPool       the pool of all tasks
      * @param agentsPool      the pool of all agents
      * @param restRequest     to make rest calls to other components.
      * @param tasksRepository to communicate with the Redis Tasks collection.
      */
     @Autowired
-    public TaskScheduler(TasksPool tasksPool, AgentsPool agentsPool, RestRequest restRequest,
-                         TasksRepository tasksRepository) {
-        this.tasksPool = tasksPool;
+    public TaskScheduler(AgentsPool agentsPool, TaskManager taskManager,
+                         RestRequest restRequest, TasksRepository tasksRepository,
+                         JmsCommunicator jmsCommunicator) {
         this.agentsPool = agentsPool;
+        this.taskManager = taskManager;
         this.restRequest = restRequest;
         this.tasksRepository = tasksRepository;
+        this.jmsCommunicator = jmsCommunicator;
     }
 
     /**
@@ -97,7 +98,7 @@ public class TaskScheduler implements PropertyChangeListener {
         if (!isInit) {
             name = name + " task scheduler";
             this.precisionQueue = precisionQueue;
-            this.tasksPool.addPropertyChangeListener(this, name); // for new Task
+            this.taskManager.addPropertyChangeListener(this, name); // for new Task
             this.isInit = true;
         }
     }
@@ -266,6 +267,7 @@ public class TaskScheduler implements PropertyChangeListener {
             if (isReserved) {
                 LOGGER.debug("Task Assigned to agent in Agent-Manager | TaskScheduler.assignTaskTo method");
                 this.changeStateOf(task, new TaskState(Enums.TaskStateName.RESERVED, null), agent.getId());
+                this.jmsCommunicator.publishTaskStateChangeForReporting(task);
                 precisionQueue.dequeue();
                 agent.reserveTask(task);
                 this.restRequest.postAgentReserved(task.getTopicId(), ccUser);

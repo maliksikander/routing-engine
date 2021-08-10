@@ -3,12 +3,14 @@ package com.ef.mediaroutingengine.eventlisteners.taskstate;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskStateChangeRequest;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
@@ -32,16 +34,23 @@ public class TaskStateListener implements PropertyChangeListener {
      */
     private final TaskStateModifierFactory factory;
 
+    private final JmsCommunicator jmsCommunicator;
+
     /**
      * Default constructor. Autowired -> loads the beans.
      *
-     * @param tasksPool the service that handles tasks flow
      * @param factory   the factory
      */
     @Autowired
     public TaskStateListener(TasksPool tasksPool, TaskStateModifierFactory factory) {
         this.tasksPool = tasksPool;
         this.factory = factory;
+        this.jmsCommunicator = this.getJmsCommunicator();
+    }
+
+    @Lookup
+    public JmsCommunicator getJmsCommunicator() {
+        return null;
     }
 
     @Override
@@ -56,6 +65,7 @@ public class TaskStateListener implements PropertyChangeListener {
             TaskStateModifier stateModifier = this.factory.getModifier(request.getState().getName());
             stateModifier.updateState(task, request.getState());
 
+            this.jmsCommunicator.publishTaskStateChangeForReporting(task);
             LOGGER.debug("TaskStateEvent.propertyChange() end");
         }
     }

@@ -6,7 +6,7 @@ import com.ef.mediaroutingengine.model.AgentMrdState;
 import com.ef.mediaroutingengine.model.AgentState;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
-import com.ef.mediaroutingengine.services.pools.TasksPool;
+import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -22,21 +22,18 @@ public class AgentStateLogout implements AgentStateDelegate {
      * The Agent presence repository.
      */
     private final AgentPresenceRepository agentPresenceRepository;
-    /**
-     * The Tasks pool.
-     */
-    private final TasksPool tasksPool;
+
+    private final TaskManager taskManager;
 
     /**
      * Instantiates a new Agent state logout.
      *
      * @param agentPresenceRepository the agent presence repository
-     * @param tasksPool               the tasks pool
      */
     @Autowired
-    public AgentStateLogout(AgentPresenceRepository agentPresenceRepository, TasksPool tasksPool) {
+    public AgentStateLogout(AgentPresenceRepository agentPresenceRepository, TaskManager taskManager) {
         this.agentPresenceRepository = agentPresenceRepository;
-        this.tasksPool = tasksPool;
+        this.taskManager = taskManager;
     }
 
     @Override
@@ -58,7 +55,7 @@ public class AgentStateLogout implements AgentStateDelegate {
      */
     private void rerouteAllTasksOf(Agent agent) {
         for (Task task : agent.getAllTasks()) {
-            this.tasksPool.rerouteTask(task);
+            this.taskManager.rerouteTask(task);
         }
         agent.clearAllTasks();
     }

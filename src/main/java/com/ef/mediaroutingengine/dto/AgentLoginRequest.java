@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.dto;
 
 import java.util.UUID;
+import javax.validation.constraints.NotNull;
 
 /**
  * An AgentLoginRequest object is used by the
@@ -11,6 +12,7 @@ public class AgentLoginRequest {
     /**
      * Id of the agent to login.
      */
+    @NotNull
     private UUID agentId;
 
     /**

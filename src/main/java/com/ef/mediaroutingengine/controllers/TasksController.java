@@ -45,7 +45,7 @@ public class TasksController {
      * @param id UUID of a specific task (optional).
      * @return List of all tasks or a specific task against an id.
      */
-    @GetMapping("")
+    @GetMapping("/{id}")
     public ResponseEntity<Object> retrieve(@RequestParam Optional<UUID> id) {
         if (id.isPresent()) {
             Task task = this.tasksPool.findById(id.get());
@@ -62,4 +62,6 @@ public class TasksController {
         }
         return new ResponseEntity<>(taskDtoList, HttpStatus.OK);
     }
+
+    // Task state -> for a specific agent -> agent-id
 }

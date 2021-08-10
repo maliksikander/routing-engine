@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.services.jms;
 
 import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.mediaroutingengine.model.Task;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.Serializable;
 import javax.jms.ExceptionListener;
@@ -53,4 +54,6 @@ public interface JmsCommunicator extends MessageListener, ExceptionListener {
      * @throws JsonProcessingException the json processing exception
      */
     void publish(Serializable message, Enums.JmsEventName eventName) throws JMSException, JsonProcessingException;
+
+    void publishTaskStateChangeForReporting(Task task);
 }

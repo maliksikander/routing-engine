@@ -17,6 +17,7 @@ import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
+import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -50,12 +51,14 @@ class BootstrapTest {
     private PrecisionQueuesPool precisionQueuesPool;
     @Mock
     private TasksPool tasksPool;
+    @Mock
+    private TaskManager taskManager;
 
     @BeforeEach
     void setUp() {
         bootstrap = new Bootstrap(agentsRepository, mediaRoutingDomainRepository, precisionQueueEntityRepository,
                 tasksRepository, agentPresenceRepository, agentsPool, mrdPool, precisionQueuesPool,
-                tasksPool, jmsCommunicator);
+                tasksPool, taskManager, jmsCommunicator);
     }
 
     @Test
