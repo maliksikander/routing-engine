@@ -23,12 +23,16 @@ public class AgentStateLogout implements AgentStateDelegate {
      */
     private final AgentPresenceRepository agentPresenceRepository;
 
+    /**
+     * The Task manager.
+     */
     private final TaskManager taskManager;
 
     /**
      * Instantiates a new Agent state logout.
      *
      * @param agentPresenceRepository the agent presence repository
+     * @param taskManager             the task manager
      */
     @Autowired
     public AgentStateLogout(AgentPresenceRepository agentPresenceRepository, TaskManager taskManager) {

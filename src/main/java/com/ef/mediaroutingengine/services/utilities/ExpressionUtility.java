@@ -31,6 +31,7 @@ public class ExpressionUtility {
         List<Object> postFixList = ExpressionUtility.convertInfixToPostfix(infixExpression);
         return ExpressionUtility.evaluatePostfix(postFixList);
     }
+
     /**
      * Evaluates a postfix expression to evaluate agents associated with a Precision-Queue's Step.
      *

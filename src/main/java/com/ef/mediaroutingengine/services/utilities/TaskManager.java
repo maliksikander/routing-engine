@@ -3,8 +3,6 @@ package com.ef.mediaroutingengine.services.utilities;
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
-import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
-import com.ef.mediaroutingengine.dto.AgentStateChangeRequest;
 import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.eventlisteners.agentstate.AgentStateListener;
@@ -39,6 +37,9 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class TaskManager {
+    /**
+     * The constant LOGGER.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskManager.class);
     /**
      * The Application context.
@@ -49,14 +50,29 @@ public class TaskManager {
      */
     private final AgentsPool agentsPool;
 
+    /**
+     * The Tasks pool.
+     */
     private final TasksPool tasksPool;
 
+    /**
+     * The Tasks repository.
+     */
     private final TasksRepository tasksRepository;
 
+    /**
+     * The Precision queues pool.
+     */
     private final PrecisionQueuesPool precisionQueuesPool;
 
+    /**
+     * The Rest request.
+     */
     private final RestRequest restRequest;
 
+    /**
+     * The Change support.
+     */
     private final PropertyChangeSupport changeSupport;
     /**
      * The Request ttl timers.
@@ -70,8 +86,12 @@ public class TaskManager {
     /**
      * Default Constructor. Loads the dependencies.
      *
-     * @param agentsPool         pool of all agents.
-     * @param applicationContext to get beans at runtime.
+     * @param agentsPool          pool of all agents.
+     * @param applicationContext  to get beans at runtime.
+     * @param tasksPool           the tasks pool
+     * @param tasksRepository     the tasks repository
+     * @param precisionQueuesPool the precision queues pool
+     * @param restRequest         the rest request
      */
     @Autowired
     public TaskManager(AgentsPool agentsPool, ApplicationContext applicationContext,
@@ -128,11 +148,11 @@ public class TaskManager {
             int noOfTasks = agent.getNoOfActiveTasks(mrdId);
 
             if (currentMrdState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY) && noOfTasks < 1) {
-                this.fireAgentMrdChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.NOT_READY, true);
+                this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.NOT_READY, true);
             } else if (currentMrdState.equals(Enums.AgentMrdStateName.BUSY)) {
-                this.fireAgentMrdChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.ACTIVE, true);
+                this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, true);
             } else if (currentMrdState.equals(Enums.AgentMrdStateName.ACTIVE) && noOfTasks < 1) {
-                this.fireAgentMrdChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.READY, true);
+                this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.READY, true);
             }
         }
     }
@@ -149,36 +169,32 @@ public class TaskManager {
         if (agent != null) {
             agent.removeReservedTask();
             AgentState agentState = new AgentState(Enums.AgentStateName.NOT_READY, null);
-            this.fireAgentStateChangeRequest(agent.getId(), agentState);
+            this.fireAgentStateChangeRequest(agent, agentState);
         }
     }
 
     /**
      * Fire agent mrd change request.
      *
-     * @param agentId the agent id
-     * @param mrdId   the mrd id
-     * @param state   the state
-     * @param async   the async
+     * @param agent the agent
+     * @param mrdId the mrd id
+     * @param state the state
+     * @param async the async
      */
-    private void fireAgentMrdChangeRequest(UUID agentId, UUID mrdId, Enums.AgentMrdStateName state, boolean async) {
-        PropertyChangeEvent evt = new PropertyChangeEvent(this, Enums.EventName.AGENT_MRD_STATE.name(),
-                null, new AgentMrdStateChangeRequest(agentId, mrdId, state));
+    private void fireAgentMrdChangeRequest(Agent agent, UUID mrdId, Enums.AgentMrdStateName state, boolean async) {
         AgentMrdStateListener listener = this.applicationContext.getBean(AgentMrdStateListener.class);
-        listener.propertyChange(evt, async);
+        listener.propertyChange(agent, mrdId, state, async);
     }
 
     /**
      * Fire agent state change request.
      *
-     * @param agentId    the agent id
+     * @param agent      the agent
      * @param agentState the agent state
      */
-    private void fireAgentStateChangeRequest(UUID agentId, AgentState agentState) {
-        PropertyChangeEvent evt = new PropertyChangeEvent(this, Enums.EventName.AGENT_STATE.name(),
-                null, new AgentStateChangeRequest(agentId, agentState));
+    private void fireAgentStateChangeRequest(Agent agent, AgentState agentState) {
         AgentStateListener listener = this.applicationContext.getBean(AgentStateListener.class);
-        listener.propertyChange(evt);
+        listener.propertyChange(agent, agentState);
     }
 
     /**
@@ -190,9 +206,9 @@ public class TaskManager {
     public void updateAgentMrdState(Agent agent, UUID mrdId) {
         int noOfActiveTasks = agent.getNoOfActiveTasks(mrdId);
         if (noOfActiveTasks == 1) {
-            this.fireAgentMrdChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.ACTIVE, false);
+            this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, false);
         } else if (noOfActiveTasks == Constants.MAX_TASKS) {
-            this.fireAgentMrdChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.BUSY, false);
+            this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.BUSY, false);
         }
         if (noOfActiveTasks > 1) {
             for (PrecisionQueue precisionQueue : this.precisionQueuesPool.toList()) {

@@ -80,6 +80,9 @@ public class Bootstrap {
      * In-memory pool of all Tasks.
      */
     private final TasksPool tasksPool;
+    /**
+     * The Task manager.
+     */
     private final TaskManager taskManager;
     /**
      * Used here to Subscribe to the JMS Topic to communicate state changes with Agent-Manager.
@@ -98,6 +101,7 @@ public class Bootstrap {
      * @param mrdPool                        MRD Pool bean
      * @param precisionQueuesPool            Precision-Queues Pool bean
      * @param tasksPool                      Tasks pool bean
+     * @param taskManager                    the task manager
      * @param jmsCommunicator                JMS Communicator
      */
     @Autowired

@@ -55,5 +55,10 @@ public interface JmsCommunicator extends MessageListener, ExceptionListener {
      */
     void publish(Serializable message, Enums.JmsEventName eventName) throws JMSException, JsonProcessingException;
 
+    /**
+     * Publish task state change for reporting.
+     *
+     * @param task the task
+     */
     void publishTaskStateChangeForReporting(Task task);
 }

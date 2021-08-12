@@ -24,18 +24,18 @@ public class TasksService {
     /**
      * The Task retriever factory.
      */
-    private final TaskRetrieverFactory taskRetrieverFactory;
+    private final TasksRetrieverFactory tasksRetrieverFactory;
 
     /**
      * Instantiates a new Tasks service.
      *
-     * @param tasksPool            the tasks pool
-     * @param taskRetrieverFactory the task retriever factory
+     * @param tasksPool             the tasks pool
+     * @param tasksRetrieverFactory the task retriever factory
      */
     @Autowired
-    public TasksService(TasksPool tasksPool, TaskRetrieverFactory taskRetrieverFactory) {
+    public TasksService(TasksPool tasksPool, TasksRetrieverFactory tasksRetrieverFactory) {
         this.tasksPool = tasksPool;
-        this.taskRetrieverFactory = taskRetrieverFactory;
+        this.tasksRetrieverFactory = tasksRetrieverFactory;
     }
 
     /**
@@ -61,7 +61,7 @@ public class TasksService {
      * @return the list
      */
     public List<TaskDto> retrieve(Optional<UUID> agentId, Optional<Enums.TaskStateName> taskState) {
-        TasksRetriever tasksRetriever = this.taskRetrieverFactory.getRetriever(agentId, taskState);
+        TasksRetriever tasksRetriever = this.tasksRetrieverFactory.getRetriever(agentId, taskState);
         return tasksRetriever.findTasks();
     }
 }

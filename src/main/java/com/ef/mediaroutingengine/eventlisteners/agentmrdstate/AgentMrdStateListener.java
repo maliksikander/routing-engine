@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.eventlisteners.agentmrdstate;
 
 import com.ef.mediaroutingengine.commons.Enums;
-import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
 import com.ef.mediaroutingengine.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentMrdState;
@@ -9,10 +8,10 @@ import com.ef.mediaroutingengine.model.AgentPresence;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
-import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import java.beans.PropertyChangeEvent;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,11 +30,6 @@ public class AgentMrdStateListener {
      * The constant LOGGER.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentMrdStateListener.class);
-
-    /**
-     * In-memory pool of all Agents.
-     */
-    private final AgentsPool agentsPool;
     /**
      * In-memory pool of all Precision queues.
      */
@@ -56,18 +50,16 @@ public class AgentMrdStateListener {
     /**
      * Default Constructor.
      *
-     * @param agentsPool              pool of all agents
      * @param precisionQueuesPool     pool of all precision queues
      * @param agentPresenceRepository Agent-presence repository DAO
      * @param jmsCommunicator         Publishes state-change events on the JMS topic
      * @param factory                 Mrd Delegate factory gives the appropriate Delegate to get the new State
      */
     @Autowired
-    public AgentMrdStateListener(AgentsPool agentsPool, PrecisionQueuesPool precisionQueuesPool,
+    public AgentMrdStateListener(PrecisionQueuesPool precisionQueuesPool,
                                  AgentPresenceRepository agentPresenceRepository,
                                  JmsCommunicator jmsCommunicator,
                                  MrdStateDelegateFactory factory) {
-        this.agentsPool = agentsPool;
         this.precisionQueues = precisionQueuesPool.toList();
         this.agentPresenceRepository = agentPresenceRepository;
         this.jmsCommunicator = jmsCommunicator;
@@ -75,48 +67,41 @@ public class AgentMrdStateListener {
     }
 
     /**
-     * This is method called by a event publisher if Agent MRD state needs to be changed.
+     * Property change.
      *
-     * @param evt   event object contains the event name and value.
-     * @param async if true the event is handled asynchronously. If false event is handled synchronously.
+     * @param agent          the agent
+     * @param mrdId          the mrd id
+     * @param requestedState the requested state
+     * @param async          the async
      */
-    public void propertyChange(PropertyChangeEvent evt, boolean async) {
-        if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.AGENT_MRD_STATE.name())) {
-            if (async) {
-                LOGGER.debug("Agent mrd state listener called asynchronously");
-                CompletableFuture.runAsync(() -> this.asyncPropertyChange(evt));
-            } else {
-                LOGGER.debug("Agent mrd state listener called synchronously");
-                this.asyncPropertyChange(evt);
-            }
+    public void propertyChange(Agent agent, UUID mrdId, Enums.AgentMrdStateName requestedState, boolean async) {
+        if (async) {
+            LOGGER.debug("Agent mrd state listener called asynchronously");
+            CompletableFuture.runAsync(() -> this.asyncPropertyChange(agent, mrdId, requestedState));
+        } else {
+            LOGGER.debug("Agent mrd state listener called synchronously");
+            this.asyncPropertyChange(agent, mrdId, requestedState);
         }
     }
 
     /**
      * Async property change.
      *
-     * @param evt the property change event
+     * @param agent          the agent
+     * @param mrdId          the mrd id
+     * @param requestedState the requested state
      */
-    private void asyncPropertyChange(PropertyChangeEvent evt) {
-        AgentMrdStateChangeRequest request = (AgentMrdStateChangeRequest) evt.getNewValue();
-        Agent agent = this.agentsPool.findById(request.getAgentId());
-
-        if (agent == null) {
-            LOGGER.error("Could not find Agent with id: {} in the agents pool", request.getAgentId());
-            return;
-        }
-
-        AgentMrdState agentMrdState = agent.getAgentMrdState(request.getMrdId());
+    private void asyncPropertyChange(Agent agent, UUID mrdId, Enums.AgentMrdStateName requestedState) {
+        AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
         if (agentMrdState == null) {
-            LOGGER.error("Could not find MRD with id: {} associated with agent: {}", request.getMrdId(),
-                    request.getAgentId());
+            LOGGER.error("Could not find MRD with id: {} associated with agent: {}", mrdId, agent.getId());
             this.publish(agent);
             return;
         }
 
-        MrdStateDelegate delegate = this.factory.getDelegate(request.getState());
+        MrdStateDelegate delegate = this.factory.getDelegate(requestedState);
         if (delegate == null) {
-            LOGGER.warn("Requested Agent-MRD state: {} is invalid", request.getState());
+            LOGGER.warn("Requested Agent-MRD state: {} is invalid", requestedState);
             return;
         }
 
@@ -140,7 +125,7 @@ public class AgentMrdStateListener {
             this.fireStateChangeToTaskSchedulers(agentMrdState);
         }
     }
-    
+
     /**
      * Update Agent-MRD state in in-memory object as well as as in Redis collection.
      *

@@ -6,7 +6,7 @@ import java.util.UUID;
 /**
  * An AssignResourceRequest object is used by the
  * {@link com.ef.mediaroutingengine.controllers.AssignResourceController#assignResource(AssignResourceRequest)
- * Assign-Resource}* API as Request Body.
+ * Assign-Resource}** API as Request Body.
  */
 public class AssignResourceRequest {
     /**

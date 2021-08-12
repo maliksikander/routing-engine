@@ -34,11 +34,15 @@ public class TaskStateListener implements PropertyChangeListener {
      */
     private final TaskStateModifierFactory factory;
 
+    /**
+     * The Jms communicator.
+     */
     private final JmsCommunicator jmsCommunicator;
 
     /**
      * Default constructor. Autowired -> loads the beans.
      *
+     * @param tasksPool the tasks pool
      * @param factory   the factory
      */
     @Autowired
@@ -48,6 +52,11 @@ public class TaskStateListener implements PropertyChangeListener {
         this.jmsCommunicator = this.getJmsCommunicator();
     }
 
+    /**
+     * Gets jms communicator.
+     *
+     * @return the jms communicator
+     */
     @Lookup
     public JmsCommunicator getJmsCommunicator() {
         return null;

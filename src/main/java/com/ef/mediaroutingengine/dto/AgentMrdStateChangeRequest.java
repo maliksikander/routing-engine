@@ -2,24 +2,28 @@ package com.ef.mediaroutingengine.dto;
 
 import com.ef.mediaroutingengine.commons.Enums;
 import java.util.UUID;
+import javax.validation.constraints.NotNull;
 
 /**
  * An AgentMrdStateChangeRequest object is used by the
  * {@link com.ef.mediaroutingengine.controllers.AgentStateController#mrdState(AgentMrdStateChangeRequest)
- * MRD-State-Change}* API as Request Body.
+ * MRD-State-Change}** API as Request Body.
  */
 public class AgentMrdStateChangeRequest {
     /**
      * Id of the agent, for which the MRD-state-change is requested.
      */
+    @NotNull
     UUID agentId;
     /**
      * Agent's Associated MRD for which the state change is requested.
      */
+    @NotNull
     UUID mrdId;
     /**
      * The New Agent-MRD-State requested.
      */
+    @NotNull
     Enums.AgentMrdStateName state;
 
     /**

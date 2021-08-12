@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.model;
 
 import com.ef.mediaroutingengine.commons.Enums;
+import javax.validation.constraints.NotNull;
 
 /**
  * The type Agent state.
@@ -9,6 +10,7 @@ public class AgentState {
     /**
      * The Name.
      */
+    @NotNull
     Enums.AgentStateName name;
     /**
      * The Reason code.

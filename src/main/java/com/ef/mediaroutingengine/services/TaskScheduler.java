@@ -49,6 +49,9 @@ public class TaskScheduler implements PropertyChangeListener {
      * The Agents pool.
      */
     private final AgentsPool agentsPool;
+    /**
+     * The Task manager.
+     */
     private final TaskManager taskManager;
     /**
      * The Rest request.
@@ -58,7 +61,10 @@ public class TaskScheduler implements PropertyChangeListener {
      * The Tasks repository.
      */
     private final TasksRepository tasksRepository;
-
+    /**
+     * The Jms communicator.
+     */
+    private final JmsCommunicator jmsCommunicator;
     /**
      * The Precision queue.
      */
@@ -68,14 +74,14 @@ public class TaskScheduler implements PropertyChangeListener {
      */
     private boolean isInit;
 
-    private final JmsCommunicator jmsCommunicator;
-
     /**
      * Constructor.
      *
      * @param agentsPool      the pool of all agents
+     * @param taskManager     the task manager
      * @param restRequest     to make rest calls to other components.
      * @param tasksRepository to communicate with the Redis Tasks collection.
+     * @param jmsCommunicator the jms communicator
      */
     @Autowired
     public TaskScheduler(AgentsPool agentsPool, TaskManager taskManager,

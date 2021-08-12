@@ -7,7 +7,6 @@ import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
-import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -30,6 +29,9 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(AssignResourceServiceImpl.class);
 
+    /**
+     * The Task manager.
+     */
     private final TaskManager taskManager;
     /**
      * The Precision queues pool.
@@ -43,6 +45,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     /**
      * Default constructor. Loads the dependencies.
      *
+     * @param taskManager         the task manager
      * @param precisionQueuesPool the precision queues pool
      * @param mrdPool             the mrd pool
      */

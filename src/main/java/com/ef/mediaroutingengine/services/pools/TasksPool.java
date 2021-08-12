@@ -61,6 +61,12 @@ public class TasksPool {
         }
     }
 
+    /**
+     * Remove boolean.
+     *
+     * @param task the task
+     * @return the boolean
+     */
     public boolean remove(Task task) {
         return this.allTasks.remove(task);
     }
@@ -104,9 +110,15 @@ public class TasksPool {
         return null;
     }
 
+    /**
+     * Find by agent list.
+     *
+     * @param agentId the agent id
+     * @return the list
+     */
     public List<Task> findByAgent(UUID agentId) {
         List<Task> result = new ArrayList<>();
-        for (Task task: this.allTasks) {
+        for (Task task : this.allTasks) {
             UUID assignedTo = task.getAssignedTo();
             if (assignedTo != null && assignedTo.equals(agentId)) {
                 result.add(task);
@@ -115,9 +127,15 @@ public class TasksPool {
         return result;
     }
 
+    /**
+     * Find by state name list.
+     *
+     * @param stateName the state name
+     * @return the list
+     */
     public List<Task> findByStateName(Enums.TaskStateName stateName) {
         List<Task> result = new ArrayList<>();
-        for (Task task: this.allTasks) {
+        for (Task task : this.allTasks) {
             if (task.getTaskState().getName().equals(stateName)) {
                 result.add(task);
             }

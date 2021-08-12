@@ -136,8 +136,10 @@ public class ActivemqCommunicator implements JmsCommunicator {
     @Override
     public void publishTaskStateChangeForReporting(Task task) {
         String topic = task.getTopicId().toString();
-        try (Session session = this.connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                MessageProducer producer = session.createProducer(session.createTopic(topic))) {
+        try (
+                Session session = this.connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                MessageProducer producer = session.createProducer(session.createTopic(topic))
+        ) {
 
             String messageStr = this.getSerializedCimEvent(new TaskDto(task));
             TextMessage messageToSend = session.createTextMessage();
@@ -150,6 +152,13 @@ public class ActivemqCommunicator implements JmsCommunicator {
         }
     }
 
+    /**
+     * Gets serialized cim event.
+     *
+     * @param message the message
+     * @return the serialized cim event
+     * @throws JsonProcessingException the json processing exception
+     */
     private String getSerializedCimEvent(Serializable message) throws JsonProcessingException {
         CimEvent cimEvent = new CimEvent(message, CimEventName.TASK_STATE_CHANGED, CimEventType.NOTIFICATION);
         return new ObjectMapper().writeValueAsString(cimEvent);

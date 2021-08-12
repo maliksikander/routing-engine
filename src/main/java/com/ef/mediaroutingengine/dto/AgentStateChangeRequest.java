@@ -2,20 +2,25 @@ package com.ef.mediaroutingengine.dto;
 
 import com.ef.mediaroutingengine.model.AgentState;
 import java.util.UUID;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 /**
  * An AgentStateChangeRequest object is used by the
  * {@link com.ef.mediaroutingengine.controllers.AgentStateController#agentState(AgentStateChangeRequest)
- * Agent-State-Change}* API as Request Body.
+ * Agent-State-Change}** API as Request Body.
  */
 public class AgentStateChangeRequest {
     /**
      * Id of the agent for which the Agent-State change is requested.
      */
+    @NotNull
     UUID agentId;
     /**
      * The new Agent-State requested.
      */
+    @NotNull
+    @Valid
     AgentState state;
 
     /**

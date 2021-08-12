@@ -11,19 +11,19 @@ import org.springframework.stereotype.Service;
  * The type Task retriever factory.
  */
 @Service
-public class TaskRetrieverFactory {
+public class TasksRetrieverFactory {
     /**
      * The Tasks pool.
      */
     private final TasksPool tasksPool;
 
     /**
-     * Instantiates a new Task retriever factory.
+     * Instantiates a new Tasks retriever factory.
      *
      * @param tasksPool the tasks pool
      */
     @Autowired
-    public TaskRetrieverFactory(TasksPool tasksPool) {
+    public TasksRetrieverFactory(TasksPool tasksPool) {
         this.tasksPool = tasksPool;
     }
 
