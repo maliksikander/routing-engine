@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.model;
 
-import com.ef.mediaroutingengine.services.utilities.ExpressionUtility;
+import com.ef.mediaroutingengine.services.utilities.StepCriteriaBuilder;
+import com.ef.mediaroutingengine.services.utilities.StepCriteriaEvaluator;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -27,7 +28,7 @@ public class Step {
     /**
      * The Associated agents.
      */
-    private List<Agent> associatedAgents;
+    private final List<Agent> associatedAgents;
 
     /**
      * Instantiates a new Step.
@@ -107,46 +108,14 @@ public class Step {
      * @param allAgents the all agents
      */
     public void evaluateAssociatedAgents(List<Agent> allAgents) {
-        this.associatedAgents = ExpressionUtility.evaluateInfix(getInfixExpression(allAgents));
-    }
-
-    /**
-     * Gets infix expression.
-     *
-     * @param allAgents the all agents
-     * @return the infix expression
-     */
-    private List<Object> getInfixExpression(List<Agent> allAgents) {
-        List<Object> infixExpression = new ArrayList<>();
-
-        for (Expression expression : this.expressions) {
-            if (expression.getPreExpressionCondition() != null) { // e.g. AND (exp1) -> operator before expression.
-                infixExpression.add(expression.getPreExpressionCondition());
+        this.associatedAgents.clear();
+        for (Agent agent : allAgents) {
+            String criteria = StepCriteriaBuilder.buildFor(agent, this);
+            boolean result = StepCriteriaEvaluator.evaluate(criteria);
+            if (result) {
+                this.associatedAgents.add(agent);
             }
-            infixExpression.add("(");
-            infixExpression.addAll(getTermInfixExpression(expression, allAgents));
-            infixExpression.add(")");
         }
-
-        return infixExpression;
-    }
-
-    /**
-     * Gets term infix expression.
-     *
-     * @param expression the expression
-     * @param allAgents  the all agents
-     * @return the term infix expression
-     */
-    private List<Object> getTermInfixExpression(Expression expression, List<Agent> allAgents) {
-        List<Object> infixExpression = new ArrayList<>();
-        for (Term term : expression.getTerms()) {
-            if (term.getPreTermLogicalOperator() != null) { // e.g. AND term1 -> operator before term.
-                infixExpression.add(term.getPreTermLogicalOperator());
-            }
-            infixExpression.add(term.evaluateAssociatedAgents(allAgents));
-        }
-        return infixExpression;
     }
 
     /**

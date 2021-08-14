@@ -7,6 +7,7 @@ import com.ef.mediaroutingengine.commons.Enums;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -28,10 +29,11 @@ public class Agent {
      * The Keycloak user.
      */
     private final KeycloakUser keycloakUser;
+
     /**
      * The Associated routing attributes.
      */
-    private final List<AssociatedRoutingAttribute> associatedRoutingAttributes;
+    private final Map<UUID, AssociatedRoutingAttribute> associatedRoutingAttributes = new HashMap<>();
     /**
      * The Active tasks.
      */
@@ -56,8 +58,26 @@ public class Agent {
      */
     public Agent(@NotNull CCUser ccUser) {
         this.keycloakUser = ccUser.getKeycloakUser();
-        this.associatedRoutingAttributes = ccUser.getAssociatedRoutingAttributes();
+        if (ccUser.getAssociatedRoutingAttributes() != null) {
+            for (AssociatedRoutingAttribute associatedRoutingAttribute : ccUser.getAssociatedRoutingAttributes()) {
+                this.associatedRoutingAttributes.put(associatedRoutingAttribute.getRoutingAttribute().getId(),
+                        associatedRoutingAttribute);
+            }
+        }
         this.activeTasks = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * Find associated routing attribute by id associated routing attribute.
+     *
+     * @param id the id
+     * @return the associated routing attribute
+     */
+    public AssociatedRoutingAttribute findAssociatedRoutingAttributeById(UUID id) {
+        if (id == null) {
+            return null;
+        }
+        return this.associatedRoutingAttributes.get(id);
     }
 
     /**
@@ -184,15 +204,6 @@ public class Agent {
     }
 
     /**
-     * Gets associated routing attributes.
-     *
-     * @return the associated routing attributes
-     */
-    public List<AssociatedRoutingAttribute> getAssociatedRoutingAttributes() {
-        return this.associatedRoutingAttributes;
-    }
-
-    /**
      * Gets state.
      *
      * @return the state
@@ -312,7 +323,13 @@ public class Agent {
         CCUser ccUser = new CCUser();
         ccUser.setId(this.getId());
         ccUser.setKeycloakUser(this.keycloakUser);
-        ccUser.setAssociatedRoutingAttributes(this.associatedRoutingAttributes);
+        ccUser.setAssociatedRoutingAttributes(getAssociatedRoutingAttributesList());
         return ccUser;
+    }
+
+    private List<AssociatedRoutingAttribute> getAssociatedRoutingAttributesList() {
+        List<AssociatedRoutingAttribute> associatedRoutingAttributeList = new ArrayList<>();
+        this.associatedRoutingAttributes.forEach((k, v) -> associatedRoutingAttributeList.add(v));
+        return associatedRoutingAttributeList;
     }
 }

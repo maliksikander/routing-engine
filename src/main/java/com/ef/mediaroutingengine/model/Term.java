@@ -1,9 +1,6 @@
 package com.ef.mediaroutingengine.model;
 
-import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.RoutingAttribute;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The type Term.
@@ -115,60 +112,5 @@ public class Term {
      */
     public void setPreTermLogicalOperator(String preTermLogicalOperator) {
         this.preTermLogicalOperator = preTermLogicalOperator;
-    }
-
-    /**
-     * Evaluates the list of agents associated with this term.
-     *
-     * @param allAgents list of all agents in the configuration db.
-     * @return the list
-     */
-    public List<Agent> evaluateAssociatedAgents(List<Agent> allAgents) {
-        List<Agent> associatedAgents = new ArrayList<>();
-
-        for (Agent agent : allAgents) {
-            List<AssociatedRoutingAttribute> associatedRoutingAttributes = agent.getAssociatedRoutingAttributes();
-            if (associatedRoutingAttributes == null) {
-                continue;
-            }
-            for (AssociatedRoutingAttribute associatedRoutingAttribute : associatedRoutingAttributes) {
-                if (this.routingAttribute.equals(associatedRoutingAttribute.getRoutingAttribute())
-                        // Example 3 (agent's value) > 4 (value in term)
-                        && applyRelationalOperator(associatedRoutingAttribute.getValue(), this.value)) {
-                    associatedAgents.add(agent);
-                    break;
-                }
-            }
-        }
-
-        return associatedAgents;
-    }
-
-    /**
-     * Apply relational operator boolean.
-     *
-     * @param a the a
-     * @param b the b
-     * @return the boolean
-     */
-    private boolean applyRelationalOperator(int a, int b) {
-        switch (this.relationalOperator) {
-            case "==":
-                return a == b;
-            case "!=":
-                return a != b;
-            case "<":
-                return a < b;
-            case ">":
-                return a > b;
-            case "<=":
-            case "=<":
-                return a <= b;
-            case ">=":
-            case "=>":
-                return a >= b;
-            default:
-                return false;
-        }
     }
 }
