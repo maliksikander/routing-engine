@@ -3,7 +3,6 @@ package com.ef.mediaroutingengine.model;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.mediaroutingengine.commons.Enums;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,7 +59,8 @@ public class Agent {
         this.keycloakUser = ccUser.getKeycloakUser();
         if (ccUser.getAssociatedRoutingAttributes() != null) {
             for (AssociatedRoutingAttribute associatedRoutingAttribute : ccUser.getAssociatedRoutingAttributes()) {
-                this.associatedRoutingAttributes.put(associatedRoutingAttribute.getRoutingAttribute().getId(),
+                this.associatedRoutingAttributes.put(
+                        associatedRoutingAttribute.getRoutingAttribute().getId(),
                         associatedRoutingAttribute);
             }
         }
@@ -111,22 +111,6 @@ public class Agent {
     }
 
     /**
-     * Sets the Mrd states of the Agent.
-     *
-     * @param updated the list of updated Mrd states
-     */
-    public void setMrdStates(List<AgentMrdState> updated) {
-        for (AgentMrdState newMrdState : updated) {
-            for (AgentMrdState oldMrdState : this.agentMrdStates) {
-                if (oldMrdState.getMrd().equals(newMrdState.getMrd())) {
-                    oldMrdState.setState(newMrdState.getState());
-                    break;
-                }
-            }
-        }
-    }
-
-    /**
      * Ends task assigned to the current Agent's object.
      *
      * @param task the task to end.
@@ -153,17 +137,6 @@ public class Agent {
      * @return total number of active tasks on an agent's mrd
      */
     public int getNoOfActiveTasks(UUID mrdId) {
-//        int noOfActiveTasks = 0;
-//        List<Task> taskList = this.activeTasks.get(mrdId);
-//        if (taskList == null) {
-//            return noOfActiveTasks;
-//        }
-//        for (Task task : taskList) {
-//            if (task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
-//                noOfActiveTasks++;
-//            }
-//        }
-//        return noOfActiveTasks;
         List<Task> taskList = this.activeTasks.get(mrdId);
         if (taskList == null) {
             return 0;
@@ -252,26 +225,6 @@ public class Agent {
             }
         }
         return null;
-    }
-
-    /**
-     * Sets an Agent MRD state.
-     *
-     * @param mrdId             id of the mrd.
-     * @param agentMrdStateName Mrd State to set
-     */
-    public void setAgentMrdState(UUID mrdId, Enums.AgentMrdStateName agentMrdStateName) {
-        // TODO: Change Mrd state list to map.
-        if (this.agentMrdStates == null) {
-            this.agentMrdStates = new ArrayList<>();
-        }
-        for (AgentMrdState agentMrdState : this.agentMrdStates) {
-            if (agentMrdState.getMrd().getId().equals(mrdId)) {
-                agentMrdState.setState(agentMrdStateName);
-                agentMrdState.setStateChangeTime(LocalDateTime.now());
-                break;
-            }
-        }
     }
 
     /**

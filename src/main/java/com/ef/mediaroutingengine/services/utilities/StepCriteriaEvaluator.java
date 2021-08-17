@@ -23,14 +23,14 @@ public class StepCriteriaEvaluator {
     /**
      * Evaluate boolean.
      *
-     * @param expression the expression
+     * @param criteria the criteria
      * @return the boolean
      */
-    public static boolean evaluate(String expression) {
+    public static boolean evaluate(String criteria) {
         try {
-            return (boolean) SCRIPT_ENGINE.eval(expression);
+            return (boolean) SCRIPT_ENGINE.eval(criteria);
         } catch (Exception e) {
-            LOGGER.error("Exception evaluating expression", e);
+            LOGGER.error("Exception evaluating criteria", e);
             return false;
         }
     }
