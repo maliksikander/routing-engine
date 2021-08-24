@@ -1,9 +1,9 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
-import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.ResponseEntity;
 
 /**
  * The interface Media routing domains service.
@@ -36,10 +36,10 @@ public interface MediaRoutingDomainsService {
     MediaRoutingDomain update(MediaRoutingDomain mediaRoutingDomain, UUID id) throws Exception;
 
     /**
-     * Delete list.
+     * Delete MRD.
      *
      * @param id the id
-     * @return the list
+     * @return Http response entity
      */
-    List<PrecisionQueueEntity> delete(UUID id);
+    ResponseEntity<Object> delete(UUID id);
 }

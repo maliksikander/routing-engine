@@ -144,6 +144,22 @@ public class TasksPool {
     }
 
     /**
+     * Find tasks by mrd id.
+     *
+     * @param mrdId the mrd id
+     * @return the list
+     */
+    public List<Task> findByMrdId(UUID mrdId) {
+        List<Task> taskList = new ArrayList<>();
+        this.allTasks.forEach(task -> {
+            if (task.getMrd().getId().equals(mrdId)) {
+                taskList.add(task);
+            }
+        });
+        return taskList;
+    }
+
+    /**
      * Size int.
      *
      * @return the int

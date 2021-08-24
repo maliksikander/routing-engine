@@ -97,12 +97,6 @@ public class MediaRoutingDomainsController {
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/media-routing-domains/{id}", produces = "application/json")
     public ResponseEntity<Object> deleteMediaRoutingDomain(@PathVariable UUID id) {
-        List<PrecisionQueueEntity> precisionQueueEntities = this.service.delete(id);
-        if (!precisionQueueEntities.isEmpty()) {
-            LOGGER.debug("Could not delete MRD: {}. It is associated with one or more Queues", id);
-            return new ResponseEntity<>(precisionQueueEntities, HttpStatus.CONFLICT);
-        }
-        SuccessResponseBody responseBody = new SuccessResponseBody("Successfully Deleted");
-        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        return this.service.delete(id);
     }
 }
