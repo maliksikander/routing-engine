@@ -11,11 +11,13 @@ import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.repositories.MediaRoutingDomainRepository;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
+import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
+import com.ef.mediaroutingengine.services.pools.RoutingAttributesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.util.ArrayList;
@@ -42,6 +44,8 @@ class BootstrapTest {
     @Mock
     private AgentPresenceRepository agentPresenceRepository;
     @Mock
+    private RoutingAttributeRepository routingAttributeRepository;
+    @Mock
     private JmsCommunicator jmsCommunicator;
     @Mock
     private AgentsPool agentsPool;
@@ -50,6 +54,8 @@ class BootstrapTest {
     @Mock
     private PrecisionQueuesPool precisionQueuesPool;
     @Mock
+    private RoutingAttributesPool routingAttributesPool;
+    @Mock
     private TasksPool tasksPool;
     @Mock
     private TaskManager taskManager;
@@ -57,8 +63,8 @@ class BootstrapTest {
     @BeforeEach
     void setUp() {
         bootstrap = new Bootstrap(agentsRepository, mediaRoutingDomainRepository, precisionQueueEntityRepository,
-                tasksRepository, agentPresenceRepository, agentsPool, mrdPool, precisionQueuesPool,
-                tasksPool, taskManager, jmsCommunicator);
+                tasksRepository, agentPresenceRepository, routingAttributeRepository, agentsPool, mrdPool,
+                precisionQueuesPool, routingAttributesPool, tasksPool, taskManager, jmsCommunicator);
     }
 
     @Test

@@ -76,7 +76,7 @@ public class PrecisionQueue implements IQueue {
         this.serviceLevelType = pqEntity.getServiceLevelType();
         this.serviceLevelThreshold = pqEntity.getServiceLevelThreshold();
         this.steps = toSteps(pqEntity.getSteps());
-        this.evaluateAgentsAssociatedWithSteps(agentsPool.toList());
+        this.evaluateAgentsAssociatedWithSteps(agentsPool.findAll());
 
         this.serviceQueue = new PriorityQueue();
         this.taskScheduler = taskScheduler;

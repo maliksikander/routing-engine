@@ -87,7 +87,7 @@ public class AgentsPool {
      *
      * @return ArrayList of Agents
      */
-    public List<Agent> toList() {
+    public List<Agent> findAll() {
         List<Agent> agentList = new ArrayList<>();
         this.agents.forEach((k, v) -> agentList.add(v));
         return agentList;

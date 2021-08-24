@@ -1,6 +1,8 @@
 package com.ef.mediaroutingengine.bootstrap;
 
+import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskDto;
@@ -8,18 +10,23 @@ import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentMrdState;
 import com.ef.mediaroutingengine.model.AgentPresence;
 import com.ef.mediaroutingengine.model.AgentState;
+import com.ef.mediaroutingengine.model.ExpressionEntity;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
+import com.ef.mediaroutingengine.model.StepEntity;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.repositories.MediaRoutingDomainRepository;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
+import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
+import com.ef.mediaroutingengine.services.pools.RoutingAttributesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.util.ArrayList;
@@ -65,6 +72,10 @@ public class Bootstrap {
      */
     private final AgentPresenceRepository agentPresenceRepository;
     /**
+     * The Routing attribute repository.
+     */
+    private final RoutingAttributeRepository routingAttributeRepository;
+    /**
      * In-memory pool of all agents.
      */
     private final AgentsPool agentsPool;
@@ -76,6 +87,10 @@ public class Bootstrap {
      * In-memory pool of all Precision-Queues.
      */
     private final PrecisionQueuesPool precisionQueuesPool;
+    /**
+     * The Routing attributes pool.
+     */
+    private final RoutingAttributesPool routingAttributesPool;
     /**
      * In-memory pool of all Tasks.
      */
@@ -110,9 +125,11 @@ public class Bootstrap {
                      PrecisionQueueEntityRepository precisionQueueEntityRepository,
                      TasksRepository tasksRepository,
                      AgentPresenceRepository agentPresenceRepository,
+                     RoutingAttributeRepository routingAttributeRepository,
                      AgentsPool agentsPool,
                      MrdPool mrdPool,
                      PrecisionQueuesPool precisionQueuesPool,
+                     RoutingAttributesPool routingAttributesPool,
                      TasksPool tasksPool,
                      TaskManager taskManager,
                      JmsCommunicator jmsCommunicator) {
@@ -121,9 +138,11 @@ public class Bootstrap {
         this.precisionQueueEntityRepository = precisionQueueEntityRepository;
         this.tasksRepository = tasksRepository;
         this.agentPresenceRepository = agentPresenceRepository;
+        this.routingAttributeRepository = routingAttributeRepository;
         this.agentsPool = agentsPool;
         this.mrdPool = mrdPool;
         this.precisionQueuesPool = precisionQueuesPool;
+        this.routingAttributesPool = routingAttributesPool;
         this.tasksPool = tasksPool;
         this.taskManager = taskManager;
         this.jmsCommunicator = jmsCommunicator;
@@ -153,8 +172,17 @@ public class Bootstrap {
      */
     public void loadPools() {
         LOGGER.debug(Constants.METHOD_STARTED);
+        // Load in-memory Routing-Attributes pool from Routing-Attributes Config DB.
+        this.routingAttributesPool.loadFrom(routingAttributeRepository.findAll());
 
         List<CCUser> ccUsers = agentsRepository.findAll();
+        /*
+        Replace the routing-Attribute in CC-Users from that in the in-memory routing-attribute pool
+        Advantage: Shared memory: we update routing-Attribute in pool, it is updated every-where it is
+                    being used. (CCUsers - in this case)
+         */
+        this.replaceRoutingAttributesInCcUsers(ccUsers);
+
         this.agentsPool.loadPoolFrom(ccUsers);
         LOGGER.debug("Agents pool loaded");
 
@@ -168,6 +196,12 @@ public class Bootstrap {
         associated to steps in the Precision-Queue.
          */
         List<PrecisionQueueEntity> precisionQueueEntities = precisionQueueEntityRepository.findAll();
+        /*
+        Replace the routing-Attribute in Precision-Queues from that in the in-memory routing-attribute pool
+        Advantage: Shared memory: we update routing-Attribute in pool, it is updated every-where it is
+                    being used. (Precision-Queues -> Steps - in this case)
+         */
+        this.replaceRoutingAttributesInQueues(precisionQueueEntities);
         this.precisionQueuesPool.loadPoolFrom(precisionQueueEntities, this.agentsPool);
         LOGGER.debug("Precision-Queues pool loaded");
 
@@ -190,6 +224,30 @@ public class Bootstrap {
         LOGGER.info("Task pool size: {}", this.tasksPool.size());
 
         LOGGER.debug(Constants.METHOD_ENDED);
+    }
+
+    private void replaceRoutingAttributesInQueues(List<PrecisionQueueEntity> precisionQueueEntities) {
+        for (PrecisionQueueEntity entity : precisionQueueEntities) {
+            for (StepEntity step : entity.getSteps()) {
+                for (ExpressionEntity expressionEntity : step.getExpressions()) {
+                    for (TermEntity termEntity : expressionEntity.getTerms()) {
+                        RoutingAttribute routingAttribute = this.routingAttributesPool
+                                .findById(termEntity.getRoutingAttribute().getId());
+                        termEntity.setRoutingAttribute(routingAttribute);
+                    }
+                }
+            }
+        }
+    }
+
+    private void replaceRoutingAttributesInCcUsers(List<CCUser> ccUsers) {
+        for (CCUser ccUser : ccUsers) {
+            for (AssociatedRoutingAttribute entry : ccUser.getAssociatedRoutingAttributes()) {
+                RoutingAttribute routingAttribute = this.routingAttributesPool
+                        .findById(entry.getRoutingAttribute().getId());
+                entry.setRoutingAttribute(routingAttribute);
+            }
+        }
     }
 
     /**
@@ -279,7 +337,7 @@ public class Bootstrap {
         this.agentPresenceRepository.deleteAll();
         LOGGER.debug("AgentPresence Repository flushed successfully.");
         Map<String, AgentPresence> updatedAgentPresenceMap = new HashMap<>();
-        for (Agent agent : this.agentsPool.toList()) {
+        for (Agent agent : this.agentsPool.findAll()) {
             AgentState agentState;
             List<AgentMrdState> agentMrdStates = getInitialAgentMrdStates(this.mrdPool.findAll());
             AgentPresence agentPresence = currentAgentPresenceMap.get(agent.getId());

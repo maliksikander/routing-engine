@@ -285,4 +285,8 @@ public class Agent {
         this.associatedRoutingAttributes.forEach((k, v) -> associatedRoutingAttributeList.add(v));
         return associatedRoutingAttributeList;
     }
+
+    public Map<UUID, AssociatedRoutingAttribute> getAssociatedRoutingAttributes() {
+        return associatedRoutingAttributes;
+    }
 }

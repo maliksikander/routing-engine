@@ -12,6 +12,7 @@ import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
+import com.ef.mediaroutingengine.services.pools.RoutingAttributesPool;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,10 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
      * The Repository.
      */
     private final RoutingAttributeRepository repository;
+    /**
+     * The Routing attributes pool.
+     */
+    private final RoutingAttributesPool routingAttributesPool;
     /**
      * The Precision queue entity repository.
      */
@@ -46,9 +51,11 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
      */
     @Autowired
     public RoutingAttributesServiceImpl(RoutingAttributeRepository repository,
+                                        RoutingAttributesPool routingAttributesPool,
                                         PrecisionQueueEntityRepository precisionQueueEntityRepository,
                                         AgentsRepository agentsRepository) {
         this.repository = repository;
+        this.routingAttributesPool = routingAttributesPool;
         this.precisionQueueEntityRepository = precisionQueueEntityRepository;
         this.agentsRepository = agentsRepository;
     }
@@ -56,6 +63,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
     @Override
     public RoutingAttribute create(RoutingAttribute routingAttribute) {
         routingAttribute.setId(UUID.randomUUID());
+        this.routingAttributesPool.insert(routingAttribute);
         return repository.insert(routingAttribute);
     }
 
@@ -75,6 +83,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
 
         this.updatePrecisionQueues(routingAttribute, id);
         this.updateAgents(routingAttribute, id);
+        this.routingAttributesPool.update(routingAttribute);
         return repository.save(routingAttribute);
     }
 
@@ -88,6 +97,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
                 .findByRoutingAttributeId(id);
         List<CCUser> agents = this.agentsRepository.findByRoutingAttributeId(id);
         if (precisionQueueEntities.isEmpty() && agents.isEmpty()) {
+            this.routingAttributesPool.deleteById(id);
             repository.deleteById(id);
             return null;
         }
