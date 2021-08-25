@@ -14,9 +14,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class MrdPool {
     /**
-     * The Mrds.
+     * The MRD pool.
      */
-    private final Map<UUID, MediaRoutingDomain> mrds = new ConcurrentHashMap<>();
+    private final Map<UUID, MediaRoutingDomain> pool = new ConcurrentHashMap<>();
 
     /**
      * Load pool at start of application.
@@ -25,7 +25,27 @@ public class MrdPool {
      */
     public void loadPoolFrom(List<MediaRoutingDomain> mediaRoutingDomains) {
         for (MediaRoutingDomain mediaRoutingDomain : mediaRoutingDomains) {
-            this.mrds.put(mediaRoutingDomain.getId(), mediaRoutingDomain);
+            this.pool.put(mediaRoutingDomain.getId(), mediaRoutingDomain);
+        }
+    }
+
+    public boolean contains(UUID id) {
+        if (id == null) {
+            return false;
+        }
+        return this.pool.containsKey(id);
+    }
+
+    public void insert(MediaRoutingDomain mediaRoutingDomain) {
+        this.pool.putIfAbsent(mediaRoutingDomain.getId(), mediaRoutingDomain);
+    }
+
+    public void update(MediaRoutingDomain mediaRoutingDomain) {
+        MediaRoutingDomain existing = this.pool.get(mediaRoutingDomain.getId());
+        if (existing != null) {
+            existing.setName(mediaRoutingDomain.getName());
+            existing.setDescription(mediaRoutingDomain.getDescription());
+            existing.setInterruptible(mediaRoutingDomain.isInterruptible());
         }
     }
 
@@ -39,7 +59,7 @@ public class MrdPool {
         if (id == null) {
             return null;
         }
-        return this.mrds.get(id);
+        return this.pool.get(id);
     }
 
     /**
@@ -49,8 +69,14 @@ public class MrdPool {
      */
     public List<MediaRoutingDomain> findAll() {
         List<MediaRoutingDomain> mediaRoutingDomains = new ArrayList<>();
-        this.mrds.forEach((k, v) -> mediaRoutingDomains.add(v));
+        this.pool.forEach((k, v) -> mediaRoutingDomains.add(v));
         return mediaRoutingDomains;
+    }
+
+    public void deleteById(UUID id) {
+        if (id != null) {
+            this.pool.remove(id);
+        }
     }
 
     /**
@@ -59,6 +85,6 @@ public class MrdPool {
      * @return the int
      */
     public int size() {
-        return this.mrds.size();
+        return this.pool.size();
     }
 }

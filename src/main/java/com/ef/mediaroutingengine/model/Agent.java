@@ -44,7 +44,7 @@ public class Agent {
     /**
      * The Agent mrd states.
      */
-    private List<AgentMrdState> agentMrdStates;
+    private final Map<UUID, AgentMrdState> agentMrdStates;
     /**
      * The Reserved task.
      */
@@ -64,6 +64,7 @@ public class Agent {
                         associatedRoutingAttribute);
             }
         }
+        this.agentMrdStates = new ConcurrentHashMap<>();
         this.activeTasks = new ConcurrentHashMap<>();
     }
 
@@ -200,16 +201,20 @@ public class Agent {
      * @return the agent mrd states
      */
     public List<AgentMrdState> getAgentMrdStates() {
-        return agentMrdStates;
+        List<AgentMrdState> agentMrdStateList = new ArrayList<>();
+        this.agentMrdStates.forEach((k, v) -> agentMrdStateList.add(v));
+        return agentMrdStateList;
     }
 
     /**
      * Sets agent mrd states.
      *
-     * @param agentMrdStates the agent mrd states
+     * @param agentMrdStateList the agent mrd states
      */
-    public void setAgentMrdStates(List<AgentMrdState> agentMrdStates) {
-        this.agentMrdStates = agentMrdStates;
+    public void setAgentMrdStates(List<AgentMrdState> agentMrdStateList) {
+        this.agentMrdStates.clear();
+        agentMrdStateList.forEach(agentMrdState ->
+                this.agentMrdStates.put(agentMrdState.getMrd().getId(), agentMrdState));
     }
 
     /**
@@ -219,12 +224,30 @@ public class Agent {
      * @return the Agent Mrd state, null if not found.
      */
     public AgentMrdState getAgentMrdState(UUID mrdId) {
-        for (AgentMrdState agentMrdState : this.agentMrdStates) {
-            if (agentMrdState.getMrd().getId().equals(mrdId)) {
-                return agentMrdState;
-            }
+        if (mrdId == null) {
+            return null;
         }
-        return null;
+        return this.agentMrdStates.get(mrdId);
+    }
+
+    /**
+     * Add agent mrd state.
+     *
+     * @param agentMrdState the agent mrd state
+     */
+    public void addAgentMrdState(AgentMrdState agentMrdState) {
+        this.agentMrdStates.put(agentMrdState.getMrd().getId(), agentMrdState);
+    }
+
+    /**
+     * Delete agent mrd state.
+     *
+     * @param mrdId the mrd id
+     */
+    public void deleteAgentMrdState(UUID mrdId) {
+        if (mrdId != null) {
+            this.agentMrdStates.remove(mrdId);
+        }
     }
 
     /**
@@ -258,13 +281,12 @@ public class Agent {
      * @param mrdId id of the mrd
      * @return the last ready state change time for an associated mrd state, null if id not found
      */
-    public LocalDateTime getLastReadyStateChangeTimeFor(UUID mrdId) {
-        for (AgentMrdState agentMrdState : this.agentMrdStates) {
-            if (agentMrdState.getMrd().getId().equals(mrdId)) {
-                return agentMrdState.getStateChangeTime();
-            }
+    public LocalDateTime getLastReadyStateChangeTimeFor(@NotNull UUID mrdId) {
+        AgentMrdState agentMrdState = this.agentMrdStates.get(mrdId);
+        if (agentMrdState == null) {
+            return null;
         }
-        return null;
+        return agentMrdState.getStateChangeTime();
     }
 
     /**
@@ -280,12 +302,22 @@ public class Agent {
         return ccUser;
     }
 
+    /**
+     * Gets associated routing attributes list.
+     *
+     * @return the associated routing attributes list
+     */
     private List<AssociatedRoutingAttribute> getAssociatedRoutingAttributesList() {
         List<AssociatedRoutingAttribute> associatedRoutingAttributeList = new ArrayList<>();
         this.associatedRoutingAttributes.forEach((k, v) -> associatedRoutingAttributeList.add(v));
         return associatedRoutingAttributeList;
     }
 
+    /**
+     * Gets associated routing attributes.
+     *
+     * @return the associated routing attributes
+     */
     public Map<UUID, AssociatedRoutingAttribute> getAssociatedRoutingAttributes() {
         return associatedRoutingAttributes;
     }

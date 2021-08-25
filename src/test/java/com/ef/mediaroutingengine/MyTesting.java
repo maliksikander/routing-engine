@@ -10,6 +10,7 @@ import com.ef.mediaroutingengine.model.Expression;
 import com.ef.mediaroutingengine.model.Step;
 import com.ef.mediaroutingengine.model.Term;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,28 @@ class MyTesting {
             System.out.print(agent.getId() + " ");
         }
         System.out.println(".");
+    }
+
+    @Test
+    void testDeletionInList() {
+        List<String> letters = new ArrayList<>();
+        letters.add("A");
+        letters.add("B");
+        letters.add("C");
+        letters.add("D");
+        letters.add("E");
+        int index = -1;
+        for (int i = 0; i < letters.size(); i++) {
+            if (letters.get(i).equals("D")) {
+                index = i;
+                break;
+            }
+        }
+        System.out.println(index);
+        if (index > -1) {
+            letters.remove(index);
+        }
+        System.out.println(letters);
     }
 
     private RoutingAttribute findByName(String name) {

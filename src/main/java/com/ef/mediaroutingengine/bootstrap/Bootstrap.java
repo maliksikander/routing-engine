@@ -186,8 +186,7 @@ public class Bootstrap {
         this.agentsPool.loadPoolFrom(ccUsers);
         LOGGER.debug("Agents pool loaded");
 
-        List<MediaRoutingDomain> mediaRoutingDomains = mediaRoutingDomainRepository.findAll();
-        this.mrdPool.loadPoolFrom(mediaRoutingDomains);
+        this.mrdPool.loadPoolFrom(mediaRoutingDomainRepository.findAll());
         LOGGER.debug("MRDs pool loaded");
         // Set Agent and AgentMRD states after MRD pool is loaded as it is required for agent-mrd states.
         this.setAgentStates();
@@ -197,11 +196,11 @@ public class Bootstrap {
          */
         List<PrecisionQueueEntity> precisionQueueEntities = precisionQueueEntityRepository.findAll();
         /*
-        Replace the routing-Attribute in Precision-Queues from that in the in-memory routing-attribute pool
-        Advantage: Shared memory: we update routing-Attribute in pool, it is updated every-where it is
+        Replace the routing-Attribute and MRD in Precision-Queues from that in the in-memory pool
+        Advantage: Shared memory: we update routing-Attribute / MRD in pools, it is updated every-where it is
                     being used. (Precision-Queues -> Steps - in this case)
          */
-        this.replaceRoutingAttributesInQueues(precisionQueueEntities);
+        this.replaceRoutingAttributesAndMrdInQueues(precisionQueueEntities);
         this.precisionQueuesPool.loadPoolFrom(precisionQueueEntities, this.agentsPool);
         LOGGER.debug("Precision-Queues pool loaded");
 
@@ -213,6 +212,7 @@ public class Bootstrap {
          */
         List<TaskDto> taskDtoList = this.tasksRepository.findAll();
         for (TaskDto taskDto : taskDtoList) {
+            this.replaceMrdInTask(taskDto);
             Task task = new Task(taskDto);
             this.associateTaskWithAgent(task);
             this.taskManager.enqueueTask(task);
@@ -226,8 +226,15 @@ public class Bootstrap {
         LOGGER.debug(Constants.METHOD_ENDED);
     }
 
-    private void replaceRoutingAttributesInQueues(List<PrecisionQueueEntity> precisionQueueEntities) {
+    private void replaceMrdInTask(TaskDto taskDto) {
+        MediaRoutingDomain mediaRoutingDomain = this.mrdPool.findById(taskDto.getMrd().getId());
+        taskDto.setMrd(mediaRoutingDomain);
+    }
+
+    private void replaceRoutingAttributesAndMrdInQueues(List<PrecisionQueueEntity> precisionQueueEntities) {
         for (PrecisionQueueEntity entity : precisionQueueEntities) {
+            MediaRoutingDomain mediaRoutingDomain = this.mrdPool.findById(entity.getMrd().getId());
+            entity.setMrd(mediaRoutingDomain);
             for (StepEntity step : entity.getSteps()) {
                 for (ExpressionEntity expressionEntity : step.getExpressions()) {
                     for (TermEntity termEntity : expressionEntity.getTerms()) {
