@@ -190,9 +190,7 @@ public class PriorityQueue {
     public List<Task> getEnqueuedTasksList() {
         List<Task> taskList = new LinkedList<>();
         for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
-            for (Task task1 : entry.getValue()) {
-                taskList.add(task1);
-            }
+            taskList.addAll(entry.getValue());
         }
         return taskList;
     }

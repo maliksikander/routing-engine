@@ -188,7 +188,7 @@ public class TaskScheduler implements PropertyChangeListener {
         if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.TIMER.name())) {
             Task task = (Task) evt.getNewValue();
             int currentStep = task.getCurrentStep();
-
+            // Start timer for every step except the last step.
             if (currentStep + 1 < precisionQueue.getSteps().size()) {
                 task.startTimer();
             }

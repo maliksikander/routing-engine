@@ -5,6 +5,7 @@ import com.ef.mediaroutingengine.services.utilities.StepCriteriaEvaluator;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,10 @@ import org.slf4j.LoggerFactory;
  * The type Step.
  */
 public class Step {
+    /**
+     * The Id.
+     */
+    private final UUID id;
     /**
      * The constant LOGGER.
      */
@@ -28,12 +33,13 @@ public class Step {
     /**
      * The Associated agents.
      */
-    private final List<Agent> associatedAgents;
+    private List<Agent> associatedAgents;
 
     /**
      * Instantiates a new Step.
      */
     public Step() {
+        this.id = UUID.randomUUID();
         this.expressions = new ArrayList<>();
         this.associatedAgents = new ArrayList<>();
     }
@@ -44,9 +50,14 @@ public class Step {
      * @param stepEntity Step entity object in configuration DB
      */
     public Step(StepEntity stepEntity) {
+        this.id = stepEntity.getId();
         this.expressions = toExpressions(stepEntity.getExpressions());
         this.timeout = stepEntity.getTimeout();
         this.associatedAgents = new ArrayList<>();
+    }
+
+    public UUID getId() {
+        return id;
     }
 
     /**
@@ -127,6 +138,10 @@ public class Step {
         return associatedAgents;
     }
 
+    public void setAssociatedAgents(List<Agent> associatedAgents) {
+        this.associatedAgents = associatedAgents;
+    }
+
     /**
      * Removes associated agent by id.
      *
@@ -179,5 +194,22 @@ public class Step {
         List<Agent> sorted = new ArrayList<>(this.associatedAgents);
         sorted.sort(Comparator.comparing((Agent o) -> o.getLastReadyStateChangeTimeFor(mrdId)));
         return sorted;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Step step = (Step) o;
+        return Objects.equals(id, step.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

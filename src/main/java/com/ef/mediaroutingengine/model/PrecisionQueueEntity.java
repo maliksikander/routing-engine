@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.model;
 
+import com.ef.mediaroutingengine.dto.PrecisionQueueRequestBody;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -51,6 +52,20 @@ public class PrecisionQueueEntity {
      * Instantiates a new Precision queue entity.
      */
     public PrecisionQueueEntity() {
+        this.steps = new ArrayList<>();
+    }
+
+    /**
+     * Instantiates a new Precision queue entity.
+     *
+     * @param requestBody the request body
+     */
+    public PrecisionQueueEntity(PrecisionQueueRequestBody requestBody) {
+        this.id = requestBody.getId();
+        this.name = requestBody.getName();
+        this.mrd = requestBody.getMrd();
+        this.serviceLevelType = requestBody.getServiceLevelType();
+        this.serviceLevelThreshold = requestBody.getServiceLevelThreshold();
         this.steps = new ArrayList<>();
     }
 
@@ -176,10 +191,49 @@ public class PrecisionQueueEntity {
      * Add step boolean.
      *
      * @param stepEntity the step entity
-     * @return the boolean
      */
-    public boolean addStep(StepEntity stepEntity) {
-        return this.steps.add(stepEntity);
+    public void addStep(StepEntity stepEntity) {
+        if (this.steps.size() >= 10) {
+            throw new IllegalStateException("Only 10 steps are allowed on this queue");
+        }
+        if (stepEntity != null) {
+            this.steps.add(stepEntity);
+        }
+    }
+
+    /**
+     * Delete step.
+     *
+     * @param stepEntity the step entity
+     */
+    public void deleteStep(StepEntity stepEntity) {
+        this.steps.remove(stepEntity);
+    }
+
+    /**
+     * Update step.
+     *
+     * @param stepEntity the step entity
+     */
+    public void updateStep(StepEntity stepEntity) {
+        for (int i = 0; i < this.steps.size(); i++) {
+            if (this.steps.get(i).equals(stepEntity)) {
+                this.steps.set(i, stepEntity);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Update queue.
+     *
+     * @param requestBody the request body
+     */
+    public void updateQueue(PrecisionQueueRequestBody requestBody) {
+        this.setName(requestBody.getName());
+        this.setMrd(requestBody.getMrd());
+        this.setServiceLevelType(requestBody.getServiceLevelType());
+        this.setServiceLevelThreshold(requestBody.getServiceLevelThreshold());
     }
 
     /**

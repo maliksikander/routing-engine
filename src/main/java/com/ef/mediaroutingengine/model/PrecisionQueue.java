@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.model;
 
+import com.ef.mediaroutingengine.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.services.TaskScheduler;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.queue.PriorityQueue;
@@ -52,7 +53,7 @@ public class PrecisionQueue implements IQueue {
     /**
      * The Steps.
      */
-    private List<Step> steps;
+    private final List<Step> steps;
     /**
      * The Average talk time.
      */
@@ -77,6 +78,28 @@ public class PrecisionQueue implements IQueue {
         this.serviceLevelThreshold = pqEntity.getServiceLevelThreshold();
         this.steps = toSteps(pqEntity.getSteps());
         this.evaluateAgentsAssociatedWithSteps(agentsPool.findAll());
+
+        this.serviceQueue = new PriorityQueue();
+        this.taskScheduler = taskScheduler;
+        this.taskScheduler.init(this.name, this);
+
+        this.averageTalkTime = 0L;
+        this.noOfTask = 0L;
+    }
+
+    /**
+     * Instantiates a new Precision queue.
+     *
+     * @param requestBody   the request body
+     * @param taskScheduler the task scheduler
+     */
+    public PrecisionQueue(PrecisionQueueRequestBody requestBody, TaskScheduler taskScheduler) {
+        this.id = requestBody.getId();
+        this.name = requestBody.getName();
+        this.mrd = requestBody.getMrd();
+        this.serviceLevelType = requestBody.getServiceLevelType();
+        this.serviceLevelThreshold = requestBody.getServiceLevelThreshold();
+        this.steps = new ArrayList<>();
 
         this.serviceQueue = new PriorityQueue();
         this.taskScheduler = taskScheduler;
@@ -205,22 +228,66 @@ public class PrecisionQueue implements IQueue {
     }
 
     /**
-     * Sets steps.
-     *
-     * @param steps the steps
-     */
-    public void setSteps(List<Step> steps) {
-        this.steps = steps;
-    }
-
-    /**
      * Gets step at.
      *
      * @param index the index
      * @return the step at
      */
     public Step getStepAt(int index) {
-        return this.steps.get(index);
+        synchronized (this.steps) {
+            return this.steps.get(index);
+        }
+    }
+
+    /**
+     * Add step.
+     *
+     * @param step the step
+     */
+    public void addStep(Step step) {
+        if (this.steps.size() >= 10) {
+            throw new IllegalStateException("Only 10 steps are allowed on this queue");
+        }
+        if (step != null) {
+            this.steps.add(step);
+        }
+    }
+
+    /**
+     * Delete step.
+     *
+     * @param step the step
+     */
+    public void deleteStep(Step step) {
+        this.steps.remove(step);
+    }
+
+    /**
+     * Update step.
+     *
+     * @param step the step
+     */
+    public void updateStep(Step step) {
+        synchronized (this.steps) {
+            for (int i = 0; i < this.steps.size(); i++) {
+                if (this.steps.get(i).equals(step)) {
+                    this.steps.set(i, step);
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Update queue.
+     *
+     * @param requestBody the request body
+     */
+    public void updateQueue(PrecisionQueueRequestBody requestBody) {
+        this.setName(requestBody.getName());
+        this.setMrd(requestBody.getMrd());
+        this.setServiceLevelType(requestBody.getServiceLevelType());
+        this.setServiceLevelThreshold(requestBody.getServiceLevelThreshold());
     }
 
     /**
@@ -230,6 +297,10 @@ public class PrecisionQueue implements IQueue {
      */
     public PriorityQueue getServiceQueue() {
         return serviceQueue;
+    }
+
+    public List<Task> getTasks() {
+        return this.serviceQueue.getEnqueuedTasksList();
     }
 
     /**

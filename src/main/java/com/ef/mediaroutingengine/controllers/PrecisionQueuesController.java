@@ -1,8 +1,7 @@
 package com.ef.mediaroutingengine.controllers;
 
-import com.ef.mediaroutingengine.dto.SuccessResponseBody;
-import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
-import com.ef.mediaroutingengine.services.controllerservices.PrecisionQueueEntityService;
+import com.ef.mediaroutingengine.dto.PrecisionQueueRequestBody;
+import com.ef.mediaroutingengine.services.controllerservices.PrecisionQueuesService;
 import java.util.UUID;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
  * Rest-Controller for the Precision-Queues CRUD APIs.
  */
 @RestController
-public class PrecisionQueueEntityController {
+public class PrecisionQueuesController {
     /**
      * The API calls are passed to this service for processing.
      */
-    private final PrecisionQueueEntityService service;
+    private final PrecisionQueuesService service;
 
     /**
      * Default Constructor. Loads the required dependency beans.
@@ -33,7 +32,7 @@ public class PrecisionQueueEntityController {
      * @param service handles the actual processing for the API calls.
      */
     @Autowired
-    public PrecisionQueueEntityController(PrecisionQueueEntityService service) {
+    public PrecisionQueuesController(PrecisionQueuesService service) {
         this.service = service;
     }
 
@@ -42,12 +41,10 @@ public class PrecisionQueueEntityController {
      *
      * @param requestBody a PrecisionQueueEntity object
      * @return the newly created Precision-Queue as the response-body with status-code 200.
-     * @throws Exception the exception
      */
     @CrossOrigin(origins = "*")
     @PostMapping(value = "/precision-queues", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Object> createPrecisionQueue(
-            @Valid @RequestBody PrecisionQueueEntity requestBody) throws Exception {
+    public ResponseEntity<Object> create(@Valid @RequestBody PrecisionQueueRequestBody requestBody) {
         return new ResponseEntity<>(this.service.create(requestBody), HttpStatus.OK);
     }
 
@@ -58,7 +55,7 @@ public class PrecisionQueueEntityController {
      */
     @CrossOrigin(origins = "*")
     @GetMapping(value = "/precision-queues", produces = "application/json")
-    public ResponseEntity<Object> retrievePrecisionQueues() {
+    public ResponseEntity<Object> retrieve() {
         return new ResponseEntity<>(this.service.retrieve(), HttpStatus.OK);
     }
 
@@ -69,12 +66,11 @@ public class PrecisionQueueEntityController {
      * @param requestBody updated values of the Precision-Queue.
      * @param id          id of the precision-queue to update.
      * @return the updated Precision-Queue as response-body with status-code 200.
-     * @throws Exception In case an Precision-Queue is not found or depended data is inconsistent.
      */
     @CrossOrigin(origins = "*")
     @PutMapping(value = "/precision-queues/{id}", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Object> updatePrecisionQueue(
-            @Valid @RequestBody PrecisionQueueEntity requestBody, @PathVariable UUID id) throws Exception {
+    public ResponseEntity<Object> update(@Valid @RequestBody PrecisionQueueRequestBody requestBody,
+                                         @PathVariable UUID id) {
         return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
@@ -84,13 +80,10 @@ public class PrecisionQueueEntityController {
      *
      * @param id UUID of the precision-queue to be deleted
      * @return Success message response with status code 200
-     * @throws Exception the exception
      */
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/precision-queues/{id}", produces = "application/json")
-    public ResponseEntity<Object> deletePrecisionQueue(@PathVariable UUID id) throws Exception {
-        this.service.delete(id);
-        SuccessResponseBody responseBody = new SuccessResponseBody("Successfully deleted");
-        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+    public ResponseEntity<Object> delete(@PathVariable UUID id) {
+        return this.service.delete(id);
     }
 }

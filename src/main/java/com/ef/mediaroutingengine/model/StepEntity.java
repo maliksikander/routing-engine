@@ -2,12 +2,18 @@ package com.ef.mediaroutingengine.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import javax.validation.constraints.NotNull;
 
 /**
  * The type Step entity.
  */
 public class StepEntity {
-
+    /**
+     * The Id.
+     */
+    private UUID id;
     /**
      * The Expressions.
      */
@@ -21,7 +27,16 @@ public class StepEntity {
      * Instantiates a new Step entity.
      */
     public StepEntity() {
+        this.id = UUID.randomUUID();
         this.expressions = new ArrayList<>();
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
     }
 
     /**
@@ -96,5 +111,22 @@ public class StepEntity {
                 + "expressions=" + expressions
                 + ", timeout=" + timeout
                 + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        StepEntity that = (StepEntity) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

@@ -51,6 +51,10 @@ public class PrecisionQueuesPool {
         return null;
     }
 
+    public void insert(PrecisionQueue precisionQueue) {
+        this.precisionQueues.putIfAbsent(precisionQueue.getId(), precisionQueue);
+    }
+
     /**
      * Finds a precision queue by name.
      *
@@ -85,7 +89,7 @@ public class PrecisionQueuesPool {
      * @param id of precision-queue to be removed.
      * @return true if removed
      */
-    public boolean remove(UUID id) {
+    public boolean deleteById(UUID id) {
         PrecisionQueue removed = this.precisionQueues.remove(id);
         return removed != null;
     }
