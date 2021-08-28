@@ -33,7 +33,7 @@ public class Step {
     /**
      * The Associated agents.
      */
-    private List<Agent> associatedAgents;
+    private final List<Agent> associatedAgents;
 
     /**
      * Instantiates a new Step.
@@ -119,14 +119,60 @@ public class Step {
      * @param allAgents the all agents
      */
     public void evaluateAssociatedAgents(List<Agent> allAgents) {
-        this.associatedAgents.clear();
-        for (Agent agent : allAgents) {
-            String criteria = StepCriteriaBuilder.buildFor(agent, this);
-            boolean result = StepCriteriaEvaluator.evaluate(criteria);
-            if (result) {
+        synchronized (this.associatedAgents) {
+            this.associatedAgents.clear();
+            for (Agent agent : allAgents) {
+                evaluateAssociatedAgentOnInsert(agent);
+            }
+        }
+    }
+
+    /**
+     * Evaluate associated agent.
+     *
+     * @param agent the agent
+     */
+    public void evaluateAssociatedAgentOnInsert(Agent agent) {
+        if (isAssociated(agent)) {
+            synchronized (this.associatedAgents) {
                 this.associatedAgents.add(agent);
             }
         }
+    }
+
+    /**
+     * Evaluate associated agent on update.
+     *
+     * @param agent the agent
+     */
+    public void evaluateAssociatedAgentOnUpdate(Agent agent) {
+        boolean isAssociated = isAssociated(agent);
+        synchronized (this.associatedAgents) {
+            int index = getIndexOf(agent);
+            if (isAssociated && index == -1) {
+                this.associatedAgents.add(agent);
+            } else if (!isAssociated && index > -1) {
+                this.associatedAgents.remove(index);
+            }
+        }
+    }
+
+    private boolean isAssociated(Agent agent) {
+        String criteria = StepCriteriaBuilder.buildFor(agent, this);
+        return StepCriteriaEvaluator.evaluate(criteria);
+    }
+
+    private int getIndexOf(Agent agent) {
+        return this.getIndexOf(agent.getId());
+    }
+
+    private int getIndexOf(UUID id) {
+        for (int i = 0; i < associatedAgents.size(); i++) {
+            if (associatedAgents.get(i).getId().equals(id)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
@@ -138,10 +184,6 @@ public class Step {
         return associatedAgents;
     }
 
-    public void setAssociatedAgents(List<Agent> associatedAgents) {
-        this.associatedAgents = associatedAgents;
-    }
-
     /**
      * Removes associated agent by id.
      *
@@ -149,16 +191,12 @@ public class Step {
      * @return true if found and removed, false otherwise
      */
     public boolean removeAssociatedAgent(UUID id) {
-        int index = -1;
-        for (int i = 0; i < associatedAgents.size(); i++) {
-            if (associatedAgents.get(i).getId().equals(id)) {
-                index = i;
-                break;
+        synchronized (this.associatedAgents) {
+            int index = this.getIndexOf(id);
+            if (index > -1) {
+                associatedAgents.remove(index);
+                return true;
             }
-        }
-        if (index > -1) {
-            associatedAgents.remove(index);
-            return true;
         }
         return false;
     }
@@ -191,9 +229,11 @@ public class Step {
      * @return the list
      */
     private List<Agent> sortAsLongestAvailable(UUID mrdId) {
-        List<Agent> sorted = new ArrayList<>(this.associatedAgents);
-        sorted.sort(Comparator.comparing((Agent o) -> o.getLastReadyStateChangeTimeFor(mrdId)));
-        return sorted;
+        synchronized (this.associatedAgents) {
+            List<Agent> sorted = new ArrayList<>(this.associatedAgents);
+            sorted.sort(Comparator.comparing((Agent o) -> o.getLastReadyStateChangeTimeFor(mrdId)));
+            return sorted;
+        }
     }
 
     @Override

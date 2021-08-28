@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.repositories;
 
+import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.model.AgentMrdState;
 import com.ef.mediaroutingengine.model.AgentPresence;
 import com.ef.mediaroutingengine.model.AgentState;
@@ -49,5 +50,9 @@ public class AgentPresenceRepository extends RedisJsonDao<AgentPresence> {
      */
     public boolean updateAgentMrdStateList(UUID agentId, List<AgentMrdState> agentMrdStates) {
         return this.updateField(agentId.toString(), ".agentMrdStates", agentMrdStates);
+    }
+
+    public boolean updateCcUser(CCUser ccUser) {
+        return this.updateField(ccUser.getId().toString(), ".agent", ccUser);
     }
 }

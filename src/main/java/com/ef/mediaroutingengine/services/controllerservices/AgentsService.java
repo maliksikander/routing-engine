@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.services.controllerservices;
 import com.ef.cim.objectmodel.CCUser;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.ResponseEntity;
 
 /**
  * The interface Agents service.
@@ -14,9 +15,8 @@ public interface AgentsService {
      *
      * @param agent the agent
      * @return the cc user
-     * @throws Exception the exception
      */
-    CCUser create(CCUser agent) throws Exception;
+    CCUser create(CCUser agent);
 
     /**
      * Retrieve list.
@@ -31,15 +31,13 @@ public interface AgentsService {
      * @param agent the agent
      * @param id    the id
      * @return the cc user
-     * @throws Exception the exception
      */
-    CCUser update(CCUser agent, UUID id) throws Exception;
+    CCUser update(CCUser agent, UUID id);
 
     /**
      * Delete.
      *
      * @param id the id
-     * @throws Exception the exception
      */
-    void delete(UUID id) throws Exception;
+    ResponseEntity<Object> delete(UUID id);
 }

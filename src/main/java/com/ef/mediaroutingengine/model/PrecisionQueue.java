@@ -407,6 +407,36 @@ public class PrecisionQueue implements IQueue {
         }
     }
 
+    /**
+     * Evaluate agent associated with steps.
+     *
+     * @param agent the agent
+     */
+    public void evaluateAssociatedAgentOnInsert(Agent agent) {
+        if (steps != null) {
+            for (Step step: steps) {
+                step.evaluateAssociatedAgentOnInsert(agent);
+            }
+        }
+    }
+
+    /**
+     * Evaluate associated agent on update.
+     *
+     * @param agent the agent
+     */
+    public void evaluateAssociatedAgentOnUpdate(Agent agent) {
+        if (steps != null) {
+            for (Step step: steps) {
+                step.evaluateAssociatedAgentOnUpdate(agent);
+            }
+        }
+    }
+
+    public void deleteAssociatedAgentFromAll(Agent agent) {
+        this.steps.forEach(step -> step.removeAssociatedAgent(agent.getId()));
+    }
+
     @Override
     public boolean enqueue(Task task) {
         if (task == null || this.serviceQueue.taskExists(task.getId())) {

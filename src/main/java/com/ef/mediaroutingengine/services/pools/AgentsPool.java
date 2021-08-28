@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,17 @@ public class AgentsPool {
     }
 
     /**
+     * Insert.
+     *
+     * @param agent the agent
+     */
+    public void insert(Agent agent) {
+        if (agent != null) {
+            this.agents.putIfAbsent(agent.getId(), agent);
+        }
+    }
+
+    /**
      * Finds an agent by it's keycloak user id, which is basically the agent's overall id as well.
      *
      * @param id find the agent by this id.
@@ -49,6 +61,28 @@ public class AgentsPool {
             return null;
         }
         return agents.get(id);
+    }
+
+    /**
+     * Converts the Agents pool into an ArrayList collection.
+     *
+     * @return ArrayList of Agents
+     */
+    public List<Agent> findAll() {
+        List<Agent> agentList = new ArrayList<>();
+        this.agents.forEach((k, v) -> agentList.add(v));
+        return agentList;
+    }
+
+    /**
+     * Delete by id.
+     *
+     * @param id the id
+     */
+    public void deleteById(UUID id) {
+        if (id != null) {
+            this.agents.remove(id);
+        }
     }
 
     /**
@@ -80,17 +114,6 @@ public class AgentsPool {
             this.agents.forEach((k, v) -> LOGGER.info("Agent: {} | {}", k, v));
         }
         LOGGER.info("------------------------------------");
-    }
-
-    /**
-     * Converts the Agents pool into an ArrayList collection.
-     *
-     * @return ArrayList of Agents
-     */
-    public List<Agent> findAll() {
-        List<Agent> agentList = new ArrayList<>();
-        this.agents.forEach((k, v) -> agentList.add(v));
-        return agentList;
     }
 
     /**

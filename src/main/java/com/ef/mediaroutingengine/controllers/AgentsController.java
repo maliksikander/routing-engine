@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.controllers;
 
 import com.ef.cim.objectmodel.CCUser;
-import com.ef.mediaroutingengine.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.services.controllerservices.AgentsService;
 import java.util.UUID;
 import javax.validation.Valid;
@@ -87,8 +86,6 @@ public class AgentsController {
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/agents/{id}", produces = "application/json")
     public ResponseEntity<Object> deleteAgent(@PathVariable UUID id) throws Exception {
-        this.service.delete(id);
-        SuccessResponseBody responseBody = new SuccessResponseBody("Successfully deleted");
-        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        return this.service.delete(id);
     }
 }

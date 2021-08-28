@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.model;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
+import com.ef.mediaroutingengine.commons.Enums;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +28,7 @@ public class Agent {
     /**
      * The Keycloak user.
      */
-    private final KeycloakUser keycloakUser;
+    private KeycloakUser keycloakUser;
 
     /**
      * The Associated routing attributes.
@@ -66,6 +67,32 @@ public class Agent {
         }
         this.agentMrdStates = new ConcurrentHashMap<>();
         this.activeTasks = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * Instantiates a new Agent.
+     *
+     * @param ccUser     the cc user
+     * @param allMrdList the all mrd list
+     */
+    public Agent(@NotNull CCUser ccUser, @NotNull List<MediaRoutingDomain> allMrdList) {
+        this(ccUser);
+        this.agentState = new AgentState(Enums.AgentStateName.LOGOUT, null);
+        List<AgentMrdState> agentMrdStateList = new ArrayList<>();
+        allMrdList.forEach(mrd -> agentMrdStateList.add(new AgentMrdState(mrd, Enums.AgentMrdStateName.NOT_READY)));
+        this.setAgentMrdStates(agentMrdStateList);
+    }
+
+    /**
+     * Update.
+     *
+     * @param ccUser the cc user
+     */
+    public void updateFrom(@NotNull CCUser ccUser) {
+        this.keycloakUser = ccUser.getKeycloakUser();
+        this.associatedRoutingAttributes.clear();
+        ccUser.getAssociatedRoutingAttributes().forEach(o ->
+                associatedRoutingAttributes.put(o.getRoutingAttribute().getId(), o));
     }
 
     /**

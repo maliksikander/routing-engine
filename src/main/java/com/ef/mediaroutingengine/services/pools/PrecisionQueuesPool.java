@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.services.pools;
 
+import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Task;
@@ -148,5 +149,17 @@ public class PrecisionQueuesPool {
             precisionQueueList.add(entry.getValue());
         }
         return precisionQueueList;
+    }
+
+    public void evaluateOnInsertForAll(Agent agent) {
+        precisionQueues.forEach((k, v) -> v.evaluateAssociatedAgentOnInsert(agent));
+    }
+
+    public void evaluateOnUpdateForAll(Agent agent) {
+        precisionQueues.forEach((k, v) -> v.evaluateAssociatedAgentOnUpdate(agent));
+    }
+
+    public void deleteFromALl(Agent agent) {
+        precisionQueues.forEach((k, v) -> v.deleteAssociatedAgentFromAll(agent));
     }
 }
