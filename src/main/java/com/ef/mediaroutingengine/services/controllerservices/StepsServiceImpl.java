@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.cim.objectmodel.RoutingAttribute;
+import com.ef.mediaroutingengine.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.ExpressionEntity;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
@@ -17,6 +18,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 /**
@@ -102,8 +105,20 @@ public class StepsServiceImpl implements StepsService {
     }
 
     @Override
-    public void delete() {
-
+    public ResponseEntity<Object> delete(UUID queueId, UUID id) {
+        Optional<PrecisionQueueEntity> existing = this.repository.findById(queueId);
+        if (!existing.isPresent()) {
+            throw new NotFoundException("Queue not found for id: " + queueId);
+        }
+        PrecisionQueueEntity precisionQueueEntity = existing.get();
+        boolean deletedFromEntity = precisionQueueEntity.deleteStepById(id);
+        if (!deletedFromEntity) {
+            throw new NotFoundException("Step: " + id + " not found in queue: " + queueId);
+        }
+        PrecisionQueue precisionQueue = this.precisionQueuesPool.findById(queueId);
+        precisionQueue.deleteStepById(id);
+        this.repository.save(precisionQueueEntity);
+        return new ResponseEntity<>(new SuccessResponseBody("Successfully Deleted"), HttpStatus.OK);
     }
 
     private void validateAndSetRoutingAttributes(StepEntity stepEntity) {

@@ -249,7 +249,9 @@ public class PrecisionQueue implements IQueue {
             throw new IllegalStateException("Only 10 steps are allowed on this queue");
         }
         if (step != null) {
-            this.steps.add(step);
+            synchronized (this.steps) {
+                this.steps.add(step);
+            }
         }
     }
 
@@ -260,6 +262,35 @@ public class PrecisionQueue implements IQueue {
      */
     public void deleteStep(Step step) {
         this.steps.remove(step);
+    }
+
+    /**
+     * Delete step by id.
+     *
+     * @param id the id
+     */
+    public void deleteStepById(UUID id) {
+        int index = findStepIndex(id);
+        synchronized (this.steps) {
+            if (index > -1) {
+                this.steps.remove(index);
+            }
+        }
+    }
+
+    /**
+     * Find step index int.
+     *
+     * @param id the id
+     * @return the int
+     */
+    private int findStepIndex(UUID id) {
+        for (int i = 0; i < steps.size(); i++) {
+            if (steps.get(i).getId().equals(id)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**

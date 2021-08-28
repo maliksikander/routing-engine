@@ -188,6 +188,21 @@ public class PrecisionQueueEntity {
     }
 
     /**
+     * Contains step boolean.
+     *
+     * @param stepId the step id
+     * @return the boolean
+     */
+    public boolean containsStep(UUID stepId) {
+        for (StepEntity step: this.steps) {
+            if (step.getId().equals(stepId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Add step boolean.
      *
      * @param stepEntity the step entity
@@ -208,6 +223,35 @@ public class PrecisionQueueEntity {
      */
     public void deleteStep(StepEntity stepEntity) {
         this.steps.remove(stepEntity);
+    }
+
+    /**
+     * Delete step by id.
+     *
+     * @param id the id
+     */
+    public boolean deleteStepById(UUID id) {
+        int index = findStepIndex(id);
+        if (index > -1) {
+            this.steps.remove(index);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Find step index int.
+     *
+     * @param id the id
+     * @return the int
+     */
+    private int findStepIndex(UUID id) {
+        for (int i = 0; i < steps.size(); i++) {
+            if (steps.get(i).getId().equals(id)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
