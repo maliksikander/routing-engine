@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,6 +41,7 @@ public class StepsController {
      * @param queueId    the queue id
      * @return the response entity
      */
+    @CrossOrigin(origins = "*")
     @PostMapping("/precision-queues/{queueId}/steps")
     public ResponseEntity<Object> create(@RequestBody StepEntity stepEntity, @PathVariable UUID queueId) {
         return new ResponseEntity<>(this.service.create(queueId, stepEntity), HttpStatus.OK);
@@ -53,6 +55,7 @@ public class StepsController {
      * @param id         the id
      * @return the response entity
      */
+    @CrossOrigin(origins = "*")
     @PutMapping("/precision-queues/{queueId}/steps/{id}")
     public ResponseEntity<Object> update(@RequestBody StepEntity stepEntity,
                                          @PathVariable UUID queueId, @PathVariable UUID id) {
@@ -66,6 +69,7 @@ public class StepsController {
      * @param id      the id
      * @return the response entity
      */
+    @CrossOrigin(origins = "*")
     @DeleteMapping("/precision-queues/{queueId}/steps/{id}")
     public ResponseEntity<Object> delete(@PathVariable UUID queueId, @PathVariable UUID id) {
         return this.service.delete(queueId, id);
