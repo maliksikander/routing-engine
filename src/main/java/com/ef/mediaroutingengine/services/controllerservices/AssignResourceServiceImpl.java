@@ -125,7 +125,8 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @return the precision queue
      */
     private PrecisionQueue validateAndGetQueue(ChannelSession channelSession, UUID requestQueue, UUID mrdId) {
-        UUID defaultQueue = channelSession.getChannel().getChannelConfig().getRoutingPolicy().getDefaultQueue();
+        UUID defaultQueue = UUID.randomUUID();
+        //channelSession.getChannel().getChannelConfig().getRoutingPolicy().getDefaultQueue();
         if (defaultQueue == null && requestQueue == null) {
             throw new IllegalArgumentException("DefaultQueue and RequestedQueue both are null");
         }
