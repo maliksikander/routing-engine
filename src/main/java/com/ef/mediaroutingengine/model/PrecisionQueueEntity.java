@@ -229,6 +229,7 @@ public class PrecisionQueueEntity {
      * Delete step by id.
      *
      * @param id the id
+     * @return the boolean
      */
     public boolean deleteStepById(UUID id) {
         int index = findStepIndex(id);

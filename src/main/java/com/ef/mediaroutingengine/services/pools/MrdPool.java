@@ -29,6 +29,12 @@ public class MrdPool {
         }
     }
 
+    /**
+     * Contains boolean.
+     *
+     * @param id the id
+     * @return the boolean
+     */
     public boolean contains(UUID id) {
         if (id == null) {
             return false;
@@ -36,10 +42,20 @@ public class MrdPool {
         return this.pool.containsKey(id);
     }
 
+    /**
+     * Insert.
+     *
+     * @param mediaRoutingDomain the media routing domain
+     */
     public void insert(MediaRoutingDomain mediaRoutingDomain) {
         this.pool.putIfAbsent(mediaRoutingDomain.getId(), mediaRoutingDomain);
     }
 
+    /**
+     * Update.
+     *
+     * @param mediaRoutingDomain the media routing domain
+     */
     public void update(MediaRoutingDomain mediaRoutingDomain) {
         MediaRoutingDomain existing = this.pool.get(mediaRoutingDomain.getId());
         if (existing != null) {
@@ -73,6 +89,11 @@ public class MrdPool {
         return mediaRoutingDomains;
     }
 
+    /**
+     * Delete by id.
+     *
+     * @param id the id
+     */
     public void deleteById(UUID id) {
         if (id != null) {
             this.pool.remove(id);

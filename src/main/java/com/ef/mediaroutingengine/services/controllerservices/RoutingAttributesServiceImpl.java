@@ -46,6 +46,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
      * Default constructor.
      *
      * @param repository                     routing attribute repository
+     * @param routingAttributesPool          the routing attributes pool
      * @param precisionQueueEntityRepository precision queue repository
      * @param agentsRepository               agents repository
      */

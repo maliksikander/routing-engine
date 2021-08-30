@@ -47,9 +47,10 @@ public class StepsServiceImpl implements StepsService {
     /**
      * Instantiates a new Steps service.
      *
-     * @param repository          the repository
-     * @param precisionQueuesPool the precision queues pool
-     * @param agentsPool          the agents pool
+     * @param repository            the repository
+     * @param precisionQueuesPool   the precision queues pool
+     * @param agentsPool            the agents pool
+     * @param routingAttributesPool the routing attributes pool
      */
     @Autowired
     public StepsServiceImpl(PrecisionQueueEntityRepository repository,
@@ -121,6 +122,11 @@ public class StepsServiceImpl implements StepsService {
         return new ResponseEntity<>(new SuccessResponseBody("Successfully Deleted"), HttpStatus.OK);
     }
 
+    /**
+     * Validate and set routing attributes.
+     *
+     * @param stepEntity the step entity
+     */
     private void validateAndSetRoutingAttributes(StepEntity stepEntity) {
         List<ExpressionEntity> expressionEntities = stepEntity.getExpressions();
         if (expressionEntities == null) {

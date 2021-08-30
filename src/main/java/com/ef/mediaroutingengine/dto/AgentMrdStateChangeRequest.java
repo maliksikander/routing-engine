@@ -7,7 +7,7 @@ import javax.validation.constraints.NotNull;
 /**
  * An AgentMrdStateChangeRequest object is used by the
  * {@link com.ef.mediaroutingengine.controllers.AgentStateController#mrdState(AgentMrdStateChangeRequest)
- * MRD-State-Change}** API as Request Body.
+ * MRD-State-Change}*** API as Request Body.
  */
 public class AgentMrdStateChangeRequest {
     /**

@@ -38,6 +38,7 @@ public interface AgentsService {
      * Delete.
      *
      * @param id the id
+     * @return the response entity
      */
     ResponseEntity<Object> delete(UUID id);
 }

@@ -31,10 +31,20 @@ public class StepEntity {
         this.expressions = new ArrayList<>();
     }
 
+    /**
+     * Gets id.
+     *
+     * @return the id
+     */
     public UUID getId() {
         return id;
     }
 
+    /**
+     * Sets id.
+     *
+     * @param id the id
+     */
     public void setId(UUID id) {
         this.id = id;
     }

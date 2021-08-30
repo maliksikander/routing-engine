@@ -52,6 +52,11 @@ public class PrecisionQueuesPool {
         return null;
     }
 
+    /**
+     * Insert.
+     *
+     * @param precisionQueue the precision queue
+     */
     public void insert(PrecisionQueue precisionQueue) {
         this.precisionQueues.putIfAbsent(precisionQueue.getId(), precisionQueue);
     }
@@ -151,14 +156,29 @@ public class PrecisionQueuesPool {
         return precisionQueueList;
     }
 
+    /**
+     * Evaluate on insert for all.
+     *
+     * @param agent the agent
+     */
     public void evaluateOnInsertForAll(Agent agent) {
         precisionQueues.forEach((k, v) -> v.evaluateAssociatedAgentOnInsert(agent));
     }
 
+    /**
+     * Evaluate on update for all.
+     *
+     * @param agent the agent
+     */
     public void evaluateOnUpdateForAll(Agent agent) {
         precisionQueues.forEach((k, v) -> v.evaluateAssociatedAgentOnUpdate(agent));
     }
 
+    /**
+     * Delete from a ll.
+     *
+     * @param agent the agent
+     */
     public void deleteFromALl(Agent agent) {
         precisionQueues.forEach((k, v) -> v.deleteAssociatedAgentFromAll(agent));
     }

@@ -30,7 +30,7 @@ public interface PrecisionQueuesService {
      * Update precision queue entity.
      *
      * @param requestBody the precision queue entity
-     * @param id                   the id
+     * @param id          the id
      * @return the precision queue entity
      */
     PrecisionQueueEntity update(PrecisionQueueRequestBody requestBody, UUID id);
@@ -39,6 +39,7 @@ public interface PrecisionQueuesService {
      * Delete.
      *
      * @param id the id
+     * @return the response entity
      */
     ResponseEntity<Object> delete(UUID id);
 }

@@ -5,12 +5,18 @@ import javax.script.ScriptEngineManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The type Step criteria evaluator.
+ */
 public class StepCriteriaEvaluator {
     /**
      * The constant LOGGER.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(StepCriteriaEvaluator.class);
 
+    /**
+     * Instantiates a new Step criteria evaluator.
+     */
     private StepCriteriaEvaluator() {
 
     }

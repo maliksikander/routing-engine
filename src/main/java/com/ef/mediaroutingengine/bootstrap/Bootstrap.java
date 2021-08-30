@@ -112,9 +112,11 @@ public class Bootstrap {
      * @param precisionQueueEntityRepository Precision-Queues config repository DAO
      * @param tasksRepository                Tasks Repository DAO
      * @param agentPresenceRepository        AgentPresence Repository DAO
+     * @param routingAttributeRepository     the routing attribute repository
      * @param agentsPool                     Agents Pool bean
      * @param mrdPool                        MRD Pool bean
      * @param precisionQueuesPool            Precision-Queues Pool bean
+     * @param routingAttributesPool          the routing attributes pool
      * @param tasksPool                      Tasks pool bean
      * @param taskManager                    the task manager
      * @param jmsCommunicator                JMS Communicator
@@ -226,11 +228,21 @@ public class Bootstrap {
         LOGGER.debug(Constants.METHOD_ENDED);
     }
 
+    /**
+     * Replace mrd in task.
+     *
+     * @param taskDto the task dto
+     */
     private void replaceMrdInTask(TaskDto taskDto) {
         MediaRoutingDomain mediaRoutingDomain = this.mrdPool.findById(taskDto.getMrd().getId());
         taskDto.setMrd(mediaRoutingDomain);
     }
 
+    /**
+     * Replace routing attributes and mrd in queues.
+     *
+     * @param precisionQueueEntities the precision queue entities
+     */
     private void replaceRoutingAttributesAndMrdInQueues(List<PrecisionQueueEntity> precisionQueueEntities) {
         for (PrecisionQueueEntity entity : precisionQueueEntities) {
             MediaRoutingDomain mediaRoutingDomain = this.mrdPool.findById(entity.getMrd().getId());
@@ -247,6 +259,11 @@ public class Bootstrap {
         }
     }
 
+    /**
+     * Replace routing attributes in cc users.
+     *
+     * @param ccUsers the cc users
+     */
     private void replaceRoutingAttributesInCcUsers(List<CCUser> ccUsers) {
         for (CCUser ccUser : ccUsers) {
             for (AssociatedRoutingAttribute entry : ccUser.getAssociatedRoutingAttributes()) {

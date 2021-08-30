@@ -31,16 +31,36 @@ public class AgentsServiceImpl implements AgentsService {
      * The Repository.
      */
     private final AgentsRepository repository;
+    /**
+     * The Routing attributes pool.
+     */
     private final RoutingAttributesPool routingAttributesPool;
+    /**
+     * The Agents pool.
+     */
     private final AgentsPool agentsPool;
+    /**
+     * The Mrd pool.
+     */
     private final MrdPool mrdPool;
+    /**
+     * The Precision queues pool.
+     */
     private final PrecisionQueuesPool precisionQueuesPool;
+    /**
+     * The Agent presence repository.
+     */
     private final AgentPresenceRepository agentPresenceRepository;
 
     /**
      * Constructor. Autowired, loads the beans.
      *
-     * @param repository to communicate with Agents collection in the DB.
+     * @param repository              to communicate with Agents collection in the DB.
+     * @param routingAttributesPool   the routing attributes pool
+     * @param agentsPool              the agents pool
+     * @param mrdPool                 the mrd pool
+     * @param precisionQueuesPool     the precision queues pool
+     * @param agentPresenceRepository the agent presence repository
      */
     @Autowired
     public AgentsServiceImpl(AgentsRepository repository,
@@ -105,6 +125,11 @@ public class AgentsServiceImpl implements AgentsService {
         return new ResponseEntity<>(new SuccessResponseBody("Successfully deleted"), HttpStatus.OK);
     }
 
+    /**
+     * Validate and set routing attributes.
+     *
+     * @param ccUser the cc user
+     */
     private void validateAndSetRoutingAttributes(CCUser ccUser) {
         List<AssociatedRoutingAttribute> associatedRoutingAttributes = ccUser.getAssociatedRoutingAttributes();
         if (associatedRoutingAttributes == null) {

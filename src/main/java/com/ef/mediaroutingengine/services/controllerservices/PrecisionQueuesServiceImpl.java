@@ -36,12 +36,17 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      */
     private final PrecisionQueuesPool precisionQueuesPool;
 
+    /**
+     * The Mrd pool.
+     */
     private final MrdPool mrdPool;
 
     /**
      * Default constructor.
      *
-     * @param repository precision queue repository
+     * @param repository          precision queue repository
+     * @param precisionQueuesPool the precision queues pool
+     * @param mrdPool             the mrd pool
      */
     @Autowired
     public PrecisionQueuesServiceImpl(PrecisionQueueEntityRepository repository,
@@ -104,6 +109,11 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         return new ResponseEntity<>(tasks, HttpStatus.CONFLICT);
     }
 
+    /**
+     * Validate and set mrd.
+     *
+     * @param requestBody the request body
+     */
     private void validateAndSetMRD(PrecisionQueueRequestBody requestBody) {
         if (requestBody.getMrd().getId() == null) {
             throw new IllegalArgumentException("MRD-id is null");

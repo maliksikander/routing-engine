@@ -56,6 +56,11 @@ public class Step {
         this.associatedAgents = new ArrayList<>();
     }
 
+    /**
+     * Gets id.
+     *
+     * @return the id
+     */
     public UUID getId() {
         return id;
     }
@@ -157,15 +162,33 @@ public class Step {
         }
     }
 
+    /**
+     * Is associated boolean.
+     *
+     * @param agent the agent
+     * @return the boolean
+     */
     private boolean isAssociated(Agent agent) {
         String criteria = StepCriteriaBuilder.buildFor(agent, this);
         return StepCriteriaEvaluator.evaluate(criteria);
     }
 
+    /**
+     * Gets index of.
+     *
+     * @param agent the agent
+     * @return the index of
+     */
     private int getIndexOf(Agent agent) {
         return this.getIndexOf(agent.getId());
     }
 
+    /**
+     * Gets index of.
+     *
+     * @param id the id
+     * @return the index of
+     */
     private int getIndexOf(UUID id) {
         for (int i = 0; i < associatedAgents.size(); i++) {
             if (associatedAgents.get(i).getId().equals(id)) {

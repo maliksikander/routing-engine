@@ -330,6 +330,11 @@ public class PrecisionQueue implements IQueue {
         return serviceQueue;
     }
 
+    /**
+     * Gets tasks.
+     *
+     * @return the tasks
+     */
     public List<Task> getTasks() {
         return this.serviceQueue.getEnqueuedTasksList();
     }
@@ -464,6 +469,11 @@ public class PrecisionQueue implements IQueue {
         }
     }
 
+    /**
+     * Delete associated agent from all.
+     *
+     * @param agent the agent
+     */
     public void deleteAssociatedAgentFromAll(Agent agent) {
         this.steps.forEach(step -> step.removeAssociatedAgent(agent.getId()));
     }

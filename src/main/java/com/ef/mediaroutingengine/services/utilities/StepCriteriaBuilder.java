@@ -6,7 +6,13 @@ import com.ef.mediaroutingengine.model.Expression;
 import com.ef.mediaroutingengine.model.Step;
 import com.ef.mediaroutingengine.model.Term;
 
+/**
+ * The type Step criteria builder.
+ */
 public class StepCriteriaBuilder {
+    /**
+     * Instantiates a new Step criteria builder.
+     */
     private StepCriteriaBuilder() {
 
     }
@@ -14,8 +20,8 @@ public class StepCriteriaBuilder {
     /**
      * Build step expression string.
      *
-     * @param step  the step
      * @param agent the agent
+     * @param step  the step
      * @return the string
      */
     public static String buildFor(Agent agent, Step step) {
@@ -35,8 +41,8 @@ public class StepCriteriaBuilder {
     /**
      * Build expression expression string builder.
      *
-     * @param expression the expression
      * @param agent      the agent
+     * @param expression the expression
      * @return the string builder
      */
     private static StringBuilder buildFor(Agent agent, Expression expression) {
@@ -53,8 +59,8 @@ public class StepCriteriaBuilder {
     /**
      * Build term expression string.
      *
-     * @param term  the term
      * @param agent the agent
+     * @param term  the term
      * @return the string
      */
     private static String buildFor(Agent agent, Term term) {

@@ -52,6 +52,12 @@ public class AgentPresenceRepository extends RedisJsonDao<AgentPresence> {
         return this.updateField(agentId.toString(), ".agentMrdStates", agentMrdStates);
     }
 
+    /**
+     * Update cc user boolean.
+     *
+     * @param ccUser the cc user
+     * @return the boolean
+     */
     public boolean updateCcUser(CCUser ccUser) {
         return this.updateField(ccUser.getId().toString(), ".agent", ccUser);
     }
