@@ -231,7 +231,7 @@ public class Step {
      * @param mrdId                  the mrd id
      * @return the sorted or ordered associated agents list.
      */
-    public List<Agent> orderAgentsBy(AgentSelectionCriteria agentSelectionCriteria, UUID mrdId) {
+    public List<Agent> orderAgentsBy(AgentSelectionCriteria agentSelectionCriteria, String mrdId) {
         switch (agentSelectionCriteria) {
             case LONGEST_AVAILABLE:
                 return sortAsLongestAvailable(mrdId);
@@ -251,7 +251,7 @@ public class Step {
      * @param mrdId the mrd id
      * @return the list
      */
-    private List<Agent> sortAsLongestAvailable(UUID mrdId) {
+    private List<Agent> sortAsLongestAvailable(String mrdId) {
         synchronized (this.associatedAgents) {
             List<Agent> sorted = new ArrayList<>(this.associatedAgents);
             sorted.sort(Comparator.comparing((Agent o) -> o.getLastReadyStateChangeTimeFor(mrdId)));

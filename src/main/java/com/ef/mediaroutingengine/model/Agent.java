@@ -33,11 +33,11 @@ public class Agent {
     /**
      * The Associated routing attributes.
      */
-    private final Map<UUID, AssociatedRoutingAttribute> associatedRoutingAttributes = new HashMap<>();
+    private final Map<String, AssociatedRoutingAttribute> associatedRoutingAttributes = new HashMap<>();
     /**
      * The Active tasks.
      */
-    private final Map<UUID, List<Task>> activeTasks;
+    private final Map<String, List<Task>> activeTasks;
     /**
      * The Agent state.
      */
@@ -45,7 +45,7 @@ public class Agent {
     /**
      * The Agent mrd states.
      */
-    private final Map<UUID, AgentMrdState> agentMrdStates;
+    private final Map<String, AgentMrdState> agentMrdStates;
     /**
      * The Reserved task.
      */
@@ -101,7 +101,7 @@ public class Agent {
      * @param id the id
      * @return the associated routing attribute
      */
-    public AssociatedRoutingAttribute findAssociatedRoutingAttributeById(UUID id) {
+    public AssociatedRoutingAttribute findAssociatedRoutingAttributeById(String id) {
         if (id == null) {
             return null;
         }
@@ -130,7 +130,7 @@ public class Agent {
      * @param task task to be added
      */
     public void addActiveTask(Task task) {
-        UUID mrdId = task.getMrd().getId();
+        String mrdId = task.getMrd().getId();
         this.activeTasks.computeIfAbsent(mrdId, k -> Collections.synchronizedList(new ArrayList<>()));
         List<Task> taskList = this.activeTasks.get(mrdId);
         if (!taskList.contains(task)) {
@@ -144,7 +144,7 @@ public class Agent {
      * @param task the task to end.
      */
     public void endTask(Task task) {
-        UUID mrdId = task.getMrd().getId();
+        String mrdId = task.getMrd().getId();
         List<Task> taskList = this.activeTasks.get(mrdId);
         if (taskList.contains(task)) {
             if (task.getStartTime() != null) {
@@ -164,7 +164,7 @@ public class Agent {
      * @param mrdId id of the mrd.
      * @return total number of active tasks on an agent's mrd
      */
-    public int getNoOfActiveTasks(UUID mrdId) {
+    public int getNoOfActiveTasks(String mrdId) {
         List<Task> taskList = this.activeTasks.get(mrdId);
         if (taskList == null) {
             return 0;
@@ -179,7 +179,7 @@ public class Agent {
      */
     public List<Task> getAllTasks() {
         List<Task> result = new ArrayList<>();
-        for (Map.Entry<UUID, List<Task>> entry : this.activeTasks.entrySet()) {
+        for (Map.Entry<String, List<Task>> entry : this.activeTasks.entrySet()) {
             result.addAll(entry.getValue());
         }
         if (reservedTask != null) {
@@ -250,7 +250,7 @@ public class Agent {
      * @param mrdId id the mrd.
      * @return the Agent Mrd state, null if not found.
      */
-    public AgentMrdState getAgentMrdState(UUID mrdId) {
+    public AgentMrdState getAgentMrdState(String mrdId) {
         if (mrdId == null) {
             return null;
         }
@@ -271,7 +271,7 @@ public class Agent {
      *
      * @param mrdId the mrd id
      */
-    public void deleteAgentMrdState(UUID mrdId) {
+    public void deleteAgentMrdState(String mrdId) {
         if (mrdId != null) {
             this.agentMrdStates.remove(mrdId);
         }
@@ -308,7 +308,7 @@ public class Agent {
      * @param mrdId id of the mrd
      * @return the last ready state change time for an associated mrd state, null if id not found
      */
-    public LocalDateTime getLastReadyStateChangeTimeFor(@NotNull UUID mrdId) {
+    public LocalDateTime getLastReadyStateChangeTimeFor(@NotNull String mrdId) {
         AgentMrdState agentMrdState = this.agentMrdStates.get(mrdId);
         if (agentMrdState == null) {
             return null;
@@ -345,7 +345,7 @@ public class Agent {
      *
      * @return the associated routing attributes
      */
-    public Map<UUID, AssociatedRoutingAttribute> getAssociatedRoutingAttributes() {
+    public Map<String, AssociatedRoutingAttribute> getAssociatedRoutingAttributes() {
         return associatedRoutingAttributes;
     }
 }

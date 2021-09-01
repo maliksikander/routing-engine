@@ -15,7 +15,7 @@ public class MrdDeleteConflictResponse {
     /**
      * The Tasks.
      */
-    private List<Task> tasks;
+    private List<TaskDto> tasks;
 
     /**
      * Instantiates a new Mrd delete conflict response.
@@ -31,7 +31,7 @@ public class MrdDeleteConflictResponse {
      * @param tasks           the tasks
      */
     public MrdDeleteConflictResponse(List<PrecisionQueueEntity> precisionQueues,
-                                     List<Task> tasks) {
+                                     List<TaskDto> tasks) {
         this.precisionQueues = precisionQueues;
         this.tasks = tasks;
     }
@@ -59,7 +59,7 @@ public class MrdDeleteConflictResponse {
      *
      * @return the tasks
      */
-    public List<Task> getTasks() {
+    public List<TaskDto> getTasks() {
         return tasks;
     }
 
@@ -68,7 +68,7 @@ public class MrdDeleteConflictResponse {
      *
      * @param tasks the tasks
      */
-    public void setTasks(List<Task> tasks) {
+    public void setTasks(List<TaskDto> tasks) {
         this.tasks = tasks;
     }
 }

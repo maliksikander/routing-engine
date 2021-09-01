@@ -10,11 +10,10 @@ import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.StepEntity;
 import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
-import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
+import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
 import com.ef.mediaroutingengine.services.pools.RoutingAttributesPool;
 import java.util.List;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class RoutingAttributesServiceImpl implements RoutingAttributesService {
-
     /**
      * The Repository.
      */
@@ -36,7 +34,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
     /**
      * The Precision queue entity repository.
      */
-    private final PrecisionQueueEntityRepository precisionQueueEntityRepository;
+    private final PrecisionQueueRepository precisionQueueRepository;
     /**
      * The Agents repository.
      */
@@ -47,25 +45,25 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
      *
      * @param repository                     routing attribute repository
      * @param routingAttributesPool          the routing attributes pool
-     * @param precisionQueueEntityRepository precision queue repository
+     * @param precisionQueueRepository precision queue repository
      * @param agentsRepository               agents repository
      */
     @Autowired
     public RoutingAttributesServiceImpl(RoutingAttributeRepository repository,
                                         RoutingAttributesPool routingAttributesPool,
-                                        PrecisionQueueEntityRepository precisionQueueEntityRepository,
+                                        PrecisionQueueRepository precisionQueueRepository,
                                         AgentsRepository agentsRepository) {
         this.repository = repository;
         this.routingAttributesPool = routingAttributesPool;
-        this.precisionQueueEntityRepository = precisionQueueEntityRepository;
+        this.precisionQueueRepository = precisionQueueRepository;
         this.agentsRepository = agentsRepository;
     }
 
     @Override
     public RoutingAttribute create(RoutingAttribute routingAttribute) {
-        routingAttribute.setId(UUID.randomUUID());
-        this.routingAttributesPool.insert(routingAttribute);
-        return repository.insert(routingAttribute);
+        RoutingAttribute inserted = repository.insert(routingAttribute);
+        this.routingAttributesPool.insert(inserted);
+        return inserted;
     }
 
     @Override
@@ -75,7 +73,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
 
     @Override
     @Transactional
-    public RoutingAttribute update(RoutingAttribute routingAttribute, UUID id) throws Exception {
+    public RoutingAttribute update(RoutingAttribute routingAttribute, String id) {
         if (!this.repository.existsById(id)) {
             throw new NotFoundException("Could not find resource to update");
         }
@@ -90,11 +88,11 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
 
     @Override
     @Transactional
-    public RoutingAttributeDeleteConflictResponse delete(UUID id) {
+    public RoutingAttributeDeleteConflictResponse delete(String id) {
         if (!repository.existsById(id)) {
             throw new NotFoundException("Could not find resource to delete");
         }
-        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueEntityRepository
+        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository
                 .findByRoutingAttributeId(id);
         List<CCUser> agents = this.agentsRepository.findByRoutingAttributeId(id);
         if (precisionQueueEntities.isEmpty() && agents.isEmpty()) {
@@ -114,8 +112,8 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
      * @param routingAttribute the routing attribute
      * @param id               the id
      */
-    private void updatePrecisionQueues(RoutingAttribute routingAttribute, UUID id) {
-        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueEntityRepository
+    private void updatePrecisionQueues(RoutingAttribute routingAttribute, String id) {
+        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository
                 .findByRoutingAttributeId(id);
         if (precisionQueueEntities != null && !precisionQueueEntities.isEmpty()) {
             for (PrecisionQueueEntity precisionQueueEntity : precisionQueueEntities) {
@@ -145,7 +143,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
                     }
                 }
             }
-            this.precisionQueueEntityRepository.saveAll(precisionQueueEntities);
+            this.precisionQueueRepository.saveAll(precisionQueueEntities);
         }
     }
 
@@ -155,7 +153,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
      * @param routingAttribute the routing attribute
      * @param id               the id
      */
-    private void updateAgents(RoutingAttribute routingAttribute, UUID id) {
+    private void updateAgents(RoutingAttribute routingAttribute, String id) {
         List<CCUser> agents = this.agentsRepository.findByRoutingAttributeId(id);
         if (agents == null || agents.isEmpty()) {
             return;

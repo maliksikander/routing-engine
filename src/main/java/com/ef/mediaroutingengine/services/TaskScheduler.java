@@ -109,15 +109,6 @@ public class TaskScheduler implements PropertyChangeListener {
         }
     }
 
-    /**
-     * Subscribe task property change support after failover.
-     *
-     * @param task the task
-     */
-    public void subscribeTaskPropertyChangeSupportAfterFailover(Task task) {
-        task.addPropertyChangeListener(this);
-    }
-
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         LOGGER.debug("TaskScheduler for queue {} invoked on event {}", precisionQueue.getName(), evt.getPropertyName());
@@ -203,11 +194,11 @@ public class TaskScheduler implements PropertyChangeListener {
      * @return the boolean
      */
     private boolean isAvailable(Agent agent) {
-        UUID mrdId = this.precisionQueue.getMrd().getId();
+        String mrdId = this.precisionQueue.getMrd().getId();
         Enums.AgentStateName agentState = agent.getState().getName();
         Enums.AgentMrdStateName mrdState = agent.getAgentMrdState(mrdId).getState();
 
-        // (Agent State is ready) AND (AgnetMRrdState is ready OR active) AND (No task is reserved for this agent)
+        // (Agent State is ready) AND (AgentMrdState is ready OR active) AND (No task is reserved for this agent)
         // Only one task can be *reserved* for an Agent at a time.
         return agentState.equals(Enums.AgentStateName.READY)
                 && (mrdState.equals(Enums.AgentMrdStateName.ACTIVE)
@@ -282,7 +273,7 @@ public class TaskScheduler implements PropertyChangeListener {
                 task.removePropertyChangeListener(Enums.EventName.TASK_REMOVED.name(), this);
             }
         } catch (Exception e) {
-            // Todo: AppacheCommons: Use ExceptionUtils instead of printstacktrace.
+            // Todo: Apache Commons: Use ExceptionUtils instead of printStackTrace.
             e.printStackTrace();
         }
         LOGGER.debug("method ended | TaskScheduler.assignTaskTo method");

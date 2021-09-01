@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.dto;
 
 import com.ef.cim.objectmodel.ChannelSession;
-import java.util.UUID;
 
 /**
  * An AssignResourceRequest object is used by the
@@ -17,7 +16,7 @@ public class AssignResourceRequest {
      * Requested queue to direct the request to. If this queue is null or not found, then the default queue
      * in the channel-session will be used.
      */
-    private UUID queue;
+    private String queue;
 
     /**
      * Gets channel session.
@@ -42,7 +41,7 @@ public class AssignResourceRequest {
      *
      * @return the queue
      */
-    public UUID getQueue() {
+    public String getQueue() {
         return queue;
     }
 
@@ -51,7 +50,7 @@ public class AssignResourceRequest {
      *
      * @param queue the queue
      */
-    public void setQueue(UUID queue) {
+    public void setQueue(String queue) {
         this.queue = queue;
     }
 

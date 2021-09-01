@@ -18,5 +18,5 @@ public interface AgentsRepository extends MongoRepository<CCUser, UUID> {
      * @return the list
      */
     @Query("{'associatedRoutingAttributes.routingAttribute.id': ?0}")
-    List<CCUser> findByRoutingAttributeId(UUID id);
+    List<CCUser> findByRoutingAttributeId(String id);
 }

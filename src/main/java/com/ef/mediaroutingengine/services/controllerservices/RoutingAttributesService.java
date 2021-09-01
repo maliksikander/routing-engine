@@ -3,7 +3,6 @@ package com.ef.mediaroutingengine.services.controllerservices;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.dto.RoutingAttributeDeleteConflictResponse;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * The interface Routing attributes service.
@@ -31,9 +30,8 @@ public interface RoutingAttributesService {
      * @param routingAttribute the routing attribute
      * @param id               the id
      * @return the routing attribute
-     * @throws Exception the exception
      */
-    RoutingAttribute update(RoutingAttribute routingAttribute, UUID id) throws Exception;
+    RoutingAttribute update(RoutingAttribute routingAttribute, String id);
 
     /**
      * Delete routing attribute delete conflict response.
@@ -41,5 +39,5 @@ public interface RoutingAttributesService {
      * @param id the id
      * @return the routing attribute delete conflict response
      */
-    RoutingAttributeDeleteConflictResponse delete(UUID id);
+    RoutingAttributeDeleteConflictResponse delete(String id);
 }

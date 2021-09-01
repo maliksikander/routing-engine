@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.controllers;
 
 import com.ef.mediaroutingengine.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.services.controllerservices.PrecisionQueuesService;
-import java.util.UUID;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -70,7 +69,7 @@ public class PrecisionQueuesController {
     @CrossOrigin(origins = "*")
     @PutMapping(value = "/precision-queues/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> update(@Valid @RequestBody PrecisionQueueRequestBody requestBody,
-                                         @PathVariable UUID id) {
+                                         @PathVariable String id) {
         return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
@@ -83,7 +82,7 @@ public class PrecisionQueuesController {
      */
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/precision-queues/{id}", produces = "application/json")
-    public ResponseEntity<Object> delete(@PathVariable UUID id) {
+    public ResponseEntity<Object> delete(@PathVariable String id) {
         return this.service.delete(id);
     }
 }

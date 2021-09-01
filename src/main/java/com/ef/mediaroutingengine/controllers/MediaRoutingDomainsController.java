@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.controllers;
 
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.services.controllerservices.MediaRoutingDomainsService;
-import java.util.UUID;
 import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,12 +73,11 @@ public class MediaRoutingDomainsController {
      * @param requestBody updated values of the MRD.
      * @param id          id of the MRD to update.
      * @return the updated MRD as response-body with status-code 200.
-     * @throws Exception In case an MRD is not found or depended data is inconsistent.
      */
     @CrossOrigin(origins = "*")
     @PutMapping(value = "/media-routing-domains/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateMediaRoutingDomain(
-            @Valid @RequestBody MediaRoutingDomain requestBody, @PathVariable UUID id) throws Exception {
+            @Valid @RequestBody MediaRoutingDomain requestBody, @PathVariable String id) {
         return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
@@ -93,7 +91,7 @@ public class MediaRoutingDomainsController {
      */
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/media-routing-domains/{id}", produces = "application/json")
-    public ResponseEntity<Object> deleteMediaRoutingDomain(@PathVariable UUID id) {
+    public ResponseEntity<Object> deleteMediaRoutingDomain(@PathVariable String id) {
         return this.service.delete(id);
     }
 }

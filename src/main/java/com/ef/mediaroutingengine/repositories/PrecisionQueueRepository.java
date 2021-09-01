@@ -2,14 +2,13 @@ package com.ef.mediaroutingengine.repositories;
 
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import java.util.List;
-import java.util.UUID;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
 /**
  * The interface Precision queue entity repository.
  */
-public interface PrecisionQueueEntityRepository extends MongoRepository<PrecisionQueueEntity, UUID> {
+public interface PrecisionQueueRepository extends MongoRepository<PrecisionQueueEntity, String> {
 
     /**
      * Find by mrd id list.
@@ -18,7 +17,7 @@ public interface PrecisionQueueEntityRepository extends MongoRepository<Precisio
      * @return the list
      */
     @Query("{'mrd.id': ?0}")
-    List<PrecisionQueueEntity> findByMrdId(UUID id);
+    List<PrecisionQueueEntity> findByMrdId(String id);
 
     /**
      * Find by routing attribute id list.
@@ -27,5 +26,5 @@ public interface PrecisionQueueEntityRepository extends MongoRepository<Precisio
      * @return the list
      */
     @Query("{'steps.expressions.terms.routingAttribute.id': ?0}")
-    List<PrecisionQueueEntity> findByRoutingAttributeId(UUID id);
+    List<PrecisionQueueEntity> findByRoutingAttributeId(String id);
 }

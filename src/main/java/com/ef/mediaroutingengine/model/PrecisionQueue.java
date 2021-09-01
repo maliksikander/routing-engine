@@ -19,6 +19,10 @@ public class PrecisionQueue implements IQueue {
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(PrecisionQueue.class);
     /**
+     * The Id.
+     */
+    private String id;
+    /**
      * The Service queue.
      */
     private final PriorityQueue serviceQueue;
@@ -30,10 +34,6 @@ public class PrecisionQueue implements IQueue {
      * The Enable reporting.
      */
     boolean enableReporting;
-    /**
-     * The Id.
-     */
-    private UUID id;
     /**
      * The Name.
      */
@@ -57,11 +57,11 @@ public class PrecisionQueue implements IQueue {
     /**
      * The Average talk time.
      */
-    private Long averageTalkTime = 0L;
+    private Long averageTalkTime;
     /**
      * The No of task.
      */
-    private Long noOfTask = 0L;
+    private Long noOfTask;
 
     /**
      * Parametrized constructor. Constructs a PrecisionQueue object with a PrecisionQueueEntity object.
@@ -90,15 +90,15 @@ public class PrecisionQueue implements IQueue {
     /**
      * Instantiates a new Precision queue.
      *
-     * @param requestBody   the request body
+     * @param entity        the request body
      * @param taskScheduler the task scheduler
      */
-    public PrecisionQueue(PrecisionQueueRequestBody requestBody, TaskScheduler taskScheduler) {
-        this.id = requestBody.getId();
-        this.name = requestBody.getName();
-        this.mrd = requestBody.getMrd();
-        this.serviceLevelType = requestBody.getServiceLevelType();
-        this.serviceLevelThreshold = requestBody.getServiceLevelThreshold();
+    public PrecisionQueue(PrecisionQueueEntity entity, TaskScheduler taskScheduler) {
+        this.id = entity.getId();
+        this.name = entity.getName();
+        this.mrd = entity.getMrd();
+        this.serviceLevelType = entity.getServiceLevelType();
+        this.serviceLevelThreshold = entity.getServiceLevelThreshold();
         this.steps = new ArrayList<>();
 
         this.serviceQueue = new PriorityQueue();
@@ -131,7 +131,7 @@ public class PrecisionQueue implements IQueue {
      *
      * @return the id
      */
-    public UUID getId() {
+    public String getId() {
         return id;
     }
 
@@ -140,7 +140,7 @@ public class PrecisionQueue implements IQueue {
      *
      * @param id unique id to set
      */
-    public void setId(UUID id) {
+    public void setId(String id) {
         if (this.id == null) {
             this.id = id;
         }
@@ -450,7 +450,7 @@ public class PrecisionQueue implements IQueue {
      */
     public void evaluateAssociatedAgentOnInsert(Agent agent) {
         if (steps != null) {
-            for (Step step: steps) {
+            for (Step step : steps) {
                 step.evaluateAssociatedAgentOnInsert(agent);
             }
         }
@@ -463,7 +463,7 @@ public class PrecisionQueue implements IQueue {
      */
     public void evaluateAssociatedAgentOnUpdate(Agent agent) {
         if (steps != null) {
-            for (Step step: steps) {
+            for (Step step : steps) {
                 step.evaluateAssociatedAgentOnUpdate(agent);
             }
         }
@@ -516,8 +516,7 @@ public class PrecisionQueue implements IQueue {
      * @return the task at the queue's head.
      */
     public Task peek() {
-        Task task = null;
-        task = this.serviceQueue.dequeue(false); // serviceQueue.peek
+        Task task = this.serviceQueue.dequeue(false); // serviceQueue.peek
         LOGGER.debug("peek task: {}", task != null ? task.getId() : "Task not found");
         return task;
     }

@@ -9,7 +9,7 @@ import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Step;
 import com.ef.mediaroutingengine.model.StepEntity;
 import com.ef.mediaroutingengine.model.TermEntity;
-import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
+import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.RoutingAttributesPool;
@@ -30,7 +30,7 @@ public class StepsServiceImpl implements StepsService {
     /**
      * The Repository.
      */
-    private final PrecisionQueueEntityRepository repository;
+    private final PrecisionQueueRepository repository;
     /**
      * The Precision queues pool.
      */
@@ -53,7 +53,7 @@ public class StepsServiceImpl implements StepsService {
      * @param routingAttributesPool the routing attributes pool
      */
     @Autowired
-    public StepsServiceImpl(PrecisionQueueEntityRepository repository,
+    public StepsServiceImpl(PrecisionQueueRepository repository,
                             PrecisionQueuesPool precisionQueuesPool, AgentsPool agentsPool,
                             RoutingAttributesPool routingAttributesPool) {
         this.repository = repository;
@@ -63,7 +63,7 @@ public class StepsServiceImpl implements StepsService {
     }
 
     @Override
-    public PrecisionQueueEntity create(UUID queueId, StepEntity stepEntity) {
+    public PrecisionQueueEntity create(String queueId, StepEntity stepEntity) {
         String notFoundMessage = "Queue not found for id: " + queueId;
         PrecisionQueue precisionQueue = this.precisionQueuesPool.findById(queueId);
         if (precisionQueue == null) {
@@ -84,7 +84,7 @@ public class StepsServiceImpl implements StepsService {
     }
 
     @Override
-    public PrecisionQueueEntity update(UUID id, UUID queueId, StepEntity stepEntity) {
+    public PrecisionQueueEntity update(UUID id, String queueId, StepEntity stepEntity) {
         Optional<PrecisionQueueEntity> existing = this.repository.findById(queueId);
         if (!existing.isPresent()) {
             throw new NotFoundException("Queue not found for id: " + queueId);
@@ -106,7 +106,7 @@ public class StepsServiceImpl implements StepsService {
     }
 
     @Override
-    public ResponseEntity<Object> delete(UUID queueId, UUID id) {
+    public ResponseEntity<Object> delete(String queueId, UUID id) {
         Optional<PrecisionQueueEntity> existing = this.repository.findById(queueId);
         if (!existing.isPresent()) {
             throw new NotFoundException("Queue not found for id: " + queueId);

@@ -3,7 +3,6 @@ package com.ef.mediaroutingengine.services.controllerservices;
 import com.ef.mediaroutingengine.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import java.util.List;
-import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 
 /**
@@ -33,7 +32,7 @@ public interface PrecisionQueuesService {
      * @param id          the id
      * @return the precision queue entity
      */
-    PrecisionQueueEntity update(PrecisionQueueRequestBody requestBody, UUID id);
+    PrecisionQueueEntity update(PrecisionQueueRequestBody requestBody, String id);
 
     /**
      * Delete.
@@ -41,5 +40,5 @@ public interface PrecisionQueuesService {
      * @param id the id
      * @return the response entity
      */
-    ResponseEntity<Object> delete(UUID id);
+    ResponseEntity<Object> delete(String id);
 }

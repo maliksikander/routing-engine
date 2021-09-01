@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 
 class MyTesting {
@@ -149,7 +150,7 @@ class MyTesting {
 
     private RoutingAttribute getRoutingAttribute(String name, RoutingAttributeType type, int defaultValue) {
         RoutingAttribute routingAttribute = new RoutingAttribute();
-        routingAttribute.setId(UUID.randomUUID());
+        routingAttribute.setId(UUID.randomUUID().toString());
         routingAttribute.setName(name);
         routingAttribute.setDescription("Description-" + name);
         routingAttribute.setType(type);

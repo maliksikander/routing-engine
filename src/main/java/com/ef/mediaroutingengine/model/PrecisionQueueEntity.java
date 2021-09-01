@@ -15,12 +15,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
  */
 @Document(value = "precisionQueues")
 public class PrecisionQueueEntity {
-
     /**
      * The Id.
      */
     @Id
-    private UUID id;
+    private String id;
     /**
      * The Name.
      */
@@ -61,7 +60,6 @@ public class PrecisionQueueEntity {
      * @param requestBody the request body
      */
     public PrecisionQueueEntity(PrecisionQueueRequestBody requestBody) {
-        this.id = requestBody.getId();
         this.name = requestBody.getName();
         this.mrd = requestBody.getMrd();
         this.serviceLevelType = requestBody.getServiceLevelType();
@@ -74,7 +72,7 @@ public class PrecisionQueueEntity {
      *
      * @return the id
      */
-    public UUID getId() {
+    public String getId() {
         return id;
     }
 
@@ -83,7 +81,7 @@ public class PrecisionQueueEntity {
      *
      * @param id the id
      */
-    public void setId(UUID id) {
+    public void setId(String id) {
         this.id = id;
     }
 

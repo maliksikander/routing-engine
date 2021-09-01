@@ -39,7 +39,7 @@ public class MockUtilities {
      * @return the number of tasks of an agent
      */
     @GetMapping("/no-of-tasks")
-    public ResponseEntity<Object> getNoOfTasks(@RequestParam UUID agentId, @RequestParam UUID mrdId) {
+    public ResponseEntity<Object> getNoOfTasks(@RequestParam UUID agentId, @RequestParam String mrdId) {
         Agent agent = this.agentsPool.findById(agentId);
         if (agent == null) {
             throw new NotFoundException("Agent not found with id: " + agentId);

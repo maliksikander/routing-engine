@@ -149,7 +149,7 @@ public class TasksPool {
      * @param mrdId the mrd id
      * @return the list
      */
-    public List<Task> findByMrdId(UUID mrdId) {
+    public List<Task> findByMrdId(String mrdId) {
         List<Task> taskList = new ArrayList<>();
         this.allTasks.forEach(task -> {
             if (task.getMrd().getId().equals(mrdId)) {

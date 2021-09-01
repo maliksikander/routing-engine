@@ -26,7 +26,7 @@ public class TaskDto implements Serializable {
     /**
      * The Queue.
      */
-    private UUID queue;
+    private String queue;
     /**
      * The Priority.
      */
@@ -108,7 +108,7 @@ public class TaskDto implements Serializable {
      *
      * @return the queue
      */
-    public UUID getQueue() {
+    public String getQueue() {
         return queue;
     }
 
@@ -117,7 +117,7 @@ public class TaskDto implements Serializable {
      *
      * @param queue the queue
      */
-    public void setQueue(UUID queue) {
+    public void setQueue(String queue) {
         this.queue = queue;
     }
 

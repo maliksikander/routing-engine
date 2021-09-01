@@ -13,15 +13,15 @@ import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.repositories.MediaRoutingDomainRepository;
-import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
+import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +46,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     /**
      * The Precision queue entity repository.
      */
-    private final PrecisionQueueEntityRepository precisionQueueEntityRepository;
+    private final PrecisionQueueRepository precisionQueueRepository;
 
     /**
      * The Tasks pool.
@@ -76,22 +76,22 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     /**
      * Constructor, Autowired, loads the beans.
      *
-     * @param repository                     to communicate with MRD collection in DB
-     * @param precisionQueueEntityRepository to communicate with PrecisionQueues collection in DB
-     * @param tasksPool                      the tasks pool
-     * @param mrdPool                        the mrd pool
-     * @param agentsPool                     the agents pool
-     * @param agentPresenceRepository        the agent presence repository
-     * @param tasksRepository                the tasks repository
+     * @param repository               to communicate with MRD collection in DB
+     * @param precisionQueueRepository to communicate with PrecisionQueues collection in DB
+     * @param tasksPool                the tasks pool
+     * @param mrdPool                  the mrd pool
+     * @param agentsPool               the agents pool
+     * @param agentPresenceRepository  the agent presence repository
+     * @param tasksRepository          the tasks repository
      */
     @Autowired
     public MediaRoutingDomainsServiceImpl(MediaRoutingDomainRepository repository,
-                                          PrecisionQueueEntityRepository precisionQueueEntityRepository,
+                                          PrecisionQueueRepository precisionQueueRepository,
                                           TasksPool tasksPool, MrdPool mrdPool, AgentsPool agentsPool,
                                           AgentPresenceRepository agentPresenceRepository,
                                           TasksRepository tasksRepository) {
         this.repository = repository;
-        this.precisionQueueEntityRepository = precisionQueueEntityRepository;
+        this.precisionQueueRepository = precisionQueueRepository;
         this.tasksPool = tasksPool;
         this.mrdPool = mrdPool;
         this.agentsPool = agentsPool;
@@ -101,11 +101,11 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
 
     @Override
     public MediaRoutingDomain create(MediaRoutingDomain mediaRoutingDomain) {
-        mediaRoutingDomain.setId(UUID.randomUUID());
+        MediaRoutingDomain inserted = repository.insert(mediaRoutingDomain);
         // Insert in in-memory pool
-        this.mrdPool.insert(mediaRoutingDomain);
+        this.mrdPool.insert(inserted);
         // Add an AgentMrdState for this MRD in every agent in in-memory pool.
-        AgentMrdState agentMrdState = new AgentMrdState(mediaRoutingDomain, Enums.AgentMrdStateName.NOT_READY);
+        AgentMrdState agentMrdState = new AgentMrdState(inserted, Enums.AgentMrdStateName.NOT_READY);
         for (Agent agent : agentsPool.findAll()) {
             agent.addAgentMrdState(agentMrdState);
         }
@@ -117,7 +117,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         }
         this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
         // Insert in MRD config DB
-        return repository.insert(mediaRoutingDomain);
+        return inserted;
     }
 
     @Override
@@ -127,7 +127,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
 
     @Override
     @Transactional
-    public MediaRoutingDomain update(MediaRoutingDomain mediaRoutingDomain, UUID id) throws Exception {
+    public MediaRoutingDomain update(MediaRoutingDomain mediaRoutingDomain, String id) {
         if (!this.repository.existsById(id)) {
             throw new NotFoundException("Could not find the resource to update");
         }
@@ -151,7 +151,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      */
     private void updateMrdInTasks(MediaRoutingDomain mediaRoutingDomain) {
         Map<String, TaskDto> taskMap = new HashMap<>();
-        for (TaskDto taskDto: this.tasksRepository.findAll()) {
+        for (TaskDto taskDto : this.tasksRepository.findAll()) {
             if (taskDto.getMrd().getId().equals(mediaRoutingDomain.getId())) {
                 taskDto.setMrd(mediaRoutingDomain);
                 taskMap.put(taskDto.getId().toString(), taskDto);
@@ -168,7 +168,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     private void updateMrdInAgentMrdStateInAllAgentPresence(MediaRoutingDomain mediaRoutingDomain) {
         Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
         for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
-            for (AgentMrdState agentMrdState: agentPresence.getAgentMrdStates()) {
+            for (AgentMrdState agentMrdState : agentPresence.getAgentMrdStates()) {
                 if (agentMrdState.getMrd().getId().equals(mediaRoutingDomain.getId())) {
                     agentMrdState.setMrd(mediaRoutingDomain);
                     agentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
@@ -181,15 +181,15 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
 
     @Override
     @Transactional
-    public ResponseEntity<Object> delete(UUID id) {
+    public ResponseEntity<Object> delete(String id) {
         if (!this.repository.existsById(id)) {
             throw new NotFoundException("Could not find the resource to delete");
         }
-        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueEntityRepository.findByMrdId(id);
+        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository.findByMrdId(id);
         List<Task> tasks = this.tasksPool.findByMrdId(id);
         if (precisionQueueEntities.isEmpty() && tasks.isEmpty()) {
             // Delete AgentMrdState for this MRD from all agents in in-memory Agents-pool
-            for (Agent agent: this.agentsPool.findAll()) {
+            for (Agent agent : this.agentsPool.findAll()) {
                 agent.deleteAgentMrdState(id);
             }
             // Delete AgentMrdState for this MRD from all AgentPresence in Redis Agent-Presence Collection
@@ -201,7 +201,10 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             return new ResponseEntity<>(new SuccessResponseBody("Successfully Deleted"), HttpStatus.OK);
         }
         LOGGER.debug("Could not delete MRD: {}. It is associated with one or more Queues", id);
-        return new ResponseEntity<>(new MrdDeleteConflictResponse(precisionQueueEntities, tasks), HttpStatus.CONFLICT);
+        List<TaskDto> taskDtoList = new ArrayList<>();
+        tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
+        return new ResponseEntity<>(new MrdDeleteConflictResponse(precisionQueueEntities, taskDtoList),
+                HttpStatus.CONFLICT);
     }
 
     /**
@@ -209,9 +212,9 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      *
      * @param mrdId the mrd id
      */
-    private void deleteAgentMrdStateFromAllAgentPresence(UUID mrdId) {
+    private void deleteAgentMrdStateFromAllAgentPresence(String mrdId) {
         Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
-        for (AgentPresence agentPresence: this.agentPresenceRepository.findAll()) {
+        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
             deleteAgentMrdStateFromAgentPresence(mrdId, agentPresence);
             agentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
         }
@@ -224,7 +227,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      * @param mrdId         the mrd id
      * @param agentPresence the agent presence
      */
-    private void deleteAgentMrdStateFromAgentPresence(UUID mrdId, AgentPresence agentPresence) {
+    private void deleteAgentMrdStateFromAgentPresence(String mrdId, AgentPresence agentPresence) {
         List<AgentMrdState> agentMrdStates = agentPresence.getAgentMrdStates();
         int index = -1;
         for (int i = 0; i < agentMrdStates.size(); i++) {
@@ -244,13 +247,13 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      * @param mediaRoutingDomain the media routing domain
      * @param id                 the id
      */
-    private void updatePrecisionQueues(MediaRoutingDomain mediaRoutingDomain, UUID id) {
-        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueEntityRepository.findByMrdId(id);
+    private void updatePrecisionQueues(MediaRoutingDomain mediaRoutingDomain, String id) {
+        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository.findByMrdId(id);
         if (precisionQueueEntities != null && !precisionQueueEntities.isEmpty()) {
             for (PrecisionQueueEntity precisionQueueEntity : precisionQueueEntities) {
                 precisionQueueEntity.setMrd(mediaRoutingDomain);
             }
-            this.precisionQueueEntityRepository.saveAll(precisionQueueEntities);
+            this.precisionQueueRepository.saveAll(precisionQueueEntities);
         }
     }
 }

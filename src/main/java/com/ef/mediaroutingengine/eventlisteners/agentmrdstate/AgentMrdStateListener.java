@@ -11,7 +11,6 @@ import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import java.beans.PropertyChangeEvent;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +73,7 @@ public class AgentMrdStateListener {
      * @param requestedState the requested state
      * @param async          the async
      */
-    public void propertyChange(Agent agent, UUID mrdId, Enums.AgentMrdStateName requestedState, boolean async) {
+    public void propertyChange(Agent agent, String mrdId, Enums.AgentMrdStateName requestedState, boolean async) {
         if (async) {
             LOGGER.debug("Agent mrd state listener called asynchronously");
             CompletableFuture.runAsync(() -> this.asyncPropertyChange(agent, mrdId, requestedState));
@@ -91,7 +90,7 @@ public class AgentMrdStateListener {
      * @param mrdId          the mrd id
      * @param requestedState the requested state
      */
-    private void asyncPropertyChange(Agent agent, UUID mrdId, Enums.AgentMrdStateName requestedState) {
+    private void asyncPropertyChange(Agent agent, String mrdId, Enums.AgentMrdStateName requestedState) {
         AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
         if (agentMrdState == null) {
             LOGGER.error("Could not find MRD with id: {} associated with agent: {}", mrdId, agent.getId());

@@ -4,7 +4,6 @@ import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.dto.RoutingAttributeDeleteConflictResponse;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.services.controllerservices.RoutingAttributesService;
-import java.util.UUID;
 import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,12 +74,11 @@ public class RoutingAttributesController {
      * @param requestBody updated value of the Routing-Attribute.
      * @param id          id of the Routing-Attribute to update.
      * @return the updated Routing-Attribute as response-body with status-code 200.
-     * @throws Exception In case an agent is not found or depended data is inconsistent.
      */
     @CrossOrigin(origins = "*")
     @PutMapping(value = "/routing-attributes/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateRoutingAttribute(
-            @Valid @RequestBody RoutingAttribute requestBody, @PathVariable UUID id) throws Exception {
+            @Valid @RequestBody RoutingAttribute requestBody, @PathVariable String id) {
         return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
@@ -95,7 +93,7 @@ public class RoutingAttributesController {
      */
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/routing-attributes/{id}", produces = "application/json")
-    public ResponseEntity<Object> deleteRoutingAttribute(@PathVariable UUID id) {
+    public ResponseEntity<Object> deleteRoutingAttribute(@PathVariable String id) {
         RoutingAttributeDeleteConflictResponse deleteConflictResponse = this.service.delete(id);
         if (deleteConflictResponse != null) {
             LOGGER.debug("Could not delete Routing-Attribute: {}. It is associated with one or more Queues or"

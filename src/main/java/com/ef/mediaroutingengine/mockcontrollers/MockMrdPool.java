@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.mockcontrollers;
 
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +39,7 @@ public class MockMrdPool {
      * @return the string
      */
     @PutMapping("/mrd-pool/{id}")
-    public String update(@RequestBody MediaRoutingDomain mediaRoutingDomain, @PathVariable UUID id) {
+    public String update(@RequestBody MediaRoutingDomain mediaRoutingDomain, @PathVariable String id) {
         if (mrdPool.contains(id)) {
             mediaRoutingDomain.setId(id);
             this.mrdPool.update(mediaRoutingDomain);

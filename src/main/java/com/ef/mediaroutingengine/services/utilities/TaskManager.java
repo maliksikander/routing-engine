@@ -143,7 +143,7 @@ public class TaskManager {
         if (agent != null) {
             agent.endTask(task);
 
-            UUID mrdId = task.getMrd().getId();
+            String mrdId = task.getMrd().getId();
             Enums.AgentMrdStateName currentMrdState = agent.getAgentMrdState(mrdId).getState();
             int noOfTasks = agent.getNoOfActiveTasks(mrdId);
 
@@ -181,7 +181,7 @@ public class TaskManager {
      * @param state the state
      * @param async the async
      */
-    private void fireAgentMrdChangeRequest(Agent agent, UUID mrdId, Enums.AgentMrdStateName state, boolean async) {
+    private void fireAgentMrdChangeRequest(Agent agent, String mrdId, Enums.AgentMrdStateName state, boolean async) {
         AgentMrdStateListener listener = this.applicationContext.getBean(AgentMrdStateListener.class);
         listener.propertyChange(agent, mrdId, state, async);
     }
@@ -203,7 +203,7 @@ public class TaskManager {
      * @param agent agent to b updated
      * @param mrdId the mrd id
      */
-    public void updateAgentMrdState(Agent agent, UUID mrdId) {
+    public void updateAgentMrdState(Agent agent, String mrdId) {
         int noOfActiveTasks = agent.getNoOfActiveTasks(mrdId);
         if (noOfActiveTasks == 1) {
             this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, false);

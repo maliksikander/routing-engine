@@ -68,7 +68,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         LOGGER.debug("MRD validated in Assign-Resource API request");
         PrecisionQueue queue = this.validateAndGetQueue(channelSession, request.getQueue(), mrd.getId());
         LOGGER.debug("PrecisionQueue validated in Assign-Resource API request");
-        // TODO: Executer service .. don't use completableFuture!
+        // TODO: Executor service .. don't use completableFuture!
         CompletableFuture.runAsync(() -> this.taskManager.enqueueTask(channelSession, queue, mrd));
         LOGGER.debug("Task enqueued");
         LOGGER.debug(Constants.METHOD_ENDED);
@@ -108,7 +108,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @return the media routing domain
      */
     private MediaRoutingDomain validateAndGetMrd(ChannelSession channelSession) {
-        UUID mrdId = channelSession.getChannel().getChannelConnector().getChannelType().getMediaRoutingDomain();
+        String mrdId = channelSession.getChannel().getChannelConnector().getChannelType().getMediaRoutingDomain();
         MediaRoutingDomain mrd = this.mrdPool.findById(mrdId);
         if (mrd == null) {
             throw new IllegalArgumentException("MRD with id: " + mrdId + " not found in MRD-pool");
@@ -124,8 +124,8 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @param mrdId          the mrd id
      * @return the precision queue
      */
-    private PrecisionQueue validateAndGetQueue(ChannelSession channelSession, UUID requestQueue, UUID mrdId) {
-        UUID defaultQueue = UUID.randomUUID();
+    private PrecisionQueue validateAndGetQueue(ChannelSession channelSession, String requestQueue, String mrdId) {
+        String defaultQueue = UUID.randomUUID().toString();
         //channelSession.getChannel().getChannelConfig().getRoutingPolicy().getDefaultQueue();
         if (defaultQueue == null && requestQueue == null) {
             throw new IllegalArgumentException("DefaultQueue and RequestedQueue both are null");
@@ -148,7 +148,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @param defaultQueue   the default queue
      * @return the precision queue from
      */
-    private PrecisionQueue getPrecisionQueueFrom(UUID requestedQueue, UUID defaultQueue) {
+    private PrecisionQueue getPrecisionQueueFrom(String requestedQueue, String defaultQueue) {
         PrecisionQueue queue = this.precisionQueuesPool.findById(requestedQueue);
         // If requested queue not found, use default queue
         if (queue == null) {

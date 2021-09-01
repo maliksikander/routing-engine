@@ -16,7 +16,7 @@ public interface StepsService {
      * @param stepEntity the step entity
      * @return the precision queue entity
      */
-    PrecisionQueueEntity create(UUID queueId, StepEntity stepEntity);
+    PrecisionQueueEntity create(String queueId, StepEntity stepEntity);
 
     /**
      * Update precision queue entity.
@@ -26,7 +26,7 @@ public interface StepsService {
      * @param stepEntity the step entity
      * @return the precision queue entity
      */
-    PrecisionQueueEntity update(UUID id, UUID queueId, StepEntity stepEntity);
+    PrecisionQueueEntity update(UUID id, String queueId, StepEntity stepEntity);
 
     /**
      * Delete response entity.
@@ -35,5 +35,5 @@ public interface StepsService {
      * @param id      the id
      * @return the response entity
      */
-    ResponseEntity<Object> delete(UUID queueId, UUID id);
+    ResponseEntity<Object> delete(String queueId, UUID id);
 }

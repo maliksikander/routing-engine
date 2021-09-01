@@ -2,18 +2,19 @@ package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.mediaroutingengine.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
+import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
+import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.services.TaskScheduler;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.http.HttpStatus;
@@ -29,7 +30,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     /**
      * The Repository.
      */
-    private final PrecisionQueueEntityRepository repository;
+    private final PrecisionQueueRepository repository;
 
     /**
      * The Precision queues pool.
@@ -49,7 +50,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * @param mrdPool             the mrd pool
      */
     @Autowired
-    public PrecisionQueuesServiceImpl(PrecisionQueueEntityRepository repository,
+    public PrecisionQueuesServiceImpl(PrecisionQueueRepository repository,
                                       PrecisionQueuesPool precisionQueuesPool,
                                       MrdPool mrdPool) {
         this.repository = repository;
@@ -59,10 +60,10 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
 
     @Override
     public PrecisionQueueEntity create(PrecisionQueueRequestBody requestBody) {
-        requestBody.setId(UUID.randomUUID());
         this.validateAndSetMRD(requestBody);
-        this.precisionQueuesPool.insert(new PrecisionQueue(requestBody, getTaskSchedulerBean()));
-        return repository.insert(new PrecisionQueueEntity(requestBody));
+        PrecisionQueueEntity inserted = repository.insert(new PrecisionQueueEntity(requestBody));
+        this.precisionQueuesPool.insert(new PrecisionQueue(inserted, getTaskSchedulerBean()));
+        return inserted;
     }
 
     /**
@@ -81,7 +82,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     }
 
     @Override
-    public PrecisionQueueEntity update(PrecisionQueueRequestBody requestBody, UUID id) {
+    public PrecisionQueueEntity update(PrecisionQueueRequestBody requestBody, String id) {
         requestBody.setId(id);
         this.validateAndSetMRD(requestBody);
 
@@ -96,7 +97,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     }
 
     @Override
-    public ResponseEntity<Object> delete(UUID id) {
+    public ResponseEntity<Object> delete(String id) {
         if (!this.repository.existsById(id)) {
             throw new NotFoundException("Could not find precision resource to delete");
         }
@@ -106,7 +107,9 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
             this.repository.deleteById(id);
             return new ResponseEntity<>(new SuccessResponseBody("Successfully deleted"), HttpStatus.OK);
         }
-        return new ResponseEntity<>(tasks, HttpStatus.CONFLICT);
+        List<TaskDto> taskDtoList = new ArrayList<>();
+        tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
+        return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
     }
 
     /**

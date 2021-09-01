@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.bootstrap;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 
 import com.ef.cim.objectmodel.CCUser;
@@ -10,7 +9,7 @@ import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.repositories.MediaRoutingDomainRepository;
-import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
+import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
@@ -38,7 +37,7 @@ class BootstrapTest {
     @Mock
     private MediaRoutingDomainRepository mediaRoutingDomainRepository;
     @Mock
-    private PrecisionQueueEntityRepository precisionQueueEntityRepository;
+    private PrecisionQueueRepository precisionQueueRepository;
     @Mock
     private TasksRepository tasksRepository;
     @Mock
@@ -62,7 +61,7 @@ class BootstrapTest {
 
     @BeforeEach
     void setUp() {
-        bootstrap = new Bootstrap(agentsRepository, mediaRoutingDomainRepository, precisionQueueEntityRepository,
+        bootstrap = new Bootstrap(agentsRepository, mediaRoutingDomainRepository, precisionQueueRepository,
                 tasksRepository, agentPresenceRepository, routingAttributeRepository, agentsPool, mrdPool,
                 precisionQueuesPool, routingAttributesPool, tasksPool, taskManager, jmsCommunicator);
     }
@@ -106,7 +105,7 @@ class BootstrapTest {
         List<MediaRoutingDomain> result = new ArrayList<>();
         for (int i = 0; i < noOfMrd; i++) {
             MediaRoutingDomain mrd = new MediaRoutingDomain();
-            mrd.setId(UUID.randomUUID());
+            mrd.setId(UUID.randomUUID().toString());
             result.add(mrd);
         }
         return result;

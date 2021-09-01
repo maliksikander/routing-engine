@@ -4,7 +4,6 @@ import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +15,7 @@ public class MrdPool {
     /**
      * The MRD pool.
      */
-    private final Map<UUID, MediaRoutingDomain> pool = new ConcurrentHashMap<>();
+    private final Map<String, MediaRoutingDomain> pool = new ConcurrentHashMap<>();
 
     /**
      * Load pool at start of application.
@@ -35,7 +34,7 @@ public class MrdPool {
      * @param id the id
      * @return the boolean
      */
-    public boolean contains(UUID id) {
+    public boolean contains(String id) {
         if (id == null) {
             return false;
         }
@@ -71,7 +70,7 @@ public class MrdPool {
      * @param id id of the MRD to return.
      * @return MRD if found, null otherwise
      */
-    public MediaRoutingDomain findById(UUID id) {
+    public MediaRoutingDomain findById(String id) {
         if (id == null) {
             return null;
         }
@@ -94,7 +93,7 @@ public class MrdPool {
      *
      * @param id the id
      */
-    public void deleteById(UUID id) {
+    public void deleteById(String id) {
         if (id != null) {
             this.pool.remove(id);
         }

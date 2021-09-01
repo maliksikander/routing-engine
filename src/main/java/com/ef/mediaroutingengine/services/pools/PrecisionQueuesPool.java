@@ -8,7 +8,6 @@ import com.ef.mediaroutingengine.services.TaskScheduler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +26,7 @@ public class PrecisionQueuesPool {
     /**
      * The Precision queues.
      */
-    private final Map<UUID, PrecisionQueue> precisionQueues = new ConcurrentHashMap<>();
+    private final Map<String, PrecisionQueue> precisionQueues = new ConcurrentHashMap<>();
 
     /**
      * Loads all the precision queues from DB.
@@ -68,7 +67,7 @@ public class PrecisionQueuesPool {
      * @return PrecisionQueue object if found, null otherwise
      */
     public PrecisionQueue findByName(String name) {
-        for (Map.Entry<UUID, PrecisionQueue> entry : this.precisionQueues.entrySet()) {
+        for (Map.Entry<String, PrecisionQueue> entry : this.precisionQueues.entrySet()) {
             if (entry.getValue().getName().equals(name)) {
                 return entry.getValue();
             }
@@ -82,7 +81,7 @@ public class PrecisionQueuesPool {
      * @param id Precision Queue with this id will be searched and returned.
      * @return Precision Queue if found, null otherwise
      */
-    public PrecisionQueue findById(UUID id) {
+    public PrecisionQueue findById(String id) {
         if (id == null) {
             return null;
         }
@@ -95,7 +94,7 @@ public class PrecisionQueuesPool {
      * @param id of precision-queue to be removed.
      * @return true if removed
      */
-    public boolean deleteById(UUID id) {
+    public boolean deleteById(String id) {
         PrecisionQueue removed = this.precisionQueues.remove(id);
         return removed != null;
     }
@@ -120,7 +119,7 @@ public class PrecisionQueuesPool {
      * @return true if task found and ended, false otherwise
      */
     public boolean endTask(Task task) {
-        PrecisionQueue queue = findByName(task.getQueue().toString());
+        PrecisionQueue queue = findByName(task.getQueue());
         if (queue != null) {
             if (queue.getAverageTalkTime() != null && queue.getAverageTalkTime() > 0) {
                 queue.setAverageTalkTime(calculateAvgTalkTimeOf(queue, task));
@@ -150,7 +149,7 @@ public class PrecisionQueuesPool {
      */
     public List<PrecisionQueue> toList() {
         List<PrecisionQueue> precisionQueueList = new ArrayList<>();
-        for (Map.Entry<UUID, PrecisionQueue> entry : this.precisionQueues.entrySet()) {
+        for (Map.Entry<String, PrecisionQueue> entry : this.precisionQueues.entrySet()) {
             precisionQueueList.add(entry.getValue());
         }
         return precisionQueueList;

@@ -43,7 +43,7 @@ public class StepsController {
      */
     @CrossOrigin(origins = "*")
     @PostMapping("/precision-queues/{queueId}/steps")
-    public ResponseEntity<Object> create(@RequestBody StepEntity stepEntity, @PathVariable UUID queueId) {
+    public ResponseEntity<Object> create(@RequestBody StepEntity stepEntity, @PathVariable String queueId) {
         return new ResponseEntity<>(this.service.create(queueId, stepEntity), HttpStatus.OK);
     }
 
@@ -58,7 +58,7 @@ public class StepsController {
     @CrossOrigin(origins = "*")
     @PutMapping("/precision-queues/{queueId}/steps/{id}")
     public ResponseEntity<Object> update(@RequestBody StepEntity stepEntity,
-                                         @PathVariable UUID queueId, @PathVariable UUID id) {
+                                         @PathVariable String queueId, @PathVariable UUID id) {
         return new ResponseEntity<>(this.service.update(id, queueId, stepEntity), HttpStatus.OK);
     }
 
@@ -71,7 +71,7 @@ public class StepsController {
      */
     @CrossOrigin(origins = "*")
     @DeleteMapping("/precision-queues/{queueId}/steps/{id}")
-    public ResponseEntity<Object> delete(@PathVariable UUID queueId, @PathVariable UUID id) {
+    public ResponseEntity<Object> delete(@PathVariable String queueId, @PathVariable UUID id) {
         return this.service.delete(queueId, id);
     }
 }

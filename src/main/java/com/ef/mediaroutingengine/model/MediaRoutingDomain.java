@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.model;
 
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.UUID;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.springframework.data.annotation.Id;
@@ -13,12 +12,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
  */
 @Document(value = "mediaRoutingDomains")
 public class MediaRoutingDomain implements Serializable {
-
     /**
      * The Id.
      */
     @Id
-    private UUID id;
+    private String id;
     /**
      * The Name.
      */
@@ -41,7 +39,7 @@ public class MediaRoutingDomain implements Serializable {
      *
      * @return the id
      */
-    public UUID getId() {
+    public String getId() {
         return id;
     }
 
@@ -50,7 +48,7 @@ public class MediaRoutingDomain implements Serializable {
      *
      * @param id the id
      */
-    public void setId(UUID id) {
+    public void setId(String id) {
         this.id = id;
     }
 

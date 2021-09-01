@@ -39,7 +39,7 @@ public class Task implements Serializable {
     /**
      * The Queue.
      */
-    private final UUID queue;
+    private final String queue;
     /**
      * The Timer.
      */
@@ -92,7 +92,7 @@ public class Task implements Serializable {
      * @param mrd            associated media routing domain
      * @param queue          the queue
      */
-    public Task(ChannelSession channelSession, MediaRoutingDomain mrd, UUID queue) {
+    public Task(ChannelSession channelSession, MediaRoutingDomain mrd, String queue) {
         this.id = UUID.randomUUID();
         this.channelSession = channelSession;
         this.mrd = mrd;
@@ -182,7 +182,7 @@ public class Task implements Serializable {
      *
      * @return the queue
      */
-    public UUID getQueue() {
+    public String getQueue() {
         return this.queue;
     }
 
@@ -442,9 +442,7 @@ public class Task implements Serializable {
 
     @Override
     public String toString() {
-        String result = "";
-        result = "TaskId: " + this.id + ", MRD: " + this.mrd + ", Priority: " + this.getPriority();
-        return result;
+        return "TaskId: " + this.id + ", MRD: " + this.mrd + ", Priority: " + this.getPriority();
     }
 
     /**

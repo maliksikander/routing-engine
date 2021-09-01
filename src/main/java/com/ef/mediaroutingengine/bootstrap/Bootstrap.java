@@ -19,7 +19,7 @@ import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.repositories.MediaRoutingDomainRepository;
-import com.ef.mediaroutingengine.repositories.PrecisionQueueEntityRepository;
+import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
@@ -62,7 +62,7 @@ public class Bootstrap {
     /**
      * Precision-Queues collection DAO for the Configuration DB.
      */
-    private final PrecisionQueueEntityRepository precisionQueueEntityRepository;
+    private final PrecisionQueueRepository precisionQueueRepository;
     /**
      * Tasks collection DAO for Redis DB.
      */
@@ -109,7 +109,7 @@ public class Bootstrap {
      *
      * @param agentsRepository               Agents config repository DAO
      * @param mediaRoutingDomainRepository   Media-routing-domains config repository DAO
-     * @param precisionQueueEntityRepository Precision-Queues config repository DAO
+     * @param precisionQueueRepository Precision-Queues config repository DAO
      * @param tasksRepository                Tasks Repository DAO
      * @param agentPresenceRepository        AgentPresence Repository DAO
      * @param routingAttributeRepository     the routing attribute repository
@@ -124,7 +124,7 @@ public class Bootstrap {
     @Autowired
     public Bootstrap(AgentsRepository agentsRepository,
                      MediaRoutingDomainRepository mediaRoutingDomainRepository,
-                     PrecisionQueueEntityRepository precisionQueueEntityRepository,
+                     PrecisionQueueRepository precisionQueueRepository,
                      TasksRepository tasksRepository,
                      AgentPresenceRepository agentPresenceRepository,
                      RoutingAttributeRepository routingAttributeRepository,
@@ -137,7 +137,7 @@ public class Bootstrap {
                      JmsCommunicator jmsCommunicator) {
         this.agentsRepository = agentsRepository;
         this.mediaRoutingDomainRepository = mediaRoutingDomainRepository;
-        this.precisionQueueEntityRepository = precisionQueueEntityRepository;
+        this.precisionQueueRepository = precisionQueueRepository;
         this.tasksRepository = tasksRepository;
         this.agentPresenceRepository = agentPresenceRepository;
         this.routingAttributeRepository = routingAttributeRepository;
@@ -196,7 +196,7 @@ public class Bootstrap {
         Load Precision-Queue pool. Requires Agents pool to be loaded first to evaluate the Agents
         associated to steps in the Precision-Queue.
          */
-        List<PrecisionQueueEntity> precisionQueueEntities = precisionQueueEntityRepository.findAll();
+        List<PrecisionQueueEntity> precisionQueueEntities = precisionQueueRepository.findAll();
         /*
         Replace the routing-Attribute and MRD in Precision-Queues from that in the in-memory pool
         Advantage: Shared memory: we update routing-Attribute / MRD in pools, it is updated every-where it is

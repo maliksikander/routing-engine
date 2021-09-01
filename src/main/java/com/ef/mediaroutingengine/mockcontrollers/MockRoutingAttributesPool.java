@@ -4,7 +4,6 @@ import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.RoutingAttributesPool;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,7 +54,7 @@ public class MockRoutingAttributesPool {
      * @return the string
      */
     @PutMapping("/routing-attributes-pool/{id}")
-    public String updateAttribute(@RequestBody RoutingAttribute routingAttribute, @PathVariable UUID id) {
+    public String updateAttribute(@RequestBody RoutingAttribute routingAttribute, @PathVariable String id) {
         if (this.routingAttributesPool.contains(id)) {
             routingAttribute.setId(id);
             this.routingAttributesPool.save(routingAttribute);

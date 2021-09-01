@@ -19,7 +19,7 @@ public class AgentMrdStateChangeRequest {
      * Agent's Associated MRD for which the state change is requested.
      */
     @NotNull
-    UUID mrdId;
+    String mrdId;
     /**
      * The New Agent-MRD-State requested.
      */
@@ -40,7 +40,7 @@ public class AgentMrdStateChangeRequest {
      * @param mrdId   MRD for which the state change is requested
      * @param state   new Agent-MRD-state requested
      */
-    public AgentMrdStateChangeRequest(UUID agentId, UUID mrdId, Enums.AgentMrdStateName state) {
+    public AgentMrdStateChangeRequest(UUID agentId, String mrdId, Enums.AgentMrdStateName state) {
         this.agentId = agentId;
         this.mrdId = mrdId;
         this.state = state;
@@ -69,7 +69,7 @@ public class AgentMrdStateChangeRequest {
      *
      * @return the value of the mrdId, an {@link UUID UUID} object, or null
      */
-    public UUID getMrdId() {
+    public String getMrdId() {
         return mrdId;
     }
 
@@ -78,7 +78,7 @@ public class AgentMrdStateChangeRequest {
      *
      * @param mrdId value to set
      */
-    public void setMrdId(UUID mrdId) {
+    public void setMrdId(String mrdId) {
         this.mrdId = mrdId;
     }
 

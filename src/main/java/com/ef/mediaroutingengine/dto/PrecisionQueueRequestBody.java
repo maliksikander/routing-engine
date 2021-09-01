@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.dto;
 
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
-import java.util.UUID;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -15,7 +14,7 @@ public class PrecisionQueueRequestBody {
      * The Id.
      */
     @Id
-    private UUID id;
+    private String id;
     /**
      * The Name.
      */
@@ -43,7 +42,7 @@ public class PrecisionQueueRequestBody {
      *
      * @return the id
      */
-    public UUID getId() {
+    public String getId() {
         return id;
     }
 
@@ -52,7 +51,7 @@ public class PrecisionQueueRequestBody {
      *
      * @param id the id
      */
-    public void setId(UUID id) {
+    public void setId(String id) {
         this.id = id;
     }
 

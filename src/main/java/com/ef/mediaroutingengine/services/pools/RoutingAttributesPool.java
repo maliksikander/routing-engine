@@ -4,7 +4,6 @@ import com.ef.cim.objectmodel.RoutingAttribute;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,7 @@ public class RoutingAttributesPool {
     /**
      * The Pool.
      */
-    private final Map<UUID, RoutingAttribute> pool;
+    private final Map<String, RoutingAttribute> pool;
 
     /**
      * Instantiates a new Routing attributes pool.
@@ -42,7 +41,7 @@ public class RoutingAttributesPool {
      * @param id the id
      * @return the routing attribute
      */
-    public RoutingAttribute findById(UUID id) {
+    public RoutingAttribute findById(String id) {
         if (id == null) {
             return null;
         }
@@ -66,7 +65,7 @@ public class RoutingAttributesPool {
      * @param id the id
      * @return the boolean
      */
-    public boolean contains(UUID id) {
+    public boolean contains(String id) {
         if (id == null) {
             return false;
         }
@@ -121,7 +120,7 @@ public class RoutingAttributesPool {
      *
      * @param id the id
      */
-    public void deleteById(UUID id) {
+    public void deleteById(String id) {
         if (id == null) {
             return;
         }

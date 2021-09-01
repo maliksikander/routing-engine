@@ -6,7 +6,6 @@ import com.ef.mediaroutingengine.model.AgentMrdState;
 import com.ef.mediaroutingengine.model.AgentState;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import java.util.List;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -44,7 +43,7 @@ public class AgentStateNotReady implements AgentStateDelegate {
             agent.setState(newState);
             List<AgentMrdState> agentMrdStates = agent.getAgentMrdStates();
             for (AgentMrdState agentMrdState : agentMrdStates) {
-                UUID mrdId = agentMrdState.getMrd().getId();
+                String mrdId = agentMrdState.getMrd().getId();
                 if (agent.getNoOfActiveTasks(mrdId) > 0) {
                     agentMrdState.setState(Enums.AgentMrdStateName.PENDING_NOT_READY);
                 } else {

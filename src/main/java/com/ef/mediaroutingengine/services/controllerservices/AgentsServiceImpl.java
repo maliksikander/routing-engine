@@ -4,6 +4,7 @@ import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
+import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentPresence;
@@ -14,6 +15,7 @@ import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.RoutingAttributesPool;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,7 +118,9 @@ public class AgentsServiceImpl implements AgentsService {
         Agent agent = this.agentsPool.findById(id);
         List<Task> tasks = agent.getAllTasks();
         if (!tasks.isEmpty()) {
-            return new ResponseEntity<>(tasks, HttpStatus.CONFLICT);
+            List<TaskDto> taskDtoList = new ArrayList<>();
+            tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
+            return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
         }
         this.agentsPool.deleteById(id);
         this.agentPresenceRepository.deleteById(id.toString());
