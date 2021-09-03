@@ -17,12 +17,12 @@ public class MrdStateReady implements MrdStateDelegate {
         if (agent.getState().getName().equals(Enums.AgentStateName.READY)) {
             if (currentState.equals(Enums.AgentMrdStateName.NOT_READY)
                     || (currentState.equals(Enums.AgentMrdStateName.ACTIVE)
-                    && agent.getNoOfActiveTasks(agentMrdState.getMrd().getId()) < 1)) {
+                    && agent.getNoOfActivePushTasks(agentMrdState.getMrd().getId()) < 1)) {
                 return Enums.AgentMrdStateName.READY;
             } else if (currentState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY)) {
-                if (agent.getNoOfActiveTasks(agentMrdState.getMrd().getId()) < 1) {
+                if (agent.getNoOfActivePushTasks(agentMrdState.getMrd().getId()) < 1) {
                     return Enums.AgentMrdStateName.READY;
-                } else if (agent.getNoOfActiveTasks(agentMrdState.getMrd().getId()) == Constants.MAX_TASKS) {
+                } else if (agent.getNoOfActivePushTasks(agentMrdState.getMrd().getId()) == Constants.MAX_TASKS) {
                     return Enums.AgentMrdStateName.BUSY;
                 } else {
                     return Enums.AgentMrdStateName.ACTIVE;

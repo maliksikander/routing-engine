@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.model;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
+import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Enums;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -159,17 +160,23 @@ public class Agent {
     }
 
     /**
-     * Returns total number of active tasks on an agent's mrd.
+     * Returns total number of active tasks of PUSH routing-mode on an agent's mrd.
      *
      * @param mrdId id of the mrd.
      * @return total number of active tasks on an agent's mrd
      */
-    public int getNoOfActiveTasks(String mrdId) {
+    public int getNoOfActivePushTasks(String mrdId) {
         List<Task> taskList = this.activeTasks.get(mrdId);
         if (taskList == null) {
             return 0;
         }
-        return taskList.size();
+        int counter = 0;
+        for (Task task: taskList) {
+            if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
+                counter++;
+            }
+        }
+        return counter;
     }
 
     /**

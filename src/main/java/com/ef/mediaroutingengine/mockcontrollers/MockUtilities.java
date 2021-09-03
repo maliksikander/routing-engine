@@ -47,7 +47,7 @@ public class MockUtilities {
         if (agent.getAgentMrdState(mrdId) == null) {
             throw new NotFoundException("MRD: " + mrdId + " not associated with agent");
         }
-        int noOfTasks = agent.getNoOfActiveTasks(mrdId);
+        int noOfTasks = agent.getNoOfActivePushTasks(mrdId);
         return new ResponseEntity<>("No of tasks: " + noOfTasks, HttpStatus.OK);
     }
 }

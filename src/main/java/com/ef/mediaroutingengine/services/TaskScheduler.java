@@ -218,7 +218,7 @@ public class TaskScheduler implements PropertyChangeListener {
         int lowestNumberOfTasks = Integer.MAX_VALUE;
         Agent result = null;
         for (Agent agent : sortedAgentList) {
-            int noOfTasksOnMrd = agent.getNoOfActiveTasks(this.precisionQueue.getMrd().getId());
+            int noOfTasksOnMrd = agent.getNoOfActivePushTasks(this.precisionQueue.getMrd().getId());
             if (isAvailable(agent) && noOfTasksOnMrd < lowestNumberOfTasks) {
                 lowestNumberOfTasks = noOfTasksOnMrd;
                 result = agent;

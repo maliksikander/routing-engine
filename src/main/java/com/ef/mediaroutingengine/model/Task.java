@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.model;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskDto;
 import java.beans.PropertyChangeListener;
@@ -92,14 +93,14 @@ public class Task implements Serializable {
      * @param mrd            associated media routing domain
      * @param queue          the queue
      */
-    public Task(ChannelSession channelSession, MediaRoutingDomain mrd, String queue) {
+    public Task(ChannelSession channelSession, MediaRoutingDomain mrd, String queue, TaskState state) {
         this.id = UUID.randomUUID();
         this.channelSession = channelSession;
         this.mrd = mrd;
         this.queue = queue;
-
+        //new TaskState(Enums.TaskStateName.QUEUED, null)
         this.priority = 1; // Right now hardcoded at highest priority level
-        this.state = new TaskState(Enums.TaskStateName.QUEUED, null);
+        this.state = state;
         this.enqueueTime = System.currentTimeMillis();
         this.timer = new Timer();
         this.handlingTime = 0L;
@@ -146,6 +147,11 @@ public class Task implements Serializable {
         this.handlingTime = 0L;
 
         this.changeSupport = new PropertyChangeSupport(this);
+    }
+
+    public Task(UUID agentId, MediaRoutingDomain mrd, ChannelSession channelSession) {
+        this(channelSession, mrd, null, new TaskState(Enums.TaskStateName.ACTIVE, null));
+        this.assignedTo = agentId;
     }
 
     // +++++++++++++++++++++++++++++++ Accessor Methods ++++++++++++++++++++++++++++++++++++++++++++++
@@ -331,6 +337,10 @@ public class Task implements Serializable {
      */
     public UUID getTopicId() {
         return this.channelSession.getTopicId();
+    }
+
+    public RoutingMode getRoutingMode() {
+        return this.channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingMode();
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.services.utilities;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskDto;
@@ -11,6 +12,7 @@ import com.ef.mediaroutingengine.model.AgentState;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
@@ -138,23 +140,36 @@ public class TaskManager {
      * @param task task to remove.
      */
     public void endTaskFromAssignedAgent(Task task) {
-        UUID assignedTo = task.getAssignedTo();
-        Agent agent = this.agentsPool.findById(assignedTo);
-        if (agent != null) {
-            agent.endTask(task);
-
-            String mrdId = task.getMrd().getId();
-            Enums.AgentMrdStateName currentMrdState = agent.getAgentMrdState(mrdId).getState();
-            int noOfTasks = agent.getNoOfActiveTasks(mrdId);
-
-            if (currentMrdState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY) && noOfTasks < 1) {
-                this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.NOT_READY, true);
-            } else if (currentMrdState.equals(Enums.AgentMrdStateName.BUSY)) {
-                this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, true);
-            } else if (currentMrdState.equals(Enums.AgentMrdStateName.ACTIVE) && noOfTasks < 1) {
-                this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.READY, true);
-            }
+        RoutingMode routingMode = task.getRoutingMode();
+        Agent agent = this.agentsPool.findById(task.getAssignedTo());
+        if (agent == null || routingMode == null) {
+            return;
         }
+        if (routingMode.equals(RoutingMode.PUSH)) {
+            this.endPushTaskFromAssignedAgent(task, agent);
+        } else if (routingMode.equals(RoutingMode.PULL)) {
+            this.endPullTaskFromAssignedAgent(task, agent);
+        }
+    }
+
+    private void endPushTaskFromAssignedAgent(Task task, Agent agent) {
+        agent.endTask(task);
+
+        String mrdId = task.getMrd().getId();
+        Enums.AgentMrdStateName currentMrdState = agent.getAgentMrdState(mrdId).getState();
+        int noOfTasks = agent.getNoOfActivePushTasks(mrdId);
+
+        if (currentMrdState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY) && noOfTasks < 1) {
+            this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.NOT_READY, true);
+        } else if (currentMrdState.equals(Enums.AgentMrdStateName.BUSY)) {
+            this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, true);
+        } else if (currentMrdState.equals(Enums.AgentMrdStateName.ACTIVE) && noOfTasks < 1) {
+            this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.READY, true);
+        }
+    }
+
+    private void endPullTaskFromAssignedAgent(Task task, Agent agent) {
+        agent.endTask(task);
     }
 
     /**
@@ -204,7 +219,7 @@ public class TaskManager {
      * @param mrdId the mrd id
      */
     public void updateAgentMrdState(Agent agent, String mrdId) {
-        int noOfActiveTasks = agent.getNoOfActiveTasks(mrdId);
+        int noOfActiveTasks = agent.getNoOfActivePushTasks(mrdId);
         if (noOfActiveTasks == 1) {
             this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, false);
         } else if (noOfActiveTasks == Constants.MAX_TASKS) {
@@ -262,7 +277,8 @@ public class TaskManager {
     public void enqueueTask(ChannelSession channelSession, PrecisionQueue queue, MediaRoutingDomain mrd) {
         LOGGER.debug("method started | TasksPool.enqueueTask method");
         LOGGER.debug("Precision-Queue is not null | TasksPool.enqueueTask method");
-        Task task = new Task(channelSession, mrd, queue.getId());
+        TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
+        Task task = new Task(channelSession, mrd, queue.getId(), taskState);
         this.tasksPool.add(task);
         LOGGER.debug("New task added to allTasks list | TasksPool.enqueueTask method");
         this.tasksRepository.save(task.getId().toString(), new TaskDto(task));
@@ -303,7 +319,7 @@ public class TaskManager {
      *
      * @param task the task
      */
-    private void removeOldTaskForReroute(Task task) {
+    public void removeTaskFromPoolAndRedis(Task task) {
         this.tasksRepository.deleteById(task.getId().toString());
         this.tasksPool.remove(task);
     }
@@ -332,7 +348,7 @@ public class TaskManager {
      * @param currentTask the current task
      */
     private void rerouteActiveTask(Task currentTask) {
-        this.removeOldTaskForReroute(currentTask);
+        this.removeTaskFromPoolAndRedis(currentTask);
         Task newTask = this.setUpNewTaskForReroute(currentTask);
         JmsCommunicator jmsCommunicator = this.applicationContext.getBean(JmsCommunicator.class);
         jmsCommunicator.publishTaskStateChangeForReporting(newTask);
@@ -346,7 +362,7 @@ public class TaskManager {
      * @param currentTask the current task
      */
     private void rerouteReservedTask(Task currentTask) {
-        this.removeOldTaskForReroute(currentTask);
+        this.removeTaskFromPoolAndRedis(currentTask);
         // If Agent request Ttl has ended.
         if (currentTask.isAgentRequestTimeout()) {
             this.requestTtlTimers.remove(currentTask.getTopicId());
@@ -377,13 +393,14 @@ public class TaskManager {
      * Removes the task from the pool by the task id.
      *
      * @param task the task to be removed
-     * @return true if found and removed, false otherwise
      */
-    public boolean removeTask(Task task) {
+    public void removeTask(Task task) {
         LOGGER.debug("Going to remove task: {}", task.getId());
-        this.cancelAgentRequestTtlTimerTask(task.getTopicId());
-        this.requestTtlTimers.remove(task.getTopicId());
-        return this.tasksPool.remove(task);
+        if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
+            this.cancelAgentRequestTtlTimerTask(task.getTopicId());
+            this.requestTtlTimers.remove(task.getTopicId());
+        }
+        this.tasksPool.remove(task);
     }
 
     /**
@@ -410,6 +427,18 @@ public class TaskManager {
      */
     public void removeAgentRequestTtlTimerTask(UUID topicId) {
         this.requestTtlTimers.remove(topicId);
+    }
+
+    /**
+     * End pull task on agent logout.
+     *
+     * @param task the task
+     */
+    public void removePullTaskOnAgentLogout(Task task) {
+        task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, null));
+        this.removeTaskFromPoolAndRedis(task);
+        JmsCommunicator jmsCommunicator = this.applicationContext.getBean(JmsCommunicator.class);
+        jmsCommunicator.publishTaskStateChangeForReporting(task);
     }
 
     /**
