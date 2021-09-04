@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.dto.AssignResourceRequest;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
@@ -8,7 +9,6 @@ import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,6 +99,10 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         if (channelSession.getChannel().getChannelConfig().getRoutingPolicy() == null) {
             throw new IllegalArgumentException("ChannelSession.Channel.ChannelConfig.RoutingPolicy is null");
         }
+        if (!channelSession.getChannel().getChannelConfig().getRoutingPolicy()
+                .getRoutingMode().equals(RoutingMode.PUSH)) {
+            throw new IllegalArgumentException("Routing mode must be PUSH for this request");
+        }
     }
 
     /**
@@ -125,8 +129,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @return the precision queue
      */
     private PrecisionQueue validateAndGetQueue(ChannelSession channelSession, String requestQueue, String mrdId) {
-        String defaultQueue = UUID.randomUUID().toString();
-        //channelSession.getChannel().getChannelConfig().getRoutingPolicy().getDefaultQueue();
+        String defaultQueue = channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingObjectId();
         if (defaultQueue == null && requestQueue == null) {
             throw new IllegalArgumentException("DefaultQueue and RequestedQueue both are null");
         }
@@ -137,6 +140,10 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         if (!queue.getMrd().getId().equals(mrdId)) {
             throw new IllegalArgumentException("The requested MRD is not associated with the "
                     + "requested PrecisionQueue");
+        }
+        if (queue.getSteps().isEmpty()) {
+            throw new IllegalStateException("Cannot process request, Queue: " + queue.getId()
+                    + " has no steps configured");
         }
         return queue;
     }

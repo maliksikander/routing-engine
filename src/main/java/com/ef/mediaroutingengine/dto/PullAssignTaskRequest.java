@@ -6,7 +6,7 @@ import javax.validation.constraints.NotNull;
 
 public class PullAssignTaskRequest {
     @NotNull
-    private UUID agent;
+    private UUID agentId;
     @NotNull
     private ChannelSession channelSession;
 
@@ -14,17 +14,17 @@ public class PullAssignTaskRequest {
 
     }
 
-    public PullAssignTaskRequest(UUID agent, ChannelSession channelSession) {
-        this.agent = agent;
+    public PullAssignTaskRequest(UUID agentId, ChannelSession channelSession) {
+        this.agentId = agentId;
         this.channelSession = channelSession;
     }
 
-    public UUID getAgent() {
-        return agent;
+    public UUID getAgentId() {
+        return agentId;
     }
 
-    public void setAgent(UUID agent) {
-        this.agent = agent;
+    public void setAgentId(UUID agentId) {
+        this.agentId = agentId;
     }
 
     public ChannelSession getChannelSession() {

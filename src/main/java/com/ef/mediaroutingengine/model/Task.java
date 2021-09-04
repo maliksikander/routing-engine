@@ -85,6 +85,7 @@ public class Task implements Serializable {
      * The Agent request timeout.
      */
     private boolean agentRequestTimeout;
+    private Step step;
 
     /**
      * Default constructor.
@@ -328,6 +329,14 @@ public class Task implements Serializable {
      */
     public int getCurrentStep() {
         return currentStep;
+    }
+
+    public Step getStep() {
+        return step;
+    }
+
+    public void setStep(Step step) {
+        this.step = step;
     }
 
     /**

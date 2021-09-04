@@ -282,6 +282,7 @@ public class TaskManager {
         this.tasksPool.add(task);
         LOGGER.debug("New task added to allTasks list | TasksPool.enqueueTask method");
         this.tasksRepository.save(task.getId().toString(), new TaskDto(task));
+        task.setStep(queue.getStepAt(0));
         LOGGER.debug("Task saved in Redis | TasksPool.enqueueTask method");
         queue.enqueue(task);
         LOGGER.debug("Task enqueued in Precision-Queue | TasksPool.enqueueTask method");

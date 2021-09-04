@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
@@ -33,11 +34,10 @@ public class TaskStateListener implements PropertyChangeListener {
      * The Factory.
      */
     private final TaskStateModifierFactory factory;
-
     /**
-     * The Jms communicator.
+     * The Application context.
      */
-    private final JmsCommunicator jmsCommunicator;
+    private final ApplicationContext applicationContext;
 
     /**
      * Default constructor. Autowired -> loads the beans.
@@ -46,10 +46,11 @@ public class TaskStateListener implements PropertyChangeListener {
      * @param factory   the factory
      */
     @Autowired
-    public TaskStateListener(TasksPool tasksPool, TaskStateModifierFactory factory) {
+    public TaskStateListener(TasksPool tasksPool, TaskStateModifierFactory factory,
+                             ApplicationContext applicationContext) {
         this.tasksPool = tasksPool;
         this.factory = factory;
-        this.jmsCommunicator = this.getJmsCommunicator();
+        this.applicationContext = applicationContext;
     }
 
     /**
@@ -74,7 +75,8 @@ public class TaskStateListener implements PropertyChangeListener {
             TaskStateModifier stateModifier = this.factory.getModifier(request.getState().getName());
             stateModifier.updateState(task, request.getState());
 
-            this.jmsCommunicator.publishTaskStateChangeForReporting(task);
+            JmsCommunicator jmsCommunicator = this.applicationContext.getBean(JmsCommunicator.class);
+            jmsCommunicator.publishTaskStateChangeForReporting(task);
             LOGGER.debug("TaskStateEvent.propertyChange() end");
         }
     }

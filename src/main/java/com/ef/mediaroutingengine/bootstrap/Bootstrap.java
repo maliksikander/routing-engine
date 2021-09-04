@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.bootstrap;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
+import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskDto;
@@ -217,7 +218,11 @@ public class Bootstrap {
             this.replaceMrdInTask(taskDto);
             Task task = new Task(taskDto);
             this.associateTaskWithAgent(task);
-            this.taskManager.enqueueTask(task);
+            if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
+                this.taskManager.enqueueTask(task);
+            } else if (task.getRoutingMode().equals(RoutingMode.PULL)) {
+                this.tasksPool.add(task);
+            }
         }
 
         LOGGER.info("Agents pool size: {}", this.agentsPool.size());
