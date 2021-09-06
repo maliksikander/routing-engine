@@ -34,7 +34,13 @@ public class StepCriteriaEvaluator {
      */
     public static boolean evaluate(String criteria) {
         try {
-            return (boolean) SCRIPT_ENGINE.eval(criteria);
+            LOGGER.info("INSIDE EVALUATOR | CRITERIA: {}", criteria);
+            if (SCRIPT_ENGINE != null) {
+                return (boolean) SCRIPT_ENGINE.eval(criteria);
+            } else {
+                LOGGER.error("SCRIPT ENGINE OBJECT IS NULL");
+                return false;
+            }
         } catch (Exception e) {
             LOGGER.error("Exception evaluating criteria", e);
             return false;

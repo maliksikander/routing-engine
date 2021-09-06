@@ -34,8 +34,6 @@ public class StepCriteriaBuilder {
             result.append(buildFor(agent, expression));
             result.append(")");
         }
-        System.out.println("STEP CRITERIA STRING FOR AGENT: "  + agent.getId() + ", STEP: " + step.getId()
-                + " -> " + result);
         return result.toString();
     }
 
