@@ -61,15 +61,10 @@ public class PullAssignTaskController {
      */
     @PostMapping("assign-task")
     public ResponseEntity<Object> assignTask(@Valid @RequestBody PullAssignTaskRequest requestBody) {
-        System.out.println("C1");
         validateRoutingMode(requestBody.getChannelSession());
-        System.out.println("C2");
         Agent agent = validateAndGetAgent(requestBody.getAgentId());
-        System.out.println("C3");
         MediaRoutingDomain mrd = validateAndGetMrd(requestBody.getChannelSession());
-        System.out.println("C4");
         validateAgentHasMrdState(agent, mrd);
-        System.out.println("VALIDATION SUCCESSFUL");
         TaskDto taskDto = this.service.assignTask(agent, mrd, requestBody.getChannelSession());
         return new ResponseEntity<>(taskDto, HttpStatus.OK);
     }
