@@ -13,6 +13,10 @@ public class StepCriteriaEvaluator {
      * The constant LOGGER.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(StepCriteriaEvaluator.class);
+    /**
+     * The constant SCRIPT_ENGINE.
+     */
+    private static final ScriptEngine SCRIPT_ENGINE = getScriptEngine();
 
     /**
      * Instantiates a new Step criteria evaluator.
@@ -20,11 +24,6 @@ public class StepCriteriaEvaluator {
     private StepCriteriaEvaluator() {
 
     }
-
-    /**
-     * The constant SCRIPT_ENGINE.
-     */
-    private static final ScriptEngine SCRIPT_ENGINE = getScriptEngine();
 
     /**
      * Evaluate boolean.
@@ -47,12 +46,13 @@ public class StepCriteriaEvaluator {
         }
     }
 
-    /**
-     * Gets script engine.
-     *
-     * @return the script engine
-     */
     private static ScriptEngine getScriptEngine() {
-        return new ScriptEngineManager().getEngineByName("JavaScript");
+        ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
+        ScriptEngine scriptEngine = scriptEngineManager.getEngineByName("JavaScript");
+        if (scriptEngine == null) {
+            LOGGER.warn("Fail to initialize JavaScript script engine trying rhino now...");
+            scriptEngine = scriptEngineManager.getEngineByName("rhino");
+        }
+        return scriptEngine;
     }
 }
