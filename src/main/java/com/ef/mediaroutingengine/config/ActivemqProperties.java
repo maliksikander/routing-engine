@@ -29,7 +29,7 @@ public class ActivemqProperties {
      * Client-id for the Active-mq connection. Must be unique. If an activemq connection with the same
      * client-id is already present, the connection will fail unless this field is changed.
      */
-    private static final String CLIENT_ID = "ROUTING-ENGINE-CLIENT-1";
+    private static final String CLIENT_ID = "ROUTING-ENGINE-CLIENT";
     /**
      * AMQ Property: transport of the broker url (tcp or ssl).
      */
