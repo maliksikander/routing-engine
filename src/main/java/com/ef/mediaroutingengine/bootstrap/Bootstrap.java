@@ -216,7 +216,7 @@ public class Bootstrap {
         List<TaskDto> taskDtoList = this.tasksRepository.findAll();
         for (TaskDto taskDto : taskDtoList) {
             this.replaceMrdInTask(taskDto);
-            Task task = new Task(taskDto);
+            Task task = new Task(taskDto, this.precisionQueuesPool.findById(taskDto.getQueue()));
             this.associateTaskWithAgent(task);
             if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
                 this.taskManager.enqueueTask(task);

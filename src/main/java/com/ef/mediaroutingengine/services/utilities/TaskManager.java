@@ -278,7 +278,7 @@ public class TaskManager {
         LOGGER.debug("method started | TasksPool.enqueueTask method");
         LOGGER.debug("Precision-Queue is not null | TasksPool.enqueueTask method");
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = new Task(channelSession, mrd, queue.getId(), taskState);
+        Task task = new Task(channelSession, mrd, queue, taskState);
         this.tasksPool.add(task);
         LOGGER.debug("New task added to allTasks list | TasksPool.enqueueTask method");
         this.tasksRepository.save(task.getId().toString(), new TaskDto(task));
@@ -302,7 +302,7 @@ public class TaskManager {
      * @param task task to be enqueued.
      */
     public void enqueueTask(Task task) {
-        PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue());
+        PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue().getId());
         if (queue != null) {
             this.tasksPool.add(task);
             if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
@@ -336,7 +336,7 @@ public class TaskManager {
         this.tasksPool.add(newTask);
         this.tasksRepository.save(newTask.getId().toString(), new TaskDto(newTask));
 
-        PrecisionQueue queue = this.precisionQueuesPool.findById(newTask.getQueue());
+        PrecisionQueue queue = this.precisionQueuesPool.findById(newTask.getQueue().getId());
         queue.enqueue(newTask);
         newTask.setEnqueueTime(System.currentTimeMillis());
         newTask.setTimeouts(queue.getTimeouts());
@@ -471,7 +471,7 @@ public class TaskManager {
             task.agentRequestTimeout();
             if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
                 // Remove task from precision-queue
-                PrecisionQueue queue = TaskManager.this.precisionQueuesPool.findById(task.getQueue());
+                PrecisionQueue queue = TaskManager.this.precisionQueuesPool.findById(task.getQueue().getId());
                 if (queue != null) {
                     queue.removeTask(task);
                 }

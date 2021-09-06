@@ -61,21 +61,6 @@ public class PrecisionQueuesPool {
     }
 
     /**
-     * Finds a precision queue by name.
-     *
-     * @param name name of the queue to find
-     * @return PrecisionQueue object if found, null otherwise
-     */
-    public PrecisionQueue findByName(String name) {
-        for (Map.Entry<String, PrecisionQueue> entry : this.precisionQueues.entrySet()) {
-            if (entry.getValue().getName().equals(name)) {
-                return entry.getValue();
-            }
-        }
-        return null;
-    }
-
-    /**
      * Return PrecisionQueue with the id in the parameter. Return null if id not found or id is null.
      *
      * @param id Precision Queue with this id will be searched and returned.
@@ -119,7 +104,7 @@ public class PrecisionQueuesPool {
      * @return true if task found and ended, false otherwise
      */
     public boolean endTask(Task task) {
-        PrecisionQueue queue = findByName(task.getQueue());
+        PrecisionQueue queue = this.precisionQueues.get(task.getQueue().getId());
         if (queue != null) {
             if (queue.getAverageTalkTime() != null && queue.getAverageTalkTime() > 0) {
                 queue.setAverageTalkTime(calculateAvgTalkTimeOf(queue, task));
