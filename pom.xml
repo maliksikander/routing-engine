@@ -135,6 +135,11 @@
 			<artifactId>joda-time</artifactId>
 			<version>2.9.9</version>
 		</dependency>
+		<dependency>
+			<groupId>org.python</groupId>
+			<artifactId>jython-slim</artifactId>
+			<version>2.7.2</version>
+		</dependency>
 	</dependencies>
 
 	<build>

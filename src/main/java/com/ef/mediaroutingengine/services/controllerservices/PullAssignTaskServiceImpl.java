@@ -53,12 +53,19 @@ public class PullAssignTaskServiceImpl implements PullAssignTaskService {
 
     @Override
     public TaskDto assignTask(Agent agent, MediaRoutingDomain mrd, ChannelSession channelSession) {
+        System.out.println("S1");
         Task task = new Task(agent.getId(), mrd, channelSession);
+        System.out.println("S1");
         this.tasksPool.add(task);
+        System.out.println("S2");
         agent.addActiveTask(task);
+        System.out.println("S3");
         TaskDto taskDto = new TaskDto(task);
+        System.out.println("S4");
         this.tasksRepository.save(taskDto.getId().toString(), taskDto);
+        System.out.println("S5");
         this.jmsCommunicator.publishTaskStateChangeForReporting(task);
+        System.out.println("S6");
         return taskDto;
     }
 }
