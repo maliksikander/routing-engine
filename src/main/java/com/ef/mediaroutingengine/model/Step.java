@@ -235,9 +235,7 @@ public class Step {
         switch (agentSelectionCriteria) {
             case LONGEST_AVAILABLE:
                 return sortAsLongestAvailable(mrdId);
-            case MOST_SKILLED:
-            case LEAST_SKILLED:
-            case DEFAULT:
+            case MOST_SKILLED, LEAST_SKILLED, DEFAULT:
                 return this.associatedAgents;
             default:
                 LOGGER.error("Switch's default case, returning null");
