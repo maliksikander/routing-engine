@@ -1,4 +1,4 @@
-package com.ef.mediaroutingengine.config;
+package com.ef.mediaroutingengine.config.jmsconfig;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -20,16 +19,11 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConfigurationProperties(prefix = "amq")
-public class ActivemqProperties {
+public class ActivemqConfig implements JmsConfig {
     /**
      * Logger.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(ActivemqProperties.class);
-    /**
-     * Client-id for the Active-mq connection. Must be unique. If an activemq connection with the same
-     * client-id is already present, the connection will fail unless this field is changed.
-     */
-    private static final String CLIENT_ID = "ROUTING-ENGINE-CLIENT-1";
+    private final Logger logger = LoggerFactory.getLogger(ActivemqConfig.class);
     /**
      * AMQ Property: transport of the broker url (tcp or ssl).
      */
@@ -74,184 +68,85 @@ public class ActivemqProperties {
      */
     private String keyStorePassword;
 
-    /**
-     * Gets transport.
-     *
-     * @return the transport
-     */
+    @Override
     public String getTransport() {
         return transport;
     }
 
-    /**
-     * Sets transport.
-     *
-     * @param transport the transport
-     */
     public void setTransport(String transport) {
         this.transport = transport;
     }
 
-    /**
-     * Gets timeout.
-     *
-     * @return the timeout
-     */
-    public String getTimeout() {
-        return timeout;
-    }
-
-    /**
-     * Sets timeout.
-     *
-     * @param timeout the timeout
-     */
-    public void setTimeout(String timeout) {
-        this.timeout = timeout;
-    }
-
-    /**
-     * Gets randomize.
-     *
-     * @return the randomize
-     */
-    public String getRandomize() {
-        return randomize;
-    }
-
-    /**
-     * Sets randomize.
-     *
-     * @param randomize the randomize
-     */
-    public void setRandomize(String randomize) {
-        this.randomize = randomize;
-    }
-
-    /**
-     * Gets priority backup.
-     *
-     * @return the priority backup
-     */
-    public String getPriorityBackup() {
-        return priorityBackup;
-    }
-
-    /**
-     * Sets priority backup.
-     *
-     * @param priorityBackup the priority backup
-     */
-    public void setPriorityBackup(String priorityBackup) {
-        this.priorityBackup = priorityBackup;
-    }
-
-    /**
-     * Gets max reconnect attempts.
-     *
-     * @return the max reconnect attempts
-     */
-    public String getMaxReconnectAttempts() {
-        return maxReconnectAttempts;
-    }
-
-    /**
-     * Sets max reconnect attempts.
-     *
-     * @param maxReconnectAttempts the max reconnect attempts
-     */
-    public void setMaxReconnectAttempts(String maxReconnectAttempts) {
-        this.maxReconnectAttempts = maxReconnectAttempts;
-    }
-
-    /**
-     * Gets trust store path.
-     *
-     * @return the trust store path
-     */
-    public String getTrustStorePath() {
-        return trustStorePath;
-    }
-
-    /**
-     * Sets trust store path.
-     *
-     * @param trustStorePath the trust store path
-     */
-    public void setTrustStorePath(String trustStorePath) {
-        this.trustStorePath = trustStorePath;
-    }
-
-    /**
-     * Gets trust store password.
-     *
-     * @return the trust store password
-     */
-    public String getTrustStorePassword() {
-        return trustStorePassword;
-    }
-
-    /**
-     * Sets trust store password.
-     *
-     * @param trustStorePassword the trust store password
-     */
-    public void setTrustStorePassword(String trustStorePassword) {
-        this.trustStorePassword = trustStorePassword;
-    }
-
-    /**
-     * Gets key store path.
-     *
-     * @return the key store path
-     */
-    public String getKeyStorePath() {
-        return keyStorePath;
-    }
-
-    /**
-     * Sets key store path.
-     *
-     * @param keyStorePath the key store path
-     */
-    public void setKeyStorePath(String keyStorePath) {
-        this.keyStorePath = keyStorePath;
-    }
-
-    /**
-     * Gets key store password.
-     *
-     * @return the key store password
-     */
-    public String getKeyStorePassword() {
-        return keyStorePassword;
-    }
-
-    /**
-     * Sets key store password.
-     *
-     * @param keyStorePassword the key store password
-     */
-    public void setKeyStorePassword(String keyStorePassword) {
-        this.keyStorePassword = keyStorePassword;
-    }
-
-    /**
-     * Gets broker url.
-     *
-     * @return the broker url
-     */
     public String getBrokerUrl() {
         return brokerUrl;
     }
 
-    /**
-     * Sets broker url.
-     *
-     * @param brokerUrl the broker url
-     */
     public void setBrokerUrl(String brokerUrl) {
         this.brokerUrl = brokerUrl;
+    }
+
+    public String getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(String timeout) {
+        this.timeout = timeout;
+    }
+
+    public String getRandomize() {
+        return randomize;
+    }
+
+    public void setRandomize(String randomize) {
+        this.randomize = randomize;
+    }
+
+    public String getPriorityBackup() {
+        return priorityBackup;
+    }
+
+    public void setPriorityBackup(String priorityBackup) {
+        this.priorityBackup = priorityBackup;
+    }
+
+    public String getMaxReconnectAttempts() {
+        return maxReconnectAttempts;
+    }
+
+    public void setMaxReconnectAttempts(String maxReconnectAttempts) {
+        this.maxReconnectAttempts = maxReconnectAttempts;
+    }
+
+    public String getTrustStorePath() {
+        return trustStorePath;
+    }
+
+    public void setTrustStorePath(String trustStorePath) {
+        this.trustStorePath = trustStorePath;
+    }
+
+    public String getTrustStorePassword() {
+        return trustStorePassword;
+    }
+
+    public void setTrustStorePassword(String trustStorePassword) {
+        this.trustStorePassword = trustStorePassword;
+    }
+
+    public String getKeyStorePath() {
+        return keyStorePath;
+    }
+
+    public void setKeyStorePath(String keyStorePath) {
+        this.keyStorePath = keyStorePath;
+    }
+
+    public String getKeyStorePassword() {
+        return keyStorePassword;
+    }
+
+    public void setKeyStorePassword(String keyStorePassword) {
+        this.keyStorePassword = keyStorePassword;
     }
 
     /**
@@ -261,21 +156,15 @@ public class ActivemqProperties {
      * @return AMQ Connection object
      * @throws Exception if there is issue in creating connection.
      */
-    @Bean
-    public Connection connectionFactory() throws Exception {
+    public Connection getConnection() throws Exception {
         this.brokerUrl += "?" + this.getOptions();
-
         Connection connection;
-        if (this.getTransport().equalsIgnoreCase("ssl")) {
+        if (this.transport.equalsIgnoreCase("ssl")) {
             connection = this.createSslConnection();
         } else {
             connection = this.createOpenWireConnection();
         }
-        LOGGER.debug("Connection object successfully created with protocol type: {}", this.transport);
-        connection.setClientID(CLIENT_ID);
-        LOGGER.debug("Client-id for AMQ connection set successfully");
-        connection.start();
-        LOGGER.info("AMQ Connection on {} protocol started successfully", this.transport);
+        logger.debug("Connection object successfully created with protocol type: {}", this.transport);
         return connection;
     }
 
@@ -285,34 +174,34 @@ public class ActivemqProperties {
      * @return the AMQ broker-url options string.
      */
     private String getOptions() {
-        return "timeout=" + this.getTimeout()
-                + "&randomize=" + this.getRandomize()
-                + "&priorityBackup=" + this.getPriorityBackup()
-                + "&maxReconnectAttempts=" + this.getMaxReconnectAttempts();
+        return "timeout=" + this.timeout
+                + "&randomize=" + this.randomize
+                + "&priorityBackup=" + this.priorityBackup
+                + "&maxReconnectAttempts=" + this.maxReconnectAttempts;
     }
 
     /**
      * Creates and returns a JMS-Connection object for SSL protocol.
      *
      * @return JMS -Connection object with protocol type: SSL
-     * @throws Exception if there is an issue with creating absolute paths for trustStore or keyStore, or their
+     * @throws Exception if there is an issue with creating absolute paths for trustStore or keyStore, or there
      *                   is an issue with creating the Connection object from the ConnectionFactory
      */
     private Connection createSslConnection() throws Exception {
-        LOGGER.debug("Creating Connection object for SSL protocol");
+        logger.debug("Creating Connection object for SSL protocol");
         ActiveMQSslConnectionFactory connectionFactory = new ActiveMQSslConnectionFactory(this.brokerUrl);
         // Convert the relative paths in the ActivemqProperties to absolute paths
-        Path trustStoreAbsolutePath = Paths.get(this.getTrustStorePath()).toAbsolutePath();
-        LOGGER.debug("Absolute path for trust-store created successfully");
+        Path trustStoreAbsolutePath = Paths.get(this.trustStorePath).toAbsolutePath();
+        logger.debug("Absolute path for trust-store created successfully");
         connectionFactory.setTrustStore(trustStoreAbsolutePath.toString());
-        connectionFactory.setTrustStorePassword(this.getTrustStorePassword());
-        LOGGER.debug("Trust-store path and password set in ConnectionFactory");
+        connectionFactory.setTrustStorePassword(this.trustStorePassword);
+        logger.debug("Trust-store path and password set in ConnectionFactory");
 
-        Path keyStoreAbsolutePath = Paths.get(this.getKeyStorePath()).toAbsolutePath();
-        LOGGER.debug("Absolute path for key-store created successfully");
+        Path keyStoreAbsolutePath = Paths.get(this.keyStorePath).toAbsolutePath();
+        logger.debug("Absolute path for key-store created successfully");
         connectionFactory.setKeyStore(keyStoreAbsolutePath.toString());
-        connectionFactory.setKeyStorePassword(this.getKeyStorePassword());
-        LOGGER.debug("Key-store path and password set in ConnectionFactory");
+        connectionFactory.setKeyStorePassword(this.keyStorePassword);
+        logger.debug("Key-store path and password set in ConnectionFactory");
 
         connectionFactory.setTrustAllPackages(true);
         return connectionFactory.createConnection();
@@ -325,26 +214,9 @@ public class ActivemqProperties {
      * @throws JMSException if there is an issue with creating the Connection object from the ConnectionFactory
      */
     private Connection createOpenWireConnection() throws JMSException {
-        LOGGER.debug("Creating Connection object for TCP protocol");
+        logger.debug("Creating Connection object for TCP protocol");
         ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(brokerUrl);
         connectionFactory.setTrustAllPackages(true);
         return connectionFactory.createConnection();
-    }
-
-
-    @Override
-    public String toString() {
-        return "ActivemqProperties{"
-                + "transport='" + transport + '\''
-                + ", brokerUrl='" + brokerUrl + '\''
-                + ", timeout='" + timeout + '\''
-                + ", randomize='" + randomize + '\''
-                + ", priorityBackup='" + priorityBackup + '\''
-                + ", maxReconnectAttempts='" + maxReconnectAttempts + '\''
-                + ", trustStorePath='" + trustStorePath + '\''
-                + ", trustStorePassword='" + trustStorePassword + '\''
-                + ", keyStorePath='" + keyStorePath + '\''
-                + ", keyStorePassword='" + keyStorePassword + '\''
-                + '}';
     }
 }
