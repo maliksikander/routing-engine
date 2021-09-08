@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 /**
  * The type Precision queue.
  */
-public class PrecisionQueue implements IQueue {
+public class PrecisionQueue implements Queue {
     /**
      * The constant LOGGER.
      */

@@ -164,7 +164,7 @@ public class PrecisionQueuesPool {
      *
      * @param agent the agent
      */
-    public void deleteFromALl(Agent agent) {
+    public void deleteFromAll(Agent agent) {
         precisionQueues.forEach((k, v) -> v.deleteAssociatedAgentFromAll(agent));
     }
 }

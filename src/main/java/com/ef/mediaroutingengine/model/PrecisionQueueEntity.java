@@ -192,7 +192,7 @@ public class PrecisionQueueEntity {
      * @return the boolean
      */
     public boolean containsStep(UUID stepId) {
-        for (StepEntity step: this.steps) {
+        for (StepEntity step : this.steps) {
             if (step.getId().equals(stepId)) {
                 return true;
             }

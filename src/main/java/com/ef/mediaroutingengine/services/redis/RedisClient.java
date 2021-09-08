@@ -115,7 +115,7 @@ public interface RedisClient {
      * @param member String
      * @return the long
      */
-    Long SADD(String key, String member);
+    Long setAdd(String key, String member);
 
     /**
      * Gets all the members in a set.
@@ -123,7 +123,7 @@ public interface RedisClient {
      * @param key String
      * @return set of String
      */
-    Set<String> SMEMBERS(String key);
+    Set<String> setMembers(String key);
 
     /**
      * Removes one or more members from a set.
@@ -132,7 +132,7 @@ public interface RedisClient {
      * @param member String
      * @return Long long
      */
-    Long SREM(String key, String... member);
+    Long setRem(String key, String... member);
 
 
     /**
@@ -167,7 +167,3 @@ public interface RedisClient {
      */
     boolean exists(String key);
 }
-
-
-
-

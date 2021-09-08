@@ -81,7 +81,7 @@ public class RedisJsonDao<T> {
      * @return List of all objects in the collection.
      */
     public List<T> findAll() {
-        Set<String> idSet = this.redisClient.SMEMBERS(this.type);
+        Set<String> idSet = this.redisClient.setMembers(this.type);
         String[] idArray = new String[idSet.size()];
 
         int i = 0;

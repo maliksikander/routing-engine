@@ -124,7 +124,7 @@ public class AgentsServiceImpl implements AgentsService {
         }
         this.agentsPool.deleteById(id);
         this.agentPresenceRepository.deleteById(id.toString());
-        this.precisionQueuesPool.deleteFromALl(agent);
+        this.precisionQueuesPool.deleteFromAll(agent);
         this.repository.deleteById(id);
         return new ResponseEntity<>(new SuccessResponseBody("Successfully deleted"), HttpStatus.OK);
     }

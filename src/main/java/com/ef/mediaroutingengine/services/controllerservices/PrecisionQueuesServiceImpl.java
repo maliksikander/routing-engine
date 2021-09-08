@@ -60,7 +60,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
 
     @Override
     public PrecisionQueueEntity create(PrecisionQueueRequestBody requestBody) {
-        this.validateAndSetMRD(requestBody);
+        this.validateAndSetMrd(requestBody);
         PrecisionQueueEntity inserted = repository.insert(new PrecisionQueueEntity(requestBody));
         this.precisionQueuesPool.insert(new PrecisionQueue(inserted, getTaskSchedulerBean()));
         return inserted;
@@ -84,7 +84,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     @Override
     public PrecisionQueueEntity update(PrecisionQueueRequestBody requestBody, String id) {
         requestBody.setId(id);
-        this.validateAndSetMRD(requestBody);
+        this.validateAndSetMrd(requestBody);
 
         Optional<PrecisionQueueEntity> existing = this.repository.findById(id);
         if (!existing.isPresent()) {
@@ -117,7 +117,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      *
      * @param requestBody the request body
      */
-    private void validateAndSetMRD(PrecisionQueueRequestBody requestBody) {
+    private void validateAndSetMrd(PrecisionQueueRequestBody requestBody) {
         if (requestBody.getMrd().getId() == null) {
             throw new IllegalArgumentException("MRD-id is null");
         }

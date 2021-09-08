@@ -54,7 +54,7 @@ public class RedisClientImpl implements RedisClient {
      *
      * @param str the reply string to "scrutinize"
      */
-    private static void assertReplyOK(final String str) {
+    private static void assertReplyOk(final String str) {
         if (!str.equals("OK")) {
             throw new RuntimeException(str);
         }
@@ -83,7 +83,7 @@ public class RedisClientImpl implements RedisClient {
             String value = objectMapper.writeValueAsString(object);
             conn.getClient().sendCommand(Command.SET, SafeEncoder.encodeMany(key, path, value));
             String status = conn.getClient().getStatusCodeReply();
-            assertReplyOK(status);
+            assertReplyOk(status);
             return true;
         } catch (JsonProcessingException e) {
             e.printStackTrace();
@@ -267,21 +267,21 @@ public class RedisClientImpl implements RedisClient {
     }
 
     @Override
-    public Long SADD(String key, String member) {
+    public Long setAdd(String key, String member) {
         try (Jedis conn = getConnection()) {
             return conn.sadd(key, member);
         }
     }
 
     @Override
-    public Set<String> SMEMBERS(String key) {
+    public Set<String> setMembers(String key) {
         try (Jedis conn = getConnection()) {
             return conn.smembers(key);
         }
     }
 
     @Override
-    public Long SREM(String key, String... member) {
+    public Long setRem(String key, String... member) {
         try (Jedis conn = getConnection()) {
             return conn.srem(key, member);
         }
@@ -293,7 +293,7 @@ public class RedisClientImpl implements RedisClient {
         try (Jedis conn = getConnection()) {
             status = conn.set(key, value);
         }
-        assertReplyOK(status);
+        assertReplyOk(status);
     }
 
     @Override

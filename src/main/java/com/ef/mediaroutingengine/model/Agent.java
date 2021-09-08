@@ -171,7 +171,7 @@ public class Agent {
             return 0;
         }
         int counter = 0;
-        for (Task task: taskList) {
+        for (Task task : taskList) {
             if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
                 counter++;
             }

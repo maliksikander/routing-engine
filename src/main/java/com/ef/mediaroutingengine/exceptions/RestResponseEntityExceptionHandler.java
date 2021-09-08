@@ -161,7 +161,7 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
      * @return ResponseEntity object
      */
     @ExceptionHandler({MalformedURLException.class})
-    public ResponseEntity<Object> handleMalformedURLException(final MalformedURLException ex) {
+    public ResponseEntity<Object> handleMalformedUrlException(final MalformedURLException ex) {
         logger.error(ex.getMessage());
         ErrorResponseBody error = new ErrorResponseBody(getTranslatedMessage(ex.getMessage(), null),
                 null);

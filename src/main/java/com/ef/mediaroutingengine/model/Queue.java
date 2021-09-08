@@ -3,7 +3,7 @@ package com.ef.mediaroutingengine.model;
 /**
  * The interface Queue.
  */
-public interface IQueue {
+public interface Queue {
     /**
      * Enqueue boolean.
      *

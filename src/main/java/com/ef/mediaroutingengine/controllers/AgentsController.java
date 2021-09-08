@@ -41,11 +41,10 @@ public class AgentsController {
      *
      * @param requestBody a CcUser object
      * @return the newly created agent as the response-body with status-code 200.
-     * @throws Exception if there is an issue. Proper error response is sent back by the ResponseExceptionHandler.
      */
     @CrossOrigin(origins = "*")
     @PostMapping(value = "/agents", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Object> createAgent(@Valid @RequestBody CCUser requestBody) throws Exception {
+    public ResponseEntity<Object> createAgent(@Valid @RequestBody CCUser requestBody) {
         return new ResponseEntity<>(this.service.create(requestBody), HttpStatus.OK);
     }
 
@@ -67,12 +66,11 @@ public class AgentsController {
      * @param id          id of the agent to update.
      * @param requestBody updated value of the agent.
      * @return the updated agent as response-body with status-code 200.
-     * @throws Exception In case an agent is not found or depended data like routing-attributes is inconsistent.
      */
     @CrossOrigin(origins = "*")
     @PutMapping(value = "/agents/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateAgent(@PathVariable UUID id,
-                                              @Valid @RequestBody CCUser requestBody) throws Exception {
+                                              @Valid @RequestBody CCUser requestBody) {
         return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
@@ -81,11 +79,10 @@ public class AgentsController {
      *
      * @param id UUID of the agent to be deleted
      * @return Success message response with status code 200
-     * @throws Exception the exception
      */
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/agents/{id}", produces = "application/json")
-    public ResponseEntity<Object> deleteAgent(@PathVariable UUID id) throws Exception {
+    public ResponseEntity<Object> deleteAgent(@PathVariable UUID id) {
         return this.service.delete(id);
     }
 }

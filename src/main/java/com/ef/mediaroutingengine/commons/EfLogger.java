@@ -15,12 +15,12 @@ import org.springframework.stereotype.Component;
  */
 @Aspect
 @Component
-public class EFLogger {
+public class EfLogger {
 
     /**
      * The Logger.
      */
-    Logger logger = LoggerFactory.getLogger(EFLogger.class);
+    Logger logger = LoggerFactory.getLogger(EfLogger.class);
 
     /**
      * App pointcut.
