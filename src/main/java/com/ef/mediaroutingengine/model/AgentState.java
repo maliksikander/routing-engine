@@ -11,11 +11,11 @@ public class AgentState {
      * The Name.
      */
     @NotNull
-    Enums.AgentStateName name;
+    private Enums.AgentStateName name;
     /**
      * The Reason code.
      */
-    ReasonCode reasonCode;
+    private ReasonCode reasonCode;
 
     /**
      * Instantiates a new Agent state.

@@ -4,7 +4,7 @@ import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.services.TaskScheduler;
+import com.ef.mediaroutingengine.services.TaskRouter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +47,7 @@ public class PrecisionQueuesPool {
      * @return the task scheduler bean
      */
     @Lookup
-    public TaskScheduler getTaskSchedulerBean() {
+    public TaskRouter getTaskSchedulerBean() {
         return null;
     }
 

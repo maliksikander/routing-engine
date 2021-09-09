@@ -51,7 +51,7 @@ public class TaskStateActive implements TaskStateModifier {
         task.setStartTime(System.currentTimeMillis());
         this.taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
         this.taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
-        agent.assignTask(task);
+        agent.assignPushTask(task);
         this.taskManager.updateAgentMrdState(agent, task.getMrd().getId());
     }
 }

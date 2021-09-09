@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.model;
 
 import com.ef.mediaroutingengine.dto.PrecisionQueueRequestBody;
-import com.ef.mediaroutingengine.services.TaskScheduler;
+import com.ef.mediaroutingengine.services.TaskRouter;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.queue.PriorityQueue;
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ public class PrecisionQueue implements Queue {
     /**
      * The Task scheduler.
      */
-    private final TaskScheduler taskScheduler;
+    private final TaskRouter taskRouter;
     /**
      * Enable reporting.
      */
@@ -68,9 +68,9 @@ public class PrecisionQueue implements Queue {
      *
      * @param pqEntity      the precision-queue entity object Stored in the DB.
      * @param agentsPool    the agents pool
-     * @param taskScheduler the task scheduler
+     * @param taskRouter the task scheduler
      */
-    public PrecisionQueue(PrecisionQueueEntity pqEntity, AgentsPool agentsPool, TaskScheduler taskScheduler) {
+    public PrecisionQueue(PrecisionQueueEntity pqEntity, AgentsPool agentsPool, TaskRouter taskRouter) {
         this.id = pqEntity.getId();
         this.name = pqEntity.getName();
         this.mrd = pqEntity.getMrd();
@@ -80,8 +80,8 @@ public class PrecisionQueue implements Queue {
         this.evaluateAgentsAssociatedWithSteps(agentsPool.findAll());
 
         this.serviceQueue = new PriorityQueue();
-        this.taskScheduler = taskScheduler;
-        this.taskScheduler.init(this.name, this);
+        this.taskRouter = taskRouter;
+        this.taskRouter.init(this.name, this);
 
         this.averageTalkTime = 0L;
         this.noOfTask = 0L;
@@ -91,9 +91,9 @@ public class PrecisionQueue implements Queue {
      * Instantiates a new Precision queue.
      *
      * @param entity        the request body
-     * @param taskScheduler the task scheduler
+     * @param taskRouter the task scheduler
      */
-    public PrecisionQueue(PrecisionQueueEntity entity, TaskScheduler taskScheduler) {
+    public PrecisionQueue(PrecisionQueueEntity entity, TaskRouter taskRouter) {
         this.id = entity.getId();
         this.name = entity.getName();
         this.mrd = entity.getMrd();
@@ -102,8 +102,8 @@ public class PrecisionQueue implements Queue {
         this.steps = new ArrayList<>();
 
         this.serviceQueue = new PriorityQueue();
-        this.taskScheduler = taskScheduler;
-        this.taskScheduler.init(this.name, this);
+        this.taskRouter = taskRouter;
+        this.taskRouter.init(this.name, this);
 
         this.averageTalkTime = 0L;
         this.noOfTask = 0L;
@@ -344,8 +344,8 @@ public class PrecisionQueue implements Queue {
      *
      * @return the task scheduler
      */
-    public TaskScheduler getTaskScheduler() {
-        return taskScheduler;
+    public TaskRouter getTaskScheduler() {
+        return taskRouter;
     }
 
     /**

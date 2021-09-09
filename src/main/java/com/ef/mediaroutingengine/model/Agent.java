@@ -114,7 +114,7 @@ public class Agent {
      *
      * @param task the task to be added.
      */
-    public void assignTask(Task task) {
+    public void assignPushTask(Task task) {
         if (task == null) {
             logger.debug("Cannot assign task, taskService is null");
             return;
@@ -144,7 +144,7 @@ public class Agent {
      *
      * @param task the task to end.
      */
-    public void endTask(Task task) {
+    public void removeTask(Task task) {
         String mrdId = task.getMrd().getId();
         List<Task> taskList = this.activeTasks.get(mrdId);
         if (taskList.contains(task)) {
@@ -354,5 +354,23 @@ public class Agent {
      */
     public Map<String, AssociatedRoutingAttribute> getAssociatedRoutingAttributes() {
         return associatedRoutingAttributes;
+    }
+
+    /**
+     * Is this agent is available for routing.
+     *
+     * @param mrdId the mrd id
+     * @return the boolean
+     */
+    public boolean isAvailableForRouting(String mrdId) {
+        Enums.AgentStateName agentStateName = this.agentState.getName();
+        Enums.AgentMrdStateName mrdState = this.getAgentMrdState(mrdId).getState();
+
+        // (Agent State is ready) AND (AgentMrdState is ready OR active) AND (No task is reserved for this agent)
+        // Only one task can be *reserved* for an Agent at a time.
+        return agentStateName.equals(Enums.AgentStateName.READY)
+                && (mrdState.equals(Enums.AgentMrdStateName.ACTIVE)
+                || mrdState.equals(Enums.AgentMrdStateName.READY))
+                && !this.isTaskReserved();
     }
 }

@@ -93,7 +93,7 @@ public class AgentsPool {
     public boolean endTask(Task task) {
         Agent assignedTo = this.agents.get(task.getAssignedTo());
         if (assignedTo != null) {
-            assignedTo.endTask(task);
+            assignedTo.removeTask(task);
             return true;
         }
         logger.warn("The agent: {} assigned to task: {} not found in Agents pool",

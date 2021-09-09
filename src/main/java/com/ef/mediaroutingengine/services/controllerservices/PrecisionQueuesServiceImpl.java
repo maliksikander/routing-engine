@@ -9,7 +9,7 @@ import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
-import com.ef.mediaroutingengine.services.TaskScheduler;
+import com.ef.mediaroutingengine.services.TaskRouter;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import java.util.ArrayList;
@@ -72,7 +72,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * @return the task scheduler bean
      */
     @Lookup
-    public TaskScheduler getTaskSchedulerBean() {
+    public TaskRouter getTaskSchedulerBean() {
         return null;
     }
 

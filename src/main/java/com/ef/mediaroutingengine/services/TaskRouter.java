@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class TaskScheduler implements PropertyChangeListener {
+public class TaskRouter implements PropertyChangeListener {
     // Queue Scheduler works as short term scheduler,
     // it scans the queue and removes task to assign an agent
 
@@ -43,7 +43,7 @@ public class TaskScheduler implements PropertyChangeListener {
     /**
      * The constant LOGGER.
      */
-    private static final Logger logger = LoggerFactory.getLogger(TaskScheduler.class);
+    private static final Logger logger = LoggerFactory.getLogger(TaskRouter.class);
     /**
      * The Agents pool.
      */
@@ -83,9 +83,9 @@ public class TaskScheduler implements PropertyChangeListener {
      * @param jmsCommunicator the jms communicator
      */
     @Autowired
-    public TaskScheduler(AgentsPool agentsPool, TaskManager taskManager,
-                         RestRequest restRequest, TasksRepository tasksRepository,
-                         JmsCommunicator jmsCommunicator) {
+    public TaskRouter(AgentsPool agentsPool, TaskManager taskManager,
+                      RestRequest restRequest, TasksRepository tasksRepository,
+                      JmsCommunicator jmsCommunicator) {
         this.agentsPool = agentsPool;
         this.taskManager = taskManager;
         this.restRequest = restRequest;
@@ -187,25 +187,6 @@ public class TaskScheduler implements PropertyChangeListener {
     }
 
     /**
-     * Is available boolean.
-     *
-     * @param agent the agent
-     * @return the boolean
-     */
-    private boolean isAvailable(Agent agent) {
-        String mrdId = this.precisionQueue.getMrd().getId();
-        Enums.AgentStateName agentState = agent.getState().getName();
-        Enums.AgentMrdStateName mrdState = agent.getAgentMrdState(mrdId).getState();
-
-        // (Agent State is ready) AND (AgentMrdState is ready OR active) AND (No task is reserved for this agent)
-        // Only one task can be *reserved* for an Agent at a time.
-        return agentState.equals(Enums.AgentStateName.READY)
-                && (mrdState.equals(Enums.AgentMrdStateName.ACTIVE)
-                || mrdState.equals(Enums.AgentMrdStateName.READY))
-                && !agent.isTaskReserved();
-    }
-
-    /**
      * Gets available agent with the least number of active tasks.
      *
      * @param step the step
@@ -217,8 +198,11 @@ public class TaskScheduler implements PropertyChangeListener {
         int lowestNumberOfTasks = Integer.MAX_VALUE;
         Agent result = null;
         for (Agent agent : sortedAgentList) {
-            int noOfTasksOnMrd = agent.getNoOfActivePushTasks(this.precisionQueue.getMrd().getId());
-            if (isAvailable(agent) && noOfTasksOnMrd < lowestNumberOfTasks) {
+
+            String mrdId = this.precisionQueue.getMrd().getId();
+            int noOfTasksOnMrd = agent.getNoOfActivePushTasks(mrdId);
+
+            if (agent.isAvailableForRouting(mrdId) && noOfTasksOnMrd < lowestNumberOfTasks) {
                 lowestNumberOfTasks = noOfTasksOnMrd;
                 result = agent;
             }
@@ -236,7 +220,8 @@ public class TaskScheduler implements PropertyChangeListener {
         UUID lastAssignedAgentId = task.getLastAssignedAgentId();
         if (lastAssignedAgentId != null) {
             Agent agent = this.agentsPool.findById(lastAssignedAgentId);
-            if (agent != null && isAvailable(agent)) {
+            String mrdId = this.precisionQueue.getMrd().getId();
+            if (agent != null && agent.isAvailableForRouting(mrdId)) {
                 assignTaskTo(agent, task);
                 return true;
             }
