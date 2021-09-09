@@ -11,7 +11,7 @@ import org.springframework.data.annotation.Id;
  */
 public class PrecisionQueueRequestBody {
     /**
-     * The Id.
+     * The PrecisionQueue id.
      */
     @Id
     private String id;

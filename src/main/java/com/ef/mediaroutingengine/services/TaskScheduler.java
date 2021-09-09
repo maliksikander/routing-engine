@@ -34,7 +34,7 @@ public class TaskScheduler implements PropertyChangeListener {
     // it scans the queue and removes task to assign an agent
 
     /*
-    This properties change listener is listening on the following property changes:
+    This property change listener is listening on the following property changes:
     Agent-state: whenever Agent state changes to READY or ACTIVE
     TaskServiceManager: NewTask, TaskState
     Task: Timer, RemoveTask,
@@ -43,8 +43,7 @@ public class TaskScheduler implements PropertyChangeListener {
     /**
      * The constant LOGGER.
      */
-// Observer pattern
-    private static final Logger LOGGER = LoggerFactory.getLogger(TaskScheduler.class);
+    private static final Logger logger = LoggerFactory.getLogger(TaskScheduler.class);
     /**
      * The Agents pool.
      */
@@ -111,7 +110,7 @@ public class TaskScheduler implements PropertyChangeListener {
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        LOGGER.debug("TaskScheduler for queue {} invoked on event {}", precisionQueue.getName(), evt.getPropertyName());
+        logger.debug("TaskScheduler for queue {} invoked on event {}", precisionQueue.getName(), evt.getPropertyName());
         try {
             this.listenToTaskPropertyChangesIfNewTaskEventFired(evt);
             this.startNextStepTimerIfTimerEventFired(evt);
@@ -119,17 +118,17 @@ public class TaskScheduler implements PropertyChangeListener {
             if (precisionQueue.isEmpty()) {
                 return;
             }
-            LOGGER.debug("Precision-Queue is not empty | TaskScheduler.propertyChange method");
+            logger.debug("Precision-Queue is not empty | TaskScheduler.propertyChange method");
 
             Task task = precisionQueue.peek();
-            LOGGER.debug("Queue.peek: Task: {} | TaskScheduler.propertyChange method", task.getId());
+            logger.debug("Queue.peek: Task: {} | TaskScheduler.propertyChange method", task.getId());
             synchronized (precisionQueue.getServiceQueue()) {
                 reserve(task);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        LOGGER.debug("Property changed");
+        logger.debug("Property changed");
     }
 
     /**
@@ -138,23 +137,23 @@ public class TaskScheduler implements PropertyChangeListener {
      * @param task the task
      */
     private void reserve(Task task) {
-        LOGGER.debug("method started | TaskScheduler.reserve method");
+        logger.debug("method started | TaskScheduler.reserve method");
 //        boolean assignedToLastAssignedAgent = this.assignToLastAssignedAgent(task);
         boolean assignedToLastAssignedAgent = false;
         if (!assignedToLastAssignedAgent) {
             for (int i = 0; i < task.getCurrentStep() + 1; i++) {
                 Step step = precisionQueue.getStepAt(i);
-                LOGGER.info("Step: {} searching in queue: {}", i, precisionQueue.getName());
+                logger.info("Step: {} searching in queue: {}", i, precisionQueue.getName());
                 Agent agent = this.getAvailableAgentWithLeastActiveTasks(step);
                 if (agent != null) {
-                    LOGGER.debug("Agent: {} is available to schedule task | TaskScheduler.reserve method",
+                    logger.debug("Agent: {} is available to schedule task | TaskScheduler.reserve method",
                             agent.getId());
                     this.assignTaskTo(agent, task);
                     break;
                 }
             }
         }
-        LOGGER.debug("method ended | TaskScheduler.reserve method");
+        logger.debug("method ended | TaskScheduler.reserve method");
     }
 
     /**
@@ -183,7 +182,7 @@ public class TaskScheduler implements PropertyChangeListener {
             if (currentStep + 1 < precisionQueue.getSteps().size()) {
                 task.startTimer();
             }
-            LOGGER.debug("step {} associated agents search for available agent", currentStep + 1);
+            logger.debug("step {} associated agents search for available agent", currentStep + 1);
         }
     }
 
@@ -207,10 +206,10 @@ public class TaskScheduler implements PropertyChangeListener {
     }
 
     /**
-     * Gets available agent with least active tasks.
+     * Gets available agent with the least number of active tasks.
      *
      * @param step the step
-     * @return the available agent with least active tasks
+     * @return the available agent with the least number of active tasks
      */
     private Agent getAvailableAgentWithLeastActiveTasks(Step step) {
         List<Agent> sortedAgentList = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE,
@@ -252,17 +251,17 @@ public class TaskScheduler implements PropertyChangeListener {
      * @param task  the task
      */
     private void assignTaskTo(Agent agent, Task task) {
-        LOGGER.debug("method started | TaskScheduler.assignTaskTo method");
+        logger.debug("method started | TaskScheduler.assignTaskTo method");
         try {
             if (task.isAgentRequestTimeout()) {
-                LOGGER.debug("AgentRequestTtlTimeout method returning.. | TaskScheduler.assignTaskTo method");
+                logger.debug("AgentRequestTtlTimeout method returning.. | TaskScheduler.assignTaskTo method");
                 return;
             }
             CCUser ccUser = agent.toCcUser();
             boolean isReserved = this.restRequest.postAssignTask(task.getChannelSession(), ccUser,
                     task.getTopicId(), task.getId());
             if (isReserved) {
-                LOGGER.debug("Task Assigned to agent in Agent-Manager | TaskScheduler.assignTaskTo method");
+                logger.debug("Task Assigned to agent in Agent-Manager | TaskScheduler.assignTaskTo method");
                 this.changeStateOf(task, new TaskState(Enums.TaskStateName.RESERVED, null), agent.getId());
                 this.jmsCommunicator.publishTaskStateChangeForReporting(task);
                 precisionQueue.dequeue();
@@ -276,7 +275,7 @@ public class TaskScheduler implements PropertyChangeListener {
             // Todo: Apache Commons: Use ExceptionUtils instead of printStackTrace.
             e.printStackTrace();
         }
-        LOGGER.debug("method ended | TaskScheduler.assignTaskTo method");
+        logger.debug("method ended | TaskScheduler.assignTaskTo method");
     }
 
     /**

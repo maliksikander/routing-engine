@@ -42,7 +42,7 @@ public class TaskManager {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(TaskManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(TaskManager.class);
     /**
      * The Application context.
      */
@@ -275,25 +275,25 @@ public class TaskManager {
      * @param mrd            mrd in request.
      */
     public void enqueueTask(ChannelSession channelSession, PrecisionQueue queue, MediaRoutingDomain mrd) {
-        LOGGER.debug("method started | TasksPool.enqueueTask method");
-        LOGGER.debug("Precision-Queue is not null | TasksPool.enqueueTask method");
+        logger.debug("method started | TasksPool.enqueueTask method");
+        logger.debug("Precision-Queue is not null | TasksPool.enqueueTask method");
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         Task task = new Task(channelSession, mrd, queue, taskState);
         this.tasksPool.add(task);
-        LOGGER.debug("New task added to allTasks list | TasksPool.enqueueTask method");
+        logger.debug("New task added to allTasks list | TasksPool.enqueueTask method");
         this.tasksRepository.save(task.getId().toString(), new TaskDto(task));
         task.setStep(queue.getStepAt(0));
-        LOGGER.debug("Task saved in Redis | TasksPool.enqueueTask method");
+        logger.debug("Task saved in Redis | TasksPool.enqueueTask method");
         queue.enqueue(task);
-        LOGGER.debug("Task enqueued in Precision-Queue | TasksPool.enqueueTask method");
+        logger.debug("Task enqueued in Precision-Queue | TasksPool.enqueueTask method");
         task.setTimeouts(queue.getTimeouts());
         JmsCommunicator jmsCommunicator = this.applicationContext.getBean(JmsCommunicator.class);
         jmsCommunicator.publishTaskStateChangeForReporting(task);
         this.scheduleAgentRequestTimeoutTask(task.getChannelSession());
-        LOGGER.debug("Agent-Request-Ttl task scheduled | TasksPool.enqueueTask method");
+        logger.debug("Agent-Request-Ttl task scheduled | TasksPool.enqueueTask method");
         this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
-        LOGGER.debug("NEW_TASK event fired to Task-Scheduler | TasksPool.enqueueTask method");
-        LOGGER.debug("method ended | TasksPool.enqueueTask method");
+        logger.debug("NEW_TASK event fired to Task-Scheduler | TasksPool.enqueueTask method");
+        logger.debug("method ended | TasksPool.enqueueTask method");
     }
 
     /**
@@ -311,7 +311,7 @@ public class TaskManager {
                 this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
             }
         } else {
-            LOGGER.warn("Queue id: {} not found while enqueuing task", task.getQueue());
+            logger.warn("Queue id: {} not found while enqueuing task", task.getQueue());
         }
     }
 
@@ -396,7 +396,7 @@ public class TaskManager {
      * @param task the task to be removed
      */
     public void removeTask(Task task) {
-        LOGGER.debug("Going to remove task: {}", task.getId());
+        logger.debug("Going to remove task: {}", task.getId());
         if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
             this.cancelAgentRequestTtlTimerTask(task.getTopicId());
             this.requestTtlTimers.remove(task.getTopicId());
@@ -417,7 +417,7 @@ public class TaskManager {
         try {
             requestTtlTimer.cancel();
         } catch (IllegalStateException e) {
-            LOGGER.warn("Agent Request Ttl timer on topic: {} is already cancelled", topicId);
+            logger.warn("Agent Request Ttl timer on topic: {} is already cancelled", topicId);
         }
     }
 
@@ -461,10 +461,10 @@ public class TaskManager {
         }
 
         public void run() {
-            LOGGER.debug("method started | RequestTtlTimer.run method");
+            logger.debug("method started | RequestTtlTimer.run method");
             Task task = TaskManager.this.tasksPool.findByConversationId(topicId);
             if (task == null) {
-                LOGGER.error("Task not found in task pool | AgentRequestTtl Timer run method returning...");
+                logger.error("Task not found in task pool | AgentRequestTtl Timer run method returning...");
                 return;
             }
 
@@ -483,7 +483,7 @@ public class TaskManager {
                 // post no agent available
                 TaskManager.this.restRequest.postNoAgentAvailable(this.topicId.toString());
             }
-            LOGGER.debug("method ended | RequestTtlTimer.run method");
+            logger.debug("method ended | RequestTtlTimer.run method");
         }
     }
 }

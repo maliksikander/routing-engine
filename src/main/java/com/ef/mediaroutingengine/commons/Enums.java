@@ -81,7 +81,7 @@ public class Enums {
          */
         AGENT_MRD_STATE,
         /**
-         * Ewt request event event name.
+         * Ewt request event name.
          */
         EWT_REQUEST_EVENT,
         /**

@@ -53,17 +53,11 @@ public class AgentStateDelegateFactory {
      * @return Agent state delegate for the requested state
      */
     public AgentStateDelegate getDelegate(Enums.AgentStateName state) {
-        switch (state) {
-            case LOGIN:
-                return agentStateLogin;
-            case NOT_READY:
-                return agentStateNotReady;
-            case READY:
-                return agentStateReady;
-            case LOGOUT:
-                return agentStateLogout;
-            default:
-                return null;
-        }
+        return switch (state) {
+            case LOGIN -> agentStateLogin;
+            case NOT_READY -> agentStateNotReady;
+            case READY -> agentStateReady;
+            case LOGOUT -> agentStateLogout;
+        };
     }
 }

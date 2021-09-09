@@ -27,7 +27,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(AssignResourceServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(AssignResourceServiceImpl.class);
 
     /**
      * The Task manager.
@@ -60,18 +60,18 @@ public class AssignResourceServiceImpl implements AssignResourceService {
 
     @Override
     public String assign(AssignResourceRequest request) {
-        LOGGER.debug(Constants.METHOD_STARTED);
+        logger.debug(Constants.METHOD_STARTED);
         ChannelSession channelSession = request.getChannelSession();
         validateChannelSession(channelSession);
-        LOGGER.debug("ChannelSession validated in Assign-Resource API request");
+        logger.debug("ChannelSession validated in Assign-Resource API request");
         MediaRoutingDomain mrd = validateAndGetMrd(channelSession);
-        LOGGER.debug("MRD validated in Assign-Resource API request");
+        logger.debug("MRD validated in Assign-Resource API request");
         PrecisionQueue queue = this.validateAndGetQueue(channelSession, request.getQueue(), mrd.getId());
-        LOGGER.debug("PrecisionQueue validated in Assign-Resource API request");
+        logger.debug("PrecisionQueue validated in Assign-Resource API request");
         // TODO: Executor service .. don't use completableFuture!
         CompletableFuture.runAsync(() -> this.taskManager.enqueueTask(channelSession, queue, mrd));
-        LOGGER.debug("Task enqueued");
-        LOGGER.debug(Constants.METHOD_ENDED);
+        logger.debug("Task enqueued");
+        logger.debug(Constants.METHOD_ENDED);
         return "The request is received Successfully";
     }
 

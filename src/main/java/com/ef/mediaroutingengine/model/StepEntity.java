@@ -4,14 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import javax.validation.constraints.NotNull;
 
 /**
  * The type Step entity.
  */
 public class StepEntity {
     /**
-     * The Id.
+     * The ID.
      */
     private UUID id;
     /**

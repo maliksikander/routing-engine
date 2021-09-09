@@ -16,7 +16,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(value = "precisionQueues")
 public class PrecisionQueueEntity {
     /**
-     * The Id.
+     * The ID.
      */
     @Id
     private String id;

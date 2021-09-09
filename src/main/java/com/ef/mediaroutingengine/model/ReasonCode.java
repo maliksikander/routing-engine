@@ -8,7 +8,7 @@ import java.util.UUID;
  */
 public class ReasonCode {
     /**
-     * The Id.
+     * The ID.
      */
     private final UUID id;
     /**

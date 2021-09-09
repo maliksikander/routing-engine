@@ -10,7 +10,7 @@ import javax.validation.constraints.NotNull;
  */
 public class AgentLoginRequest {
     /**
-     * Id of the agent to login.
+     * ID of the agent to login.
      */
     @NotNull
     private UUID agentId;

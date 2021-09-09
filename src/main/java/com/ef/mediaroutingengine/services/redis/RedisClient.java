@@ -87,7 +87,7 @@ public interface RedisClient {
      * Delete an object associated given key.
      *
      * @param key String
-     * @return Long long
+     * @return operation status
      */
     Long delJson(String key);
 
@@ -130,7 +130,7 @@ public interface RedisClient {
      *
      * @param key    String
      * @param member String
-     * @return Long long
+     * @return operation status
      */
     Long setRem(String key, String... member);
 
@@ -152,10 +152,10 @@ public interface RedisClient {
     String get(String key);
 
     /**
-     * Delete an value associated given key.
+     * Delete any value associated given key.
      *
      * @param key String
-     * @return Long long
+     * @return operation status
      */
     Long del(String key);
 

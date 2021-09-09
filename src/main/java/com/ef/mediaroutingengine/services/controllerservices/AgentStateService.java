@@ -91,7 +91,7 @@ public class AgentStateService {
     }
 
     /**
-     * Validate and get agent agent.
+     * Validate and get agent.
      *
      * @param agentId the agent id
      * @return the agent

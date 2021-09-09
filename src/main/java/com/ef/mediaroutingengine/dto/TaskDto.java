@@ -12,7 +12,7 @@ import java.util.UUID;
  */
 public class TaskDto implements Serializable {
     /**
-     * The Id.
+     * The ID.
      */
     private UUID id;
     /**

@@ -6,8 +6,6 @@ import com.ef.mediaroutingengine.model.AgentMrdState;
 import com.ef.mediaroutingengine.model.AgentState;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
@@ -18,10 +16,6 @@ import org.springframework.stereotype.Service;
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AgentStateNotReady implements AgentStateDelegate {
-    /**
-     * The constant LOGGER.
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(AgentStateNotReady.class);
     /**
      * The Agent presence repository.
      */

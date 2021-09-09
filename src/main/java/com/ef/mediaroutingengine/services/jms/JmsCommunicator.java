@@ -17,7 +17,7 @@ import javax.jms.MessageListener;
  * messages on a particular topic can be received and published.
  *
  * <p>It extends the MessageListener interface to listen to messages using the onMessage()
- * method and provides a publish() method to send messages on topic.
+ * method and provides publish() method to send messages on topic.
  *
  * <p>It also provides a stop() method to stop the connection gracefully.
  */

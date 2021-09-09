@@ -24,7 +24,7 @@ public class JmsEventsService {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(JmsEventsService.class);
+    private static final Logger logger = LoggerFactory.getLogger(JmsEventsService.class);
 
     /**
      * The Object mapper.
@@ -57,12 +57,12 @@ public class JmsEventsService {
      */
     public void handleEvent(Enums.JmsEventName event, Message message)
             throws JMSException, JsonProcessingException {
-        LOGGER.debug("handleEvent method started");
+        logger.debug("handleEvent method started");
         validateJmsMessageInstance(message);
 
         String textMessageString = ((TextMessage) message).getText();
 
-        LOGGER.debug("Message : {}", textMessageString);
+        logger.debug("Message : {}", textMessageString);
         JsonNode textMessageJson = objectMapper.readTree(textMessageString);
         String dataJsonString = textMessageJson.get("data").toString();
 
@@ -70,10 +70,10 @@ public class JmsEventsService {
             TaskStateChangeRequest req = objectMapper.readValue(dataJsonString, TaskStateChangeRequest.class);
             propertyChangeSupport.firePropertyChange(Enums.EventName.TASK_STATE.toString(), null, req);
         } else {
-            LOGGER.info("Event: {} is ignored by JMS Listener", event);
+            logger.info("Event: {} is ignored by JMS Listener", event);
         }
 
-        LOGGER.debug("handleEvent method ended");
+        logger.debug("handleEvent method ended");
     }
 
     /**
@@ -83,14 +83,14 @@ public class JmsEventsService {
      * @param message JMS Message
      */
     private void validateJmsMessageInstance(Message message) {
-        LOGGER.debug("validateJmsMessageInstance method started");
+        logger.debug("validateJmsMessageInstance method started");
 
         if (!(message instanceof TextMessage)) {
             throw new IllegalArgumentException(
                     "The JMS-Message object should be instance of JMS-Text-Message");
         }
 
-        LOGGER.debug("validateJmsMessageInstance method ended");
+        logger.debug("validateJmsMessageInstance method ended");
     }
 
 }

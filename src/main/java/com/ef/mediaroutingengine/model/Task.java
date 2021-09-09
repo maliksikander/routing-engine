@@ -23,10 +23,10 @@ public class Task implements Serializable {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(Task.class);
+    private static final Logger logger = LoggerFactory.getLogger(Task.class);
 
     /**
-     * The Id.
+     * The ID.
      */
     private final UUID id;
     /**
@@ -410,12 +410,12 @@ public class Task implements Serializable {
             timer.schedule(new TaskTimer(), this.timeouts.get(currentStep++) * 1000L);
         } catch (IllegalArgumentException ex) {
             if (!"Negative delay.".equalsIgnoreCase(ExceptionUtils.getRootCause(ex).getMessage())) {
-                LOGGER.error(ExceptionUtils.getMessage(ex));
-                LOGGER.error(ExceptionUtils.getStackTrace(ex));
+                logger.error(ExceptionUtils.getMessage(ex));
+                logger.error(ExceptionUtils.getStackTrace(ex));
             }
         } catch (Exception ex) {
-            LOGGER.error(ExceptionUtils.getMessage(ex));
-            LOGGER.error(ExceptionUtils.getStackTrace(ex));
+            logger.error(ExceptionUtils.getMessage(ex));
+            logger.error(ExceptionUtils.getStackTrace(ex));
         }
     }
 
@@ -471,7 +471,7 @@ public class Task implements Serializable {
     private class TaskTimer extends TimerTask {
 
         public void run() {
-            LOGGER.debug("Time up for step: {}, Task id: {}, MRD: {}", Task.this.getCurrentStep(),
+            logger.debug("Time up for step: {}, Task id: {}, MRD: {}", Task.this.getCurrentStep(),
                     Task.this.getId(), Task.this.getMrd());
             try {
                 Task.this.getTimer().cancel();

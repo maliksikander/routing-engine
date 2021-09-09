@@ -74,7 +74,7 @@ public class StepsServiceImpl implements StepsService {
         newStep.evaluateAssociatedAgents(agentsPool.findAll());
 
         Optional<PrecisionQueueEntity> existing = this.repository.findById(queueId);
-        if (!existing.isPresent()) {
+        if (existing.isEmpty()) {
             throw new NotFoundException(notFoundMessage);
         }
         precisionQueue.addStep(newStep);
@@ -86,7 +86,7 @@ public class StepsServiceImpl implements StepsService {
     @Override
     public PrecisionQueueEntity update(UUID id, String queueId, StepEntity stepEntity) {
         Optional<PrecisionQueueEntity> existing = this.repository.findById(queueId);
-        if (!existing.isPresent()) {
+        if (existing.isEmpty()) {
             throw new NotFoundException("Queue not found for id: " + queueId);
         }
         stepEntity.setId(id);
@@ -108,7 +108,7 @@ public class StepsServiceImpl implements StepsService {
     @Override
     public ResponseEntity<Object> delete(String queueId, UUID id) {
         Optional<PrecisionQueueEntity> existing = this.repository.findById(queueId);
-        if (!existing.isPresent()) {
+        if (existing.isEmpty()) {
             throw new NotFoundException("Queue not found for id: " + queueId);
         }
         PrecisionQueueEntity precisionQueueEntity = existing.get();

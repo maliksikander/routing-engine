@@ -35,7 +35,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(ActivemqCommunicator.class);
+    private static final Logger logger = LoggerFactory.getLogger(ActivemqCommunicator.class);
     /**
      * The constant SUBSCRIBER_NAME.
      */
@@ -84,16 +84,16 @@ public class ActivemqCommunicator implements JmsCommunicator {
      */
     @Autowired
     public ActivemqCommunicator(Connection connection, JmsEventsService jmsEventsService) throws JMSException {
-        LOGGER.debug("ActivemqServiceImpl.Constructor started");
+        logger.debug("ActivemqServiceImpl.Constructor started");
         this.connection = connection;
         this.connection.setExceptionListener(this);
         this.jmsEventsService = jmsEventsService;
-        LOGGER.debug("ActivemqServiceImpl.Constructor ended");
+        logger.debug("ActivemqServiceImpl.Constructor ended");
     }
 
     @Override
     public void init(String topic) throws JMSException {
-        LOGGER.debug("ActivemqServiceImpl.init method started");
+        logger.debug("ActivemqServiceImpl.init method started");
         if (topic == null) {
             throw new IllegalArgumentException("Topic is null");
         }
@@ -102,22 +102,22 @@ public class ActivemqCommunicator implements JmsCommunicator {
         try {
             this.setSubscriber();
             this.setPublisher();
-            LOGGER.info("Connection, subscriber, publisher successfully "
+            logger.info("Connection, subscriber, publisher successfully "
                     + "initialized for topic '{}'", this.topicName);
         } catch (JMSException jmsException) {
-            LOGGER.error(
+            logger.error(
                     "ActivemqServiceImpl.init | JMSException, trying to close connection and sessions...");
             this.stop();
             throw jmsException;
         }
 
-        LOGGER.debug("ActivemqServiceImpl.init method ended");
+        logger.debug("ActivemqServiceImpl.init method ended");
     }
 
     @Override
     public void publish(Serializable message, Enums.JmsEventName eventName)
             throws JMSException, JsonProcessingException {
-        LOGGER.debug("method started");
+        logger.debug("method started");
 
         StateChangeEvent stateChangeEvent = new StateChangeEvent(eventName, message, this.topicName);
         ObjectMapper objectMapper = new ObjectMapper();
@@ -129,8 +129,8 @@ public class ActivemqCommunicator implements JmsCommunicator {
 
         this.publisher.send(messageToSend);
 
-        LOGGER.info("Text Message: '{}' published on topic: '{}'", messageStr, this.topicName);
-        LOGGER.debug("method ended");
+        logger.info("Text Message: '{}' published on topic: '{}'", messageStr, this.topicName);
+        logger.debug("method ended");
     }
 
     @Override
@@ -165,36 +165,36 @@ public class ActivemqCommunicator implements JmsCommunicator {
 
     @Override
     public void stop() throws JMSException {
-        LOGGER.debug("ActivemqServiceImpl.stop method started");
+        logger.debug("ActivemqServiceImpl.stop method started");
         if (this.publisher != null) {
             this.publisher.close();
             this.publisher = null;
-            LOGGER.debug("ActivemqServiceImpl.stop | publisher closed");
+            logger.debug("ActivemqServiceImpl.stop | publisher closed");
         }
         if (this.publisherSession != null) {
             this.publisherSession.close();
             this.publisherSession = null;
-            LOGGER.debug("ActivemqServiceImpl.stop | publisherSession closed");
+            logger.debug("ActivemqServiceImpl.stop | publisherSession closed");
         }
         if (subscriber != null) {
             subscriber.close();
             this.subscriber = null;
-            LOGGER.debug("ActivemqServiceImpl.stop | subscriber closed");
+            logger.debug("ActivemqServiceImpl.stop | subscriber closed");
         }
         if (subscriberSession != null) {
             this.subscriberSession.unsubscribe(SUBSCRIBER_NAME);
             subscriberSession.close();
             this.subscriberSession = null;
-            LOGGER.debug("ActivemqServiceImpl.stop | subscriberSession closed");
+            logger.debug("ActivemqServiceImpl.stop | subscriberSession closed");
         }
 
-        LOGGER.info("Communication stopped successfully on Topic: '{}'", this.topicName);
-        LOGGER.debug("ActivemqServiceImpl.stop method ended");
+        logger.info("Communication stopped successfully on Topic: '{}'", this.topicName);
+        logger.debug("ActivemqServiceImpl.stop method ended");
     }
 
     @Override
     public void onMessage(Message message) {
-        LOGGER.debug("ActivemqServiceImpl.onMessage method started");
+        logger.debug("ActivemqServiceImpl.onMessage method started");
         try {
             Enums.JmsEventName event = Enums.JmsEventName.valueOf(message.getJMSType());
             System.out.println("*******************************");
@@ -203,20 +203,20 @@ public class ActivemqCommunicator implements JmsCommunicator {
             this.jmsEventsService.handleEvent(event, message);
             message.acknowledge();
 
-            LOGGER.info("ActivemqServiceImpl.onMessage |  Event: '{}' handled gracefully "
+            logger.info("ActivemqServiceImpl.onMessage |  Event: '{}' handled gracefully "
                     + "on Topic: '{}'", event, this.topicName);
         } catch (JMSException | JsonProcessingException e) {
-            LOGGER.error("Exception while handling JMS Message: ", e);
+            logger.error("Exception while handling JMS Message: ", e);
         }
 
-        LOGGER.debug("ActivemqServiceImpl.onMessage method ended");
+        logger.debug("ActivemqServiceImpl.onMessage method ended");
     }
 
     @Override
     public synchronized void onException(JMSException ex) {
-        LOGGER.debug("ActivemqServiceImpl.onException method started");
-        LOGGER.error("JMSException: ", ex);
-        LOGGER.debug("ActivemqServiceImpl.onException method ended");
+        logger.debug("ActivemqServiceImpl.onException method started");
+        logger.error("JMSException: ", ex);
+        logger.debug("ActivemqServiceImpl.onException method ended");
     }
 
     public String getTopic() {
@@ -230,16 +230,16 @@ public class ActivemqCommunicator implements JmsCommunicator {
      * @throws JMSException exception
      */
     private void setSubscriber() throws JMSException {
-        LOGGER.debug("Method started for Topic: '{}'", this.topicName);
+        logger.debug("Method started for Topic: '{}'", this.topicName);
 
         this.subscriberSession = this.connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        LOGGER.debug("ActivemqServiceImpl.setSubscriber | Session created successfully");
+        logger.debug("ActivemqServiceImpl.setSubscriber | Session created successfully");
         Topic destination = this.subscriberSession.createTopic(this.topicName);
-        LOGGER.debug("ActivemqServiceImpl.setSubscriber | Topic Destination created successfully");
+        logger.debug("ActivemqServiceImpl.setSubscriber | Topic Destination created successfully");
         this.subscriber = subscriberSession.createDurableSubscriber(destination, SUBSCRIBER_NAME);
-        LOGGER.debug("ActivemqServiceImpl.setSubscriber | Durable subscriber created successfully");
+        logger.debug("ActivemqServiceImpl.setSubscriber | Durable subscriber created successfully");
         this.subscriber.setMessageListener(this);
-        LOGGER.debug("Method ended for Topic: '{}'", this.topicName);
+        logger.debug("Method ended for Topic: '{}'", this.topicName);
     }
 
     /**
@@ -248,13 +248,13 @@ public class ActivemqCommunicator implements JmsCommunicator {
      * @throws JMSException exception
      */
     private void setPublisher() throws JMSException {
-        LOGGER.debug("Method started for Topic: '{}'", this.topicName);
+        logger.debug("Method started for Topic: '{}'", this.topicName);
 
         this.publisherSession = this.connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        LOGGER.debug("ActivemqServiceImpl.setPublisher | Session created successfully");
+        logger.debug("ActivemqServiceImpl.setPublisher | Session created successfully");
         Topic destination = this.publisherSession.createTopic(this.topicName);
         this.publisher = this.publisherSession.createProducer(destination);
-        LOGGER.debug("ActivemqServiceImpl.setPublisher | Publisher created successfully");
-        LOGGER.debug("Method ended for Topic: '{}'", this.topicName);
+        logger.debug("ActivemqServiceImpl.setPublisher | Publisher created successfully");
+        logger.debug("Method ended for Topic: '{}'", this.topicName);
     }
 }

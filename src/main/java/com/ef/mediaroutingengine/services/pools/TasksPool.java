@@ -19,10 +19,10 @@ public class TasksPool {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(TasksPool.class);
+    private static final Logger logger = LoggerFactory.getLogger(TasksPool.class);
 
     /**
-     * The All tasks.
+     * Contains all tasks in the pool.
      */
     private final List<Task> allTasks;
 

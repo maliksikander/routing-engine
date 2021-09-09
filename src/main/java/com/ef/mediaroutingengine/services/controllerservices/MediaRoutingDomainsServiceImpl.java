@@ -38,7 +38,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(MediaRoutingDomainsServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(MediaRoutingDomainsServiceImpl.class);
     /**
      * The Repository.
      */
@@ -200,7 +200,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             this.repository.deleteById(id);
             return new ResponseEntity<>(new SuccessResponseBody("Successfully Deleted"), HttpStatus.OK);
         }
-        LOGGER.debug("Could not delete MRD: {}. It is associated with one or more Queues", id);
+        logger.debug("Could not delete MRD: {}. It is associated with one or more Queues", id);
         List<TaskDto> taskDtoList = new ArrayList<>();
         tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
         return new ResponseEntity<>(new MrdDeleteConflictResponse(precisionQueueEntities, taskDtoList),

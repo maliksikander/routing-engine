@@ -87,7 +87,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         this.validateAndSetMrd(requestBody);
 
         Optional<PrecisionQueueEntity> existing = this.repository.findById(id);
-        if (!existing.isPresent()) {
+        if (existing.isEmpty()) {
             throw new NotFoundException("Could not find precision queue resource to update");
         }
         PrecisionQueueEntity precisionQueueEntity = existing.get();

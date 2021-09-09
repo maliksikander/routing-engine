@@ -16,7 +16,7 @@ public class RedisConfig {
     /**
      * Logger.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(RedisConfig.class);
+    private static final Logger logger = LoggerFactory.getLogger(RedisConfig.class);
     /**
      * Contains all Redis-properties set at the application level.
      */
@@ -39,12 +39,12 @@ public class RedisConfig {
      */
     @Bean
     public JedisPool jedisPool() {
-        LOGGER.info("Initializing redis pool ........");
-        LOGGER.info("Redis config info {}", redisProperties);
+        logger.info("Initializing redis pool ........");
+        logger.info("Redis config info {}", redisProperties);
         JedisPoolConfig poolConfig = this.getJedisPoolConfig();
         final JedisPool jedisPool = new JedisPool(poolConfig, redisProperties.getHost(), redisProperties.getPort(),
                 redisProperties.getTimeout(), redisProperties.getPassword(), redisProperties.isSsl());
-        LOGGER.info("Redis pool initialized on -> {}:{}", redisProperties.getHost(), redisProperties.getPort());
+        logger.info("Redis pool initialized on -> {}:{}", redisProperties.getHost(), redisProperties.getPort());
         return jedisPool;
     }
 

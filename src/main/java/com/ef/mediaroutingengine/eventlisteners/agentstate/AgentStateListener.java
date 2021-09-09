@@ -24,7 +24,7 @@ public class AgentStateListener {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(AgentStateListener.class);
+    private static final Logger logger = LoggerFactory.getLogger(AgentStateListener.class);
     /**
      * The Agent presence repository.
      */
@@ -61,9 +61,9 @@ public class AgentStateListener {
      * @param newState the new state
      */
     public void propertyChange(Agent agent, AgentState newState) {
-        LOGGER.debug("Method started");
-        CompletableFuture.runAsync(() -> this.asyncPropertyChange(agent, newState));
-        LOGGER.debug("Method ended");
+        logger.debug("Method started");
+        CompletableFuture.runAsync(() -> this.run(agent, newState));
+        logger.debug("Method ended");
     }
 
 
@@ -73,18 +73,18 @@ public class AgentStateListener {
      * @param agent    the agent
      * @param newState the new state
      */
-    private void asyncPropertyChange(Agent agent, AgentState newState) {
-        LOGGER.info("Property change event: Agent-State called");
-        LOGGER.info("Current state: {}, New state: {}", agent.getState().getName(), newState);
+    private void run(Agent agent, AgentState newState) {
+        logger.info("Property change event: Agent-State called");
+        logger.info("Current state: {}, New state: {}", agent.getState().getName(), newState);
 
         AgentStateDelegate delegate = factory.getDelegate(newState.getName());
         if (delegate == null) {
             return;
         }
         boolean isStateChanged = delegate.updateState(agent, newState);
-        LOGGER.info("Before Publishing state change on JMS");
+        logger.info("Before Publishing state change on JMS");
         this.publish(this.agentPresenceRepository.find(agent.getId().toString()), isStateChanged);
-        LOGGER.info("Agent state change request published on JMS");
+        logger.info("Agent state change request published on JMS");
     }
 
     /**

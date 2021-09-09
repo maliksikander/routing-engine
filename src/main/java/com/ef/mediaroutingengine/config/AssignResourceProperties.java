@@ -15,11 +15,11 @@ public class AssignResourceProperties {
      */
     private int retries;
     /**
-     * Base url of Agent-Manager component to call it's Apis.
+     * Base url of Agent-Manager component to call its Apis.
      */
     private String agentManagerBaseUri;
     /**
-     * Base url of Bot-Framework component to call it's Apis.
+     * Base url of Bot-Framework component to call its Apis.
      */
     private String botFrameworkBaseUri;
 

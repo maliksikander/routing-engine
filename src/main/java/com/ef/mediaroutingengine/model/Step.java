@@ -1,7 +1,8 @@
 package com.ef.mediaroutingengine.model;
 
-import com.ef.mediaroutingengine.services.utilities.StepCriteriaBuilder;
-import com.ef.mediaroutingengine.services.utilities.StepCriteriaEvaluator;
+import static com.ef.mediaroutingengine.services.utilities.StepCriteriaBuilder.buildCriteria;
+import static com.ef.mediaroutingengine.services.utilities.StepCriteriaEvaluator.evaluate;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -15,13 +16,13 @@ import org.slf4j.LoggerFactory;
  */
 public class Step {
     /**
-     * The Id.
+     * The step id.
      */
     private final UUID id;
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(Step.class);
+    private static final Logger logger = LoggerFactory.getLogger(Step.class);
     /**
      * The Expressions.
      */
@@ -169,8 +170,7 @@ public class Step {
      * @return the boolean
      */
     private boolean isAssociated(Agent agent) {
-        String criteria = StepCriteriaBuilder.buildFor(agent, this);
-        return StepCriteriaEvaluator.evaluate(criteria);
+        return evaluate(buildCriteria(agent, this));
     }
 
     /**
@@ -238,7 +238,7 @@ public class Step {
             case MOST_SKILLED, LEAST_SKILLED, DEFAULT:
                 return this.associatedAgents;
             default:
-                LOGGER.error("Switch's default case, returning null");
+                logger.error("Switch's default case, returning null");
                 return new ArrayList<>();
         }
     }

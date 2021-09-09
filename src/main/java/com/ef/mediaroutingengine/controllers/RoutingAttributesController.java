@@ -27,7 +27,7 @@ public class RoutingAttributesController {
     /**
      * Logger.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(RoutingAttributesController.class);
+    private static final Logger logger = LoggerFactory.getLogger(RoutingAttributesController.class);
     /**
      * The API calls are passed to this service for processing.
      */
@@ -96,7 +96,7 @@ public class RoutingAttributesController {
     public ResponseEntity<Object> deleteRoutingAttribute(@PathVariable String id) {
         RoutingAttributeDeleteConflictResponse deleteConflictResponse = this.service.delete(id);
         if (deleteConflictResponse != null) {
-            LOGGER.debug("Could not delete Routing-Attribute: {}. It is associated with one or more Queues or"
+            logger.debug("Could not delete Routing-Attribute: {}. It is associated with one or more Queues or"
                     + "Agents", id);
             return new ResponseEntity<>(deleteConflictResponse, HttpStatus.CONFLICT);
         }

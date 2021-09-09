@@ -51,7 +51,7 @@ public class Bootstrap {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(Bootstrap.class);
+    private static final Logger logger = LoggerFactory.getLogger(Bootstrap.class);
     /**
      * Agents collection DAO for the Configuration DB.
      */
@@ -159,12 +159,12 @@ public class Bootstrap {
     public boolean subscribeToStateEventsChannel() {
         try {
             this.jmsCommunicator.init("STATE_CHANNEL");
-            LOGGER.info("JMS topic subscribed successfully");
+            logger.info("JMS topic subscribed successfully");
             return true;
         } catch (JMSException jmsException) {
-            LOGGER.error("JmsException while initializing JMS-Communicator: ", jmsException);
+            logger.error("JmsException while initializing JMS-Communicator: ", jmsException);
         }
-        LOGGER.debug("Failed to subscribe JMS topic ");
+        logger.debug("Failed to subscribe JMS topic ");
         return false;
     }
 
@@ -174,7 +174,7 @@ public class Bootstrap {
      * the in-memory Task pool and loads the Tasks present in the REDIS Tasks DB at the time of startup.
      */
     public void loadPools() {
-        LOGGER.debug(Constants.METHOD_STARTED);
+        logger.debug(Constants.METHOD_STARTED);
         // Load in-memory Routing-Attributes pool from Routing-Attributes Config DB.
         this.routingAttributesPool.loadFrom(routingAttributeRepository.findAll());
 
@@ -187,10 +187,10 @@ public class Bootstrap {
         this.replaceRoutingAttributesInCcUsers(ccUsers);
 
         this.agentsPool.loadPoolFrom(ccUsers);
-        LOGGER.debug("Agents pool loaded");
+        logger.debug("Agents pool loaded");
 
         this.mrdPool.loadPoolFrom(mediaRoutingDomainRepository.findAll());
-        LOGGER.debug("MRDs pool loaded");
+        logger.debug("MRDs pool loaded");
         // Set Agent and AgentMRD states after MRD pool is loaded as it is required for agent-mrd states.
         this.setAgentStates();
         /*
@@ -205,7 +205,7 @@ public class Bootstrap {
          */
         this.replaceRoutingAttributesAndMrdInQueues(precisionQueueEntities);
         this.precisionQueuesPool.loadPoolFrom(precisionQueueEntities, this.agentsPool);
-        LOGGER.debug("Precision-Queues pool loaded");
+        logger.debug("Precision-Queues pool loaded");
 
         /*
         Load the in-memory Tasks pool from REDIS.
@@ -225,12 +225,12 @@ public class Bootstrap {
             }
         }
 
-        LOGGER.info("Agents pool size: {}", this.agentsPool.size());
-        LOGGER.info("Mrd pool size: {}", this.mrdPool.size());
-        LOGGER.info("Precision-Queues pool size: {}", this.precisionQueuesPool.size());
-        LOGGER.info("Task pool size: {}", this.tasksPool.size());
+        logger.info("Agents pool size: {}", this.agentsPool.size());
+        logger.info("Mrd pool size: {}", this.mrdPool.size());
+        logger.info("Precision-Queues pool size: {}", this.precisionQueuesPool.size());
+        logger.info("Task pool size: {}", this.tasksPool.size());
 
-        LOGGER.debug(Constants.METHOD_ENDED);
+        logger.debug(Constants.METHOD_ENDED);
     }
 
     /**
@@ -286,21 +286,21 @@ public class Bootstrap {
      * @param task the task to be associated with the agent
      */
     private void associateTaskWithAgent(Task task) {
-        LOGGER.debug(Constants.METHOD_STARTED);
+        logger.debug(Constants.METHOD_STARTED);
         Agent agent = this.agentsPool.findById(task.getAssignedTo());
         if (agent != null) {
-            LOGGER.debug("Agent: {} assigned to the Task found", agent.getId());
+            logger.debug("Agent: {} assigned to the Task found", agent.getId());
             if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
                 agent.reserveTask(task);
-                LOGGER.debug("Task: {} reserved for Agent: {}", task.getId(), agent.getId());
+                logger.debug("Task: {} reserved for Agent: {}", task.getId(), agent.getId());
             } else if (task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
                 agent.addActiveTask(task);
-                LOGGER.debug("Task: {} added to the Agent: {} active tasks list", task.getId(), agent.getId());
+                logger.debug("Task: {} added to the Agent: {} active tasks list", task.getId(), agent.getId());
             }
         } else {
-            LOGGER.debug("No agent assigned to Task: {}", task.getId());
+            logger.debug("No agent assigned to Task: {}", task.getId());
         }
-        LOGGER.debug(Constants.METHOD_ENDED);
+        logger.debug(Constants.METHOD_ENDED);
     }
 
     /**
@@ -326,7 +326,7 @@ public class Bootstrap {
      */
     private Map<UUID, AgentPresence> getCurrentAgentPresenceMap() {
         List<AgentPresence> currentAgentPresenceList = this.agentPresenceRepository.findAll();
-        LOGGER.debug("Fetched List of all AgentPresence objects from Redis Collection successfully");
+        logger.debug("Fetched List of all AgentPresence objects from Redis Collection successfully");
         Map<UUID, AgentPresence> currentAgentPresenceMap = new HashMap<>();
         for (AgentPresence agentPresence : currentAgentPresenceList) {
             currentAgentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
@@ -364,7 +364,7 @@ public class Bootstrap {
         Map<UUID, AgentPresence> currentAgentPresenceMap = this.getCurrentAgentPresenceMap();
         // AgentPresence Repository is flushed so that newly-updated, fresh Objects are added.
         this.agentPresenceRepository.deleteAll();
-        LOGGER.debug("AgentPresence Repository flushed successfully.");
+        logger.debug("AgentPresence Repository flushed successfully.");
         Map<String, AgentPresence> updatedAgentPresenceMap = new HashMap<>();
         for (Agent agent : this.agentsPool.findAll()) {
             AgentState agentState;
@@ -386,9 +386,9 @@ public class Bootstrap {
             agent.setAgentMrdStates(agentMrdStates);
             updatedAgentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
         }
-        LOGGER.debug("Agent states for agents in in-memory pool set successfully");
+        logger.debug("Agent states for agents in in-memory pool set successfully");
         this.agentPresenceRepository.saveAllByKeyValueMap(updatedAgentPresenceMap);
-        LOGGER.debug("AgentPresence Repository loaded successfully");
+        logger.debug("AgentPresence Repository loaded successfully");
     }
 }
 

@@ -9,7 +9,7 @@ import java.io.Serializable;
  */
 public class AgentStateChangedResponse implements Serializable {
     /**
-     * Contains the information of the Agent and it's states.
+     * Contains the information of the Agent and its states.
      */
     private AgentPresence agentPresence;
     /**

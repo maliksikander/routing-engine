@@ -18,7 +18,7 @@ public class TaskStateActive implements TaskStateModifier {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(TaskStateActive.class);
+    private static final Logger logger = LoggerFactory.getLogger(TaskStateActive.class);
     /**
      * The Task manager.
      */
@@ -44,7 +44,7 @@ public class TaskStateActive implements TaskStateModifier {
     public void updateState(Task task, TaskState state) {
         Agent agent = this.agentsPool.findById(task.getAssignedTo());
         if (agent == null) {
-            LOGGER.error("Could not update task state to Active, Assigned Agent not found");
+            logger.error("Could not update task state to Active, Assigned Agent not found");
             return;
         }
         task.setTaskState(state);

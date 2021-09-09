@@ -8,7 +8,7 @@ import java.util.UUID;
  */
 public class AgentReservedRequest {
     /**
-     * Id of the JMS-topic on which an Agent is reserved.
+     * ID of the JMS-topic on which an Agent is reserved.
      */
     UUID topicId;
     /**

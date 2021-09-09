@@ -17,9 +17,9 @@ public class PrecisionQueue implements Queue {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(PrecisionQueue.class);
+    private static final Logger logger = LoggerFactory.getLogger(PrecisionQueue.class);
     /**
-     * The Id.
+     * The ID.
      */
     private String id;
     /**
@@ -31,7 +31,7 @@ public class PrecisionQueue implements Queue {
      */
     private final TaskScheduler taskScheduler;
     /**
-     * The Enable reporting.
+     * Enable reporting.
      */
     boolean enableReporting;
     /**
@@ -423,7 +423,7 @@ public class PrecisionQueue implements Queue {
     /**
      * Sets enable reporting.
      *
-     * @param enableReporting the enable reporting
+     * @param enableReporting value of enable reporting
      */
     public void setEnableReporting(boolean enableReporting) {
         this.enableReporting = enableReporting;
@@ -491,7 +491,7 @@ public class PrecisionQueue implements Queue {
     @Override
     public Task dequeue() {
         Task task = this.serviceQueue.dequeue(true); //serviceQueue.poll
-        LOGGER.debug("Removed Task: {}", task != null ? task.getId() : "task not found" + " from queue: "
+        logger.debug("Removed Task: {}", task != null ? task.getId() : "task not found" + " from queue: "
                 + this.getName());
         printQueue();
         return task;
@@ -499,14 +499,14 @@ public class PrecisionQueue implements Queue {
 
     @Override
     public void printQueue() {
-        LOGGER.debug("FIFO Precision Queue: {}", this.serviceQueue);
+        logger.debug("FIFO Precision Queue: {}", this.serviceQueue);
     }
 
     @Override
     public void logAllSteps() {
         int i = 0;
         for (Step step : this.steps) {
-            LOGGER.info("Step {}: {}, No. of associated agents: {}", ++i, step, step.getAssociatedAgents().size());
+            logger.info("Step {}: {}, No. of associated agents: {}", ++i, step, step.getAssociatedAgents().size());
         }
     }
 
@@ -517,7 +517,7 @@ public class PrecisionQueue implements Queue {
      */
     public Task peek() {
         Task task = this.serviceQueue.dequeue(false); // serviceQueue.peek
-        LOGGER.debug("peek task: {}", task != null ? task.getId() : "Task not found");
+        logger.debug("peek task: {}", task != null ? task.getId() : "Task not found");
         return task;
     }
 

@@ -24,7 +24,7 @@ public class Agent {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(Agent.class);
+    private static final Logger logger = LoggerFactory.getLogger(Agent.class);
 
     /**
      * The Keycloak user.
@@ -116,12 +116,12 @@ public class Agent {
      */
     public void assignTask(Task task) {
         if (task == null) {
-            LOGGER.debug("Cannot assign task, taskService is null");
+            logger.debug("Cannot assign task, taskService is null");
             return;
         }
         this.removeReservedTask();
         this.addActiveTask(task);
-        LOGGER.debug("Agent Id: {}. Task: {} assigned. Total tasks handling: {}.",
+        logger.debug("Agent Id: {}. Task: {} assigned. Total tasks handling: {}.",
                 this.keycloakUser.getId(), task.getId(), this.activeTasks.size());
     }
 
@@ -156,7 +156,7 @@ public class Agent {
             task.setStartTime(System.currentTimeMillis());
             taskList.remove(task);
         }
-        LOGGER.debug("Agent Id: {}. Task : {} removed.", this.getId(), task.getId());
+        logger.debug("Agent Id: {}. Task : {} removed.", this.getId(), task.getId());
     }
 
     /**

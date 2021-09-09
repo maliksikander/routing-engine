@@ -12,8 +12,8 @@ public class StepCriteriaEvaluator {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(StepCriteriaEvaluator.class);
-    private static final ExpressionParser PARSER = new SpelExpressionParser();
+    private static final Logger logger = LoggerFactory.getLogger(StepCriteriaEvaluator.class);
+    private static final ExpressionParser parser = new SpelExpressionParser();
 
     /**
      * Instantiates a new Step criteria evaluator.
@@ -30,13 +30,13 @@ public class StepCriteriaEvaluator {
      */
     public static boolean evaluate(String criteria) {
         try {
-            Boolean result = (Boolean) PARSER.parseExpression(criteria).getValue();
+            Boolean result = (Boolean) parser.parseExpression(criteria).getValue();
             if (result != null) {
                 return result;
             }
             return false;
         } catch (Exception ex) {
-            LOGGER.error("Exception evaluating criteria", ex);
+            logger.error("Exception evaluating criteria", ex);
             return false;
         }
     }

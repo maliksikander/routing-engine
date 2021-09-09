@@ -11,7 +11,7 @@ import javax.validation.constraints.NotNull;
  */
 public class AgentMrdStateChangeRequest {
     /**
-     * Id of the agent, for which the MRD-state-change is requested.
+     * ID of the agent, for which the MRD-state-change is requested.
      */
     @NotNull
     UUID agentId;

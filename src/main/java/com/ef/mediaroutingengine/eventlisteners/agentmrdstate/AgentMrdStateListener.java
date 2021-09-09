@@ -28,7 +28,7 @@ public class AgentMrdStateListener {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(AgentMrdStateListener.class);
+    private static final Logger logger = LoggerFactory.getLogger(AgentMrdStateListener.class);
     /**
      * In-memory pool of all Precision queues.
      */
@@ -75,11 +75,11 @@ public class AgentMrdStateListener {
      */
     public void propertyChange(Agent agent, String mrdId, Enums.AgentMrdStateName requestedState, boolean async) {
         if (async) {
-            LOGGER.debug("Agent mrd state listener called asynchronously");
-            CompletableFuture.runAsync(() -> this.asyncPropertyChange(agent, mrdId, requestedState));
+            logger.debug("Agent mrd state listener called asynchronously");
+            CompletableFuture.runAsync(() -> this.run(agent, mrdId, requestedState));
         } else {
-            LOGGER.debug("Agent mrd state listener called synchronously");
-            this.asyncPropertyChange(agent, mrdId, requestedState);
+            logger.debug("Agent mrd state listener called synchronously");
+            this.run(agent, mrdId, requestedState);
         }
     }
 
@@ -90,17 +90,17 @@ public class AgentMrdStateListener {
      * @param mrdId          the mrd id
      * @param requestedState the requested state
      */
-    private void asyncPropertyChange(Agent agent, String mrdId, Enums.AgentMrdStateName requestedState) {
+    private void run(Agent agent, String mrdId, Enums.AgentMrdStateName requestedState) {
         AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
         if (agentMrdState == null) {
-            LOGGER.error("Could not find MRD with id: {} associated with agent: {}", mrdId, agent.getId());
+            logger.error("Could not find MRD with id: {} associated with agent: {}", mrdId, agent.getId());
             this.publish(agent);
             return;
         }
 
         MrdStateDelegate delegate = this.factory.getDelegate(requestedState);
         if (delegate == null) {
-            LOGGER.warn("Requested Agent-MRD state: {} is invalid", requestedState);
+            logger.warn("Requested Agent-MRD state: {} is invalid", requestedState);
             return;
         }
 
@@ -109,7 +109,7 @@ public class AgentMrdStateListener {
         boolean fireEvent = false;
         if (!newState.equals(currentState)) {
             this.updateState(agent, agentMrdState, newState);
-            LOGGER.debug("Agent-Mrd state for agent: {} updated to: {} from: {}", agent.getId(), newState,
+            logger.debug("Agent-Mrd state for agent: {} updated to: {} from: {}", agent.getId(), newState,
                     currentState);
             if (newState.equals(Enums.AgentMrdStateName.READY)
                     || newState.equals(Enums.AgentMrdStateName.ACTIVE)) {
@@ -117,16 +117,16 @@ public class AgentMrdStateListener {
             }
         }
         this.publish(agent);
-        LOGGER.debug("Updated AgentPresence for agent: {} published on topic", agent.getId());
+        logger.debug("Updated AgentPresence for agent: {} published on topic", agent.getId());
         if (fireEvent) {
-            LOGGER.debug("Task Schedulers for MRD: {} triggerred by agent mrd state change to: {}",
+            logger.debug("Task Schedulers for MRD: {} triggerred by agent mrd state change to: {}",
                     agentMrdState.getMrd().getId(), newState);
             this.fireStateChangeToTaskSchedulers(agentMrdState);
         }
     }
 
     /**
-     * Update Agent-MRD state in in-memory object as well as as in Redis collection.
+     * Update Agent-MRD state in in-memory object as well as in Redis collection.
      *
      * @param agent         the agent
      * @param agentMrdState the agent mrd state

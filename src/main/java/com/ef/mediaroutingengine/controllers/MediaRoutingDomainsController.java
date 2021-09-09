@@ -3,8 +3,6 @@ package com.ef.mediaroutingengine.controllers;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.services.controllerservices.MediaRoutingDomainsService;
 import javax.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 public class MediaRoutingDomainsController {
-    /**
-     * Logger.
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(MediaRoutingDomainsController.class);
     /**
      * The API calls are passed to this service for processing.
      */

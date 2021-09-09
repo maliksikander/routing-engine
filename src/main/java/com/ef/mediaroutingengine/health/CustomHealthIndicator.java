@@ -25,7 +25,7 @@ public class CustomHealthIndicator implements HealthIndicator {
     }
 
     /**
-     * Is running service a boolean.
+     * Is running service A running.
      *
      * @return the boolean
      */

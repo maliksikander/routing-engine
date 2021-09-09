@@ -27,7 +27,7 @@ public class AgentStateLogin implements AgentStateDelegate {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(AgentStateLogin.class);
+    private static final Logger logger = LoggerFactory.getLogger(AgentStateLogin.class);
     /**
      * The Agent presence repository.
      */
@@ -56,9 +56,9 @@ public class AgentStateLogin implements AgentStateDelegate {
         AgentPresence agentPresence = this.addToAddPresenceDbIfDoesNotExist(agent);
         if (currentState.equals(Enums.AgentStateName.LOGOUT)) {
             this.logoutToLogin(agent, agentPresence, newState);
-            LOGGER.debug("State changed from LOGOUT to LOGIN");
+            logger.debug("State changed from LOGOUT to LOGIN");
             loginToNotReady(agent, new AgentState(Enums.AgentStateName.NOT_READY, newState.getReasonCode()));
-            LOGGER.debug("State changed from LOGIN to NOT_READY");
+            logger.debug("State changed from LOGIN to NOT_READY");
             return true;
         }
         return false;
@@ -103,7 +103,7 @@ public class AgentStateLogin implements AgentStateDelegate {
     }
 
     /**
-     * Add to add presence db if does not exist agent presence.
+     * Add agent to AgentPresence DB if it does not exist already.
      *
      * @param agent the agent
      * @return the agent presence

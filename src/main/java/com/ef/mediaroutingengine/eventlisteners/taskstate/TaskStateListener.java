@@ -25,7 +25,7 @@ public class TaskStateListener implements PropertyChangeListener {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(TaskStateListener.class);
+    private static final Logger logger = LoggerFactory.getLogger(TaskStateListener.class);
     /**
      * The Tasks pool.
      */
@@ -66,7 +66,7 @@ public class TaskStateListener implements PropertyChangeListener {
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.TASK_STATE.toString())) {
-            LOGGER.debug("TaskStateEvent.propertyChange() method started");
+            logger.debug("TaskStateEvent.propertyChange() method started");
             TaskStateChangeRequest request = (TaskStateChangeRequest) evt.getNewValue();
             Task task = tasksPool.findById(request.getTaskId());
             if (task == null) {
@@ -77,7 +77,7 @@ public class TaskStateListener implements PropertyChangeListener {
 
             JmsCommunicator jmsCommunicator = this.applicationContext.getBean(JmsCommunicator.class);
             jmsCommunicator.publishTaskStateChangeForReporting(task);
-            LOGGER.debug("TaskStateEvent.propertyChange() end");
+            logger.debug("TaskStateEvent.propertyChange() end");
         }
     }
 }

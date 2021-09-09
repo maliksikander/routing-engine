@@ -22,7 +22,7 @@ public class PrecisionQueuesPool {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(PrecisionQueuesPool.class);
+    private static final Logger logger = LoggerFactory.getLogger(PrecisionQueuesPool.class);
     /**
      * The Precision queues.
      */

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,7 @@ public class AgentsPool {
     /**
      * The constant LOGGER.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(AgentsPool.class);
+    private static final Logger logger = LoggerFactory.getLogger(AgentsPool.class);
     /**
      * The Agents.
      */
@@ -51,7 +50,7 @@ public class AgentsPool {
     }
 
     /**
-     * Finds an agent by it's keycloak user id, which is basically the agent's overall id as well.
+     * Finds an agent by its keycloak user id, which is basically the agent's overall id as well.
      *
      * @param id find the agent by this id.
      * @return Agent if found, null otherwise.
@@ -97,7 +96,7 @@ public class AgentsPool {
             assignedTo.endTask(task);
             return true;
         }
-        LOGGER.warn("The agent: {} assigned to task: {} not found in Agents pool",
+        logger.warn("The agent: {} assigned to task: {} not found in Agents pool",
                 task.getAssignedTo(), task.getId());
         return false;
     }
@@ -106,14 +105,14 @@ public class AgentsPool {
      * Logs all the agents in the agents pool.
      */
     public void logAll() {
-        LOGGER.info("LOGGING ALL AGENTS IN THE AGENT POOL");
-        LOGGER.info("------------------------------------");
+        logger.info("LOGGING ALL AGENTS IN THE AGENT POOL");
+        logger.info("------------------------------------");
         if (this.agents.isEmpty()) {
-            LOGGER.info("Agents pool is empty");
+            logger.info("Agents pool is empty");
         } else {
-            this.agents.forEach((k, v) -> LOGGER.info("Agent: {} | {}", k, v));
+            this.agents.forEach((k, v) -> logger.info("Agent: {} | {}", k, v));
         }
-        LOGGER.info("------------------------------------");
+        logger.info("------------------------------------");
     }
 
     /**

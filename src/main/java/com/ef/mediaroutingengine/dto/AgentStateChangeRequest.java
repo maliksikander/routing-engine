@@ -12,7 +12,7 @@ import javax.validation.constraints.NotNull;
  */
 public class AgentStateChangeRequest {
     /**
-     * Id of the agent for which the Agent-State change is requested.
+     * ID of the agent for which the Agent-State change is requested.
      */
     @NotNull
     UUID agentId;

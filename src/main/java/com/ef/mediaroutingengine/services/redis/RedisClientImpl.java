@@ -179,7 +179,7 @@ public class RedisClientImpl implements RedisClient {
 
     @Override
     public <T> List<T> getJsonArray(String key, Class<T> clazz) throws JsonProcessingException {
-        String response = null;
+        String response;
         try (Jedis conn = getConnection()) {
             conn.getClient().sendCommand(Command.GET, SafeEncoder.encodeMany(key, JSON_ROOT_PATH));
             response = conn.getClient().getBulkReply();
@@ -355,7 +355,7 @@ public class RedisClientImpl implements RedisClient {
          */
         SET("JSON.SET"),
         /**
-         * Mget command.
+         * Multiple get command.
          */
         MGET("JSON.MGET"),
         /**

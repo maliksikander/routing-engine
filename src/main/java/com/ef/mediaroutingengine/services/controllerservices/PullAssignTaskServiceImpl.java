@@ -8,8 +8,6 @@ import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,11 +16,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class PullAssignTaskServiceImpl implements PullAssignTaskService {
-    /**
-     * The constant LOGGER.
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(PullAssignTaskServiceImpl.class);
-
     /**
      * The Tasks repository.
      */

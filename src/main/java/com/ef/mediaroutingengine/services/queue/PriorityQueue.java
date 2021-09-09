@@ -118,7 +118,7 @@ public class PriorityQueue {
     }
 
     /**
-     * Get task task service.
+     * Get task service.
      *
      * @param taskId the task id
      * @return the task service

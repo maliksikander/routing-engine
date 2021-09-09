@@ -18,51 +18,51 @@ public class StepCriteriaBuilder {
     }
 
     /**
-     * Build step expression string.
+     * Build step criteria string.
      *
      * @param agent the agent
      * @param step  the step
      * @return the string
      */
-    public static String buildFor(Agent agent, Step step) {
+    public static String buildCriteria(Agent agent, Step step) {
         StringBuilder result = new StringBuilder();
         for (Expression expression : step.getExpressions()) {
             if (expression.getPreExpressionCondition() != null) { // e.g. AND (exp1) -> operator before expression.
                 result.append(convertLogicalOperator(expression.getPreExpressionCondition()));
             }
             result.append("(");
-            result.append(buildFor(agent, expression));
+            result.append(buildCriteria(agent, expression));
             result.append(")");
         }
         return result.toString();
     }
 
     /**
-     * Build expression expression string builder.
+     * Build expression criteria string.
      *
      * @param agent      the agent
      * @param expression the expression
      * @return the string builder
      */
-    private static StringBuilder buildFor(Agent agent, Expression expression) {
+    private static StringBuilder buildCriteria(Agent agent, Expression expression) {
         StringBuilder stringBuilder = new StringBuilder();
         for (Term term : expression.getTerms()) {
             if (term.getPreTermLogicalOperator() != null) { // e.g. AND term1 -> operator before term.
                 stringBuilder.append(convertLogicalOperator(term.getPreTermLogicalOperator()));
             }
-            stringBuilder.append(buildFor(agent, term));
+            stringBuilder.append(buildCriteria(agent, term));
         }
         return stringBuilder;
     }
 
     /**
-     * Build term expression string.
+     * Build term criteria string.
      *
      * @param agent the agent
      * @param term  the term
      * @return the string
      */
-    private static String buildFor(Agent agent, Term term) {
+    private static String buildCriteria(Agent agent, Term term) {
         AssociatedRoutingAttribute associatedRoutingAttribute = agent
                 .findAssociatedRoutingAttributeById(term.getRoutingAttribute().getId());
         if (associatedRoutingAttribute == null) {
@@ -78,15 +78,10 @@ public class StepCriteriaBuilder {
      * @return the string
      */
     private static String convertLogicalOperator(String s) {
-        switch (s) {
-            case "AND":
-            case "and":
-                return "&&";
-            case "OR":
-            case "or":
-                return "||";
-            default:
-                return null;
-        }
+        return switch (s) {
+            case "AND", "and" -> "&&";
+            case "OR", "or" -> "||";
+            default -> null;
+        };
     }
 }

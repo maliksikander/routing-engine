@@ -18,7 +18,7 @@ public class TasksRetrieverFactory {
     private final TasksPool tasksPool;
 
     /**
-     * Instantiates a new Tasks retriever factory.
+     * Instantiates a new tasks' retriever factory.
      *
      * @param tasksPool the tasks pool
      */
