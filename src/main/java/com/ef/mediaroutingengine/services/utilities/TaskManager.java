@@ -283,7 +283,7 @@ public class TaskManager {
         logger.debug("Precision-Queue is not null | TasksPool.enqueueTask method");
 
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = new Task(channelSession, mrd, queue, taskState);
+        Task task = new Task(channelSession, mrd, queue.getId(), taskState);
         this.tasksPool.add(task);
         logger.debug("New task added to allTasks list | TasksPool.enqueueTask method");
 
@@ -312,7 +312,7 @@ public class TaskManager {
      * @param task task to be enqueued.
      */
     public void enqueueTask(Task task) {
-        PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue().getId());
+        PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue());
         if (queue != null) {
             this.tasksPool.add(task);
             if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
@@ -346,7 +346,7 @@ public class TaskManager {
         this.tasksPool.add(newTask);
         this.tasksRepository.save(newTask.getId().toString(), new TaskDto(newTask));
 
-        PrecisionQueue queue = this.precisionQueuesPool.findById(newTask.getQueue().getId());
+        PrecisionQueue queue = this.precisionQueuesPool.findById(newTask.getQueue());
         queue.enqueue(newTask);
         newTask.setEnqueueTime(System.currentTimeMillis());
         newTask.setTimeouts(queue.getTimeouts());
@@ -481,7 +481,7 @@ public class TaskManager {
             task.agentRequestTimeout();
             if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
                 // Remove task from precision-queue
-                PrecisionQueue queue = TaskManager.this.precisionQueuesPool.findById(task.getQueue().getId());
+                PrecisionQueue queue = TaskManager.this.precisionQueuesPool.findById(task.getQueue());
                 if (queue != null) {
                     queue.removeTask(task);
                 }
