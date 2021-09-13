@@ -7,7 +7,6 @@ import com.ef.mediaroutingengine.dto.TaskDto;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
-import java.util.List;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -44,7 +43,7 @@ public class Task implements Serializable {
     /**
      * The Timer.
      */
-    private final Timer timer;
+    private Timer timer;
     /**
      * The Change support.
      */
@@ -74,18 +73,13 @@ public class Task implements Serializable {
      */
     private Long handlingTime;
     /**
-     * The Timeouts.
-     */
-    private List<Integer> timeouts;
-    /**
-     * The Current step.
-     */
-    private int currentStep;
-    /**
      * The Agent request timeout.
      */
     private boolean agentRequestTimeout;
-    private Step step;
+    /**
+     * The Current step.
+     */
+    private Step currentStep;
 
     /**
      * Default constructor.
@@ -310,33 +304,12 @@ public class Task implements Serializable {
         return this.timer;
     }
 
-    /**
-     * Sets the timeouts array for this task.
-     *
-     * @param timeouts the timeouts array
-     */
-    public void setTimeouts(List<Integer> timeouts) {
-        this.timeouts = timeouts;
-        if (timeouts.size() > 1) {
-            this.startTimer();
-        }
-    }
-
-    /**
-     * Gets current step.
-     *
-     * @return the current step
-     */
-    public int getCurrentStep() {
+    public Step getCurrentStep() {
         return currentStep;
     }
 
-    public Step getStep() {
-        return step;
-    }
-
-    public void setStep(Step step) {
-        this.step = step;
+    public void setCurrentStep(Step currentStep) {
+        this.currentStep = currentStep;
     }
 
     /**
@@ -403,11 +376,14 @@ public class Task implements Serializable {
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     /**
-     * Schedules a Timer for a step for this task.
+     * Start timer.
      */
     public void startTimer() {
         try {
-            timer.schedule(new TaskTimer(), this.timeouts.get(currentStep++) * 1000L);
+            if (this.currentStep != null) {
+                timer = new Timer();
+                timer.schedule(new TaskTimer(), this.currentStep.getTimeout() * 1000L);
+            }
         } catch (IllegalArgumentException ex) {
             if (!"Negative delay.".equalsIgnoreCase(ExceptionUtils.getRootCause(ex).getMessage())) {
                 logger.error(ExceptionUtils.getMessage(ex));
@@ -471,7 +447,7 @@ public class Task implements Serializable {
     private class TaskTimer extends TimerTask {
 
         public void run() {
-            logger.debug("Time up for step: {}, Task id: {}, MRD: {}", Task.this.getCurrentStep(),
+            logger.debug("Time up for step: {}, Task id: {}, MRD: {}", Task.this.currentStep.getId(),
                     Task.this.getId(), Task.this.getMrd());
             try {
                 Task.this.getTimer().cancel();
