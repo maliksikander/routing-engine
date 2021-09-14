@@ -16,7 +16,7 @@ public class JmsConnectionConfig {
      * Client-id for the JMS connection. Must be unique. If a JMS connection with the same
      * client-id is already present, the connection will fail unless this field is changed.
      */
-    private static final String CLIENT_ID = "ROUTING-ENGINE-CLIENT";
+    private static final String CLIENT_ID = "ROUTING-ENGINE-CLIENT-1";
     /**
      * Logger.
      */
