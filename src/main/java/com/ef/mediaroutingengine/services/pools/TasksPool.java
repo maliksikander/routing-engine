@@ -160,6 +160,22 @@ public class TasksPool {
     }
 
     /**
+     * Find by queue id list.
+     *
+     * @param id the id
+     * @return the list
+     */
+    public List<Task> findByQueueId(String id) {
+        List<Task> taskList = new ArrayList<>();
+        this.allTasks.forEach(task -> {
+            if (task.getQueue() != null && task.getQueue().equals(id)) {
+                taskList.add(task);
+            }
+        });
+        return taskList;
+    }
+
+    /**
      * Size int.
      *
      * @return the int

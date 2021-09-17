@@ -283,17 +283,19 @@ public class TaskManager {
         logger.debug("Precision-Queue is not null | TasksPool.enqueueTask method");
 
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = new Task(channelSession, mrd, queue, taskState);
+        Task task = new Task(channelSession, mrd, queue.getId(), taskState);
         this.tasksPool.add(task);
         logger.debug("New task added to allTasks list | TasksPool.enqueueTask method");
 
         this.tasksRepository.save(task.getId().toString(), new TaskDto(task));
         logger.debug("Task saved in Redis | TasksPool.enqueueTask method");
 
-        task.setStep(queue.getStepAt(0));
+        task.setCurrentStep(queue.getStepAt(0));
+        if (queue.getSteps().size() > 1) {
+            task.startTimer();
+        }
         queue.enqueue(task);
         logger.debug("Task enqueued in Precision-Queue | TasksPool.enqueueTask method");
-        task.setTimeouts(queue.getTimeouts());
 
         JmsCommunicator jmsCommunicator = this.applicationContext.getBean(JmsCommunicator.class);
         jmsCommunicator.publishTaskStateChangeForReporting(task);
@@ -312,12 +314,15 @@ public class TaskManager {
      * @param task task to be enqueued.
      */
     public void enqueueTask(Task task) {
-        PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue().getId());
+        PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue());
         if (queue != null) {
             this.tasksPool.add(task);
             if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
+                task.setCurrentStep(queue.getStepAt(0));
+                if (queue.getSteps().size() > 1) {
+                    task.startTimer();
+                }
                 queue.enqueue(task);
-                task.setTimeouts(queue.getTimeouts());
                 this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
             }
         } else {
@@ -346,10 +351,14 @@ public class TaskManager {
         this.tasksPool.add(newTask);
         this.tasksRepository.save(newTask.getId().toString(), new TaskDto(newTask));
 
-        PrecisionQueue queue = this.precisionQueuesPool.findById(newTask.getQueue().getId());
+        PrecisionQueue queue = this.precisionQueuesPool.findById(newTask.getQueue());
+        newTask.setCurrentStep(queue.getStepAt(0));
+        if (queue.getSteps().size() > 1) {
+            newTask.startTimer();
+        }
         queue.enqueue(newTask);
         newTask.setEnqueueTime(System.currentTimeMillis());
-        newTask.setTimeouts(queue.getTimeouts());
+
         return newTask;
     }
 
@@ -480,8 +489,9 @@ public class TaskManager {
 
             task.agentRequestTimeout();
             if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
+                task.getTimer().cancel();
                 // Remove task from precision-queue
-                PrecisionQueue queue = TaskManager.this.precisionQueuesPool.findById(task.getQueue().getId());
+                PrecisionQueue queue = TaskManager.this.precisionQueuesPool.findById(task.getQueue());
                 if (queue != null) {
                     queue.removeTask(task);
                 }
@@ -492,6 +502,7 @@ public class TaskManager {
                 TaskManager.this.requestTtlTimers.remove(this.topicId);
                 // post no agent available
                 TaskManager.this.restRequest.postNoAgentAvailable(this.topicId.toString());
+                logger.debug("Agent request TTL expired. Queued task: {} removed", task.getId());
             }
             logger.debug("method ended | RequestTtlTimer.run method");
         }

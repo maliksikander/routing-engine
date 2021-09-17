@@ -69,6 +69,8 @@ public class ActivemqCommunicator implements JmsCommunicator {
      */
     private String topicName;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     /**
      * Constructor
      *
@@ -88,6 +90,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
         this.connection = connection;
         this.connection.setExceptionListener(this);
         this.jmsEventsService = jmsEventsService;
+        this.objectMapper.findAndRegisterModules();
         logger.debug("ActivemqServiceImpl.Constructor ended");
     }
 
@@ -120,8 +123,8 @@ public class ActivemqCommunicator implements JmsCommunicator {
         logger.debug("method started");
 
         StateChangeEvent stateChangeEvent = new StateChangeEvent(eventName, message, this.topicName);
-        ObjectMapper objectMapper = new ObjectMapper();
-        String messageStr = objectMapper.writeValueAsString(stateChangeEvent);
+
+        String messageStr = this.objectMapper.writeValueAsString(stateChangeEvent);
 
         TextMessage messageToSend = this.publisherSession.createTextMessage();
         messageToSend.setText(messageStr);
@@ -160,7 +163,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
      */
     private String getSerializedCimEvent(Serializable message) throws JsonProcessingException {
         CimEvent cimEvent = new CimEvent(message, CimEventName.TASK_STATE_CHANGED, CimEventType.NOTIFICATION);
-        return new ObjectMapper().writeValueAsString(cimEvent);
+        return this.objectMapper.writeValueAsString(cimEvent);
     }
 
     @Override

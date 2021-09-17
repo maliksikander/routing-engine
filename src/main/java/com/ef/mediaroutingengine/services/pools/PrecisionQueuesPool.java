@@ -104,8 +104,7 @@ public class PrecisionQueuesPool {
      * @return true if task found and ended, false otherwise
      */
     public boolean endTask(Task task) {
-
-        PrecisionQueue queue = this.precisionQueues.get(task.getQueue().getId());
+        PrecisionQueue queue = this.precisionQueues.get(task.getQueue());
         if (queue != null) {
             if (queue.getAverageTalkTime() != null && queue.getAverageTalkTime() > 0) {
                 queue.setAverageTalkTime(calculateAvgTalkTimeOf(queue, task));
