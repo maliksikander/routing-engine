@@ -131,29 +131,23 @@ public class TaskRouter implements PropertyChangeListener {
         logger.debug("Property changed");
     }
 
-    /**
-     * Reserve.
-     *
-     * @param task the task
-     */
     private void reserve(Task task) {
-        logger.debug("method started | TaskScheduler.reserve method");
-//        boolean assignedToLastAssignedAgent = this.assignToLastAssignedAgent(task);
+        // boolean assignedToLastAssignedAgent = this.assignToLastAssignedAgent(task);
         boolean assignedToLastAssignedAgent = false;
         if (!assignedToLastAssignedAgent) {
-            for (int i = 0; i < task.getCurrentStep() + 1; i++) {
+            int currentStepIndex = precisionQueue.getStepIndex(task.getCurrentStep());
+            for (int i = 0; i < currentStepIndex + 1; i++) {
                 Step step = precisionQueue.getStepAt(i);
                 logger.info("Step: {} searching in queue: {}", i, precisionQueue.getName());
                 Agent agent = this.getAvailableAgentWithLeastActiveTasks(step);
                 if (agent != null) {
-                    logger.debug("Agent: {} is available to schedule task | TaskScheduler.reserve method",
-                            agent.getId());
+                    logger.debug("Agent: {} is available to schedule task: {}", agent.getId(), task.getId());
                     this.assignTaskTo(agent, task);
                     break;
                 }
             }
+            logger.debug("Could not find an agent at the moment for task: {}", task.getId());
         }
-        logger.debug("method ended | TaskScheduler.reserve method");
     }
 
     /**
@@ -169,20 +163,22 @@ public class TaskRouter implements PropertyChangeListener {
         }
     }
 
-    /**
-     * Start next step timer if timer event fired.
-     *
-     * @param evt the evt
-     */
     private void startNextStepTimerIfTimerEventFired(PropertyChangeEvent evt) {
         if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.TIMER.name())) {
             Task task = (Task) evt.getNewValue();
-            int currentStep = task.getCurrentStep();
-            // Start timer for every step except the last step.
-            if (currentStep + 1 < precisionQueue.getSteps().size()) {
+            logger.debug("Task Timer event fired for task: {}", task.getId());
+
+            int currentStepIndex = this.precisionQueue.getStepIndex(task.getCurrentStep());
+            int nextStepIndex = currentStepIndex + 1;
+
+            task.setCurrentStep(precisionQueue.getStepAt(nextStepIndex));
+
+            // If next step is not the last step, start step expiry timer in the task
+            if (nextStepIndex < precisionQueue.getSteps().size() - 1) {
+                logger.debug("STEP IS NOT THE LAST STEP TASK TIMER IS STARTING");
                 task.startTimer();
             }
-            logger.debug("step {} associated agents search for available agent", currentStep + 1);
+            logger.debug("step {} associated agents search for available agent", currentStepIndex + 1);
         }
     }
 
@@ -253,6 +249,7 @@ public class TaskRouter implements PropertyChangeListener {
                 agent.reserveTask(task);
                 this.restRequest.postAgentReserved(task.getTopicId(), ccUser);
 //                task.handleTaskRemoveEvent();
+                task.getTimer().cancel();
                 task.removePropertyChangeListener(Enums.EventName.TIMER.name(), this);
                 task.removePropertyChangeListener(Enums.EventName.TASK_REMOVED.name(), this);
             }

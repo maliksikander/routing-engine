@@ -31,10 +31,6 @@ public class PrecisionQueue implements Queue {
      */
     private final TaskRouter taskRouter;
     /**
-     * Enable reporting.
-     */
-    boolean enableReporting;
-    /**
      * The Name.
      */
     private String name;
@@ -240,6 +236,19 @@ public class PrecisionQueue implements Queue {
     }
 
     /**
+     * Gets step index.
+     *
+     * @param step the step
+     * @return the step index
+     */
+    public int getStepIndex(Step step) {
+        if (step == null) {
+            return -1;
+        }
+        return this.steps.indexOf(step);
+    }
+
+    /**
      * Add step.
      *
      * @param step the step
@@ -253,15 +262,6 @@ public class PrecisionQueue implements Queue {
                 this.steps.add(step);
             }
         }
-    }
-
-    /**
-     * Delete step.
-     *
-     * @param step the step
-     */
-    public void deleteStep(Step step) {
-        this.steps.remove(step);
     }
 
     /**
@@ -284,7 +284,7 @@ public class PrecisionQueue implements Queue {
      * @param id the id
      * @return the int
      */
-    private int findStepIndex(UUID id) {
+    public int findStepIndex(UUID id) {
         for (int i = 0; i < steps.size(); i++) {
             if (steps.get(i).getId().equals(id)) {
                 return i;
@@ -349,22 +349,6 @@ public class PrecisionQueue implements Queue {
     }
 
     /**
-     * Returns the list of timeout of every step in the queue.
-     *
-     * @return the list of timeout of every step in the queue.
-     */
-    public List<Integer> getTimeouts() {
-        List<Integer> timeouts = new ArrayList<>();
-        for (Step step : this.steps) {
-            timeouts.add(step.getTimeout());
-        }
-        if (!timeouts.isEmpty()) {
-            timeouts.set(timeouts.size() - 1, -1);
-        }
-        return timeouts;
-    }
-
-    /**
      * Gets average talk time.
      *
      * @return the average talk time
@@ -392,15 +376,6 @@ public class PrecisionQueue implements Queue {
     }
 
     /**
-     * Sets no of task.
-     *
-     * @param noOfTask the no of task
-     */
-    public void setNoOfTask(Long noOfTask) {
-        this.noOfTask = noOfTask;
-    }
-
-    /**
      * Increments the number of tasks.
      */
     public void incrNoOfTask() {
@@ -409,24 +384,6 @@ public class PrecisionQueue implements Queue {
         } else {
             this.noOfTask += 1L;
         }
-    }
-
-    /**
-     * Is enable reporting boolean.
-     *
-     * @return the boolean
-     */
-    public boolean isEnableReporting() {
-        return enableReporting;
-    }
-
-    /**
-     * Sets enable reporting.
-     *
-     * @param enableReporting value of enable reporting
-     */
-    public void setEnableReporting(boolean enableReporting) {
-        this.enableReporting = enableReporting;
     }
 
     /**

@@ -12,6 +12,7 @@ import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.services.TaskRouter;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
+import com.ef.mediaroutingengine.services.pools.TasksPool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,10 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * The Precision queues pool.
      */
     private final PrecisionQueuesPool precisionQueuesPool;
+    /**
+     * The Tasks pool.
+     */
+    private final TasksPool tasksPool;
 
     /**
      * The Mrd pool.
@@ -52,10 +57,11 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     @Autowired
     public PrecisionQueuesServiceImpl(PrecisionQueueRepository repository,
                                       PrecisionQueuesPool precisionQueuesPool,
-                                      MrdPool mrdPool) {
+                                      MrdPool mrdPool, TasksPool tasksPool) {
         this.repository = repository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.mrdPool = mrdPool;
+        this.tasksPool = tasksPool;
     }
 
     @Override
@@ -101,7 +107,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         if (!this.repository.existsById(id)) {
             throw new NotFoundException("Could not find precision resource to delete");
         }
-        List<Task> tasks = this.precisionQueuesPool.findById(id).getTasks();
+        List<Task> tasks = this.tasksPool.findByQueueId(id);
         if (tasks.isEmpty()) {
             this.precisionQueuesPool.deleteById(id);
             this.repository.deleteById(id);

@@ -60,11 +60,7 @@ public class TaskDto implements Serializable {
         this.id = task.getId();
         this.channelSession = task.getChannelSession();
         this.mrd = task.getMrd();
-        if (task.getQueue() == null) {
-            this.queue = null;
-        } else {
-            this.queue = task.getQueue().getId();
-        }
+        this.queue = task.getQueue();
         this.priority = task.getPriority();
         this.state = task.getTaskState();
         this.assignedTo = task.getAssignedTo();
