@@ -50,9 +50,12 @@ public class AgentStateDelegateFactory {
      * Returns the Agent state delegate object wrt the requested state change.
      *
      * @param state the requested Agent state to be changed
-     * @return Agent state delegate for the requested state
+     * @return Agent state delegate for the requested state, null if requested state is null
      */
     public AgentStateDelegate getDelegate(Enums.AgentStateName state) {
+        if (state == null) {
+            return null;
+        }
         return switch (state) {
             case LOGIN -> agentStateLogin;
             case NOT_READY -> agentStateNotReady;

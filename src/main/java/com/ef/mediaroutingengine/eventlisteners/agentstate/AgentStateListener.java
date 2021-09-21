@@ -73,7 +73,7 @@ public class AgentStateListener {
      * @param agent    the agent
      * @param newState the new state
      */
-    private void run(Agent agent, AgentState newState) {
+    public void run(Agent agent, AgentState newState) {
         logger.info("Property change event: Agent-State called");
         logger.info("Current state: {}, New state: {}", agent.getState().getName(), newState);
 
