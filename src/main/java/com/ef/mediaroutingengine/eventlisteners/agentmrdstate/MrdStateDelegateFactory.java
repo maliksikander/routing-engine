@@ -16,18 +16,16 @@ public class MrdStateDelegateFactory {
      * @return MRD State Delegate.
      */
     public MrdStateDelegate getDelegate(Enums.AgentMrdStateName state) {
-        switch (state) {
-            case NOT_READY:
-                return new MrdStateNotReady();
-            case READY:
-                return new MrdStateReady();
-            case ACTIVE:
-                return new MrdStateActive();
-            case BUSY:
-                return new MrdStateBusy();
-            default:
-                break;
+        if (state == null) {
+            return null;
         }
-        return null;
+
+        return switch (state) {
+            case NOT_READY -> new MrdStateNotReady();
+            case READY -> new MrdStateReady();
+            case ACTIVE -> new MrdStateActive();
+            case BUSY -> new MrdStateBusy();
+            default -> null;
+        };
     }
 }
