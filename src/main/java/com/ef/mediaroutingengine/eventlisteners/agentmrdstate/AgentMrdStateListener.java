@@ -10,7 +10,6 @@ import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import java.beans.PropertyChangeEvent;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +31,7 @@ public class AgentMrdStateListener {
     /**
      * In-memory pool of all Precision queues.
      */
-    private final List<PrecisionQueue> precisionQueues;
+    private final PrecisionQueuesPool precisionQueuesPool;
     /**
      * The Agent presence repository DAO.
      */
@@ -59,7 +58,7 @@ public class AgentMrdStateListener {
                                  AgentPresenceRepository agentPresenceRepository,
                                  JmsCommunicator jmsCommunicator,
                                  MrdStateDelegateFactory factory) {
-        this.precisionQueues = precisionQueuesPool.toList();
+        this.precisionQueuesPool = precisionQueuesPool;
         this.agentPresenceRepository = agentPresenceRepository;
         this.jmsCommunicator = jmsCommunicator;
         this.factory = factory;
@@ -90,7 +89,7 @@ public class AgentMrdStateListener {
      * @param mrdId          the mrd id
      * @param requestedState the requested state
      */
-    private void run(Agent agent, String mrdId, Enums.AgentMrdStateName requestedState) {
+    void run(Agent agent, String mrdId, Enums.AgentMrdStateName requestedState) {
         AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
         if (agentMrdState == null) {
             logger.error("Could not find MRD with id: {} associated with agent: {}", mrdId, agent.getId());
@@ -107,22 +106,24 @@ public class AgentMrdStateListener {
         Enums.AgentMrdStateName currentState = agentMrdState.getState();
         Enums.AgentMrdStateName newState = delegate.getNewState(agent, agentMrdState);
         boolean fireEvent = false;
+
         if (!newState.equals(currentState)) {
             this.updateState(agent, agentMrdState, newState);
-            logger.debug("Agent-Mrd state for agent: {} updated to: {} from: {}", agent.getId(), newState,
-                    currentState);
-            if (newState.equals(Enums.AgentMrdStateName.READY)
-                    || newState.equals(Enums.AgentMrdStateName.ACTIVE)) {
-                fireEvent = true;
-            }
+            logger.debug("Mrd-state for agent: {} updated to: {} from: {}", agent.getId(), newState, currentState);
+            fireEvent = isStateReadyOrActive(newState);
         }
+
         this.publish(agent);
-        logger.debug("Updated AgentPresence for agent: {} published on topic", agent.getId());
+        logger.debug("AgentPresence for agent: {} published on topic", agent.getId());
+
         if (fireEvent) {
-            logger.debug("Task Schedulers for MRD: {} triggerred by agent mrd state change to: {}",
-                    agentMrdState.getMrd().getId(), newState);
+            logger.debug("Triggering task-routers for MRD: {}", agentMrdState.getMrd().getId());
             this.fireStateChangeToTaskSchedulers(agentMrdState);
         }
+    }
+
+    boolean isStateReadyOrActive(Enums.AgentMrdStateName newState) {
+        return newState.equals(Enums.AgentMrdStateName.READY) || newState.equals(Enums.AgentMrdStateName.ACTIVE);
     }
 
     /**
@@ -132,7 +133,7 @@ public class AgentMrdStateListener {
      * @param agentMrdState the agent mrd state
      * @param state         the state
      */
-    private void updateState(Agent agent, AgentMrdState agentMrdState, Enums.AgentMrdStateName state) {
+    void updateState(Agent agent, AgentMrdState agentMrdState, Enums.AgentMrdStateName state) {
         agentMrdState.setState(state);
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
     }
@@ -142,7 +143,7 @@ public class AgentMrdStateListener {
      *
      * @param agent the agent
      */
-    private void publish(Agent agent) {
+    void publish(Agent agent) {
         try {
             AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId().toString());
             AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, false);
@@ -157,9 +158,9 @@ public class AgentMrdStateListener {
      *
      * @param agentMrdState the agent mrd state
      */
-    private void fireStateChangeToTaskSchedulers(AgentMrdState agentMrdState) {
+    void fireStateChangeToTaskSchedulers(AgentMrdState agentMrdState) {
         String eventName = "AGENT_MRD_STATE_" + agentMrdState.getState().name();
-        for (PrecisionQueue precisionQueue : this.precisionQueues) {
+        for (PrecisionQueue precisionQueue : this.precisionQueuesPool.toList()) {
             if (precisionQueue.getMrd().getId().equals(agentMrdState.getMrd().getId())) {
                 PropertyChangeEvent evt = new PropertyChangeEvent(this, eventName, null, agentMrdState);
                 precisionQueue.getTaskScheduler().propertyChange(evt);
