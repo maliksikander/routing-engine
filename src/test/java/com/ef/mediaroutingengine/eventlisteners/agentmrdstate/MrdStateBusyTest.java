@@ -23,53 +23,53 @@ class MrdStateBusyTest {
     @DisplayName("Mrd State busy not updated")
     class MrdStateBusyNotUpdated {
         @Test
-        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIs_Logout() {
+        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIsLogout() {
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd("Chat"), Enums.AgentMrdStateName.LOGOUT);
             assertEquals(agentMrdState.getState(), mrdStateBusy.getNewState(getNewAgent(), agentMrdState));
         }
 
         @Test
-        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIs_Login() {
+        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIsLogin() {
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd("Chat"), Enums.AgentMrdStateName.LOGIN);
             assertEquals(agentMrdState.getState(), mrdStateBusy.getNewState(getNewAgent(), agentMrdState));
         }
 
         @Test
-        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIs_NotReady() {
+        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIsNotReady() {
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd("Chat"),
                     Enums.AgentMrdStateName.NOT_READY);
             assertEquals(agentMrdState.getState(), mrdStateBusy.getNewState(getNewAgent(), agentMrdState));
         }
 
         @Test
-        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIs_PendingNotReady() {
+        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIsPendingNotReady() {
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd("Chat"),
                     Enums.AgentMrdStateName.PENDING_NOT_READY);
             assertEquals(agentMrdState.getState(), mrdStateBusy.getNewState(getNewAgent(), agentMrdState));
         }
 
         @Test
-        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIs_Ready() {
+        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIsReady() {
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd("Chat"), Enums.AgentMrdStateName.READY);
             assertEquals(agentMrdState.getState(), mrdStateBusy.getNewState(getNewAgent(), agentMrdState));
         }
 
         @Test
-        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIs_Interrupted() {
+        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIsInterrupted() {
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd("Chat"),
                     Enums.AgentMrdStateName.INTERRUPTED);
             assertEquals(agentMrdState.getState(), mrdStateBusy.getNewState(getNewAgent(), agentMrdState));
         }
 
         @Test
-        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIs_Busy() {
+        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIsBusy() {
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd("Chat"), Enums.AgentMrdStateName.BUSY);
             assertEquals(agentMrdState.getState(), mrdStateBusy.getNewState(getNewAgent(), agentMrdState));
         }
     }
 
     @Test
-    void testGetNewState_returnsMrdState_Busy_when_currentMrdStateIs_Active() {
+    void testGetNewState_returnsMrdState_Busy_when_currentMrdStateIsActive() {
         AgentMrdState agentMrdState = new AgentMrdState(getNewMrd("Voice"), Enums.AgentMrdStateName.ACTIVE);
         assertEquals(Enums.AgentMrdStateName.BUSY, mrdStateBusy.getNewState(getNewAgent(), agentMrdState));
     }
