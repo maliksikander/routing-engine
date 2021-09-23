@@ -58,7 +58,7 @@ public class AgentStateLogout implements AgentStateDelegate {
      *
      * @param agent the agent
      */
-    private void handleAgentTasks(Agent agent) {
+    void handleAgentTasks(Agent agent) {
         for (Task task : agent.getAllTasks()) {
             RoutingMode routingMode = task.getRoutingMode();
             if (routingMode.equals(RoutingMode.PUSH)) {

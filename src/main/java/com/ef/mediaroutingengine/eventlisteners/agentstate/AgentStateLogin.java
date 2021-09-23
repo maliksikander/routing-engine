@@ -8,9 +8,6 @@ import com.ef.mediaroutingengine.model.AgentPresence;
 import com.ef.mediaroutingengine.model.AgentState;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,9 +50,8 @@ public class AgentStateLogin implements AgentStateDelegate {
     @Override
     public boolean updateState(Agent agent, AgentState newState) {
         Enums.AgentStateName currentState = agent.getState().getName();
-        AgentPresence agentPresence = this.addToAddPresenceDbIfDoesNotExist(agent);
         if (currentState.equals(Enums.AgentStateName.LOGOUT)) {
-            this.logoutToLogin(agent, agentPresence, newState);
+            this.logoutToLogin(agent, newState);
             logger.debug("State changed from LOGOUT to LOGIN");
             loginToNotReady(agent, new AgentState(Enums.AgentStateName.NOT_READY, newState.getReasonCode()));
             logger.debug("State changed from LOGIN to NOT_READY");
@@ -67,21 +63,17 @@ public class AgentStateLogin implements AgentStateDelegate {
     /**
      * Logout to login.
      *
-     * @param agent         the agent
-     * @param agentPresence the agent presence
-     * @param state         the state
+     * @param agent the agent
+     * @param state the state
      */
-    private void logoutToLogin(Agent agent, AgentPresence agentPresence, AgentState state) {
+    void logoutToLogin(Agent agent, AgentState state) {
         agent.setState(state);
-        List<AgentMrdState> agentMrdStates = new ArrayList<>();
         for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
-            agentMrdStates.add(new AgentMrdState(agentMrdState.getMrd(), Enums.AgentMrdStateName.LOGIN));
+            agentMrdState.setState(Enums.AgentMrdStateName.LOGIN);
         }
-        agent.setAgentMrdStates(agentMrdStates);
-        agentPresence.setAgent(agent.toCcUser());
-        agentPresence.setStateChangeTime(new Timestamp(System.currentTimeMillis()));
+        AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId().toString());
         agentPresence.setState(agent.getState());
-        agentPresence.setAgentMrdStates(agentMrdStates);
+        agentPresence.setAgentMrdStates(agent.getAgentMrdStates());
         this.publish(agentPresence);
     }
 
@@ -91,30 +83,13 @@ public class AgentStateLogin implements AgentStateDelegate {
      * @param agent the agent
      * @param state the state
      */
-    private void loginToNotReady(Agent agent, AgentState state) {
+    void loginToNotReady(Agent agent, AgentState state) {
         agent.setState(state);
-        List<AgentMrdState> agentMrdStates = new ArrayList<>();
         for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
-            agentMrdStates.add(new AgentMrdState(agentMrdState.getMrd(), Enums.AgentMrdStateName.NOT_READY));
+            agentMrdState.setState(Enums.AgentMrdStateName.NOT_READY);
         }
-        agent.setAgentMrdStates(agentMrdStates);
         this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());
-        this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agentMrdStates);
-    }
-
-    /**
-     * Add agent to AgentPresence DB if it does not exist already.
-     *
-     * @param agent the agent
-     * @return the agent presence
-     */
-    private AgentPresence addToAddPresenceDbIfDoesNotExist(Agent agent) {
-        AgentPresence agentPresence = agentPresenceRepository.find(agent.getId().toString());
-        if (agentPresence == null) {
-            agentPresence = new AgentPresence(agent.toCcUser(), agent.getState(), agent.getAgentMrdStates());
-            this.agentPresenceRepository.save(agent.getId().toString(), agentPresence);
-        }
-        return agentPresence;
+        this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
     }
 
     /**
@@ -122,7 +97,7 @@ public class AgentStateLogin implements AgentStateDelegate {
      *
      * @param agentPresence the agent presence
      */
-    private void publish(AgentPresence agentPresence) {
+    void publish(AgentPresence agentPresence) {
         AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, true);
         try {
             jmsCommunicator.publish(res, Enums.JmsEventName.AGENT_STATE_CHANGED);
