@@ -28,6 +28,18 @@ public class ReasonCode {
     }
 
     /**
+     * Instantiates a new Reason code.
+     *
+     * @param name the name
+     * @param type the type
+     */
+    public ReasonCode(String name, Enums.ReasonCodeType type) {
+        this.id = UUID.randomUUID();
+        this.name = name;
+        this.type = type;
+    }
+
+    /**
      * Gets id.
      *
      * @return the id
