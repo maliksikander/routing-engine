@@ -34,7 +34,7 @@ public class AgentStateNotReady implements AgentStateDelegate {
     public boolean updateState(Agent agent, AgentState newState) {
         Enums.AgentStateName currentState = agent.getState().getName();
         if (currentState.equals(Enums.AgentStateName.READY)) {
-            this.readyToNotReady(agent, newState);
+            this.updateReadyStateToNotReady(agent, newState);
             return true;
         } else if (currentState.equals(Enums.AgentStateName.NOT_READY)) {
             agent.setState(newState);
@@ -44,7 +44,7 @@ public class AgentStateNotReady implements AgentStateDelegate {
         return false;
     }
 
-    void readyToNotReady(Agent agent, AgentState newState) {
+    void updateReadyStateToNotReady(Agent agent, AgentState newState) {
         agent.setState(newState);
         List<AgentMrdState> updatedMrdStates = updateAgentMrdStates(agent);
         this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());

@@ -61,7 +61,7 @@ class AgentStateNotReadyTest {
     }
 
     @Test
-    void testReadyToNotReady() {
+    void test_updateReadyStateToNotReady() {
         List<AgentMrdState> agentMrdStateList = new ArrayList<>();
         agentMrdStateList.add(new AgentMrdState(getNewMrd("Chat"), Enums.AgentMrdStateName.NOT_READY));
 
@@ -73,7 +73,7 @@ class AgentStateNotReadyTest {
 
         // No need to test the updateAgentMrdStates. it is already tested.
         when(spy.updateAgentMrdStates(agent)).thenReturn(agentMrdStateList);
-        spy.readyToNotReady(agent, newState);
+        spy.updateReadyStateToNotReady(agent, newState);
 
         // Assert that new state has been set for the agent
         assertEquals(newState, agent.getState());
@@ -94,7 +94,7 @@ class AgentStateNotReadyTest {
 
         AgentStateNotReady spy = Mockito.spy(agentStateNotReady);
         // no need to test readyToNotReady method again, it is already tested.
-        doNothing().when(spy).readyToNotReady(agent, newState);
+        doNothing().when(spy).updateReadyStateToNotReady(agent, newState);
 
         assertTrue(spy.updateState(agent, newState));
     }
