@@ -1,11 +1,17 @@
 package com.ef.mediaroutingengine.eventlisteners.taskstate;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
-import com.ef.cim.objectmodel.CCUser;
-import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Agent;
+import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
@@ -31,18 +37,52 @@ class TaskStateActiveTest {
     }
 
     @Test
-    void test_updateState() {
+    void test_updateState_when_agentIsNull() {
         Task task = mock(Task.class);
         TaskState taskState = new TaskState(Enums.TaskStateName.ACTIVE, null);
-        Agent agent = getAgent();
+
+        when(task.getAssignedTo()).thenReturn(UUID.randomUUID());
+        when(agentsPool.findById(any())).thenReturn(null);
+
+        taskStateActive.updateState(task, taskState);
+
+        verifyNoMoreInteractions(task);
+        verifyNoInteractions(taskManager);
+    }
+
+    @Test
+    void test_updateState_when_agentIsNotNull() {
+        Task task = mock(Task.class);
+        TaskState taskState = new TaskState(Enums.TaskStateName.ACTIVE, null);
+        Agent agent = mock(Agent.class);
+        UUID topicId = UUID.randomUUID();
+        MediaRoutingDomain mrd = getNewMrd();
+
+        when(task.getAssignedTo()).thenReturn(UUID.randomUUID());
+        when(agentsPool.findById(any())).thenReturn(agent);
+        when(task.getTopicId()).thenReturn(topicId).thenReturn(topicId);
+        when(task.getMrd()).thenReturn(mrd);
+
+        taskStateActive.updateState(task, taskState);
+
+        verify(task, times(1)).setTaskState(taskState);
+        verify(task, times(1)).setStartTime(anyLong());
+        verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(topicId);
+        verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(topicId);
+        verify(agent, times(1)).assignPushTask(task);
+        verify(taskManager, times(1)).updateAgentMrdState(agent, mrd.getId());
+
+        verifyNoMoreInteractions(task);
+        verifyNoMoreInteractions(taskManager);
+        verifyNoMoreInteractions(agent);
 
     }
 
-    private Agent getAgent() {
-        KeycloakUser keycloakUser = new KeycloakUser();
-        keycloakUser.setId(UUID.randomUUID());
-        CCUser ccUser = new CCUser();
-        ccUser.setKeycloakUser(keycloakUser);
-        return new Agent(ccUser);
+    private MediaRoutingDomain getNewMrd() {
+        MediaRoutingDomain mrd = new MediaRoutingDomain();
+        mrd.setId(UUID.randomUUID().toString());
+        mrd.setName("Chat");
+        mrd.setDescription("Description");
+        return mrd;
     }
 }
