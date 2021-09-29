@@ -8,6 +8,7 @@ import com.ef.mediaroutingengine.services.TaskRouter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,7 +105,11 @@ public class PrecisionQueuesPool {
      * @return true if task found and ended, false otherwise
      */
     public boolean endTask(Task task) {
-        PrecisionQueue queue = this.precisionQueues.get(task.getQueue());
+        String queueId = task.getQueue();
+        if (queueId == null) {
+            return false;
+        }
+        PrecisionQueue queue = this.precisionQueues.get(queueId);
         if (queue != null) {
             if (queue.getAverageTalkTime() != null && queue.getAverageTalkTime() > 0) {
                 queue.setAverageTalkTime(calculateAvgTalkTimeOf(queue, task));
