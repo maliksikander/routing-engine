@@ -134,7 +134,7 @@ public class AgentsServiceImpl implements AgentsService {
      *
      * @param ccUser the cc user
      */
-    private void validateAndSetRoutingAttributes(CCUser ccUser) {
+    void validateAndSetRoutingAttributes(CCUser ccUser) {
         List<AssociatedRoutingAttribute> associatedRoutingAttributes = ccUser.getAssociatedRoutingAttributes();
         if (associatedRoutingAttributes == null) {
             return;
