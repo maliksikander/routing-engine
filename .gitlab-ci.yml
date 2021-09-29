@@ -8,7 +8,7 @@ stages:
   - test
   - code_format
   - artifacts
-  #- mvn-scan
+  - mvn-scan
   - init
   - build
   - docker_build_branch
