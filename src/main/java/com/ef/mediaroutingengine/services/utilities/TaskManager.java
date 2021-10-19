@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.services.utilities;
 
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.RoutingMode;
-import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.eventlisteners.agentmrdstate.AgentMrdStateListener;
@@ -164,9 +163,17 @@ public class TaskManager {
         if (currentMrdState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY) && noOfTasks < 1) {
             this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.NOT_READY, true);
         } else if (currentMrdState.equals(Enums.AgentMrdStateName.BUSY)) {
-            this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, true);
-        } else if (currentMrdState.equals(Enums.AgentMrdStateName.ACTIVE) && noOfTasks < 1) {
-            this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.READY, true);
+            if (noOfTasks == 0) {
+                this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.READY, true);
+            } else if (noOfTasks < task.getMrd().getMaxRequests()) {
+                this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, true);
+            }
+        } else if (currentMrdState.equals(Enums.AgentMrdStateName.ACTIVE)) {
+            if (noOfTasks >= task.getMrd().getMaxRequests()) {
+                this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.BUSY, true);
+            } else if (noOfTasks < 1) {
+                this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.READY, true);
+            }
         }
     }
 
@@ -222,11 +229,12 @@ public class TaskManager {
      */
     public void updateAgentMrdState(Agent agent, String mrdId) {
         int noOfActiveTasks = agent.getNoOfActivePushTasks(mrdId);
+        int maxRequestAllowed = agent.getAgentMrdState(mrdId).getMrd().getMaxRequests();
 
-        if (noOfActiveTasks == 1) {
-            this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, false);
-        } else if (noOfActiveTasks == Constants.MAX_TASKS) {
+        if (noOfActiveTasks >= maxRequestAllowed) {
             this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.BUSY, false);
+        } else if (noOfActiveTasks == 1) {
+            this.fireAgentMrdChangeRequest(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, false);
         }
 
         if (noOfActiveTasks > 1) {

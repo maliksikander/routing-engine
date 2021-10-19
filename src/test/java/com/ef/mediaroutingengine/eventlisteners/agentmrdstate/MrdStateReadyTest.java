@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentMrdState;
@@ -76,13 +75,6 @@ class MrdStateReadyTest {
         }
 
         @Test
-        void returnsCurrentMrdState_when_agentStateIsReady_currentMrdStateIsBusy() {
-            Agent agent = getNewAgent(new AgentState(Enums.AgentStateName.READY, null));
-            AgentMrdState agentMrdState = new AgentMrdState(getNewMrd(), Enums.AgentMrdStateName.BUSY);
-            assertEquals(agentMrdState.getState(), mrdStateReady.getNewState(agent, agentMrdState));
-        }
-
-        @Test
         void returnsCurrentMrdState_when_agentStateIsReady_currentMrdStateIsActive_atLeastOneActivePushTaskForMrd() {
             Agent agent = getNewAgent(new AgentState(Enums.AgentStateName.READY, null));
             Agent agentSpy = spy(agent);
@@ -134,7 +126,8 @@ class MrdStateReadyTest {
             Agent agent = getNewAgent(new AgentState(Enums.AgentStateName.READY, null));
             Agent agentSpy = spy(agent);
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd(), Enums.AgentMrdStateName.PENDING_NOT_READY);
-            when(agentSpy.getNoOfActivePushTasks(agentMrdState.getMrd().getId())).thenReturn(Constants.MAX_TASKS);
+            when(agentSpy.getNoOfActivePushTasks(agentMrdState.getMrd().getId()))
+                    .thenReturn(agentMrdState.getMrd().getMaxRequests());
             assertEquals(Enums.AgentMrdStateName.BUSY, mrdStateReady.getNewState(agentSpy, agentMrdState));
         }
     }
@@ -154,6 +147,7 @@ class MrdStateReadyTest {
         mrd.setId(UUID.randomUUID().toString());
         mrd.setName("Chat");
         mrd.setDescription("Description");
+        mrd.setMaxRequests(5);
         return mrd;
     }
 }
