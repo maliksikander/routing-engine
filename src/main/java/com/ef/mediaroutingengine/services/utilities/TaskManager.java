@@ -481,7 +481,7 @@ public class TaskManager {
 
         public void run() {
             logger.debug("method started | RequestTtlTimer.run method");
-            Task task = TaskManager.this.tasksPool.findByConversationId(topicId);
+            Task task = TaskManager.this.tasksPool.findFirstByConversationId(topicId);
             if (task == null) {
                 logger.error("Task not found in task pool | AgentRequestTtl Timer run method returning...");
                 return;

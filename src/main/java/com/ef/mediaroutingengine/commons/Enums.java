@@ -58,6 +58,10 @@ public class Enums {
          * Reroute task state reason code.
          */
         REROUTE,
+        /**
+         * Cancelled task state reason code.
+         */
+        CANCELLED
     }
 
     /**

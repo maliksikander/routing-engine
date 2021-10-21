@@ -5,6 +5,7 @@ import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.mediaroutingengine.config.AssignResourceProperties;
 import com.ef.mediaroutingengine.dto.AgentReservedRequest;
 import com.ef.mediaroutingengine.dto.AssignTaskRequest;
+import com.ef.mediaroutingengine.dto.RevokeTaskRequest;
 import java.time.Duration;
 import java.util.UUID;
 import org.json.JSONObject;
@@ -86,6 +87,24 @@ public class RestRequest {
 
         try {
             this.httpRequest(request, this.config.getAssignTaskUri(), HttpMethod.POST);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Post revoke task boolean.
+     *
+     * @param taskId  the task id
+     * @param agentId the agent id
+     * @return the boolean
+     */
+    public boolean postRevokeTask(UUID taskId, UUID agentId) {
+        RevokeTaskRequest requestBody = new RevokeTaskRequest(taskId, agentId);
+        try {
+            this.httpRequest(requestBody, this.config.getRevokeTaskUri(), HttpMethod.POST);
             return true;
         } catch (Exception e) {
             e.printStackTrace();

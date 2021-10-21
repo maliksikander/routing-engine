@@ -103,4 +103,13 @@ public class AssignResourceProperties {
     public String getNoAgentAvailableUri() {
         return this.getBotFrameworkBaseUri() + "/no-agent-available";
     }
+
+    /**
+     * Gets revoke task uri.
+     *
+     * @return the revoke task uri
+     */
+    public String getRevokeTaskUri() {
+        return this.getAgentManagerBaseUri() + "/revoke-task";
+    }
 }

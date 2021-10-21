@@ -120,9 +120,9 @@ public class TaskRouter implements PropertyChangeListener {
             }
             logger.debug("Precision-Queue is not empty | TaskScheduler.propertyChange method");
 
-            Task task = precisionQueue.peek();
-            logger.debug("Queue.peek: Task: {} | TaskScheduler.propertyChange method", task.getId());
             synchronized (precisionQueue.getServiceQueue()) {
+                Task task = precisionQueue.peek();
+                logger.debug("Queue.peek: Task: {} | TaskScheduler.propertyChange method", task.getId());
                 reserve(task);
             }
         } catch (Exception ex) {

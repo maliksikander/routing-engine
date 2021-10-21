@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,7 @@ public class TasksPool {
      */
     @Autowired
     public TasksPool() {
-        this.allTasks = new LinkedList<>();
+        this.allTasks = new CopyOnWriteArrayList<>();
     }
 
     /**
@@ -101,13 +102,29 @@ public class TasksPool {
      * @param conversationId the conversation-id to search task by
      * @return task if found, null otherwise
      */
-    public Task findByConversationId(UUID conversationId) {
+    public Task findFirstByConversationId(UUID conversationId) {
         for (Task task : this.allTasks) {
             if (task.getTopicId().equals(conversationId)) {
                 return task;
             }
         }
         return null;
+    }
+
+    /**
+     * Find by conversation id list.
+     *
+     * @param conversationId the conversation id
+     * @return the list
+     */
+    public List<Task> findByConversationId(UUID conversationId) {
+        List<Task> result = new ArrayList<>();
+        for (Task task : this.allTasks) {
+            if (task.getTopicId().equals(conversationId)) {
+                result.add(task);
+            }
+        }
+        return result;
     }
 
     /**
