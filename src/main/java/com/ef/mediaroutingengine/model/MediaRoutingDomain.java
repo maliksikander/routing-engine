@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.model;
 
 import java.io.Serializable;
 import java.util.Objects;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.springframework.data.annotation.Id;
@@ -13,7 +14,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(value = "mediaRoutingDomains")
 public class MediaRoutingDomain implements Serializable {
     /**
-     * The Id.
+     * The ID.
      */
     @Id
     private String id;
@@ -33,6 +34,11 @@ public class MediaRoutingDomain implements Serializable {
      */
     @NotNull
     private boolean interruptible;
+    /**
+     * The Max requests.
+     */
+    @Min(value = 1, message = "Maximum requests should be greater than 0")
+    private int maxRequests;
 
     /**
      * Gets id.
@@ -106,6 +112,24 @@ public class MediaRoutingDomain implements Serializable {
         this.interruptible = interruptible;
     }
 
+    /**
+     * Gets max requests.
+     *
+     * @return the max requests
+     */
+    public int getMaxRequests() {
+        return maxRequests;
+    }
+
+    /**
+     * Sets max requests.
+     *
+     * @param maxRequests the max requests
+     */
+    public void setMaxRequests(int maxRequests) {
+        this.maxRequests = maxRequests;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -126,10 +150,11 @@ public class MediaRoutingDomain implements Serializable {
     @Override
     public String toString() {
         return "MediaRoutingDomain{"
-                + "id=" + id
+                + "id='" + id + '\''
                 + ", name='" + name + '\''
                 + ", description='" + description + '\''
                 + ", interruptible=" + interruptible
+                + ", maxRequests=" + maxRequests
                 + '}';
     }
 }
