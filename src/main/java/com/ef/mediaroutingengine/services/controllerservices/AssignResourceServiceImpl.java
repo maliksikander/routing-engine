@@ -90,7 +90,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         if (channelSession.getChannel().getChannelConnector() == null) {
             throw new IllegalArgumentException("ChannelSession.Channel.ChannelConnector is null");
         }
-        if (channelSession.getChannel().getChannelConnector().getChannelType() == null) {
+        if (channelSession.getChannel().getChannelType() == null) {
             throw new IllegalArgumentException("ChannelSession.Channel.ChannelConnector.ChannelType is null");
         }
         if (channelSession.getChannel().getChannelConfig() == null) {
@@ -112,7 +112,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @return the media routing domain
      */
     private MediaRoutingDomain validateAndGetMrd(ChannelSession channelSession) {
-        String mrdId = channelSession.getChannel().getChannelConnector().getChannelType().getMediaRoutingDomain();
+        String mrdId = channelSession.getChannel().getChannelType().getMediaRoutingDomain();
         MediaRoutingDomain mrd = this.mrdPool.findById(mrdId);
         if (mrd == null) {
             throw new IllegalArgumentException("MRD with id: " + mrdId + " not found in MRD-pool");
