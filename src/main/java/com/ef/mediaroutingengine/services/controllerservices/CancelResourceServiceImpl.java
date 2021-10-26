@@ -13,6 +13,8 @@ import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.utilities.RestRequest;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,10 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class CancelResourceServiceImpl implements CancelResourceService {
+    /**
+     * The constant logger.
+     */
+    private static final Logger logger = LoggerFactory.getLogger(CancelResourceServiceImpl.class);
     /**
      * The Tasks pool.
      */
@@ -80,18 +86,24 @@ public class CancelResourceServiceImpl implements CancelResourceService {
         if (!isProcessable(task)) {
             return;
         }
+        logger.debug("Task {} is processable", task.getId());
+
         taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
         task.getTimer().cancel();
+        logger.debug("AgentRequestTtl and Task step timers cancelled for task {}", task.getId());
 
         PrecisionQueue precisionQueue = precisionQueuesPool.findById(task.getQueue());
         synchronized (precisionQueue.getServiceQueue()) {
             precisionQueue.removeTask(task);
+            logger.debug("Task {} removed from queue", task.getId());
         }
 
         if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
             endQueuedTask(task, precisionQueue, request.getReasonCode());
+            logger.info("Queued task {} ended successfully", task.getId());
         } else if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
             endReservedTask(task, request.getReasonCode());
+            logger.info("Reserved task {} ended successfully", task.getId());
         }
     }
 
@@ -103,7 +115,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
         if (!(state.equals(Enums.TaskStateName.QUEUED) || state.equals(Enums.TaskStateName.RESERVED))) {
             return false;
         }
-        return task.isAgentRequestTimeout();
+        return !task.isAgentRequestTimeout();
     }
 
     private void endQueuedTask(Task task, PrecisionQueue precisionQueue, Enums.TaskStateReasonCode closeReasonCode) {
@@ -118,7 +130,8 @@ public class CancelResourceServiceImpl implements CancelResourceService {
      * @param task the task
      */
     private void endReservedTask(Task task, Enums.TaskStateReasonCode closeReasonCode) {
-        boolean taskRevoked = this.restRequest.postRevokeTask(task.getId(), task.getAssignedTo());
+        boolean taskRevoked = true;
+        //this.restRequest.postRevokeTask(task.getId(), task.getAssignedTo());
         if (taskRevoked) {
             removeAndPublish(task, closeReasonCode);
             Agent agent = this.agentsPool.findById(task.getAssignedTo());
@@ -136,8 +149,9 @@ public class CancelResourceServiceImpl implements CancelResourceService {
     private void removeAndPublish(Task task, Enums.TaskStateReasonCode closeReasonCode) {
         tasksPool.remove(task);
         tasksRepository.deleteById(task.getId().toString());
+        logger.debug("Task {}, removed from in-memory pool and repository", task.getId());
 
         task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, closeReasonCode));
-        jmsCommunicator.publishTaskStateChangeForReporting(task);
+//        jmsCommunicator.publishTaskStateChangeForReporting(task);
     }
 }

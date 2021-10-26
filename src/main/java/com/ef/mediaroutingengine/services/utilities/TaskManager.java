@@ -298,7 +298,7 @@ public class TaskManager {
         logger.debug("Task enqueued in Precision-Queue | TasksPool.enqueueTask method");
 
         JmsCommunicator jmsCommunicator = this.applicationContext.getBean(JmsCommunicator.class);
-        jmsCommunicator.publishTaskStateChangeForReporting(task);
+//        jmsCommunicator.publishTaskStateChangeForReporting(task);
 
         this.scheduleAgentRequestTimeoutTask(task.getChannelSession());
         logger.debug("Agent-Request-Ttl task scheduled | TasksPool.enqueueTask method");
