@@ -10,6 +10,7 @@ import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Step;
 import com.ef.mediaroutingengine.model.StepEntity;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.model.TaskStep;
 import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
@@ -169,22 +170,22 @@ public class StepsServiceImpl implements StepsService {
     }
 
     private void lastStep(PrecisionQueue precisionQueue, int stepIndex, UUID id) {
-        for (Task task : precisionQueue.getTasks()) {
-            if (task.getCurrentStep() != null && task.getCurrentStep().getId().equals(id)) {
-                Step prevStep = precisionQueue.getStepAt(stepIndex - 1);
-                task.setCurrentStep(prevStep);
+        synchronized (precisionQueue.getServiceQueue()) {
+            for (Task task : precisionQueue.getTasks()) {
+                if (task.getCurrentStep() != null && task.getCurrentStep().getStep().getId().equals(id)) {
+                    Step prevStep = precisionQueue.getStepAt(stepIndex - 1);
+                    task.setCurrentStep(new TaskStep(prevStep, true));
+                }
             }
         }
     }
 
     private void notLastStep(PrecisionQueue precisionQueue, int stepIndex, UUID id) {
-        for (Task task : precisionQueue.getTasks()) {
-            if (task.getCurrentStep() != null && task.getCurrentStep().getId().equals(id)) {
-                task.getTimer().cancel();
-                int nextStepIndex = stepIndex + 1;
-                task.setCurrentStep(precisionQueue.getStepAt(nextStepIndex));
-                if (nextStepIndex < precisionQueue.getSteps().size() - 1) {
-                    task.startTimer();
+        synchronized (precisionQueue.getServiceQueue()) {
+            for (Task task : precisionQueue.getTasks()) {
+                if (task.getCurrentStep() != null && task.getCurrentStep().getStep().getId().equals(id)) {
+                    task.getTimer().cancel();
+                    task.setUpStepFrom(precisionQueue, stepIndex + 1);
                 }
             }
         }

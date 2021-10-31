@@ -12,7 +12,6 @@ import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.utilities.RestRequest;
-import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
@@ -49,10 +48,6 @@ public class TaskRouter implements PropertyChangeListener {
      */
     private final AgentsPool agentsPool;
     /**
-     * The Task manager.
-     */
-    private final TaskManager taskManager;
-    /**
      * The Rest request.
      */
     private final RestRequest restRequest;
@@ -77,17 +72,14 @@ public class TaskRouter implements PropertyChangeListener {
      * Constructor.
      *
      * @param agentsPool      the pool of all agents
-     * @param taskManager     the task manager
      * @param restRequest     to make rest calls to other components.
      * @param tasksRepository to communicate with the Redis Tasks collection.
      * @param jmsCommunicator the jms communicator
      */
     @Autowired
-    public TaskRouter(AgentsPool agentsPool, TaskManager taskManager,
-                      RestRequest restRequest, TasksRepository tasksRepository,
-                      JmsCommunicator jmsCommunicator) {
+    public TaskRouter(AgentsPool agentsPool, RestRequest restRequest,
+                      TasksRepository tasksRepository, JmsCommunicator jmsCommunicator) {
         this.agentsPool = agentsPool;
-        this.taskManager = taskManager;
         this.restRequest = restRequest;
         this.tasksRepository = tasksRepository;
         this.jmsCommunicator = jmsCommunicator;
@@ -96,14 +88,11 @@ public class TaskRouter implements PropertyChangeListener {
     /**
      * Initializes the Scheduler.
      *
-     * @param name           the name of the scheduler
      * @param precisionQueue precision queue associated with this scheduler
      */
-    public void init(String name, PrecisionQueue precisionQueue) {
+    public void init(PrecisionQueue precisionQueue) {
         if (!isInit) {
-            name = name + " task scheduler";
             this.precisionQueue = precisionQueue;
-            this.taskManager.addPropertyChangeListener(this, name); // for new Task
             this.isInit = true;
         }
     }
@@ -118,10 +107,10 @@ public class TaskRouter implements PropertyChangeListener {
             if (precisionQueue.isEmpty()) {
                 return;
             }
-            logger.debug("Precision-Queue is not empty | TaskScheduler.propertyChange method");
+            logger.debug("Precision-Queue is not empty");
 
             Task task = precisionQueue.peek();
-            logger.debug("Queue.peek: Task: {} | TaskScheduler.propertyChange method", task.getId());
+
             synchronized (precisionQueue.getServiceQueue()) {
                 reserve(task);
             }
@@ -132,10 +121,9 @@ public class TaskRouter implements PropertyChangeListener {
     }
 
     private void reserve(Task task) {
-        // boolean assignedToLastAssignedAgent = this.assignToLastAssignedAgent(task);
-        boolean assignedToLastAssignedAgent = false;
+        boolean assignedToLastAssignedAgent = this.assignToLastAssignedAgent(task);
         if (!assignedToLastAssignedAgent) {
-            int currentStepIndex = precisionQueue.getStepIndex(task.getCurrentStep());
+            int currentStepIndex = precisionQueue.getStepIndex(task.getCurrentStep().getStep());
             for (int i = 0; i < currentStepIndex + 1; i++) {
                 Step step = precisionQueue.getStepAt(i);
                 logger.info("Step: {} searching in queue: {}", i, precisionQueue.getName());
@@ -143,7 +131,7 @@ public class TaskRouter implements PropertyChangeListener {
                 if (agent != null) {
                     logger.debug("Agent: {} is available to schedule task: {}", agent.getId(), task.getId());
                     this.assignTaskTo(agent, task);
-                    break;
+                    return;
                 }
             }
             logger.debug("Could not find an agent at the moment for task: {}", task.getId());
@@ -166,19 +154,8 @@ public class TaskRouter implements PropertyChangeListener {
     private void startNextStepTimerIfTimerEventFired(PropertyChangeEvent evt) {
         if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.TIMER.name())) {
             Task task = (Task) evt.getNewValue();
-            logger.debug("Task Timer event fired for task: {}", task.getId());
-
-            int currentStepIndex = this.precisionQueue.getStepIndex(task.getCurrentStep());
-            int nextStepIndex = currentStepIndex + 1;
-
-            task.setCurrentStep(precisionQueue.getStepAt(nextStepIndex));
-
-            // If next step is not the last step, start step expiry timer in the task
-            if (nextStepIndex < precisionQueue.getSteps().size() - 1) {
-                logger.debug("STEP IS NOT THE LAST STEP TASK TIMER IS STARTING");
-                task.startTimer();
-            }
-            logger.debug("step {} associated agents search for available agent", currentStepIndex + 1);
+            int currentStepIndex = this.precisionQueue.getStepIndex(task.getCurrentStep().getStep());
+            task.setUpStepFrom(this.precisionQueue, currentStepIndex + 1);
         }
     }
 
@@ -213,15 +190,16 @@ public class TaskRouter implements PropertyChangeListener {
      * @return the boolean
      */
     private boolean assignToLastAssignedAgent(Task task) {
-        UUID lastAssignedAgentId = task.getLastAssignedAgentId();
-        if (lastAssignedAgentId != null) {
-            Agent agent = this.agentsPool.findById(lastAssignedAgentId);
-            String mrdId = this.precisionQueue.getMrd().getId();
-            if (agent != null && agent.isAvailableForRouting(mrdId)) {
-                assignTaskTo(agent, task);
-                return true;
-            }
-        }
+//        UUID lastAssignedAgentId = task.getLastAssignedAgentId();
+//        if (lastAssignedAgentId != null) {
+//            Agent agent = this.agentsPool.findById(lastAssignedAgentId);
+//            String mrdId = this.precisionQueue.getMrd().getId();
+//            if (agent != null && agent.isAvailableForRouting(mrdId)) {
+//                assignTaskTo(agent, task);
+//                return true;
+//            }
+//        }
+//        return false;
         return false;
     }
 
@@ -232,17 +210,17 @@ public class TaskRouter implements PropertyChangeListener {
      * @param task  the task
      */
     private void assignTaskTo(Agent agent, Task task) {
-        logger.debug("method started | TaskScheduler.assignTaskTo method");
+        logger.debug("method started");
         try {
             if (task.isAgentRequestTimeout()) {
-                logger.debug("AgentRequestTtlTimeout method returning.. | TaskScheduler.assignTaskTo method");
+                logger.debug("AgentRequestTtlTimeout method returning..");
                 return;
             }
             CCUser ccUser = agent.toCcUser();
             boolean isReserved = this.restRequest.postAssignTask(task.getChannelSession(), ccUser,
                     task.getTopicId(), task.getId());
             if (isReserved) {
-                logger.debug("Task Assigned to agent in Agent-Manager | TaskScheduler.assignTaskTo method");
+                logger.debug("Task Assigned to agent in Agent-Manager");
                 this.changeStateOf(task, new TaskState(Enums.TaskStateName.RESERVED, null), agent.getId());
                 this.jmsCommunicator.publishTaskStateChangeForReporting(task);
                 precisionQueue.dequeue();
@@ -257,7 +235,7 @@ public class TaskRouter implements PropertyChangeListener {
             // Todo: Apache Commons: Use ExceptionUtils instead of printStackTrace.
             e.printStackTrace();
         }
-        logger.debug("method ended | TaskScheduler.assignTaskTo method");
+        logger.debug("method ended");
     }
 
     /**

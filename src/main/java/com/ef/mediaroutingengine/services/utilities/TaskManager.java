@@ -18,10 +18,6 @@ import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -50,39 +46,26 @@ public class TaskManager {
      * The Agents pool.
      */
     private final AgentsPool agentsPool;
-
     /**
      * The Tasks pool.
      */
     private final TasksPool tasksPool;
-
     /**
      * The Tasks repository.
      */
     private final TasksRepository tasksRepository;
-
     /**
      * The Precision queues pool.
      */
     private final PrecisionQueuesPool precisionQueuesPool;
-
     /**
      * The Rest request.
      */
     private final RestRequest restRequest;
-
-    /**
-     * The Change support.
-     */
-    private final PropertyChangeSupport changeSupport;
     /**
      * The Request ttl timers.
      */
     private final Map<UUID, TaskManager.RequestTtlTimer> requestTtlTimers;
-    /**
-     * The Change support precision queue listeners.
-     */
-    private final List<String> changeSupportListeners = new LinkedList<>();
 
     /**
      * Default Constructor. Loads the dependencies.
@@ -104,32 +87,7 @@ public class TaskManager {
         this.tasksRepository = tasksRepository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.restRequest = restRequest;
-        this.changeSupport = new PropertyChangeSupport(this);
         this.requestTtlTimers = new ConcurrentHashMap<>();
-    }
-
-    /**
-     * Adds a property change listener, which will listen to property changes of this object.
-     *
-     * @param listener the property change listener object
-     * @param name     the name of the listener
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener, String name) {
-        if (!this.changeSupportListeners.contains(name)) {
-            this.changeSupportListeners.add(name);
-            this.changeSupport.addPropertyChangeListener(listener);
-        }
-    }
-
-    /**
-     * Remove property change listener.
-     *
-     * @param listener the listener
-     * @param name     the name
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener, String name) {
-        this.changeSupportListeners.remove(name);
-        this.changeSupport.removePropertyChangeListener(listener);
     }
 
     /**
@@ -279,6 +237,27 @@ public class TaskManager {
         this.requestTtlTimers.put(topicId, newTimerTask);
     }
 
+    private void fireNewTaskToTaskRouter(Task task, PrecisionQueue precisionQueue) {
+        PropertyChangeEvent evt =
+                new PropertyChangeEvent(this, Enums.EventName.NEW_TASK.name(), null, task);
+        precisionQueue.getTaskScheduler().propertyChange(evt);
+    }
+
+    private void setupNewTask(Task task, PrecisionQueue precisionQueue) {
+        this.tasksPool.add(task);
+        logger.debug("Task: {} added in tasks pool", task.getId());
+
+        this.tasksRepository.save(task.getId().toString(), new TaskDto(task));
+        logger.debug("Task: {} saved in tasks repository", task.getId());
+
+        task.setUpStepFrom(precisionQueue, 0);
+        logger.debug("Queue Step set-up for Task: {}", task.getId());
+
+        precisionQueue.enqueue(task);
+        task.setEnqueueTime(System.currentTimeMillis());
+        logger.debug("Task: {} enqueued in Precision-Queue: {}", task.getId(), precisionQueue.getId());
+    }
+
     /**
      * Enqueue task from assign-resource API call.
      *
@@ -287,33 +266,19 @@ public class TaskManager {
      * @param mrd            mrd in request.
      */
     public void enqueueTask(ChannelSession channelSession, PrecisionQueue queue, MediaRoutingDomain mrd) {
-        logger.debug("method started | TasksPool.enqueueTask method");
-        logger.debug("Precision-Queue is not null | TasksPool.enqueueTask method");
+        logger.debug("method started");
 
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = new Task(channelSession, mrd, queue.getId(), taskState);
-        this.tasksPool.add(task);
-        logger.debug("New task added to allTasks list | TasksPool.enqueueTask method");
+        Task task = Task.getInstance(channelSession, mrd, queue.getId(), taskState);
+        this.setupNewTask(task, queue);
 
-        this.tasksRepository.save(task.getId().toString(), new TaskDto(task));
-        logger.debug("Task saved in Redis | TasksPool.enqueueTask method");
-
-        task.setCurrentStep(queue.getStepAt(0));
-        if (queue.getSteps().size() > 1) {
-            task.startTimer();
-        }
-        queue.enqueue(task);
-        logger.debug("Task enqueued in Precision-Queue | TasksPool.enqueueTask method");
-
-        JmsCommunicator jmsCommunicator = this.applicationContext.getBean(JmsCommunicator.class);
-        jmsCommunicator.publishTaskStateChangeForReporting(task);
+        this.jmsCommunicator().publishTaskStateChangeForReporting(task);
 
         this.scheduleAgentRequestTimeoutTask(task.getChannelSession());
-        logger.debug("Agent-Request-Ttl task scheduled | TasksPool.enqueueTask method");
+        logger.debug("Agent-Request-Ttl task scheduled");
 
-        this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
-        logger.debug("NEW_TASK event fired to Task-Scheduler | TasksPool.enqueueTask method");
-        logger.debug("method ended | TasksPool.enqueueTask method");
+        fireNewTaskToTaskRouter(task, queue);
+        logger.debug("method ended");
     }
 
     /**
@@ -321,31 +286,18 @@ public class TaskManager {
      *
      * @param task task to be enqueued.
      */
-    public void enqueueTask(Task task) {
+    public void enqueueTaskOnFailover(Task task) {
         PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue());
         if (queue != null) {
             this.tasksPool.add(task);
             if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
-                task.setCurrentStep(queue.getStepAt(0));
-                if (queue.getSteps().size() > 1) {
-                    task.startTimer();
-                }
+                task.setUpStepFrom(queue, 0);
                 queue.enqueue(task);
-                this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
+                fireNewTaskToTaskRouter(task, queue);
             }
         } else {
             logger.warn("Queue id: {} not found while enqueuing task", task.getQueue());
         }
-    }
-
-    /**
-     * Remove old task for reroute.
-     *
-     * @param task the task
-     */
-    public void removeTaskFromPoolAndRepository(Task task) {
-        this.tasksRepository.deleteById(task.getId().toString());
-        this.tasksPool.remove(task);
     }
 
     /**
@@ -354,53 +306,10 @@ public class TaskManager {
      * @param oldTask the old task
      * @return the up new task for reroute
      */
-    private Task setUpNewTaskForReroute(Task oldTask) {
-        Task newTask = new Task(oldTask);
-        this.tasksPool.add(newTask);
-        this.tasksRepository.save(newTask.getId().toString(), new TaskDto(newTask));
-
-        PrecisionQueue queue = this.precisionQueuesPool.findById(newTask.getQueue());
-        newTask.setCurrentStep(queue.getStepAt(0));
-        if (queue.getSteps().size() > 1) {
-            newTask.startTimer();
-        }
-        queue.enqueue(newTask);
-        newTask.setEnqueueTime(System.currentTimeMillis());
-
+    private Task setUpNewTaskForReroute(Task oldTask, PrecisionQueue precisionQueue) {
+        Task newTask = Task.getInstance(oldTask);
+        setupNewTask(newTask, precisionQueue);
         return newTask;
-    }
-
-    /**
-     * Reroute active task.
-     *
-     * @param currentTask the current task
-     */
-    private void rerouteActiveTask(Task currentTask) {
-        this.removeTaskFromPoolAndRepository(currentTask);
-        Task newTask = this.setUpNewTaskForReroute(currentTask);
-        JmsCommunicator jmsCommunicator = this.applicationContext.getBean(JmsCommunicator.class);
-        jmsCommunicator.publishTaskStateChangeForReporting(newTask);
-        this.scheduleAgentRequestTimeoutTask(newTask.getChannelSession());
-        this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, newTask);
-    }
-
-    /**
-     * Reroute reserved task.
-     *
-     * @param currentTask the current task
-     */
-    private void rerouteReservedTask(Task currentTask) {
-        this.removeTaskFromPoolAndRepository(currentTask);
-        // If Agent request Ttl has ended.
-        if (currentTask.isAgentRequestTimeout()) {
-            this.requestTtlTimers.remove(currentTask.getTopicId());
-            this.restRequest.postNoAgentAvailable(currentTask.getTopicId().toString());
-            return;
-        }
-        Task newTask = this.setUpNewTaskForReroute(currentTask);
-        JmsCommunicator jmsCommunicator = this.applicationContext.getBean(JmsCommunicator.class);
-        jmsCommunicator.publishTaskStateChangeForReporting(newTask);
-        this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, newTask);
     }
 
     /**
@@ -418,17 +327,40 @@ public class TaskManager {
     }
 
     /**
-     * Removes the task from the pool by the task id.
+     * Reroute active task.
      *
-     * @param task the task to be removed
+     * @param currentTask the current task
      */
-    public void removeTask(Task task) {
-        logger.debug("Going to remove task: {}", task.getId());
-        if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
-            this.cancelAgentRequestTtlTimerTask(task.getTopicId());
-            this.requestTtlTimers.remove(task.getTopicId());
+    private void rerouteActiveTask(Task currentTask) {
+        this.removeTaskFromPoolAndRepository(currentTask);
+        PrecisionQueue precisionQueue = this.precisionQueuesPool.findById(currentTask.getQueue());
+
+        Task newTask = this.setUpNewTaskForReroute(currentTask, precisionQueue);
+
+        this.jmsCommunicator().publishTaskStateChangeForReporting(newTask);
+        this.scheduleAgentRequestTimeoutTask(newTask.getChannelSession());
+        this.fireNewTaskToTaskRouter(newTask, precisionQueue);
+    }
+
+    /**
+     * Reroute reserved task.
+     *
+     * @param currentTask the current task
+     */
+    private void rerouteReservedTask(Task currentTask) {
+        this.removeTaskFromPoolAndRepository(currentTask);
+        // If Agent request Ttl has ended.
+        if (currentTask.isAgentRequestTimeout()) {
+            this.requestTtlTimers.remove(currentTask.getTopicId());
+            this.restRequest.postNoAgentAvailable(currentTask.getTopicId().toString());
+            return;
         }
-        this.tasksPool.remove(task);
+
+        PrecisionQueue precisionQueue = this.precisionQueuesPool.findById(currentTask.getQueue());
+
+        Task newTask = this.setUpNewTaskForReroute(currentTask, precisionQueue);
+        this.jmsCommunicator().publishTaskStateChangeForReporting(newTask);
+        this.fireNewTaskToTaskRouter(newTask, precisionQueue);
     }
 
     /**
@@ -449,6 +381,30 @@ public class TaskManager {
     }
 
     /**
+     * Removes the task from the pool by the task id.
+     *
+     * @param task the task to be removed
+     */
+    public void removeTask(Task task) {
+        logger.debug("Going to remove task: {}", task.getId());
+        if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
+            this.cancelAgentRequestTtlTimerTask(task.getTopicId());
+            this.requestTtlTimers.remove(task.getTopicId());
+        }
+        this.tasksPool.remove(task);
+    }
+
+    /**
+     * Remove old task for reroute.
+     *
+     * @param task the task
+     */
+    public void removeTaskFromPoolAndRepository(Task task) {
+        this.tasksRepository.deleteById(task.getId().toString());
+        this.tasksPool.remove(task);
+    }
+
+    /**
      * Remove agent request ttl timer task.
      *
      * @param topicId the topic id
@@ -465,9 +421,14 @@ public class TaskManager {
     public void removePullTaskOnAgentLogout(Task task) {
         task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, null));
         this.removeTaskFromPoolAndRepository(task);
-        JmsCommunicator jmsCommunicator = this.applicationContext.getBean(JmsCommunicator.class);
-        jmsCommunicator.publishTaskStateChangeForReporting(task);
+        this.jmsCommunicator().publishTaskStateChangeForReporting(task);
     }
+
+    private JmsCommunicator jmsCommunicator() {
+        return this.applicationContext.getBean(JmsCommunicator.class);
+    }
+
+// +++++++++++++++++++++++++++++++ RequestTtlTimer class ++++++++++++++++++++++++++++++++++++++++++++
 
     /**
      * The type Request ttl timer.
@@ -515,4 +476,5 @@ public class TaskManager {
             logger.debug("method ended | RequestTtlTimer.run method");
         }
     }
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 }
