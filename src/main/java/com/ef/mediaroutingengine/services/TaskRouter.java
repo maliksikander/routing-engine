@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.services;
 
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentSelectionCriteria;
@@ -12,6 +13,7 @@ import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.utilities.RestRequest;
+import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
@@ -29,16 +31,6 @@ import org.springframework.stereotype.Service;
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class TaskRouter implements PropertyChangeListener {
-    // Queue Scheduler works as short term scheduler,
-    // it scans the queue and removes task to assign an agent
-
-    /*
-    This property change listener is listening on the following property changes:
-    Agent-state: whenever Agent state changes to READY or ACTIVE
-    TaskServiceManager: NewTask, TaskState
-    Task: Timer, RemoveTask,
-     */
-
     /**
      * The constant LOGGER.
      */
@@ -60,6 +52,10 @@ public class TaskRouter implements PropertyChangeListener {
      */
     private final JmsCommunicator jmsCommunicator;
     /**
+     * The Task manager.
+     */
+    private final TaskManager taskManager;
+    /**
      * The Precision queue.
      */
     private PrecisionQueue precisionQueue;
@@ -77,12 +73,13 @@ public class TaskRouter implements PropertyChangeListener {
      * @param jmsCommunicator the jms communicator
      */
     @Autowired
-    public TaskRouter(AgentsPool agentsPool, RestRequest restRequest,
-                      TasksRepository tasksRepository, JmsCommunicator jmsCommunicator) {
+    public TaskRouter(AgentsPool agentsPool, RestRequest restRequest, TasksRepository tasksRepository,
+                      JmsCommunicator jmsCommunicator, TaskManager taskManager) {
         this.agentsPool = agentsPool;
         this.restRequest = restRequest;
         this.tasksRepository = tasksRepository;
         this.jmsCommunicator = jmsCommunicator;
+        this.taskManager = taskManager;
     }
 
     /**
@@ -93,31 +90,58 @@ public class TaskRouter implements PropertyChangeListener {
     public void init(PrecisionQueue precisionQueue) {
         if (!isInit) {
             this.precisionQueue = precisionQueue;
+            this.taskManager.addPropertyChangeListener(Enums.EventName.NEW_TASK.name(), this);
             this.isInit = true;
         }
     }
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        logger.debug("TaskScheduler for queue {} invoked on event {}", precisionQueue.getName(), evt.getPropertyName());
+        logger.debug("TaskRouter for queue: [{}] invoked on event [{}]",
+                precisionQueue.getName(), evt.getPropertyName());
+
+        if (evt.getPropertyName().equals(Enums.EventName.NEW_TASK.name())) {
+            this.onNewTask(evt);
+        } else if (evt.getPropertyName().equals(Enums.EventName.STEP_TIMEOUT.name())) {
+            this.onStepTimeout(evt);
+        }
+
+        if (precisionQueue.isEmpty()) {
+            logger.debug("Queue [{}] is empty", this.precisionQueue.getName());
+            return;
+        }
+        logger.debug("Queue [{}] is not empty", this.precisionQueue.getName());
+
         try {
-            this.listenToTaskPropertyChangesIfNewTaskEventFired(evt);
-            this.startNextStepTimerIfTimerEventFired(evt);
-
-            if (precisionQueue.isEmpty()) {
-                return;
-            }
-            logger.debug("Precision-Queue is not empty");
-
-            Task task = precisionQueue.peek();
-
             synchronized (precisionQueue.getServiceQueue()) {
+                Task task = precisionQueue.peek();
                 reserve(task);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        logger.debug("Property changed");
+        logger.debug(Constants.METHOD_ENDED);
+    }
+
+    /**
+     * Listen to task property changes if new task event fired.
+     *
+     * @param evt the evt
+     */
+    private void onNewTask(PropertyChangeEvent evt) {
+        Task task = (Task) evt.getNewValue();
+        if (task.getQueue().equals(this.precisionQueue.getId())) {
+            this.precisionQueue.enqueue(task);
+            logger.debug("Task: {} enqueued in Precision-Queue: {}", task.getId(), precisionQueue.getId());
+            task.addPropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), this);
+            task.setUpStepFrom(this.precisionQueue, 0);
+        }
+    }
+
+    private void onStepTimeout(PropertyChangeEvent evt) {
+        Task task = (Task) evt.getNewValue();
+        int currentStepIndex = this.precisionQueue.getStepIndex(task.getCurrentStep().getStep());
+        task.setUpStepFrom(this.precisionQueue, currentStepIndex + 1);
     }
 
     private void reserve(Task task) {
@@ -139,24 +163,22 @@ public class TaskRouter implements PropertyChangeListener {
     }
 
     /**
-     * Listen to task property changes if new task event fired.
+     * Assign to last assigned agent boolean.
      *
-     * @param evt the evt
+     * @param task the task
+     * @return the boolean
      */
-    private void listenToTaskPropertyChangesIfNewTaskEventFired(PropertyChangeEvent evt) {
-        if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.NEW_TASK.name())) {
-            Task task = (Task) evt.getNewValue();
-            task.addPropertyChangeListener(Enums.EventName.TIMER.name(), this);
-            task.addPropertyChangeListener(Enums.EventName.TASK_REMOVED.name(), this);
+    private boolean assignToLastAssignedAgent(Task task) {
+        UUID lastAssignedAgentId = task.getLastAssignedAgentId();
+        if (lastAssignedAgentId != null) {
+            Agent agent = this.agentsPool.findById(lastAssignedAgentId);
+            String mrdId = this.precisionQueue.getMrd().getId();
+            if (agent != null && agent.isAvailableForRouting(mrdId)) {
+                assignTaskTo(agent, task);
+                return true;
+            }
         }
-    }
-
-    private void startNextStepTimerIfTimerEventFired(PropertyChangeEvent evt) {
-        if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.TIMER.name())) {
-            Task task = (Task) evt.getNewValue();
-            int currentStepIndex = this.precisionQueue.getStepIndex(task.getCurrentStep().getStep());
-            task.setUpStepFrom(this.precisionQueue, currentStepIndex + 1);
-        }
+        return false;
     }
 
     /**
@@ -184,26 +206,6 @@ public class TaskRouter implements PropertyChangeListener {
     }
 
     /**
-     * Assign to last assigned agent boolean.
-     *
-     * @param task the task
-     * @return the boolean
-     */
-    private boolean assignToLastAssignedAgent(Task task) {
-//        UUID lastAssignedAgentId = task.getLastAssignedAgentId();
-//        if (lastAssignedAgentId != null) {
-//            Agent agent = this.agentsPool.findById(lastAssignedAgentId);
-//            String mrdId = this.precisionQueue.getMrd().getId();
-//            if (agent != null && agent.isAvailableForRouting(mrdId)) {
-//                assignTaskTo(agent, task);
-//                return true;
-//            }
-//        }
-//        return false;
-        return false;
-    }
-
-    /**
      * Assign task to.
      *
      * @param agent the agent
@@ -226,13 +228,11 @@ public class TaskRouter implements PropertyChangeListener {
                 precisionQueue.dequeue();
                 agent.reserveTask(task);
                 this.restRequest.postAgentReserved(task.getTopicId(), ccUser);
-//                task.handleTaskRemoveEvent();
+
                 task.getTimer().cancel();
-                task.removePropertyChangeListener(Enums.EventName.TIMER.name(), this);
-                task.removePropertyChangeListener(Enums.EventName.TASK_REMOVED.name(), this);
+                task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), this);
             }
         } catch (Exception e) {
-            // Todo: Apache Commons: Use ExceptionUtils instead of printStackTrace.
             e.printStackTrace();
         }
         logger.debug("method ended");

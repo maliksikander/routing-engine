@@ -102,8 +102,8 @@ public class Task {
      * @param state          the state
      * @return the instance
      */
-    public static Task getInstance(ChannelSession channelSession, MediaRoutingDomain mrd,
-                                   String queue, TaskState state) {
+    public static Task getInstanceFrom(ChannelSession channelSession, MediaRoutingDomain mrd,
+                                       String queue, TaskState state) {
         Task task = new Task(UUID.randomUUID(), channelSession, mrd, queue);
         task.setTaskState(state);
         return task;
@@ -115,7 +115,7 @@ public class Task {
      * @param taskDto the task dto
      * @return the instance
      */
-    public static Task getInstance(TaskDto taskDto) {
+    public static Task getInstanceFrom(TaskDto taskDto) {
         Task task = new Task(taskDto.getId(), taskDto.getChannelSession(), taskDto.getMrd(), taskDto.getQueue());
         task.state = taskDto.getState();
         task.priority = taskDto.getPriority();
@@ -130,9 +130,9 @@ public class Task {
      * @param oldTask the old task
      * @return the instance
      */
-    public static Task getInstance(Task oldTask) {
+    public static Task getInstanceFrom(Task oldTask) {
         TaskState newTaskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = getInstance(oldTask.channelSession, oldTask.mrd, oldTask.queue, newTaskState);
+        Task task = getInstanceFrom(oldTask.channelSession, oldTask.mrd, oldTask.queue, newTaskState);
         task.priority = 11;
         return task;
     }
@@ -145,9 +145,9 @@ public class Task {
      * @param channelSession the channel session
      * @return the instance
      */
-    public static Task getInstance(UUID agentId, MediaRoutingDomain mrd, ChannelSession channelSession) {
+    public static Task getInstanceFrom(UUID agentId, MediaRoutingDomain mrd, ChannelSession channelSession) {
         TaskState taskState = new TaskState(Enums.TaskStateName.ACTIVE, null);
-        Task task = getInstance(channelSession, mrd, null, taskState);
+        Task task = getInstanceFrom(channelSession, mrd, null, taskState);
         task.setAssignedTo(agentId);
         return task;
     }
@@ -340,7 +340,7 @@ public class Task {
      */
     // TODO: Implement it correctly
     public UUID getLastAssignedAgentId() {
-        return UUID.randomUUID();
+        return null;
     }
 
     /**
@@ -384,13 +384,6 @@ public class Task {
             logger.error(ExceptionUtils.getMessage(ex));
             logger.error(ExceptionUtils.getStackTrace(ex));
         }
-    }
-
-    /**
-     * Handle task remove event.
-     */
-    public void handleTaskRemoveEvent() {
-        this.changeSupport.firePropertyChange(Enums.EventName.TASK_REMOVED.name(), null, "");
     }
 
     /**
@@ -445,7 +438,7 @@ public class Task {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-            Task.this.changeSupport.firePropertyChange(Enums.EventName.TIMER.name(), null, Task.this);
+            Task.this.changeSupport.firePropertyChange(Enums.EventName.STEP_TIMEOUT.name(), null, Task.this);
         }
     }
     // +++++++++++++++++++++++++++++++************************++++++++++++++++++++++++++++++++++++++++++++*
