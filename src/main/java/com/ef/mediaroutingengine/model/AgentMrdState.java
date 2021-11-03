@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.model;
 
 import com.ef.mediaroutingengine.commons.Enums;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 /**
@@ -18,11 +19,11 @@ public class AgentMrdState {
     /**
      * The State change time.
      */
-    private LocalDateTime stateChangeTime;
+    private Timestamp stateChangeTime;
     /**
      * The Last ready state change time.
      */
-    private LocalDateTime lastReadyStateChangeTime;
+    private Timestamp lastReadyStateChangeTime;
 
     /**
      * Instantiates a new Agent mrd state.
@@ -40,8 +41,10 @@ public class AgentMrdState {
     public AgentMrdState(MediaRoutingDomain mrd, Enums.AgentMrdStateName state) {
         this.mrd = mrd;
         this.state = state;
-        this.stateChangeTime = LocalDateTime.now();
-        this.lastReadyStateChangeTime = LocalDateTime.of(1990, 4, 2, 12, 1);
+        this.stateChangeTime = Timestamp.valueOf(LocalDateTime.now());
+
+        LocalDateTime longTimeAgo = LocalDateTime.of(1990, 4, 2, 12, 1);
+        this.lastReadyStateChangeTime = Timestamp.valueOf(longTimeAgo);
     }
 
     /**
@@ -79,7 +82,7 @@ public class AgentMrdState {
      */
     public void setState(Enums.AgentMrdStateName state) {
         this.state = state;
-        this.stateChangeTime = LocalDateTime.now();
+        this.stateChangeTime = Timestamp.valueOf(LocalDateTime.now());
         if (this.state.equals(Enums.AgentMrdStateName.READY)) {
             this.lastReadyStateChangeTime = this.stateChangeTime;
         }
@@ -90,7 +93,7 @@ public class AgentMrdState {
      *
      * @return the state change time
      */
-    public LocalDateTime getStateChangeTime() {
+    public Timestamp getStateChangeTime() {
         return stateChangeTime;
     }
 
@@ -99,7 +102,7 @@ public class AgentMrdState {
      *
      * @param stateChangeTime the state change time
      */
-    public void setStateChangeTime(LocalDateTime stateChangeTime) {
+    public void setStateChangeTime(Timestamp stateChangeTime) {
         this.stateChangeTime = stateChangeTime;
     }
 
@@ -108,7 +111,7 @@ public class AgentMrdState {
      *
      * @return the last ready state change time
      */
-    public LocalDateTime getLastReadyStateChangeTime() {
+    public Timestamp getLastReadyStateChangeTime() {
         return lastReadyStateChangeTime;
     }
 
@@ -117,7 +120,7 @@ public class AgentMrdState {
      *
      * @param lastReadyStateChangeTime the last ready state change time
      */
-    public void setLastReadyStateChangeTime(LocalDateTime lastReadyStateChangeTime) {
+    public void setLastReadyStateChangeTime(Timestamp lastReadyStateChangeTime) {
         this.lastReadyStateChangeTime = lastReadyStateChangeTime;
     }
 
