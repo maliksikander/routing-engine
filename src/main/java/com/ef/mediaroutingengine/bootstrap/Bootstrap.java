@@ -216,10 +216,10 @@ public class Bootstrap {
         List<TaskDto> taskDtoList = this.tasksRepository.findAll();
         for (TaskDto taskDto : taskDtoList) {
             this.replaceMrdInTask(taskDto);
-            Task task = new Task(taskDto);
+            Task task = Task.getInstanceFrom(taskDto);
             this.associateTaskWithAgent(task);
             if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
-                this.taskManager.enqueueTask(task);
+                this.taskManager.enqueueTaskOnFailover(task);
             } else if (task.getRoutingMode().equals(RoutingMode.PULL)) {
                 this.tasksPool.add(task);
             }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import javax.validation.constraints.Min;
 
 /**
  * The type Step entity.
@@ -20,6 +21,7 @@ public class StepEntity {
     /**
      * The Timeout.
      */
+    @Min(value = 0, message = "Negative integers not allowed for timeout value")
     private int timeout;
 
     /**

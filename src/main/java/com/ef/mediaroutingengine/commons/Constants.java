@@ -12,10 +12,6 @@ public class Constants {
      * Used for Logging at the end of a method.
      */
     public static final String METHOD_ENDED = "method ended";
-    /**
-     * Maximum number of tasks an Agent can handle on each MRD.
-     */
-    public static final int MAX_TASKS = 5;
 
     /**
      * Instantiates a new Constants.

@@ -11,7 +11,8 @@ public class MrdStateBusy implements MrdStateDelegate {
     @Override
     public Enums.AgentMrdStateName getNewState(Agent agent, AgentMrdState agentMrdState) {
         Enums.AgentMrdStateName currentState = agentMrdState.getState();
-        if (currentState.equals(Enums.AgentMrdStateName.ACTIVE)) {
+        if (currentState.equals(Enums.AgentMrdStateName.ACTIVE)
+                || currentState.equals(Enums.AgentMrdStateName.READY)) {
             return Enums.AgentMrdStateName.BUSY;
         }
         return currentState;

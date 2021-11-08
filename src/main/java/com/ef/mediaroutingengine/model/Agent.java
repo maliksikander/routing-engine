@@ -5,7 +5,7 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Enums;
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -315,7 +315,7 @@ public class Agent {
      * @param mrdId id of the mrd
      * @return the last ready state change time for an associated mrd state, null if id not found
      */
-    public LocalDateTime getLastReadyStateChangeTimeFor(@NotNull String mrdId) {
+    public Timestamp getLastReadyStateChangeTimeFor(@NotNull String mrdId) {
         AgentMrdState agentMrdState = this.agentMrdStates.get(mrdId);
         if (agentMrdState == null) {
             return null;

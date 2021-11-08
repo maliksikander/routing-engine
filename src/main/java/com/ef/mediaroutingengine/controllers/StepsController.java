@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.controllers;
 import com.ef.mediaroutingengine.model.StepEntity;
 import com.ef.mediaroutingengine.services.controllerservices.StepsService;
 import java.util.UUID;
+import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,7 +44,7 @@ public class StepsController {
      */
     @CrossOrigin(origins = "*")
     @PostMapping("/precision-queues/{queueId}/steps")
-    public ResponseEntity<Object> create(@RequestBody StepEntity stepEntity, @PathVariable String queueId) {
+    public ResponseEntity<Object> create(@Valid @RequestBody StepEntity stepEntity, @PathVariable String queueId) {
         return new ResponseEntity<>(this.service.create(queueId, stepEntity), HttpStatus.OK);
     }
 
@@ -57,7 +58,7 @@ public class StepsController {
      */
     @CrossOrigin(origins = "*")
     @PutMapping("/precision-queues/{queueId}/steps/{id}")
-    public ResponseEntity<Object> update(@RequestBody StepEntity stepEntity,
+    public ResponseEntity<Object> update(@Valid @RequestBody StepEntity stepEntity,
                                          @PathVariable String queueId, @PathVariable UUID id) {
         return new ResponseEntity<>(this.service.update(id, queueId, stepEntity), HttpStatus.OK);
     }
