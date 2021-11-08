@@ -46,7 +46,7 @@ public class PullAssignTaskServiceImpl implements PullAssignTaskService {
 
     @Override
     public TaskDto assignTask(Agent agent, MediaRoutingDomain mrd, ChannelSession channelSession) {
-        Task task = new Task(agent.getId(), mrd, channelSession);
+        Task task = Task.getInstanceFrom(agent.getId(), mrd, channelSession);
         this.tasksPool.add(task);
         agent.addActiveTask(task);
         TaskDto taskDto = new TaskDto(task);

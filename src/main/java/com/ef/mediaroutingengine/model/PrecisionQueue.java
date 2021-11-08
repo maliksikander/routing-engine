@@ -62,8 +62,8 @@ public class PrecisionQueue implements Queue {
     /**
      * Parametrized constructor. Constructs a PrecisionQueue object with a PrecisionQueueEntity object.
      *
-     * @param pqEntity      the precision-queue entity object Stored in the DB.
-     * @param agentsPool    the agents pool
+     * @param pqEntity   the precision-queue entity object Stored in the DB.
+     * @param agentsPool the agents pool
      * @param taskRouter the task scheduler
      */
     public PrecisionQueue(PrecisionQueueEntity pqEntity, AgentsPool agentsPool, TaskRouter taskRouter) {
@@ -77,7 +77,7 @@ public class PrecisionQueue implements Queue {
 
         this.serviceQueue = new PriorityQueue();
         this.taskRouter = taskRouter;
-        this.taskRouter.init(this.name, this);
+        this.taskRouter.init(this);
 
         this.averageTalkTime = 0L;
         this.noOfTask = 0L;
@@ -86,7 +86,7 @@ public class PrecisionQueue implements Queue {
     /**
      * Instantiates a new Precision queue.
      *
-     * @param entity        the request body
+     * @param entity     the request body
      * @param taskRouter the task scheduler
      */
     public PrecisionQueue(PrecisionQueueEntity entity, TaskRouter taskRouter) {
@@ -99,7 +99,7 @@ public class PrecisionQueue implements Queue {
 
         this.serviceQueue = new PriorityQueue();
         this.taskRouter = taskRouter;
-        this.taskRouter.init(this.name, this);
+        this.taskRouter.init(this);
 
         this.averageTalkTime = 0L;
         this.noOfTask = 0L;
@@ -232,6 +232,27 @@ public class PrecisionQueue implements Queue {
     public Step getStepAt(int index) {
         synchronized (this.steps) {
             return this.steps.get(index);
+        }
+    }
+
+    /**
+     * Gets next step.
+     *
+     * @param fromIndex search for next task from this index to the end of step list.
+     * @return the next step
+     */
+    public TaskStep getNextStep(int fromIndex) {
+        synchronized (this.steps) {
+            for (int i = fromIndex; i < this.steps.size(); i++) {
+                if (this.steps.get(i).getTimeout() > 0) {
+                    boolean isLastStep = i == this.steps.size() - 1;
+                    return new TaskStep(this.steps.get(i), isLastStep);
+                }
+            }
+            if (!steps.isEmpty()) {
+                return new TaskStep(this.steps.get(this.steps.size() - 1), true);
+            }
+            return null;
         }
     }
 
