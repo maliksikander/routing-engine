@@ -85,9 +85,9 @@ public class Enums {
          */
         EWT_REQUEST_EVENT,
         /**
-         * Timer event name.
+         * Step timeout event name.
          */
-        TIMER,
+        STEP_TIMEOUT,
         /**
          * Task state event name.
          */

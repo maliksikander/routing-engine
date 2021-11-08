@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
+import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.dto.TaskDto;
@@ -13,6 +14,8 @@ import com.ef.mediaroutingengine.services.TaskRouter;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
+import com.ef.mediaroutingengine.services.utilities.TaskManager;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +49,10 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * The Mrd pool.
      */
     private final MrdPool mrdPool;
+    /**
+     * The Task manager.
+     */
+    private final TaskManager taskManager;
 
     /**
      * Default constructor.
@@ -57,11 +64,12 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     @Autowired
     public PrecisionQueuesServiceImpl(PrecisionQueueRepository repository,
                                       PrecisionQueuesPool precisionQueuesPool,
-                                      MrdPool mrdPool, TasksPool tasksPool) {
+                                      MrdPool mrdPool, TasksPool tasksPool, TaskManager taskManager) {
         this.repository = repository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.mrdPool = mrdPool;
         this.tasksPool = tasksPool;
+        this.taskManager = taskManager;
     }
 
     @Override
@@ -109,6 +117,8 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         }
         List<Task> tasks = this.tasksPool.findByQueueId(id);
         if (tasks.isEmpty()) {
+            PropertyChangeListener listener = this.precisionQueuesPool.findById(id).getTaskScheduler();
+            this.taskManager.removePropertyChangeListener(Enums.EventName.NEW_TASK.name(), listener);
             this.precisionQueuesPool.deleteById(id);
             this.repository.deleteById(id);
             return new ResponseEntity<>(new SuccessResponseBody("Successfully deleted"), HttpStatus.OK);
