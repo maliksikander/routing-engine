@@ -6,6 +6,7 @@ import com.ef.mediaroutingengine.config.AssignResourceProperties;
 import com.ef.mediaroutingengine.dto.AgentReservedRequest;
 import com.ef.mediaroutingengine.dto.AssignTaskRequest;
 import com.ef.mediaroutingengine.dto.RevokeTaskRequest;
+import com.ef.mediaroutingengine.model.Task;
 import java.time.Duration;
 import java.util.UUID;
 import org.json.JSONObject;
@@ -97,12 +98,11 @@ public class RestRequest {
     /**
      * Post revoke task boolean.
      *
-     * @param taskId  the task id
-     * @param agentId the agent id
+     * @param task the task
      * @return the boolean
      */
-    public boolean postRevokeTask(UUID taskId, UUID agentId) {
-        RevokeTaskRequest requestBody = new RevokeTaskRequest(taskId, agentId);
+    public boolean postRevokeTask(Task task) {
+        RevokeTaskRequest requestBody = new RevokeTaskRequest(task.getId(), task.getAssignedTo(), task.getTopicId());
         try {
             this.httpRequest(requestBody, this.config.getRevokeTaskUri(), HttpMethod.POST);
             return true;

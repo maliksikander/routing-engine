@@ -219,12 +219,12 @@ public class TaskRouter implements PropertyChangeListener {
                 return;
             }
             CCUser ccUser = agent.toCcUser();
-            boolean isReserved = true;
-            //this.restRequest.postAssignTask(task.getChannelSession(), ccUser, task.getTopicId(), task.getId());
+            boolean isReserved = this.restRequest.postAssignTask(task.getChannelSession(),
+                    ccUser, task.getTopicId(), task.getId());
             if (isReserved) {
                 logger.debug("Task Assigned to agent in Agent-Manager");
                 this.changeStateOf(task, new TaskState(Enums.TaskStateName.RESERVED, null), agent.getId());
-//                this.jmsCommunicator.publishTaskStateChangeForReporting(task);
+                this.jmsCommunicator.publishTaskStateChangeForReporting(task);
                 precisionQueue.dequeue();
                 agent.reserveTask(task);
                 this.restRequest.postAgentReserved(task.getTopicId(), ccUser);

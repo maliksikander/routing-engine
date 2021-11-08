@@ -109,18 +109,19 @@ public class CancelResourceServiceImpl implements CancelResourceService {
 
     private boolean isProcessable(Task task) {
         if (task == null) {
+            logger.debug("Task is null");
             return false;
         }
         Enums.TaskStateName state = task.getTaskState().getName();
         if (!(state.equals(Enums.TaskStateName.QUEUED) || state.equals(Enums.TaskStateName.RESERVED))) {
+            logger.debug("Task: {} is not in QUEUED or RESERVED state", task.getId());
             return false;
         }
         return !task.isAgentRequestTimeout();
     }
 
     private void endQueuedTask(Task task, PrecisionQueue precisionQueue, Enums.TaskStateReasonCode closeReasonCode) {
-        task.removePropertyChangeListener(Enums.EventName.TIMER.name(), precisionQueue.getTaskScheduler());
-        task.removePropertyChangeListener(Enums.EventName.TASK_REMOVED.name(), precisionQueue.getTaskScheduler());
+        task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), precisionQueue.getTaskScheduler());
         removeAndPublish(task, closeReasonCode);
     }
 
@@ -130,8 +131,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
      * @param task the task
      */
     private void endReservedTask(Task task, Enums.TaskStateReasonCode closeReasonCode) {
-        boolean taskRevoked = true;
-        //this.restRequest.postRevokeTask(task.getId(), task.getAssignedTo());
+        boolean taskRevoked = this.restRequest.postRevokeTask(task);
         if (taskRevoked) {
             removeAndPublish(task, closeReasonCode);
             Agent agent = this.agentsPool.findById(task.getAssignedTo());
@@ -152,6 +152,6 @@ public class CancelResourceServiceImpl implements CancelResourceService {
         logger.debug("Task {}, removed from in-memory pool and repository", task.getId());
 
         task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, closeReasonCode));
-//        jmsCommunicator.publishTaskStateChangeForReporting(task);
+        jmsCommunicator.publishTaskStateChangeForReporting(task);
     }
 }

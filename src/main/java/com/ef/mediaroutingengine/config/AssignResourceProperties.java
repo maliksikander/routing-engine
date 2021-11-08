@@ -83,7 +83,7 @@ public class AssignResourceProperties {
      * @return Agent -Manager's Assign-Task API's url
      */
     public String getAssignTaskUri() {
-        return this.getAgentManagerBaseUri() + "/api/v1/agent/task";
+        return this.getAgentManagerBaseUri() + "/agent/assign-task";
     }
 
     /**
@@ -110,6 +110,6 @@ public class AssignResourceProperties {
      * @return the revoke task uri
      */
     public String getRevokeTaskUri() {
-        return this.getAgentManagerBaseUri() + "/revoke-task";
+        return this.getAgentManagerBaseUri() + "/agent/revoke-task";
     }
 }

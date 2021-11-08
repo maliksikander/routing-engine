@@ -15,13 +15,23 @@ public class RevokeTaskRequest {
      */
     private UUID agentId;
 
+    private UUID topicId;
+
     public RevokeTaskRequest() {
 
     }
 
-    public RevokeTaskRequest(UUID taskId, UUID agentId) {
+    /**
+     * Instantiates a new Revoke task request.
+     *
+     * @param taskId  the task id
+     * @param agentId the agent id
+     * @param topicId the topic id
+     */
+    public RevokeTaskRequest(UUID taskId, UUID agentId, UUID topicId) {
         this.taskId = taskId;
         this.agentId = agentId;
+        this.topicId = topicId;
     }
 
     /**
@@ -58,5 +68,13 @@ public class RevokeTaskRequest {
      */
     public void setAgentId(UUID agentId) {
         this.agentId = agentId;
+    }
+
+    public UUID getTopicId() {
+        return topicId;
+    }
+
+    public void setTopicId(UUID topicId) {
+        this.topicId = topicId;
     }
 }
