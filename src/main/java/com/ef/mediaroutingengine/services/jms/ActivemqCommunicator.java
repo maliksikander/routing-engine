@@ -128,11 +128,11 @@ public class ActivemqCommunicator implements JmsCommunicator {
 
         TextMessage messageToSend = this.publisherSession.createTextMessage();
         messageToSend.setText(messageStr);
-        messageToSend.setJMSType(eventName.toString());
+        messageToSend.setJMSType(eventName.name());
 
         this.publisher.send(messageToSend);
 
-        logger.info("Text Message: '{}' published on topic: '{}'", messageStr, this.topicName);
+        logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'", eventName, messageStr, topicName);
         logger.debug("method ended");
     }
 
