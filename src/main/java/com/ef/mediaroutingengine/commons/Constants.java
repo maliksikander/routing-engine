@@ -13,6 +13,10 @@ public class Constants {
      */
     public static final String METHOD_ENDED = "method ended";
 
+    public static long startTime = 0L;
+
+    public static long endTime = 0L;
+
     /**
      * Instantiates a new Constants.
      */
