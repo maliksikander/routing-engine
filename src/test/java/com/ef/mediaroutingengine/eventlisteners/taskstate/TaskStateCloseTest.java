@@ -47,6 +47,7 @@ class TaskStateCloseTest {
         verify(taskManager, times(1)).endTaskFromAssignedAgent(task);
         verify(tasksRepository, times(1)).deleteById(taskId.toString());
         verify(taskManager, times(1)).removeTask(task);
+        verify(taskManager, times(1)).publishTaskForReporting(task);
 
         verifyNoMoreInteractions(precisionQueuesPool);
         verifyNoMoreInteractions(taskManager);

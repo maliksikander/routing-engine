@@ -117,7 +117,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
             logger.debug("Task: {} is not in QUEUED or RESERVED state", task.getId());
             return false;
         }
-        return !task.isAgentRequestTimeout();
+        return !task.isMarkedForDeletion();
     }
 
     private void endQueuedTask(Task task, PrecisionQueue precisionQueue, Enums.TaskStateReasonCode closeReasonCode) {
@@ -138,6 +138,8 @@ public class CancelResourceServiceImpl implements CancelResourceService {
             if (agent != null) {
                 agent.removeReservedTask();
             }
+        } else {
+            task.markForDeletion(closeReasonCode);
         }
     }
 

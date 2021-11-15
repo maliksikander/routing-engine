@@ -242,7 +242,7 @@ public class TaskManager {
         Task task = Task.getInstanceFrom(channelSession, mrd, queue.getId(), taskState);
 
         this.insertInPoolAndRepository(task);
-        this.jmsCommunicator().publishTaskStateChangeForReporting(task);
+        this.publishTaskForReporting(task);
 
         this.scheduleAgentRequestTimeoutTask(task.getChannelSession());
         logger.debug("Agent-Request-Ttl task scheduled");
@@ -293,7 +293,7 @@ public class TaskManager {
         Task newTask = Task.getInstanceFrom(currentTask);
         this.insertInPoolAndRepository(newTask);
 
-        this.jmsCommunicator().publishTaskStateChangeForReporting(newTask);
+        this.publishTaskForReporting(newTask);
         this.scheduleAgentRequestTimeoutTask(newTask.getChannelSession());
         this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, newTask);
     }
@@ -306,15 +306,16 @@ public class TaskManager {
     private void rerouteReservedTask(Task currentTask) {
         this.removeFromPoolAndRepository(currentTask);
         // If Agent request Ttl has ended.
-        if (currentTask.isAgentRequestTimeout()) {
+        if (currentTask.isMarkedForDeletion()) {
             this.requestTtlTimers.remove(currentTask.getTopicId());
             this.restRequest.postNoAgentAvailable(currentTask.getTopicId().toString());
+            this.publishTaskForReporting(currentTask);
             return;
         }
 
         Task newTask = Task.getInstanceFrom(currentTask);
         this.insertInPoolAndRepository(newTask);
-        this.jmsCommunicator().publishTaskStateChangeForReporting(newTask);
+        this.publishTaskForReporting(newTask);
         this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, newTask);
     }
 
@@ -376,7 +377,7 @@ public class TaskManager {
     public void removePullTaskOnAgentLogout(Task task) {
         task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, null));
         this.removeFromPoolAndRepository(task);
-        this.jmsCommunicator().publishTaskStateChangeForReporting(task);
+        this.publishTaskForReporting(task);
     }
 
     /**
@@ -397,6 +398,10 @@ public class TaskManager {
      */
     public void removePropertyChangeListener(String property, PropertyChangeListener listener) {
         this.changeSupport.removePropertyChangeListener(property, listener);
+    }
+
+    public void publishTaskForReporting(Task task) {
+        this.jmsCommunicator().publishTaskStateChangeForReporting(task);
     }
 
     private JmsCommunicator jmsCommunicator() {
@@ -439,7 +444,7 @@ public class TaskManager {
                 return;
             }
 
-            task.agentRequestTimeout();
+            task.markForDeletion(Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE);
             if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
                 task.getTimer().cancel();
                 // Remove task from precision-queue
@@ -454,6 +459,8 @@ public class TaskManager {
                 TaskManager.this.requestTtlTimers.remove(this.topicId);
                 // post no agent available
                 TaskManager.this.restRequest.postNoAgentAvailable(this.topicId.toString());
+                //publish task for reporting
+                TaskManager.this.publishTaskForReporting(task);
                 logger.debug("Agent request TTL expired. Queued task: {} removed", task.getId());
             }
             logger.debug("method ended | RequestTtlTimer.run method");

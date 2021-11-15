@@ -214,7 +214,7 @@ public class TaskRouter implements PropertyChangeListener {
     private void assignTaskTo(Agent agent, Task task) {
         logger.debug("method started");
         try {
-            if (task.isAgentRequestTimeout()) {
+            if (task.isMarkedForDeletion()) {
                 logger.debug("AgentRequestTtlTimeout method returning..");
                 return;
             }

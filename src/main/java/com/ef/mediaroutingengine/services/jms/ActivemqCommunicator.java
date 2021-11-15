@@ -143,6 +143,11 @@ public class ActivemqCommunicator implements JmsCommunicator {
                 Session session = this.connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
                 MessageProducer producer = session.createProducer(session.createTopic(topic))
         ) {
+
+            if (task.isMarkedForDeletion()) {
+                task.setTaskStateFromMarkedForDeletion();
+            }
+
             String messageStr = this.getSerializedCimEvent(new TaskDto(task));
             TextMessage messageToSend = session.createTextMessage();
             messageToSend.setText(messageStr);
