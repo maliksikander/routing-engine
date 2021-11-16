@@ -63,7 +63,7 @@ class TaskStateCloseTest {
 
         verify(precisionQueuesPool, times(1)).endTask(task);
         verify(taskManager, times(1)).endTaskFromAgentOnRona(task);
-        verify(taskManager, times(1)).rerouteTask(task);
+        verify(taskManager, times(1)).rerouteReservedTask(task);
 
         verifyNoMoreInteractions(precisionQueuesPool);
         verifyNoMoreInteractions(taskManager);

@@ -51,7 +51,7 @@ public class TaskStateClose implements TaskStateModifier {
             this.taskManager.publishTaskForReporting(task);
         } else if (state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA)) {
             this.taskManager.endTaskFromAgentOnRona(task);
-            this.taskManager.rerouteTask(task);
+            this.taskManager.rerouteReservedTask(task);
         }
     }
 }

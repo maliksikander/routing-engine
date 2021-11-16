@@ -1,6 +1,5 @@
 package com.ef.mediaroutingengine.eventlisteners.agentstate;
 
-import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentMrdState;
@@ -59,14 +58,22 @@ public class AgentStateLogout implements AgentStateDelegate {
      * @param agent the agent
      */
     void handleAgentTasks(Agent agent) {
-        for (Task task : agent.getAllTasks()) {
-            RoutingMode routingMode = task.getRoutingMode();
-            if (routingMode.equals(RoutingMode.PUSH)) {
-                this.taskManager.rerouteTask(task);
-            } else if (routingMode.equals(RoutingMode.PULL)) {
-                this.taskManager.removePullTaskOnAgentLogout(task);
-            }
-        }
+        rerouteReservedTask(agent);
+        closeActiveTasks(agent);
         agent.clearAllTasks();
+    }
+
+    void rerouteReservedTask(Agent agent) {
+        Task reservedTask = agent.getReservedTask();
+        if (reservedTask != null) {
+            this.taskManager.rerouteReservedTask(reservedTask);
+            agent.removeReservedTask();
+        }
+    }
+
+    void closeActiveTasks(Agent agent) {
+        for (Task task : agent.getActiveTasksList()) {
+            this.taskManager.removeTaskOnAgentLogout(task);
+        }
     }
 }

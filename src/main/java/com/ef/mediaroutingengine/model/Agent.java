@@ -185,13 +185,21 @@ public class Agent {
      * @return list of all tasks from all MRDs
      */
     public List<Task> getAllTasks() {
-        List<Task> result = new ArrayList<>();
-        for (Map.Entry<String, List<Task>> entry : this.activeTasks.entrySet()) {
-            result.addAll(entry.getValue());
-        }
+        List<Task> result = this.getActiveTasksList();
         if (reservedTask != null) {
             result.add(reservedTask);
         }
+        return result;
+    }
+
+    /**
+     * Gets active tasks list.
+     *
+     * @return the active tasks list
+     */
+    public List<Task> getActiveTasksList() {
+        List<Task> result = new ArrayList<>();
+        this.activeTasks.forEach((k, v) -> result.addAll(v));
         return result;
     }
 
@@ -307,6 +315,10 @@ public class Agent {
      */
     public boolean isTaskReserved() {
         return this.reservedTask != null;
+    }
+
+    public Task getReservedTask() {
+        return this.reservedTask;
     }
 
     /**

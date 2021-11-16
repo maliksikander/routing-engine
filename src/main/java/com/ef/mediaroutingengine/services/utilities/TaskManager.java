@@ -269,41 +269,11 @@ public class TaskManager {
     }
 
     /**
-     * Reroutes a task to be assigned to another agent. Deletes the task in request, creates a new task from
-     * the task in request and enqueue the newly created task.
-     *
-     * @param task Task to reschedule.
-     */
-    public void rerouteTask(Task task) {
-        if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
-            this.rerouteReservedTask(task);
-        } else if (task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
-            this.rerouteActiveTask(task);
-        }
-    }
-
-    /**
-     * Reroute active task.
-     *
-     * @param currentTask the current task
-     */
-    private void rerouteActiveTask(Task currentTask) {
-        this.removeFromPoolAndRepository(currentTask);
-
-        Task newTask = Task.getInstanceFrom(currentTask);
-        this.insertInPoolAndRepository(newTask);
-
-        this.publishTaskForReporting(newTask);
-        this.scheduleAgentRequestTimeoutTask(newTask.getChannelSession());
-        this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, newTask);
-    }
-
-    /**
      * Reroute reserved task.
      *
      * @param currentTask the current task
      */
-    private void rerouteReservedTask(Task currentTask) {
+    public void rerouteReservedTask(Task currentTask) {
         this.removeFromPoolAndRepository(currentTask);
         // If Agent request Ttl has ended.
         if (currentTask.isMarkedForDeletion()) {
@@ -374,7 +344,7 @@ public class TaskManager {
      *
      * @param task the task
      */
-    public void removePullTaskOnAgentLogout(Task task) {
+    public void removeTaskOnAgentLogout(Task task) {
         task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, null));
         this.removeFromPoolAndRepository(task);
         this.publishTaskForReporting(task);
