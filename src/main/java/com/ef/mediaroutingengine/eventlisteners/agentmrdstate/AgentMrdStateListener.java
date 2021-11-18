@@ -99,7 +99,7 @@ public class AgentMrdStateListener {
 
         MrdStateDelegate delegate = this.factory.getDelegate(requestedState);
         if (delegate == null) {
-            logger.warn("Requested Agent-MRD state: {} is invalid", requestedState);
+            logger.warn("Requested Agent-MRD state: {} is invalid, ignoring request..", requestedState);
             return;
         }
 
@@ -108,7 +108,7 @@ public class AgentMrdStateListener {
 
         if (!newState.equals(currentState)) {
             this.updateState(agent, agentMrdState, newState);
-            logger.debug("Mrd-state for agent: {} updated to: {} from: {}", agent.getId(), newState, currentState);
+            logger.info("Mrd-state for agent: {} changed from: {} to: {}", agent.getId(), currentState, newState);
 
             this.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED);
 
@@ -117,6 +117,8 @@ public class AgentMrdStateListener {
                 this.fireStateChangeToTaskSchedulers(agentMrdState);
             }
         } else {
+            logger.info("Mrd-state update for agent: {} not allowed from: {} to: {}", agent.getId(), currentState,
+                    newState);
             this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED);
         }
     }

@@ -177,6 +177,7 @@ public class Bootstrap {
         logger.debug(Constants.METHOD_STARTED);
         // Load in-memory Routing-Attributes pool from Routing-Attributes Config DB.
         this.routingAttributesPool.loadFrom(routingAttributeRepository.findAll());
+        logger.debug("Routing-Attributes pool loaded from DB");
 
         List<CCUser> ccUsers = agentsRepository.findAll();
         /*
@@ -187,10 +188,10 @@ public class Bootstrap {
         this.replaceRoutingAttributesInCcUsers(ccUsers);
 
         this.agentsPool.loadPoolFrom(ccUsers);
-        logger.debug("Agents pool loaded");
+        logger.debug("Agents pool loaded DB");
 
         this.mrdPool.loadPoolFrom(mediaRoutingDomainRepository.findAll());
-        logger.debug("MRDs pool loaded");
+        logger.debug("MRDs pool loaded from DB");
         // Set Agent and AgentMRD states after MRD pool is loaded as it is required for agent-mrd states.
         this.setAgentStates();
         /*
@@ -205,7 +206,7 @@ public class Bootstrap {
          */
         this.replaceRoutingAttributesAndMrdInQueues(precisionQueueEntities);
         this.precisionQueuesPool.loadPoolFrom(precisionQueueEntities, this.agentsPool);
-        logger.debug("Precision-Queues pool loaded");
+        logger.debug("Precision-Queues pool loaded from DB");
 
         /*
         Load the in-memory Tasks pool from REDIS.
@@ -225,6 +226,7 @@ public class Bootstrap {
             }
         }
 
+        logger.info("Routing-Attributes pool size: {}", this.routingAttributesPool.size());
         logger.info("Agents pool size: {}", this.agentsPool.size());
         logger.info("Mrd pool size: {}", this.mrdPool.size());
         logger.info("Precision-Queues pool size: {}", this.precisionQueuesPool.size());

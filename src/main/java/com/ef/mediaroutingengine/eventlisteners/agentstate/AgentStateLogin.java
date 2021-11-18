@@ -52,9 +52,8 @@ public class AgentStateLogin implements AgentStateDelegate {
         Enums.AgentStateName currentState = agent.getState().getName();
         if (currentState.equals(Enums.AgentStateName.LOGOUT)) {
             this.logoutToLogin(agent, newState);
-            logger.debug("State changed from LOGOUT to LOGIN");
+            logger.debug("Agent-state for agent: {} changed from LOGOUT to LOGIN", agent.getId());
             loginToNotReady(agent, new AgentState(Enums.AgentStateName.NOT_READY, newState.getReasonCode()));
-            logger.debug("State changed from LOGIN to NOT_READY");
             return true;
         }
         return false;
