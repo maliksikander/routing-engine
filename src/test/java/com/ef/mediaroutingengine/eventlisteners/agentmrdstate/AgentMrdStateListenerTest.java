@@ -98,7 +98,7 @@ class AgentMrdStateListenerTest {
         AgentPresence agentPresence = mock(AgentPresence.class);
         when(agentPresenceRepository.find(agent.getId().toString())).thenReturn(agentPresence);
 
-        listener.publish(agent);
+        listener.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED);
 
         verifyNoMoreInteractions(agentPresenceRepository);
 
@@ -143,7 +143,7 @@ class AgentMrdStateListenerTest {
         Agent agent = getNewAgent();
         AgentMrdStateListener listenerSpy = spy(listener);
         // No need to test publish, it is already tested
-        doNothing().when(listenerSpy).publish(agent);
+        doNothing().when(listenerSpy).publish(eq(agent), any());
         listenerSpy.run(agent, "", Enums.AgentMrdStateName.READY);
 
         verifyNoInteractions(factory);
@@ -160,7 +160,7 @@ class AgentMrdStateListenerTest {
         when(factory.getDelegate(requestedState)).thenReturn(delegate);
         when(delegate.getNewState(agent, agentMrdState)).thenReturn(Enums.AgentMrdStateName.READY);
 
-        doNothing().when(listenerSpy).publish(agent);
+        doNothing().when(listenerSpy).publish(eq(agent), any());
         listenerSpy.run(agent, agentMrdState.getMrd().getId(), requestedState);
 
         verify(listenerSpy, times(0)).updateState(any(), any(), any());
@@ -179,7 +179,7 @@ class AgentMrdStateListenerTest {
         when(factory.getDelegate(requestedState)).thenReturn(delegate);
         when(delegate.getNewState(agent, agentMrdState)).thenReturn(Enums.AgentMrdStateName.READY);
 
-        doNothing().when(listenerSpy).publish(agent);
+        doNothing().when(listenerSpy).publish(eq(agent), any());
         listenerSpy.run(agent, agentMrdState.getMrd().getId(), requestedState);
 
         verify(listenerSpy, times(1)).updateState(any(), any(), any());
@@ -198,7 +198,7 @@ class AgentMrdStateListenerTest {
         when(factory.getDelegate(requestedState)).thenReturn(delegate);
         when(delegate.getNewState(agent, agentMrdState)).thenReturn(Enums.AgentMrdStateName.ACTIVE);
 
-        doNothing().when(listenerSpy).publish(agent);
+        doNothing().when(listenerSpy).publish(eq(agent), any());
         listenerSpy.run(agent, agentMrdState.getMrd().getId(), requestedState);
 
         verify(listenerSpy, times(1)).updateState(any(), any(), any());
@@ -217,7 +217,7 @@ class AgentMrdStateListenerTest {
         when(factory.getDelegate(requestedState)).thenReturn(delegate);
         when(delegate.getNewState(agent, agentMrdState)).thenReturn(Enums.AgentMrdStateName.PENDING_NOT_READY);
 
-        doNothing().when(listenerSpy).publish(agent);
+        doNothing().when(listenerSpy).publish(eq(agent), any());
         listenerSpy.run(agent, agentMrdState.getMrd().getId(), requestedState);
 
         verify(listenerSpy, times(1)).updateState(any(), any(), any());

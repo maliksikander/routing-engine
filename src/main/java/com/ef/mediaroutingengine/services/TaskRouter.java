@@ -214,13 +214,13 @@ public class TaskRouter implements PropertyChangeListener {
     private void assignTaskTo(Agent agent, Task task) {
         logger.debug("method started");
         try {
-            if (task.isAgentRequestTimeout()) {
+            if (task.isMarkedForDeletion()) {
                 logger.debug("AgentRequestTtlTimeout method returning..");
                 return;
             }
             CCUser ccUser = agent.toCcUser();
-            boolean isReserved = this.restRequest.postAssignTask(task.getChannelSession(), ccUser,
-                    task.getTopicId(), task.getId());
+            boolean isReserved = this.restRequest.postAssignTask(task.getChannelSession(),
+                    ccUser, task.getTopicId(), task.getId());
             if (isReserved) {
                 logger.debug("Task Assigned to agent in Agent-Manager");
                 this.changeStateOf(task, new TaskState(Enums.TaskStateName.RESERVED, null), agent.getId());

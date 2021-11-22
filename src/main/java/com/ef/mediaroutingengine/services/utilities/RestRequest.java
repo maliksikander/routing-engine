@@ -5,9 +5,14 @@ import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.mediaroutingengine.config.AssignResourceProperties;
 import com.ef.mediaroutingengine.dto.AgentReservedRequest;
 import com.ef.mediaroutingengine.dto.AssignTaskRequest;
+import com.ef.mediaroutingengine.dto.RevokeTaskRequest;
+import com.ef.mediaroutingengine.model.Task;
 import java.time.Duration;
 import java.util.UUID;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
@@ -25,6 +30,10 @@ import org.springframework.web.client.RestTemplate;
  */
 @Service
 public class RestRequest {
+    /**
+     * The constant LOGGER.
+     */
+    private final Logger logger = LoggerFactory.getLogger(RestRequest.class);
     /**
      * The Config.
      */
@@ -88,7 +97,26 @@ public class RestRequest {
             this.httpRequest(request, this.config.getAssignTaskUri(), HttpMethod.POST);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(ExceptionUtils.getMessage(e));
+            logger.error(ExceptionUtils.getStackTrace(e));
+            return false;
+        }
+    }
+
+    /**
+     * Post revoke task boolean.
+     *
+     * @param task the task
+     * @return the boolean
+     */
+    public boolean postRevokeTask(Task task) {
+        RevokeTaskRequest requestBody = new RevokeTaskRequest(task.getId(), task.getAssignedTo(), task.getTopicId());
+        try {
+            this.httpRequest(requestBody, this.config.getRevokeTaskUri(), HttpMethod.POST);
+            return true;
+        } catch (Exception e) {
+            logger.error(ExceptionUtils.getMessage(e));
+            logger.error(ExceptionUtils.getStackTrace(e));
             return false;
         }
     }
@@ -124,7 +152,8 @@ public class RestRequest {
             }
 
         } catch (ResourceAccessException resourceAccessException) {
-            resourceAccessException.printStackTrace();
+            logger.error(ExceptionUtils.getMessage(resourceAccessException));
+            logger.error(ExceptionUtils.getStackTrace(resourceAccessException));
         }
 
         return null;

@@ -2,16 +2,17 @@ package com.ef.mediaroutingengine.eventlisteners.agentstate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentMrdState;
@@ -44,22 +45,56 @@ class AgentStateLogoutTest {
     }
 
     @Test
-    void test_handleAgentTasks() {
+    void test_closeActiveTasks() {
         Agent agent = mock(Agent.class);
 
-        List<Task> taskList = new ArrayList<>();
-        taskList.add(mock(Task.class));
-        taskList.add(mock(Task.class));
+        List<Task> activeTasks = new ArrayList<>();
+        activeTasks.add(mock(Task.class));
+        activeTasks.add(mock(Task.class));
 
-        when(agent.getAllTasks()).thenReturn(taskList);
-        when(taskList.get(0).getRoutingMode()).thenReturn(RoutingMode.PUSH);
-        when(taskList.get(1).getRoutingMode()).thenReturn(RoutingMode.PULL);
+        when(agent.getActiveTasksList()).thenReturn(activeTasks);
 
-        this.agentStateLogout.handleAgentTasks(agent);
+        this.agentStateLogout.closeActiveTasks(agent);
 
-        verify(this.taskManager, times(1)).rerouteTask(taskList.get(0));
-        verify(this.taskManager, times(1)).removePullTaskOnAgentLogout(taskList.get(1));
+        verify(this.taskManager, times(activeTasks.size())).removeTaskOnAgentLogout(any());
         verifyNoMoreInteractions(this.taskManager);
+    }
+
+    @Test
+    void test_rerouteReservedTask_when_reservedTaskIsNull() {
+        Agent agent = mock(Agent.class);
+        when(agent.getReservedTask()).thenReturn(null);
+
+        this.agentStateLogout.rerouteReservedTask(agent);
+        verifyNoInteractions(this.taskManager);
+        verifyNoMoreInteractions(agent);
+    }
+
+    @Test
+    void test_rerouteReservedTask_when_reservedTaskIsNotNull() {
+        Agent agent = mock(Agent.class);
+        Task reservedTask = mock(Task.class);
+
+        when(agent.getReservedTask()).thenReturn(reservedTask);
+
+        this.agentStateLogout.rerouteReservedTask(agent);
+
+        verify(this.taskManager, times(1)).rerouteReservedTask(reservedTask);
+        verify(agent, times(1)).removeReservedTask();
+        verifyNoMoreInteractions(this.taskManager);
+        verifyNoMoreInteractions(agent);
+    }
+
+    @Test
+    void test_handleAgentTasks() {
+        Agent agent = mock(Agent.class);
+        AgentStateLogout spy = Mockito.spy(agentStateLogout);
+
+        spy.handleAgentTasks(agent);
+
+        verify(spy, times(1)).rerouteReservedTask(agent);
+        verify(spy, times(1)).closeActiveTasks(agent);
+        verify(agent, times(1)).clearAllTasks();
     }
 
     @Test
@@ -80,7 +115,7 @@ class AgentStateLogoutTest {
         // Assert agent-state has been updated to the new state i.e. LOGOUT
         assertEquals(newState.getName(), agent.getState().getName());
         // Assert all agent-mrd-states have been updated to log-out
-        for (AgentMrdState agentMrdState: agent.getAgentMrdStates()) {
+        for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
             assertEquals(Enums.AgentMrdStateName.LOGOUT, agentMrdState.getState());
         }
         // Verify agentPresenceRepository calls are made correctly

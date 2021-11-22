@@ -93,7 +93,7 @@ public class AgentMrdStateListener {
         AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
         if (agentMrdState == null) {
             logger.error("Could not find MRD with id: {} associated with agent: {}", mrdId, agent.getId());
-            this.publish(agent);
+            this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED);
             return;
         }
 
@@ -105,20 +105,19 @@ public class AgentMrdStateListener {
 
         Enums.AgentMrdStateName currentState = agentMrdState.getState();
         Enums.AgentMrdStateName newState = delegate.getNewState(agent, agentMrdState);
-        boolean fireEvent = false;
 
         if (!newState.equals(currentState)) {
             this.updateState(agent, agentMrdState, newState);
             logger.debug("Mrd-state for agent: {} updated to: {} from: {}", agent.getId(), newState, currentState);
-            fireEvent = isStateReadyOrActive(newState);
-        }
 
-        this.publish(agent);
-        logger.debug("AgentPresence for agent: {} published on topic", agent.getId());
+            this.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED);
 
-        if (fireEvent) {
-            logger.debug("Triggering task-routers for MRD: {}", agentMrdState.getMrd().getId());
-            this.fireStateChangeToTaskSchedulers(agentMrdState);
+            if (isStateReadyOrActive(newState)) {
+                logger.debug("Triggering task-routers for MRD: {}", agentMrdState.getMrd().getId());
+                this.fireStateChangeToTaskSchedulers(agentMrdState);
+            }
+        } else {
+            this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED);
         }
     }
 
@@ -143,11 +142,11 @@ public class AgentMrdStateListener {
      *
      * @param agent the agent
      */
-    void publish(Agent agent) {
+    void publish(Agent agent, Enums.JmsEventName eventName) {
         try {
             AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId().toString());
             AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, false);
-            jmsCommunicator.publish(res, Enums.JmsEventName.AGENT_STATE_CHANGED);
+            jmsCommunicator.publish(res, eventName);
         } catch (Exception e) {
             e.printStackTrace();
         }

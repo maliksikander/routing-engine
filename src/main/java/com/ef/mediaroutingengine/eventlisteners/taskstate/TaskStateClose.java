@@ -41,15 +41,17 @@ public class TaskStateClose implements TaskStateModifier {
 
     @Override
     public void updateState(Task task, TaskState state) {
+        task.setTaskState(state);
         this.precisionQueuesPool.endTask(task);
 
         if (state.getReasonCode() == null || !state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA)) {
             this.taskManager.endTaskFromAssignedAgent(task);
             this.tasksRepository.deleteById(task.getId().toString());
             this.taskManager.removeTask(task);
+            this.taskManager.publishTaskForReporting(task);
         } else if (state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA)) {
             this.taskManager.endTaskFromAgentOnRona(task);
-            this.taskManager.rerouteTask(task);
+            this.taskManager.rerouteReservedTask(task);
         }
     }
 }

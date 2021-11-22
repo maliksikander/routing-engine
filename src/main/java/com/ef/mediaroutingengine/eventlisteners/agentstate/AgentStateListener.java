@@ -81,10 +81,9 @@ public class AgentStateListener {
         if (delegate == null) {
             return;
         }
+
         boolean isStateChanged = delegate.updateState(agent, newState);
-        logger.info("Before Publishing state change on JMS");
         this.publish(this.agentPresenceRepository.find(agent.getId().toString()), isStateChanged);
-        logger.info("Agent state change request published on JMS");
     }
 
     /**
@@ -95,8 +94,10 @@ public class AgentStateListener {
      */
     private void publish(AgentPresence agentPresence, boolean agentStateChanged) {
         AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, agentStateChanged);
+        Enums.JmsEventName eventName = agentStateChanged
+                ? Enums.JmsEventName.AGENT_STATE_CHANGED : Enums.JmsEventName.AGENT_STATE_UNCHANGED;
         try {
-            jmsCommunicator.publish(res, Enums.JmsEventName.AGENT_STATE_CHANGED);
+            jmsCommunicator.publish(res, eventName);
         } catch (Exception e) {
             e.printStackTrace();
         }
