@@ -9,6 +9,7 @@ import com.ef.mediaroutingengine.dto.RevokeTaskRequest;
 import com.ef.mediaroutingengine.model.Task;
 import java.time.Duration;
 import java.util.UUID;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -90,7 +91,7 @@ public class RestRequest {
             this.httpRequest(request, this.config.getAssignTaskUri(), HttpMethod.POST);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            ExceptionUtils.printRootCauseStackTrace(e);
             return false;
         }
     }
@@ -107,7 +108,7 @@ public class RestRequest {
             this.httpRequest(requestBody, this.config.getRevokeTaskUri(), HttpMethod.POST);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            ExceptionUtils.printRootCauseStackTrace(e);
             return false;
         }
     }
@@ -143,7 +144,7 @@ public class RestRequest {
             }
 
         } catch (ResourceAccessException resourceAccessException) {
-            resourceAccessException.printStackTrace();
+            ExceptionUtils.printRootCauseStackTrace(resourceAccessException);
         }
 
         return null;
