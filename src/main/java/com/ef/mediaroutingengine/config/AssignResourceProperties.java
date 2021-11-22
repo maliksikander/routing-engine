@@ -22,6 +22,22 @@ public class AssignResourceProperties {
      * Base url of Bot-Framework component to call its Apis.
      */
     private String botFrameworkBaseUri;
+    /**
+     * The Assign task uri.
+     */
+    private String assignTaskUri;
+    /**
+     * The Agent reserved uri.
+     */
+    private String agentReservedUri;
+    /**
+     * The No agent available uri.
+     */
+    private String noAgentAvailableUri;
+    /**
+     * The Revoke task uri.
+     */
+    private String revokeTaskUri;
 
     /**
      * Gets retries.
@@ -57,6 +73,8 @@ public class AssignResourceProperties {
      */
     public void setAgentManagerBaseUri(String agentManagerBaseUri) {
         this.agentManagerBaseUri = agentManagerBaseUri;
+        this.assignTaskUri = agentManagerBaseUri + "/agent/assign-task";
+        this.revokeTaskUri = agentManagerBaseUri + "/agent/revoke-task";
     }
 
     /**
@@ -75,6 +93,8 @@ public class AssignResourceProperties {
      */
     public void setBotFrameworkBaseUri(String botFrameworkBaseUri) {
         this.botFrameworkBaseUri = botFrameworkBaseUri;
+        this.agentReservedUri = botFrameworkBaseUri + "/agent-reserved";
+        this.noAgentAvailableUri = botFrameworkBaseUri + "/no-agent-available";
     }
 
     /**
@@ -83,7 +103,7 @@ public class AssignResourceProperties {
      * @return Agent -Manager's Assign-Task API's url
      */
     public String getAssignTaskUri() {
-        return this.getAgentManagerBaseUri() + "/api/v1/agent/task";
+        return this.assignTaskUri;
     }
 
     /**
@@ -92,7 +112,7 @@ public class AssignResourceProperties {
      * @return Bot -Framework's Agent-Reserved API's url
      */
     public String getAgentReservedUri() {
-        return this.getBotFrameworkBaseUri() + "/agent-reserved";
+        return this.agentReservedUri;
     }
 
     /**
@@ -101,6 +121,15 @@ public class AssignResourceProperties {
      * @return Bot -Framework's No-Agent-Available API's url
      */
     public String getNoAgentAvailableUri() {
-        return this.getBotFrameworkBaseUri() + "/no-agent-available";
+        return this.noAgentAvailableUri;
+    }
+
+    /**
+     * Gets revoke task uri.
+     *
+     * @return the revoke task uri
+     */
+    public String getRevokeTaskUri() {
+        return this.revokeTaskUri;
     }
 }

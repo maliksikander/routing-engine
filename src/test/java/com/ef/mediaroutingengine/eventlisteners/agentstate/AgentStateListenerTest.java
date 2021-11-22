@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.eventlisteners.agentstate;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -63,8 +62,7 @@ class AgentStateListenerTest {
 
         verify(factory, times(1)).getDelegate(any());
         verify(delegate, times(1)).updateState(agent, newState);
-        verify(jmsCommunicator, times(1)).publish(any(),
-                eq(Enums.JmsEventName.AGENT_STATE_CHANGED));
+        verify(jmsCommunicator, times(1)).publish(any(), any());
     }
 
     private Agent getAgent() {

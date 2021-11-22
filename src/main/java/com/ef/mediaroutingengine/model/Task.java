@@ -71,14 +71,22 @@ public class Task {
      */
     private Long handlingTime;
     /**
-     * The Agent request timeout.
+     * The Mark for deletion.
      */
-    private boolean agentRequestTimeout;
+    private final MarkForDeletion markForDeletion = new MarkForDeletion();
     /**
      * The Current step.
      */
     private TaskStep currentStep;
 
+    /**
+     * Instantiates a new Task.
+     *
+     * @param id             the id
+     * @param channelSession the channel session
+     * @param mrd            the mrd
+     * @param queue          the queue
+     */
     private Task(UUID id, ChannelSession channelSession, MediaRoutingDomain mrd, String queue) {
         this.id = id;
         this.channelSession = channelSession;
@@ -89,7 +97,6 @@ public class Task {
         this.enqueueTime = System.currentTimeMillis();
         this.timer = new Timer();
         this.handlingTime = 0L;
-        this.agentRequestTimeout = false;
         this.changeSupport = new PropertyChangeSupport(this);
     }
 
@@ -307,14 +314,30 @@ public class Task {
         return this.timer;
     }
 
+    /**
+     * Gets current step.
+     *
+     * @return the current step
+     */
     public TaskStep getCurrentStep() {
         return currentStep;
     }
 
+    /**
+     * Sets current step.
+     *
+     * @param currentStep the current step
+     */
     public void setCurrentStep(TaskStep currentStep) {
         this.currentStep = currentStep;
     }
 
+    /**
+     * Sets up step from.
+     *
+     * @param precisionQueue    the precision queue
+     * @param stepStartingIndex the step starting index
+     */
     public void setUpStepFrom(PrecisionQueue precisionQueue, int stepStartingIndex) {
         this.currentStep = precisionQueue.getNextStep(stepStartingIndex);
         this.startStepTimer();
@@ -329,6 +352,11 @@ public class Task {
         return this.channelSession.getTopicId();
     }
 
+    /**
+     * Gets routing mode.
+     *
+     * @return the routing mode
+     */
     public RoutingMode getRoutingMode() {
         return this.channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingMode();
     }
@@ -338,7 +366,7 @@ public class Task {
      *
      * @return the last assigned agent id
      */
-    // TODO: Implement it correctly
+// TODO: Implement it correctly
     public UUID getLastAssignedAgentId() {
         return null;
     }
@@ -387,19 +415,32 @@ public class Task {
     }
 
     /**
-     * Agent request timeout.
+     * Mark for deletion.
+     *
+     * @param reasonCode the reason code
      */
-    public void agentRequestTimeout() {
-        this.agentRequestTimeout = true;
+    public void markForDeletion(Enums.TaskStateReasonCode reasonCode) {
+        if (!markForDeletion.isMarked()) {
+            this.markForDeletion.setMarked(true);
+            this.markForDeletion.setReasonCode(reasonCode);
+        }
     }
 
     /**
-     * Is agent request timeout boolean.
+     * Is marked for deletion boolean.
      *
      * @return the boolean
      */
-    public boolean isAgentRequestTimeout() {
-        return this.agentRequestTimeout;
+    public boolean isMarkedForDeletion() {
+        return this.markForDeletion.isMarked();
+    }
+
+    /**
+     * Sets task state from marked for deletion.
+     */
+    public void setTaskStateFromMarkedForDeletion() {
+        this.state.setName(Enums.TaskStateName.CLOSED);
+        this.state.setReasonCode(this.markForDeletion.getReasonCode());
     }
 
     @Override

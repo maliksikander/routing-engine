@@ -58,6 +58,10 @@ public class Enums {
          * Reroute task state reason code.
          */
         REROUTE,
+        /**
+         * Cancelled task state reason code.
+         */
+        CANCELLED
     }
 
     /**
@@ -191,6 +195,10 @@ public class Enums {
         /**
          * Agent state changed jms event name.
          */
-        AGENT_STATE_CHANGED
+        AGENT_STATE_CHANGED,
+        /**
+         * Agent state unchanged jms event name.
+         */
+        AGENT_STATE_UNCHANGED
     }
 }
