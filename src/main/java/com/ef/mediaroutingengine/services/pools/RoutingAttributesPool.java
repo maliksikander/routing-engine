@@ -126,4 +126,8 @@ public class RoutingAttributesPool {
         }
         this.pool.remove(id);
     }
+
+    public int size() {
+        return this.pool.size();
+    }
 }

@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.services.utilities;
 
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.RoutingMode;
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.eventlisteners.agentmrdstate.AgentMrdStateListener;
@@ -236,7 +237,7 @@ public class TaskManager {
      * @param mrd            mrd in request.
      */
     public void enqueueTask(ChannelSession channelSession, PrecisionQueue queue, MediaRoutingDomain mrd) {
-        logger.debug("method started");
+        logger.debug(Constants.METHOD_STARTED);
 
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         Task task = Task.getInstanceFrom(channelSession, mrd, queue.getId(), taskState);
@@ -245,10 +246,10 @@ public class TaskManager {
         this.publishTaskForReporting(task);
 
         this.scheduleAgentRequestTimeoutTask(task.getChannelSession());
-        logger.debug("Agent-Request-Ttl task scheduled");
+        logger.debug("Agent-Request-Ttl timer task scheduled");
 
         this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
-        logger.debug("method ended");
+        logger.debug(Constants.METHOD_ENDED);
     }
 
     /**
@@ -407,7 +408,7 @@ public class TaskManager {
         }
 
         public void run() {
-            logger.debug("method started | RequestTtlTimer.run method");
+            logger.debug(Constants.METHOD_STARTED);
             Task task = TaskManager.this.tasksPool.findFirstByConversationId(topicId);
             if (task == null) {
                 logger.error("Task not found in task pool | AgentRequestTtl Timer run method returning...");
@@ -433,7 +434,7 @@ public class TaskManager {
                 TaskManager.this.publishTaskForReporting(task);
                 logger.debug("Agent request TTL expired. Queued task: {} removed", task.getId());
             }
-            logger.debug("method ended | RequestTtlTimer.run method");
+            logger.debug(Constants.METHOD_ENDED);
         }
     }
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

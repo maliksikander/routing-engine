@@ -19,6 +19,8 @@ import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.http.HttpStatus;
@@ -30,7 +32,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
-
+    private static final Logger logger = LoggerFactory.getLogger(PrecisionQueuesServiceImpl.class);
     /**
      * The Repository.
      */
@@ -74,9 +76,18 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
 
     @Override
     public PrecisionQueueEntity create(PrecisionQueueRequestBody requestBody) {
+        logger.info("Create PrecisionQueue request initiated");
+
         this.validateAndSetMrd(requestBody);
+        logger.debug("MRD validated for PrecisionQueue");
+
         PrecisionQueueEntity inserted = repository.insert(new PrecisionQueueEntity(requestBody));
+        logger.debug("PrecisionQueue inserted in PrecisionQueue Config DB | Queue: {}", inserted.getId());
+
         this.precisionQueuesPool.insert(new PrecisionQueue(inserted, getTaskSchedulerBean()));
+        logger.debug("PrecisionQueue inserted in in-memory PrecisionQueue pool | Queue: {}", inserted.getId());
+
+        logger.info("PrecisionQueue created successfully | Queue: {}", inserted.getId());
         return inserted;
     }
 
@@ -97,32 +108,59 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
 
     @Override
     public PrecisionQueueEntity update(PrecisionQueueRequestBody requestBody, String id) {
+        logger.info("Update PrecisionQueue request initiated | Queue: {}", id);
+
         requestBody.setId(id);
         this.validateAndSetMrd(requestBody);
+        logger.debug("MRD validated for PrecisionQueue | Queue: {}", id);
 
         Optional<PrecisionQueueEntity> existing = this.repository.findById(id);
         if (existing.isEmpty()) {
-            throw new NotFoundException("Could not find precision queue resource to update");
+            String errorMessage = "Could not find PrecisionQueue resource to update | QueueId: " + id;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
+
         PrecisionQueueEntity precisionQueueEntity = existing.get();
         precisionQueueEntity.updateQueue(requestBody);
+
         this.precisionQueuesPool.findById(id).updateQueue(requestBody);
-        return this.repository.save(precisionQueueEntity);
+        logger.debug("PrecisionQueue updated in in-memory PrecisionQueue pool | Queue: {}", id);
+
+        this.repository.save(precisionQueueEntity);
+        logger.debug("PrecisionQueue updated in PrecisionQueue Config DB | Queue: {}", id);
+
+        logger.info("PrecisionQueue updated successfully | Queue: {}", id);
+        return precisionQueueEntity;
     }
 
     @Override
     public ResponseEntity<Object> delete(String id) {
+        logger.info("Delete PrecisionQueue request initiated | Queue: {}", id);
+
         if (!this.repository.existsById(id)) {
-            throw new NotFoundException("Could not find precision resource to delete");
+            String errorMessage = "Could not find the PrecisionQueue resource to delete | Queue: " + id;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
+
         List<Task> tasks = this.tasksPool.findByQueueId(id);
         if (tasks.isEmpty()) {
             PropertyChangeListener listener = this.precisionQueuesPool.findById(id).getTaskScheduler();
             this.taskManager.removePropertyChangeListener(Enums.EventName.NEW_TASK.name(), listener);
+            logger.debug("PrecisionQueue's TaskRouter removed from the TaskManager's PropertyChangeListener list");
+
             this.precisionQueuesPool.deleteById(id);
+            logger.debug("PrecisionQueue deleted from the in-memory PrecisionQueue pool | Queue: {}", id);
+
             this.repository.deleteById(id);
+            logger.debug("PrecisionQueue deleted from the PrecisionQueue Config DB | Queue: {}", id);
+
+            logger.info("PrecisionQueue Deleted successfully | Queue: {}", id);
             return new ResponseEntity<>(new SuccessResponseBody("Successfully deleted"), HttpStatus.OK);
         }
+
+        logger.info("Could not delete PrecisionQueue, there are tasks associated to it | Queue: {}", id);
         List<TaskDto> taskDtoList = new ArrayList<>();
         tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
         return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);

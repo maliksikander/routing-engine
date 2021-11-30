@@ -156,7 +156,6 @@ public class Agent {
             task.setStartTime(System.currentTimeMillis());
             taskList.remove(task);
         }
-        logger.debug("Agent Id: {}. Task : {} removed.", this.getId(), task.getId());
     }
 
     /**
