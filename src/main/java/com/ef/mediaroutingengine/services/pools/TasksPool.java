@@ -3,12 +3,9 @@ package com.ef.mediaroutingengine.services.pools;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Task;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,10 +14,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class TasksPool {
-    /**
-     * The constant LOGGER.
-     */
-    private static final Logger logger = LoggerFactory.getLogger(TasksPool.class);
 
     /**
      * Contains all tasks in the pool.

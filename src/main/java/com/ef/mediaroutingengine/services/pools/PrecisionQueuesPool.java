@@ -8,10 +8,7 @@ import com.ef.mediaroutingengine.services.TaskRouter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.stereotype.Repository;
 
@@ -20,10 +17,6 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class PrecisionQueuesPool {
-    /**
-     * The constant LOGGER.
-     */
-    private static final Logger logger = LoggerFactory.getLogger(PrecisionQueuesPool.class);
     /**
      * The Precision queues.
      */
