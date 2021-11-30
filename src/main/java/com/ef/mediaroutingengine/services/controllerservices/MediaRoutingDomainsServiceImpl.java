@@ -101,22 +101,28 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
 
     @Override
     public MediaRoutingDomain create(MediaRoutingDomain mediaRoutingDomain) {
+        logger.info("Create MRD request initiated");
         MediaRoutingDomain inserted = repository.insert(mediaRoutingDomain);
-        // Insert in in-memory pool
+        logger.debug("MRD inserted in MRD Config DB | MRD: {}", inserted.getId());
+
         this.mrdPool.insert(inserted);
-        // Add an AgentMrdState for this MRD in every agent in in-memory pool.
+        logger.debug("MRD inserted in in-memory MRD pool | MRD: {}", inserted.getId());
+
         AgentMrdState agentMrdState = new AgentMrdState(inserted, Enums.AgentMrdStateName.NOT_READY);
         for (Agent agent : agentsPool.findAll()) {
             agent.addAgentMrdState(agentMrdState);
         }
-        // Add an AgentMrdState for this MRD for every agent in Agent-Presence Collection.
+        logger.debug("MRD associated to all Agents in in-memory Agents pool | MRD: {}", inserted.getId());
+
         Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
         for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
             agentPresence.getAgentMrdStates().add(agentMrdState);
             agentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
         }
         this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
+        logger.debug("MRD associated to all Agents in Agent presence Repository | MRD: {}", inserted.getId());
         // Insert in MRD config DB
+        logger.info("MRD successfully created | MRD: {}", inserted.getId());
         return inserted;
     }
 
@@ -128,20 +134,33 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     @Override
     @Transactional
     public MediaRoutingDomain update(MediaRoutingDomain mediaRoutingDomain, String id) {
+        logger.info("Update MRD request initiated for MRD: {}", id);
+
         if (!this.repository.existsById(id)) {
-            throw new NotFoundException("Could not find the resource to update");
+            String errorMessage = "Could not find the MRD resource to update with id: " + id;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
+
         mediaRoutingDomain.setId(id);
-        // Update MRD in precision-queues in Config DB
+
         this.updatePrecisionQueues(mediaRoutingDomain, id);
-        // Update MRD in in-memory MRD-pool
+        logger.debug("MRD updated in precision-queues inside PrecisionQueue Config DB | MRD: {}", id);
+
         this.mrdPool.update(mediaRoutingDomain);
-        // Update MRD in AgentMrdStates in AgentPresence in the Redis AgentPresence Collection
+        logger.debug("MRD updated in in-memory MRD pool | MRD: {}", id);
+
         updateMrdInAgentMrdStateInAllAgentPresence(mediaRoutingDomain);
-        // Update MRD in Tasks in the Redis Tasks Collection
+        logger.debug("MRD updated in AgentMrdState for Agents in Agent Presence Repository | MRD: {}", id);
+
         updateMrdInTasks(mediaRoutingDomain);
+        logger.debug("MRD updated in Tasks inside Tasks Repository | MRD: {}", id);
         // Update MRD in MRD Config DB
-        return this.repository.save(mediaRoutingDomain);
+        MediaRoutingDomain savedInDb = this.repository.save(mediaRoutingDomain);
+        logger.debug("MRD updated in MRD Config DB");
+
+        logger.info("MRD updated successfully | MRD: {}", id);
+        return savedInDb;
     }
 
     /**
@@ -182,25 +201,38 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     @Override
     @Transactional
     public ResponseEntity<Object> delete(String id) {
+        logger.info("Delete MRD request initiated | MRD: {}", id);
+
         if (!this.repository.existsById(id)) {
-            throw new NotFoundException("Could not find the resource to delete");
+            String errorMessage = "Could not find the MRD resource to delete | MRD: " + id;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
+
         List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository.findByMrdId(id);
         List<Task> tasks = this.tasksPool.findByMrdId(id);
+
         if (precisionQueueEntities.isEmpty() && tasks.isEmpty()) {
-            // Delete AgentMrdState for this MRD from all agents in in-memory Agents-pool
             for (Agent agent : this.agentsPool.findAll()) {
                 agent.deleteAgentMrdState(id);
             }
-            // Delete AgentMrdState for this MRD from all AgentPresence in Redis Agent-Presence Collection
+            logger.debug("AgentMrdState deleted from Agents in in-memory Agents pool | MRD: {}", id);
+
             deleteAgentMrdStateFromAllAgentPresence(id);
-            // Delete MRD from in-memory MRD-pool
+            logger.debug("AgentMrdState deleted from Agents in Agent Presence Repository | MRD: {}", id);
+
             this.mrdPool.deleteById(id);
+            logger.debug("MRD deleted from in-memory MRD pool | MRD: {}", id);
+
             // Delete MRD from MRD config DB
             this.repository.deleteById(id);
+            logger.debug("MRD deleted from MRD Config DB | MRD: {}", id);
+
+            logger.info("MRD deleted successfully | MRD: {}", id);
             return new ResponseEntity<>(new SuccessResponseBody("Successfully Deleted"), HttpStatus.OK);
         }
-        logger.debug("Could not delete MRD: {}. It is associated with one or more Queues", id);
+
+        logger.info("Could not delete MRD: {}. It is associated to queues or tasks", id);
         List<TaskDto> taskDtoList = new ArrayList<>();
         tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
         return new ResponseEntity<>(new MrdDeleteConflictResponse(precisionQueueEntities, taskDtoList),

@@ -6,11 +6,11 @@ import com.ef.mediaroutingengine.config.AssignResourceProperties;
 import com.ef.mediaroutingengine.dto.AgentReservedRequest;
 import com.ef.mediaroutingengine.dto.AssignTaskRequest;
 import com.ef.mediaroutingengine.dto.RevokeTaskRequest;
+import com.ef.mediaroutingengine.model.NoAgentAvailableRequest;
 import com.ef.mediaroutingengine.model.Task;
 import java.time.Duration;
 import java.util.UUID;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,11 +57,11 @@ public class RestRequest {
      * @return The HTTP response from the API call.
      */
     public ResponseEntity<String> postAgentReserved(UUID topicId, CCUser agent) {
-        AgentReservedRequest request = new AgentReservedRequest();
-        request.setAgent(agent);
-        request.setTopicId(topicId);
+        AgentReservedRequest requestBody = new AgentReservedRequest();
+        requestBody.setAgent(agent);
+        requestBody.setTopicId(topicId);
 
-        return httpRequest(request, this.config.getAgentReservedUri(), HttpMethod.POST);
+        return httpRequest(requestBody, this.config.getAgentReservedUri(), HttpMethod.POST);
     }
 
     /**
@@ -71,8 +71,8 @@ public class RestRequest {
      * @return The HTTP response from the API call.
      */
     public ResponseEntity<String> postNoAgentAvailable(String topic) {
-        JSONObject requestBody = new JSONObject();
-        requestBody.put("topicId", topic);
+        NoAgentAvailableRequest requestBody = new NoAgentAvailableRequest();
+        requestBody.setTopicId(topic);
         return this.httpRequest(requestBody, config.getNoAgentAvailableUri(), HttpMethod.POST);
     }
 

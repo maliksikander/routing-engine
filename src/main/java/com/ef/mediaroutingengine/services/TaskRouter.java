@@ -18,6 +18,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
 import java.util.UUID;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -233,7 +234,8 @@ public class TaskRouter implements PropertyChangeListener {
                 task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), this);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(ExceptionUtils.getMessage(e));
+            logger.error(ExceptionUtils.getStackTrace(e));
         }
         logger.debug("method ended");
     }

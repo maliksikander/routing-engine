@@ -1,8 +1,10 @@
 package com.ef.mediaroutingengine.eventlisteners.taskstate;
 
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskStateChangeRequest;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import java.beans.PropertyChangeEvent;
@@ -65,19 +67,28 @@ public class TaskStateListener implements PropertyChangeListener {
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
+        logger.debug(Constants.METHOD_STARTED);
         if (evt.getPropertyName().equalsIgnoreCase(Enums.EventName.TASK_STATE.toString())) {
-            logger.debug("TaskStateEvent.propertyChange() method started");
             TaskStateChangeRequest request = (TaskStateChangeRequest) evt.getNewValue();
+            logger.info("Task state change requested | Task: {}", request.getTaskId());
+
             Task task = tasksPool.findById(request.getTaskId());
             if (task == null) {
+                logger.warn("Task not found for id: {}, ignoring request...", request.getTaskId());
                 return;
             }
-            TaskStateModifier stateModifier = this.factory.getModifier(request.getState().getName());
+
+            TaskState currentState = task.getTaskState();
+            TaskState requestedState = request.getState();
+
+            TaskStateModifier stateModifier = this.factory.getModifier(requestedState.getName());
             stateModifier.updateState(task, request.getState());
+
+            logger.info("Task state changed from {} to {} | Task: {}", currentState, requestedState, task.getId());
 
             JmsCommunicator jmsCommunicator = this.applicationContext.getBean(JmsCommunicator.class);
             jmsCommunicator.publishTaskStateChangeForReporting(task);
-            logger.debug("TaskStateEvent.propertyChange() end");
         }
+        logger.debug(Constants.METHOD_ENDED);
     }
 }

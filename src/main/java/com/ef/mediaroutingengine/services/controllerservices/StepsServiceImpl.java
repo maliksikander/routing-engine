@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +33,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class StepsServiceImpl implements StepsService {
+    private final Logger logger = LoggerFactory.getLogger(StepsServiceImpl.class);
     /**
      * The Repository.
      */
@@ -75,58 +78,99 @@ public class StepsServiceImpl implements StepsService {
 
     @Override
     public PrecisionQueueEntity create(String queueId, StepEntity stepEntity) {
+        logger.info("Create Step in Queue: {} request initiated", queueId);
+
         PrecisionQueue precisionQueue = this.precisionQueuesPool.findById(queueId);
         if (precisionQueue == null) {
-            throw new NotFoundException(QUEUE_NOT_FOUND_MSG + queueId);
+            String errorMessage = QUEUE_NOT_FOUND_MSG + queueId;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
+
         this.validateAndSetRoutingAttributes(stepEntity);
+        logger.debug("Routing Attributes in Step validated successfully");
+
         Step newStep = new Step(stepEntity);
+        logger.debug("New Step created with id: {}", newStep.getId());
+
         newStep.evaluateAssociatedAgents(agentsPool.findAll());
+        logger.debug("Associated agents evaluated in Step: {}", newStep.getId());
 
         Optional<PrecisionQueueEntity> existing = this.repository.findById(queueId);
         if (existing.isEmpty()) {
             throw new NotFoundException(QUEUE_NOT_FOUND_MSG + queueId);
         }
+
         precisionQueue.addStep(newStep);
+        logger.debug("Step {} added in in-memory PrecisionQueue {}", newStep.getId(), queueId);
+
         PrecisionQueueEntity precisionQueueEntity = existing.get();
         precisionQueueEntity.addStep(stepEntity);
-        return this.repository.save(precisionQueueEntity);
+        PrecisionQueueEntity queueInConfigDb = this.repository.save(precisionQueueEntity);
+        logger.debug("Step {} added in PrecisionQueue {} in Config DB", newStep.getId(), queueId);
+
+        logger.info("Step {} added in queue {} successfully", newStep.getId(), queueId);
+        return queueInConfigDb;
     }
 
     @Override
     public PrecisionQueueEntity update(UUID id, String queueId, StepEntity stepEntity) {
+        logger.info("Update Step {} in queue {} request initiated", id, queueId);
+
         Optional<PrecisionQueueEntity> existing = this.repository.findById(queueId);
         if (existing.isEmpty()) {
-            throw new NotFoundException(QUEUE_NOT_FOUND_MSG + queueId);
+            String errorMessage = QUEUE_NOT_FOUND_MSG + queueId;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
+
         stepEntity.setId(id);
         PrecisionQueueEntity precisionQueueEntity = existing.get();
         if (!precisionQueueEntity.containsStep(stepEntity)) {
-            throw new NotFoundException("Step: " + id + " not found in queue: " + queueId);
+            String errorMessage = "Step: " + id + " not found in queue: " + queueId;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
+
         this.validateAndSetRoutingAttributes(stepEntity);
+        logger.debug("Routing Attributes in Step {} validated successfully", id);
+
         precisionQueueEntity.updateStep(stepEntity);
         this.repository.save(precisionQueueEntity);
+        logger.debug("Step {} entity updated in Queue {} in Config DB", id, queueId);
 
         Step step = new Step(stepEntity);
         step.evaluateAssociatedAgents(agentsPool.findAll());
+        logger.debug("Associated agent in Step {} re-evaluated", id);
+
         this.precisionQueuesPool.findById(queueId).updateStep(step);
+        logger.debug("Step {} updated in in-memory Queue {}", id, queueId);
+
+        logger.info("Step {} updated in Queue {} successfully", id, queueId);
         return precisionQueueEntity;
     }
 
     @Override
     public ResponseEntity<Object> delete(String queueId, UUID id) {
+        logger.info("Delete Step {} in Queue {} request initiated", id, queueId);
+
         PrecisionQueue precisionQueue = this.precisionQueuesPool.findById(queueId);
         if (precisionQueue == null) {
-            throw new NotFoundException(QUEUE_NOT_FOUND_MSG + queueId);
+            String errorMessage = QUEUE_NOT_FOUND_MSG + queueId;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
+
         Optional<PrecisionQueueEntity> existing = this.repository.findById(queueId);
         if (existing.isEmpty()) {
             throw new NotFoundException(QUEUE_NOT_FOUND_MSG + queueId);
         }
+
         int stepIndex = precisionQueue.findStepIndex(id);
         if (stepIndex == -1) {
-            throw new NotFoundException("Step: " + id + " not found in queue: " + queueId);
+            String errorMessage = "Step: " + id + " not found in queue: " + queueId;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
 
         int noOfSteps = precisionQueue.getSteps().size();
@@ -149,8 +193,11 @@ public class StepsServiceImpl implements StepsService {
         List<Task> tasks = this.tasksPool.findByQueueId(queueId);
         if (tasks.isEmpty()) {
             deleteStep(precisionQueue, precisionQueueEntity, id);
+            logger.info("Step {} deleted from Queue {} successfully", id, queueId);
             return new ResponseEntity<>(new SuccessResponseBody("Successfully Deleted"), HttpStatus.OK);
         } else {
+            logger.info("Could not Delete Step {} from Queue {}, there are tasks associated to Queue with "
+                    + "only one step configured", id, queueId);
             List<TaskDto> taskDtoList = new ArrayList<>();
             tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
             return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
@@ -166,6 +213,7 @@ public class StepsServiceImpl implements StepsService {
             notLastStep(precisionQueue, stepIndex, id);
         }
         deleteStep(precisionQueue, precisionQueueEntity, id);
+        logger.info("Step {} deleted from Queue {} successfully", id, precisionQueue.getId());
         return new ResponseEntity<>(new SuccessResponseBody("Successfully Deleted"), HttpStatus.OK);
     }
 
@@ -216,7 +264,9 @@ public class StepsServiceImpl implements StepsService {
                 }
                 RoutingAttribute routingAttribute = routingAttributesPool.findById(requestRoutingAttribute.getId());
                 if (routingAttribute == null) {
-                    throw new NotFoundException("Could not find a routing-attribute resource");
+                    String errorMessage = "Failed to validate RoutingAttributes for Step";
+                    logger.error(errorMessage);
+                    throw new NotFoundException(errorMessage);
                 }
                 termEntity.setRoutingAttribute(routingAttribute);
             }

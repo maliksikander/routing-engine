@@ -82,6 +82,8 @@ public class CancelResourceServiceImpl implements CancelResourceService {
 
     @Override
     public void cancelResource(CancelResourceRequest request) {
+        logger.info("Cancel resource request initiated | topic: {}", request.getTopicId());
+
         Task task = tasksPool.findFirstByConversationId(request.getTopicId());
         if (!isProcessable(task)) {
             return;
@@ -89,8 +91,11 @@ public class CancelResourceServiceImpl implements CancelResourceService {
         logger.debug("Task {} is processable", task.getId());
 
         taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
+        taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
+        logger.debug("Agent-Request-Ttl-timer-task cancelled and removed | Task: {}", task.getId());
+
         task.getTimer().cancel();
-        logger.debug("AgentRequestTtl and Task step timers cancelled for task {}", task.getId());
+        logger.debug("Task {} step timer cancelled", task.getId());
 
         PrecisionQueue precisionQueue = precisionQueuesPool.findById(task.getQueue());
         synchronized (precisionQueue.getServiceQueue()) {
@@ -100,21 +105,21 @@ public class CancelResourceServiceImpl implements CancelResourceService {
 
         if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
             endQueuedTask(task, precisionQueue, request.getReasonCode());
-            logger.info("Queued task {} ended successfully", task.getId());
+            logger.info("Queued task {} cancelled successfully on topic: {}", task.getId(), request.getTopicId());
         } else if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
             endReservedTask(task, request.getReasonCode());
-            logger.info("Reserved task {} ended successfully", task.getId());
+            logger.info("Reserved task {} cancelled successfully on topic: {}", task.getId(), request.getTopicId());
         }
     }
 
     private boolean isProcessable(Task task) {
         if (task == null) {
-            logger.debug("Task is null");
+            logger.info("No Task found on this topic, ignoring request");
             return false;
         }
         Enums.TaskStateName state = task.getTaskState().getName();
         if (!(state.equals(Enums.TaskStateName.QUEUED) || state.equals(Enums.TaskStateName.RESERVED))) {
-            logger.debug("Task: {} is not in QUEUED or RESERVED state", task.getId());
+            logger.info("Task: {} is not in QUEUED or RESERVED state, ignoring request", task.getId());
             return false;
         }
         return !task.isMarkedForDeletion();
@@ -140,6 +145,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
             }
         } else {
             task.markForDeletion(closeReasonCode);
+            logger.info("Revoke-task API did not return 200 response, marked task: {} for deletion", task.getId());
         }
     }
 
