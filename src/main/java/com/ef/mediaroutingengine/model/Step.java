@@ -8,8 +8,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The type Step.
@@ -19,10 +17,6 @@ public class Step {
      * The step id.
      */
     private final UUID id;
-    /**
-     * The constant LOGGER.
-     */
-    private static final Logger logger = LoggerFactory.getLogger(Step.class);
     /**
      * The Expressions.
      */
@@ -211,17 +205,14 @@ public class Step {
      * Removes associated agent by id.
      *
      * @param id id of the agent to be removed
-     * @return true if found and removed, false otherwise
      */
-    public boolean removeAssociatedAgent(UUID id) {
+    public void removeAssociatedAgent(UUID id) {
         synchronized (this.associatedAgents) {
             int index = this.getIndexOf(id);
             if (index > -1) {
                 associatedAgents.remove(index);
-                return true;
             }
         }
-        return false;
     }
 
     /**
@@ -232,15 +223,10 @@ public class Step {
      * @return the sorted or ordered associated agents list.
      */
     public List<Agent> orderAgentsBy(AgentSelectionCriteria agentSelectionCriteria, String mrdId) {
-        switch (agentSelectionCriteria) {
-            case LONGEST_AVAILABLE:
-                return sortAsLongestAvailable(mrdId);
-            case MOST_SKILLED, LEAST_SKILLED, DEFAULT:
-                return this.associatedAgents;
-            default:
-                logger.error("Switch's default case, returning null");
-                return new ArrayList<>();
-        }
+        return switch (agentSelectionCriteria) {
+            case LONGEST_AVAILABLE -> sortAsLongestAvailable(mrdId);
+            case MOST_SKILLED, LEAST_SKILLED, DEFAULT -> this.associatedAgents;
+        };
     }
 
     /**

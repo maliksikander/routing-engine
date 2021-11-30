@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.jms.JMSException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -159,12 +160,12 @@ public class Bootstrap {
     public boolean subscribeToStateEventsChannel() {
         try {
             this.jmsCommunicator.init("STATE_CHANNEL");
-            logger.info("JMS topic subscribed successfully");
+            logger.info("Successfully subscribed to JMS topic: STATE_CHANNEL");
             return true;
         } catch (JMSException jmsException) {
-            logger.error("JmsException while initializing JMS-Communicator: ", jmsException);
+            logger.error(ExceptionUtils.getMessage(jmsException));
+            logger.error(ExceptionUtils.getStackTrace(jmsException));
         }
-        logger.debug("Failed to subscribe JMS topic ");
         return false;
     }
 

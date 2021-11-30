@@ -90,6 +90,7 @@ public class AgentMrdStateListener {
      * @param requestedState the requested state
      */
     void run(Agent agent, String mrdId, Enums.AgentMrdStateName requestedState) {
+        logger.info("MRD state change requested | MRD: {}, Agent: {}", mrdId, agent.getId());
         AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
         if (agentMrdState == null) {
             logger.error("Could not find MRD with id: {} associated with agent: {}", mrdId, agent.getId());
@@ -108,7 +109,8 @@ public class AgentMrdStateListener {
 
         if (!newState.equals(currentState)) {
             this.updateState(agent, agentMrdState, newState);
-            logger.info("Mrd-state for agent: {} changed from: {} to: {}", agent.getId(), currentState, newState);
+            logger.info("MRD state changed from: {} to: {} | MRD: {} | Agent: {}", currentState, newState,
+                    mrdId, agent.getId());
 
             this.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED);
 
@@ -117,8 +119,8 @@ public class AgentMrdStateListener {
                 this.fireStateChangeToTaskSchedulers(agentMrdState);
             }
         } else {
-            logger.info("Mrd-state update for agent: {} not allowed from: {} to: {}", agent.getId(), currentState,
-                    newState);
+            logger.info("MRD state change from: {} to: {} not allowed | MRD: {} | Agent: {}", currentState, newState,
+                    mrdId, agent.getId());
             this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED);
         }
     }

@@ -73,20 +73,23 @@ public class AgentStateListener {
      * @param newState the new state
      */
     public void run(Agent agent, AgentState newState) {
+        logger.info("Agent state change requested | Agent: {}", agent.getId());
+
         AgentStateDelegate delegate = factory.getDelegate(newState.getName());
         if (delegate == null) {
             logger.warn("Requested Agent state: {} is invalid, ignoring request..", newState);
             return;
         }
 
+        AgentState currentState = agent.getState();
         boolean isStateChanged = delegate.updateState(agent, newState);
 
         if (isStateChanged) {
-            logger.info("Agent-state for agent: {} changed from {} to {}", agent.getId(), agent.getState(), newState);
+            logger.info("Agent state changed from {} to {} | Agent: {}", currentState, newState, agent.getId());
             this.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED, true);
         } else {
-            logger.info("Agent-state update for agent: {} not allowed from: {} to: {}", agent.getId(),
-                    agent.getState(), newState);
+            logger.info("Agent-state change from: {} to: {} not allowed | Agent: {}",
+                    currentState, newState, agent.getId());
             this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED, false);
         }
     }
