@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.services.jms;
 import com.ef.cim.objectmodel.CimEvent;
 import com.ef.cim.objectmodel.CimEventName;
 import com.ef.cim.objectmodel.CimEventType;
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.StateChangeEvent;
 import com.ef.mediaroutingengine.dto.TaskDto;
@@ -19,6 +20,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,20 +88,21 @@ public class ActivemqCommunicator implements JmsCommunicator {
      */
     @Autowired
     public ActivemqCommunicator(Connection connection, JmsEventsService jmsEventsService) throws JMSException {
-        logger.debug("ActivemqServiceImpl.Constructor started");
         this.connection = connection;
         this.connection.setExceptionListener(this);
         this.jmsEventsService = jmsEventsService;
         this.objectMapper.findAndRegisterModules();
-        logger.debug("ActivemqServiceImpl.Constructor ended");
     }
 
     @Override
     public void init(String topic) throws JMSException {
-        logger.debug("ActivemqServiceImpl.init method started");
+        logger.debug(Constants.METHOD_STARTED);
         if (topic == null) {
-            throw new IllegalArgumentException("Topic is null");
+            String errorMessage = "Topic is null";
+            logger.error(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
         }
+
         this.topicName = topic;
 
         try {
@@ -108,19 +111,19 @@ public class ActivemqCommunicator implements JmsCommunicator {
             logger.info("Connection, subscriber, publisher successfully "
                     + "initialized for topic '{}'", this.topicName);
         } catch (JMSException jmsException) {
-            logger.error(
-                    "ActivemqServiceImpl.init | JMSException, trying to close connection and sessions...");
+            logger.error(ExceptionUtils.getMessage(jmsException));
+            logger.error(ExceptionUtils.getStackTrace(jmsException));
             this.stop();
             throw jmsException;
         }
 
-        logger.debug("ActivemqServiceImpl.init method ended");
+        logger.debug(Constants.METHOD_ENDED);
     }
 
     @Override
     public void publish(Serializable message, Enums.JmsEventName eventName)
             throws JMSException, JsonProcessingException {
-        logger.debug("method started");
+        logger.debug(Constants.METHOD_STARTED);
 
         StateChangeEvent stateChangeEvent = new StateChangeEvent(eventName, message, this.topicName);
 
@@ -133,7 +136,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
         this.publisher.send(messageToSend);
 
         logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'", eventName, messageStr, topicName);
-        logger.debug("method ended");
+        logger.debug(Constants.METHOD_ENDED);
     }
 
     @Override
@@ -154,8 +157,11 @@ public class ActivemqCommunicator implements JmsCommunicator {
             messageToSend.setJMSType(CimEventName.TASK_STATE_CHANGED.name());
 
             producer.send(messageToSend);
+            logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
+                    CimEventName.TASK_STATE_CHANGED, messageStr, topicName);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(ExceptionUtils.getMessage(e));
+            logger.error(ExceptionUtils.getStackTrace(e));
         }
     }
 
@@ -173,58 +179,54 @@ public class ActivemqCommunicator implements JmsCommunicator {
 
     @Override
     public void stop() throws JMSException {
-        logger.debug("ActivemqServiceImpl.stop method started");
+        logger.debug(Constants.METHOD_STARTED);
+
         if (this.publisher != null) {
             this.publisher.close();
             this.publisher = null;
-            logger.debug("ActivemqServiceImpl.stop | publisher closed");
+            logger.debug("Publisher closed on topic: {}", this.topicName);
         }
         if (this.publisherSession != null) {
             this.publisherSession.close();
             this.publisherSession = null;
-            logger.debug("ActivemqServiceImpl.stop | publisherSession closed");
+            logger.debug("PublisherSession closed on topic: {}", this.topicName);
         }
         if (subscriber != null) {
             subscriber.close();
             this.subscriber = null;
-            logger.debug("ActivemqServiceImpl.stop | subscriber closed");
+            logger.debug("Subscriber closed on topic: {}", this.topicName);
         }
         if (subscriberSession != null) {
             this.subscriberSession.unsubscribe(SUBSCRIBER_NAME);
             subscriberSession.close();
             this.subscriberSession = null;
-            logger.debug("ActivemqServiceImpl.stop | subscriberSession closed");
+            logger.debug("SubscriberSession closed on topic: {}", this.topicName);
         }
 
         logger.info("Communication stopped successfully on Topic: '{}'", this.topicName);
-        logger.debug("ActivemqServiceImpl.stop method ended");
+
+        logger.debug(Constants.METHOD_ENDED);
     }
 
     @Override
     public void onMessage(Message message) {
-        logger.debug("ActivemqServiceImpl.onMessage method started");
+        logger.debug(Constants.METHOD_STARTED);
         try {
             Enums.JmsEventName event = Enums.JmsEventName.valueOf(message.getJMSType());
-            System.out.println("*******************************");
-            System.out.println("JMS EVENT: " + event + " received");
-            System.out.println("*******************************");
             this.jmsEventsService.handleEvent(event, message);
             message.acknowledge();
-
-            logger.info("ActivemqServiceImpl.onMessage |  Event: '{}' handled gracefully "
-                    + "on Topic: '{}'", event, this.topicName);
         } catch (JMSException | JsonProcessingException e) {
-            logger.error("Exception while handling JMS Message: ", e);
+            logger.error(ExceptionUtils.getMessage(e));
+            logger.error(ExceptionUtils.getStackTrace(e));
         }
 
-        logger.debug("ActivemqServiceImpl.onMessage method ended");
+        logger.debug(Constants.METHOD_ENDED);
     }
 
     @Override
     public synchronized void onException(JMSException ex) {
-        logger.debug("ActivemqServiceImpl.onException method started");
-        logger.error("JMSException: ", ex);
-        logger.debug("ActivemqServiceImpl.onException method ended");
+        logger.error(ExceptionUtils.getMessage(ex));
+        logger.error(ExceptionUtils.getStackTrace(ex));
     }
 
     public String getTopic() {
