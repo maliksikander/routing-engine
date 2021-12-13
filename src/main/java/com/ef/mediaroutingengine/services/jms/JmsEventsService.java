@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.services.jms;
 
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskStateChangeRequest;
 import com.ef.mediaroutingengine.eventlisteners.taskstate.TaskStateListener;
@@ -57,23 +58,24 @@ public class JmsEventsService {
      */
     public void handleEvent(Enums.JmsEventName event, Message message)
             throws JMSException, JsonProcessingException {
-        logger.debug("handleEvent method started");
+        logger.debug(Constants.METHOD_STARTED);
+
         validateJmsMessageInstance(message);
 
         String textMessageString = ((TextMessage) message).getText();
 
-        logger.debug("Message : {}", textMessageString);
         JsonNode textMessageJson = objectMapper.readTree(textMessageString);
         String dataJsonString = textMessageJson.get("data").toString();
 
         if (event.equals(Enums.JmsEventName.TASK_STATE_CHANGED)) {
+            logger.info("JMS EVENT: {} received, with payload: {}", event, textMessageString);
             TaskStateChangeRequest req = objectMapper.readValue(dataJsonString, TaskStateChangeRequest.class);
             propertyChangeSupport.firePropertyChange(Enums.EventName.TASK_STATE.toString(), null, req);
         } else {
-            logger.info("Event: {} is ignored by JMS Listener", event);
+            logger.debug("Event: {} is received and ignored by JMS Listener", event);
         }
 
-        logger.debug("handleEvent method ended");
+        logger.debug(Constants.METHOD_ENDED);
     }
 
     /**
@@ -83,14 +85,15 @@ public class JmsEventsService {
      * @param message JMS Message
      */
     private void validateJmsMessageInstance(Message message) {
-        logger.debug("validateJmsMessageInstance method started");
+        logger.debug(Constants.METHOD_STARTED);
 
         if (!(message instanceof TextMessage)) {
-            throw new IllegalArgumentException(
-                    "The JMS-Message object should be instance of JMS-Text-Message");
+            String errorMessage = "The JMS-Message object should be instance of JMS-Text-Message";
+            logger.error(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
         }
 
-        logger.debug("validateJmsMessageInstance method ended");
+        logger.debug(Constants.METHOD_ENDED);
     }
 
 }

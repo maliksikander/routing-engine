@@ -18,6 +18,8 @@ import com.ef.mediaroutingengine.services.pools.RoutingAttributesPool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +30,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AgentsServiceImpl implements AgentsService {
-
+    private final Logger logger = LoggerFactory.getLogger(AgentsServiceImpl.class);
     /**
      * The Repository.
      */
@@ -79,16 +81,30 @@ public class AgentsServiceImpl implements AgentsService {
 
     @Override
     public CCUser create(CCUser ccUser) {
+        logger.info("Request to add CCUser initiated | CCUser: {}", ccUser.getKeycloakUser().getId());
         ccUser.setId(ccUser.getKeycloakUser().getId());
+
         this.validateAndSetRoutingAttributes(ccUser);
+        logger.debug("CCUser's RoutingAttributes validated | CCUser: {}", ccUser.getId());
 
         Agent agent = new Agent(ccUser, mrdPool.findAll());
-        AgentPresence agentPresence = new AgentPresence(ccUser, agent.getState(), agent.getAgentMrdStates());
+        logger.debug("Agent object created with associated MRDs | Agent: {}", agent.getId());
 
+        AgentPresence agentPresence = new AgentPresence(ccUser, agent.getState(), agent.getAgentMrdStates());
         this.agentPresenceRepository.save(agent.getId().toString(), agentPresence);
+        logger.debug("Agent inserted in Agent Presence Repository | Agent: {}", agent.getId());
+
         this.precisionQueuesPool.evaluateOnInsertForAll(agent);
+        logger.debug("Agent's association in Queues evaluated | Agent: {}", agent.getId());
+
         this.agentsPool.insert(agent);
-        return this.repository.insert(ccUser);
+        logger.debug("Agent inserted in in-memory Agents pool | Agent: {}", agent.getId());
+
+        CCUser insertedInDb = this.repository.insert(ccUser);
+        logger.debug("Agent inserted in Agents config DB | Agent: {}", agent.getId());
+
+        logger.info("CCUser added successfully | CCUser: {}", ccUser.getId());
+        return insertedInDb;
     }
 
     @Override
@@ -98,34 +114,68 @@ public class AgentsServiceImpl implements AgentsService {
 
     @Override
     public CCUser update(CCUser ccUser, UUID id) {
+        logger.info("Request to update CCUser initiated | CCUser: {}", id);
+
         if (!this.repository.existsById(id)) {
-            throw new NotFoundException("Could not find agent resource to update");
+            String errorMessage = "Could not find CCUser resource to update | CCUserId: " + id;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
+
         ccUser.setId(id);
         this.validateAndSetRoutingAttributes(ccUser);
+        logger.debug("CCUser's RoutingAttributes validated | CCUser: {}", ccUser.getId());
+
         Agent agent = this.agentsPool.findById(id);
         agent.updateFrom(ccUser);
+        logger.debug("Agent updated in in-memory Agents pool | Agent: {}", agent.getId());
+
         this.agentPresenceRepository.updateCcUser(ccUser);
+        logger.debug("Agent updated in Agent Presence Repository | Agent: {}", agent.getId());
+
         this.precisionQueuesPool.evaluateOnUpdateForAll(agent);
-        return this.repository.save(ccUser);
+        logger.debug("Agent's association in Queues re-evaluated | Agent: {}", agent.getId());
+
+        CCUser savedInDb = this.repository.save(ccUser);
+        logger.debug("Agent updated in Agents config DB | Agent: {}", agent.getId());
+
+        logger.info("CCUser updated successfully | CCUser: {}", ccUser.getId());
+        return savedInDb;
     }
 
     @Override
     public ResponseEntity<Object> delete(UUID id) {
+        logger.info("Request to delete CCUser initiated | CCUser: {}", id);
+
         if (!this.repository.existsById(id)) {
-            throw new NotFoundException("Could not find agent resource to delete");
+            String errorMessage = "Could not find CCUser resource to delete | CCUserId: " + id;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
+
         Agent agent = this.agentsPool.findById(id);
+
         List<Task> tasks = agent.getAllTasks();
         if (!tasks.isEmpty()) {
+            logger.error("Could not delete agent, there are tasks associated to the agent | Agent: {}", id);
             List<TaskDto> taskDtoList = new ArrayList<>();
             tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
             return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
         }
+
         this.agentsPool.deleteById(id);
+        logger.debug("Agent deleted from in-memory Agents pool | Agent: {}", id);
+
         this.agentPresenceRepository.deleteById(id.toString());
+        logger.debug("Agent deleted from Agent Presence Repository | Agent: {}", id);
+
         this.precisionQueuesPool.deleteFromAll(agent);
+        logger.debug("Agent's Association removed from all Queues | Agent: {}", id);
+
         this.repository.deleteById(id);
+        logger.debug("Agent deleted from Agents Config DB | Agent: {}", id);
+
+        logger.info("CCUser deleted successfully | CCUser: {}", id);
         return new ResponseEntity<>(new SuccessResponseBody("Successfully deleted"), HttpStatus.OK);
     }
 
@@ -146,6 +196,7 @@ public class AgentsServiceImpl implements AgentsService {
             }
             RoutingAttribute routingAttribute = this.routingAttributesPool.findById(requestedRoutingAttribute.getId());
             if (routingAttribute == null) {
+                logger.error("CCUser's RoutingAttributes validation failed | CCUser: {}", ccUser.getId());
                 throw new NotFoundException("Could not find routing-attribute resource");
             }
             associatedRoutingAttribute.setRoutingAttribute(routingAttribute);

@@ -14,6 +14,8 @@ import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;
 import com.ef.mediaroutingengine.services.pools.RoutingAttributesPool;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class RoutingAttributesServiceImpl implements RoutingAttributesService {
+    private final Logger logger = LoggerFactory.getLogger(RoutingAttributesServiceImpl.class);
     /**
      * The Repository.
      */
@@ -43,10 +46,10 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
     /**
      * Default constructor.
      *
-     * @param repository                     routing attribute repository
-     * @param routingAttributesPool          the routing attributes pool
+     * @param repository               routing attribute repository
+     * @param routingAttributesPool    the routing attributes pool
      * @param precisionQueueRepository precision queue repository
-     * @param agentsRepository               agents repository
+     * @param agentsRepository         agents repository
      */
     @Autowired
     public RoutingAttributesServiceImpl(RoutingAttributeRepository repository,
@@ -61,8 +64,15 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
 
     @Override
     public RoutingAttribute create(RoutingAttribute routingAttribute) {
+        logger.info("Create RoutingAttribute request initiated");
+
         RoutingAttribute inserted = repository.insert(routingAttribute);
+        logger.debug("RoutingAttribute inserted in RoutingAttribute Config DB | Attribute: {}", inserted.getId());
+
         this.routingAttributesPool.insert(inserted);
+        logger.debug("RoutingAttribute inserted in RoutingAttributes Pool | Attribute: {}", inserted.getId());
+
+        logger.info("RoutingAttribute created successfully | Attribute: {}", inserted.getId());
         return inserted;
     }
 
@@ -74,32 +84,59 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
     @Override
     @Transactional
     public RoutingAttribute update(RoutingAttribute routingAttribute, String id) {
+        logger.info("Update RoutingAttribute request initiated with id: {}", id);
+
         if (!this.repository.existsById(id)) {
-            throw new NotFoundException("Could not find resource to update");
+            String errorMessage = "Could not find RoutingAttribute: " + id + " resource to update";
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
 
         routingAttribute.setId(id);
 
         this.updatePrecisionQueues(routingAttribute, id);
+        logger.debug("RoutingAttribute {} updated in PrecisionQueues in PQ-Config-DB", id);
+
         this.updateAgents(routingAttribute, id);
+        logger.debug("RoutingAttribute {} updated in Agents in Agents-Config-DB", id);
+
         this.routingAttributesPool.update(routingAttribute);
-        return repository.save(routingAttribute);
+        logger.debug("RoutingAttribute {} updated in RoutingAttributes pool", id);
+
+        RoutingAttribute savedInDb = repository.save(routingAttribute);
+        logger.debug("RoutingAttribute {} updated in RoutingAttributes Config DB", id);
+
+        logger.info("RoutingAttribute {} updated successfully", id);
+        return savedInDb;
     }
 
     @Override
     @Transactional
     public RoutingAttributeDeleteConflictResponse delete(String id) {
+        logger.info("Delete RoutingAttribute request initiated with id: {}", id);
+
         if (!repository.existsById(id)) {
-            throw new NotFoundException("Could not find resource to delete");
+            String errorMessage = "Could not find RoutingAttribute: " + id + " resource to delete";
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
-        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository
-                .findByRoutingAttributeId(id);
+
+        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository.findByRoutingAttributeId(id);
         List<CCUser> agents = this.agentsRepository.findByRoutingAttributeId(id);
+
         if (precisionQueueEntities.isEmpty() && agents.isEmpty()) {
             this.routingAttributesPool.deleteById(id);
+            logger.debug("RoutingAttribute {} deleted from RoutingAttributes in-memory pool", id);
+
             repository.deleteById(id);
+            logger.debug("RoutingAttribute {} deleted from RoutingAttributes Config DB", id);
+
+            logger.info("RoutingAttribute {} deleted successfully", id);
             return null;
         }
+
+        logger.info("Could not delete RoutingAttribute {}, there are Queues or Agents associated to it", id);
+
         RoutingAttributeDeleteConflictResponse response = new RoutingAttributeDeleteConflictResponse();
         response.setAgents(agents);
         response.setPrecisionQueues(precisionQueueEntities);

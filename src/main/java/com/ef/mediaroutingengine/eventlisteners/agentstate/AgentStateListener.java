@@ -61,9 +61,8 @@ public class AgentStateListener {
      * @param newState the new state
      */
     public void propertyChange(Agent agent, AgentState newState) {
-        logger.debug("Method started");
+        logger.debug("Agent state listener called asynchronously");
         CompletableFuture.runAsync(() -> this.run(agent, newState));
-        logger.debug("Method ended");
     }
 
 
@@ -74,29 +73,38 @@ public class AgentStateListener {
      * @param newState the new state
      */
     public void run(Agent agent, AgentState newState) {
-        logger.info("Property change event: Agent-State called");
-        logger.info("Current state: {}, New state: {}", agent.getState().getName(), newState);
+        logger.info("Agent state change requested | Agent: {}", agent.getId());
 
         AgentStateDelegate delegate = factory.getDelegate(newState.getName());
         if (delegate == null) {
+            logger.warn("Requested Agent state: {} is invalid, ignoring request..", newState);
             return;
         }
+
+        AgentState currentState = agent.getState();
         boolean isStateChanged = delegate.updateState(agent, newState);
-        logger.info("Before Publishing state change on JMS");
-        this.publish(this.agentPresenceRepository.find(agent.getId().toString()), isStateChanged);
-        logger.info("Agent state change request published on JMS");
+
+        if (isStateChanged) {
+            logger.info("Agent state changed from {} to {} | Agent: {}", currentState, newState, agent.getId());
+            this.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED, true);
+        } else {
+            logger.info("Agent-state change from: {} to: {} not allowed | Agent: {}",
+                    currentState, newState, agent.getId());
+            this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED, false);
+        }
     }
 
     /**
      * Publish.
      *
-     * @param agentPresence     the agent presence
+     * @param agent     the agent presence
      * @param agentStateChanged the agent state changed
      */
-    private void publish(AgentPresence agentPresence, boolean agentStateChanged) {
+    private void publish(Agent agent, Enums.JmsEventName eventName, boolean agentStateChanged) {
+        AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId().toString());
         AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, agentStateChanged);
         try {
-            jmsCommunicator.publish(res, Enums.JmsEventName.AGENT_STATE_CHANGED);
+            jmsCommunicator.publish(res, eventName);
         } catch (Exception e) {
             e.printStackTrace();
         }

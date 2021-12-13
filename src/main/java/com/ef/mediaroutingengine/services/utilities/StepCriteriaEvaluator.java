@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.services.utilities;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.expression.ExpressionParser;
@@ -36,7 +37,8 @@ public class StepCriteriaEvaluator {
             }
             return false;
         } catch (Exception ex) {
-            logger.error("Exception evaluating criteria", ex);
+            logger.error(ExceptionUtils.getMessage(ex));
+            logger.error(ExceptionUtils.getStackTrace(ex));
             return false;
         }
     }

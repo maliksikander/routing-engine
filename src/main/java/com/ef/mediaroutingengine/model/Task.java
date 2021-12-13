@@ -6,7 +6,6 @@ import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.TaskDto;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.io.Serializable;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -18,12 +17,11 @@ import org.slf4j.LoggerFactory;
 /**
  * The type Task.
  */
-public class Task implements Serializable {
+public class Task {
     /**
      * The constant LOGGER.
      */
     private static final Logger logger = LoggerFactory.getLogger(Task.class);
-
     /**
      * The ID.
      */
@@ -73,80 +71,92 @@ public class Task implements Serializable {
      */
     private Long handlingTime;
     /**
-     * The Agent request timeout.
+     * The Mark for deletion.
      */
-    private boolean agentRequestTimeout;
+    private final MarkForDeletion markForDeletion = new MarkForDeletion();
     /**
      * The Current step.
      */
-    private Step currentStep;
+    private TaskStep currentStep;
 
     /**
-     * Default constructor.
+     * Instantiates a new Task.
      *
-     * @param channelSession the channel session in request
-     * @param mrd            associated media routing domain
+     * @param id             the id
+     * @param channelSession the channel session
+     * @param mrd            the mrd
      * @param queue          the queue
      */
-    public Task(ChannelSession channelSession, MediaRoutingDomain mrd, String queue, TaskState state) {
-        this.id = UUID.randomUUID();
+    private Task(UUID id, ChannelSession channelSession, MediaRoutingDomain mrd, String queue) {
+        this.id = id;
         this.channelSession = channelSession;
         this.mrd = mrd;
         this.queue = queue;
-        //new TaskState(Enums.TaskStateName.QUEUED, null)
+
         this.priority = 1; // Right now hardcoded at highest priority level
-        this.state = state;
         this.enqueueTime = System.currentTimeMillis();
         this.timer = new Timer();
         this.handlingTime = 0L;
-        this.agentRequestTimeout = false;
-
         this.changeSupport = new PropertyChangeSupport(this);
     }
 
     /**
-     * Constructor. build object from TaskDto Object.
+     * Gets instance.
      *
-     * @param taskDto build object from this dto.
+     * @param channelSession the channel session
+     * @param mrd            the mrd
+     * @param queue          the queue
+     * @param state          the state
+     * @return the instance
      */
-    public Task(TaskDto taskDto) {
-        this.id = taskDto.getId();
-        this.channelSession = taskDto.getChannelSession();
-        this.mrd = taskDto.getMrd();
-        this.queue = taskDto.getQueue();
-
-        this.priority = taskDto.getPriority();
-        this.state = taskDto.getState();
-        this.assignedTo = taskDto.getAssignedTo();
-        this.enqueueTime = taskDto.getEnqueueTime();
-        this.handlingTime = 0L;
-
-        this.timer = new Timer();
-        this.changeSupport = new PropertyChangeSupport(this);
+    public static Task getInstanceFrom(ChannelSession channelSession, MediaRoutingDomain mrd,
+                                       String queue, TaskState state) {
+        Task task = new Task(UUID.randomUUID(), channelSession, mrd, queue);
+        task.setTaskState(state);
+        return task;
     }
 
     /**
-     * Copy constructor. Used to make a new task for rerouting.
+     * Gets instance.
      *
-     * @param o the task to be copied
+     * @param taskDto the task dto
+     * @return the instance
      */
-    public Task(Task o) {
-        this.id = UUID.randomUUID();
-        this.channelSession = o.getChannelSession();
-        this.mrd = o.getMrd();
-        this.queue = o.getQueue();
-
-        this.priority = 11;
-        this.state = new TaskState(Enums.TaskStateName.QUEUED, null);
-        this.timer = new Timer();
-        this.handlingTime = 0L;
-
-        this.changeSupport = new PropertyChangeSupport(this);
+    public static Task getInstanceFrom(TaskDto taskDto) {
+        Task task = new Task(taskDto.getId(), taskDto.getChannelSession(), taskDto.getMrd(), taskDto.getQueue());
+        task.state = taskDto.getState();
+        task.priority = taskDto.getPriority();
+        task.assignedTo = taskDto.getAssignedTo();
+        task.enqueueTime = taskDto.getEnqueueTime();
+        return task;
     }
 
-    public Task(UUID agentId, MediaRoutingDomain mrd, ChannelSession channelSession) {
-        this(channelSession, mrd, null, new TaskState(Enums.TaskStateName.ACTIVE, null));
-        this.assignedTo = agentId;
+    /**
+     * Gets instance.
+     *
+     * @param oldTask the old task
+     * @return the instance
+     */
+    public static Task getInstanceFrom(Task oldTask) {
+        TaskState newTaskState = new TaskState(Enums.TaskStateName.QUEUED, null);
+        Task task = getInstanceFrom(oldTask.channelSession, oldTask.mrd, oldTask.queue, newTaskState);
+        task.priority = 11;
+        return task;
+    }
+
+    /**
+     * Gets instance.
+     *
+     * @param agentId        the agent id
+     * @param mrd            the mrd
+     * @param channelSession the channel session
+     * @return the instance
+     */
+    public static Task getInstanceFrom(UUID agentId, MediaRoutingDomain mrd, ChannelSession channelSession) {
+        TaskState taskState = new TaskState(Enums.TaskStateName.ACTIVE, null);
+        Task task = getInstanceFrom(channelSession, mrd, null, taskState);
+        task.setAssignedTo(agentId);
+        return task;
     }
 
     // +++++++++++++++++++++++++++++++ Accessor Methods ++++++++++++++++++++++++++++++++++++++++++++++
@@ -304,12 +314,33 @@ public class Task implements Serializable {
         return this.timer;
     }
 
-    public Step getCurrentStep() {
+    /**
+     * Gets current step.
+     *
+     * @return the current step
+     */
+    public TaskStep getCurrentStep() {
         return currentStep;
     }
 
-    public void setCurrentStep(Step currentStep) {
+    /**
+     * Sets current step.
+     *
+     * @param currentStep the current step
+     */
+    public void setCurrentStep(TaskStep currentStep) {
         this.currentStep = currentStep;
+    }
+
+    /**
+     * Sets up step from.
+     *
+     * @param precisionQueue    the precision queue
+     * @param stepStartingIndex the step starting index
+     */
+    public void setUpStepFrom(PrecisionQueue precisionQueue, int stepStartingIndex) {
+        this.currentStep = precisionQueue.getNextStep(stepStartingIndex);
+        this.startStepTimer();
     }
 
     /**
@@ -321,6 +352,11 @@ public class Task implements Serializable {
         return this.channelSession.getTopicId();
     }
 
+    /**
+     * Gets routing mode.
+     *
+     * @return the routing mode
+     */
     public RoutingMode getRoutingMode() {
         return this.channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingMode();
     }
@@ -332,7 +368,7 @@ public class Task implements Serializable {
      */
 // TODO: Implement it correctly
     public UUID getLastAssignedAgentId() {
-        return UUID.randomUUID();
+        return null;
     }
 
     /**
@@ -346,15 +382,6 @@ public class Task implements Serializable {
     }
 
     /**
-     * Add property change listener.
-     *
-     * @param listener the listener
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        this.changeSupport.addPropertyChangeListener(listener);
-    }
-
-    /**
      * Remove property change listener.
      *
      * @param property the property
@@ -364,25 +391,17 @@ public class Task implements Serializable {
         this.changeSupport.removePropertyChangeListener(property, listener);
     }
 
-    /**
-     * Remove property change listener.
-     *
-     * @param listener the listener
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        this.changeSupport.removePropertyChangeListener(listener);
-    }
-
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     /**
      * Start timer.
      */
-    public void startTimer() {
+    private void startStepTimer() {
         try {
-            if (this.currentStep != null) {
+            if (this.currentStep != null && !this.currentStep.isLastStep()) {
                 timer = new Timer();
-                timer.schedule(new TaskTimer(), this.currentStep.getTimeout() * 1000L);
+                timer.schedule(new TaskTimer(), this.currentStep.getStep().getTimeout() * 1000L);
+                logger.debug("Step: {} timer started for task: {}", currentStep.getStep().getId(), this.id);
             }
         } catch (IllegalArgumentException ex) {
             if (!"Negative delay.".equalsIgnoreCase(ExceptionUtils.getRootCause(ex).getMessage())) {
@@ -396,26 +415,32 @@ public class Task implements Serializable {
     }
 
     /**
-     * Handle task remove event.
+     * Mark for deletion.
+     *
+     * @param reasonCode the reason code
      */
-    public void handleTaskRemoveEvent() {
-        this.changeSupport.firePropertyChange(Enums.EventName.TASK_REMOVED.name(), null, "");
+    public void markForDeletion(Enums.TaskStateReasonCode reasonCode) {
+        if (!markForDeletion.isMarked()) {
+            this.markForDeletion.setMarked(true);
+            this.markForDeletion.setReasonCode(reasonCode);
+        }
     }
 
     /**
-     * Agent request timeout.
-     */
-    public void agentRequestTimeout() {
-        this.agentRequestTimeout = true;
-    }
-
-    /**
-     * Is agent request timeout boolean.
+     * Is marked for deletion boolean.
      *
      * @return the boolean
      */
-    public boolean isAgentRequestTimeout() {
-        return this.agentRequestTimeout;
+    public boolean isMarkedForDeletion() {
+        return this.markForDeletion.isMarked();
+    }
+
+    /**
+     * Sets task state from marked for deletion.
+     */
+    public void setTaskStateFromMarkedForDeletion() {
+        this.state.setName(Enums.TaskStateName.CLOSED);
+        this.state.setReasonCode(this.markForDeletion.getReasonCode());
     }
 
     @Override
@@ -447,14 +472,14 @@ public class Task implements Serializable {
     private class TaskTimer extends TimerTask {
 
         public void run() {
-            logger.debug("Time up for step: {}, Task id: {}, MRD: {}", Task.this.currentStep.getId(),
+            logger.debug("Time up for step: {}, Task id: {}, MRD: {}", Task.this.currentStep.getStep().getId(),
                     Task.this.getId(), Task.this.getMrd());
             try {
                 Task.this.getTimer().cancel();
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-            Task.this.changeSupport.firePropertyChange(Enums.EventName.TIMER.name(), null, Task.this);
+            Task.this.changeSupport.firePropertyChange(Enums.EventName.STEP_TIMEOUT.name(), null, Task.this);
         }
     }
     // +++++++++++++++++++++++++++++++************************++++++++++++++++++++++++++++++++++++++++++++*

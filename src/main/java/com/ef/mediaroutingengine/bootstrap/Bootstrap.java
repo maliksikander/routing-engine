@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.jms.JMSException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -159,12 +160,12 @@ public class Bootstrap {
     public boolean subscribeToStateEventsChannel() {
         try {
             this.jmsCommunicator.init("STATE_CHANNEL");
-            logger.info("JMS topic subscribed successfully");
+            logger.info("Successfully subscribed to JMS topic: STATE_CHANNEL");
             return true;
         } catch (JMSException jmsException) {
-            logger.error("JmsException while initializing JMS-Communicator: ", jmsException);
+            logger.error(ExceptionUtils.getMessage(jmsException));
+            logger.error(ExceptionUtils.getStackTrace(jmsException));
         }
-        logger.debug("Failed to subscribe JMS topic ");
         return false;
     }
 
@@ -177,6 +178,7 @@ public class Bootstrap {
         logger.debug(Constants.METHOD_STARTED);
         // Load in-memory Routing-Attributes pool from Routing-Attributes Config DB.
         this.routingAttributesPool.loadFrom(routingAttributeRepository.findAll());
+        logger.debug("Routing-Attributes pool loaded from DB");
 
         List<CCUser> ccUsers = agentsRepository.findAll();
         /*
@@ -187,10 +189,10 @@ public class Bootstrap {
         this.replaceRoutingAttributesInCcUsers(ccUsers);
 
         this.agentsPool.loadPoolFrom(ccUsers);
-        logger.debug("Agents pool loaded");
+        logger.debug("Agents pool loaded DB");
 
         this.mrdPool.loadPoolFrom(mediaRoutingDomainRepository.findAll());
-        logger.debug("MRDs pool loaded");
+        logger.debug("MRDs pool loaded from DB");
         // Set Agent and AgentMRD states after MRD pool is loaded as it is required for agent-mrd states.
         this.setAgentStates();
         /*
@@ -205,7 +207,7 @@ public class Bootstrap {
          */
         this.replaceRoutingAttributesAndMrdInQueues(precisionQueueEntities);
         this.precisionQueuesPool.loadPoolFrom(precisionQueueEntities, this.agentsPool);
-        logger.debug("Precision-Queues pool loaded");
+        logger.debug("Precision-Queues pool loaded from DB");
 
         /*
         Load the in-memory Tasks pool from REDIS.
@@ -216,15 +218,16 @@ public class Bootstrap {
         List<TaskDto> taskDtoList = this.tasksRepository.findAll();
         for (TaskDto taskDto : taskDtoList) {
             this.replaceMrdInTask(taskDto);
-            Task task = new Task(taskDto);
+            Task task = Task.getInstanceFrom(taskDto);
             this.associateTaskWithAgent(task);
             if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
-                this.taskManager.enqueueTask(task);
+                this.taskManager.enqueueTaskOnFailover(task);
             } else if (task.getRoutingMode().equals(RoutingMode.PULL)) {
                 this.tasksPool.add(task);
             }
         }
 
+        logger.info("Routing-Attributes pool size: {}", this.routingAttributesPool.size());
         logger.info("Agents pool size: {}", this.agentsPool.size());
         logger.info("Mrd pool size: {}", this.mrdPool.size());
         logger.info("Precision-Queues pool size: {}", this.precisionQueuesPool.size());

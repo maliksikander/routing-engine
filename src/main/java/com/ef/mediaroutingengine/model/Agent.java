@@ -5,7 +5,7 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Enums;
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -156,7 +156,6 @@ public class Agent {
             task.setStartTime(System.currentTimeMillis());
             taskList.remove(task);
         }
-        logger.debug("Agent Id: {}. Task : {} removed.", this.getId(), task.getId());
     }
 
     /**
@@ -185,13 +184,21 @@ public class Agent {
      * @return list of all tasks from all MRDs
      */
     public List<Task> getAllTasks() {
-        List<Task> result = new ArrayList<>();
-        for (Map.Entry<String, List<Task>> entry : this.activeTasks.entrySet()) {
-            result.addAll(entry.getValue());
-        }
+        List<Task> result = this.getActiveTasksList();
         if (reservedTask != null) {
             result.add(reservedTask);
         }
+        return result;
+    }
+
+    /**
+     * Gets active tasks list.
+     *
+     * @return the active tasks list
+     */
+    public List<Task> getActiveTasksList() {
+        List<Task> result = new ArrayList<>();
+        this.activeTasks.forEach((k, v) -> result.addAll(v));
         return result;
     }
 
@@ -309,13 +316,17 @@ public class Agent {
         return this.reservedTask != null;
     }
 
+    public Task getReservedTask() {
+        return this.reservedTask;
+    }
+
     /**
      * Returns the last ready state change time for an associated mrd state.
      *
      * @param mrdId id of the mrd
      * @return the last ready state change time for an associated mrd state, null if id not found
      */
-    public LocalDateTime getLastReadyStateChangeTimeFor(@NotNull String mrdId) {
+    public Timestamp getLastReadyStateChangeTimeFor(@NotNull String mrdId) {
         AgentMrdState agentMrdState = this.agentMrdStates.get(mrdId);
         if (agentMrdState == null) {
             return null;

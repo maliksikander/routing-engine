@@ -105,7 +105,7 @@ public class PullAssignTaskController {
      * @return the media routing domain
      */
     private MediaRoutingDomain validateAndGetMrd(ChannelSession channelSession) {
-        String mrdId = channelSession.getChannel().getChannelConnector().getChannelType().getMediaRoutingDomain();
+        String mrdId = channelSession.getChannel().getChannelType().getMediaRoutingDomain();
         MediaRoutingDomain mrd = this.mrdPool.findById(mrdId);
         if (mrd == null) {
             throw new NotFoundException("MRD: " + mrdId + " in requested channel session not found");

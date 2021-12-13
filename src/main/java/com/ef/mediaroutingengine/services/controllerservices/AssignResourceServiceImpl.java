@@ -61,16 +61,22 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     @Override
     public String assign(AssignResourceRequest request) {
         logger.debug(Constants.METHOD_STARTED);
+        logger.info("Assign resource request initiated | Topic: {}", request.getChannelSession().getTopicId());
+
         ChannelSession channelSession = request.getChannelSession();
         validateChannelSession(channelSession);
         logger.debug("ChannelSession validated in Assign-Resource API request");
+
         MediaRoutingDomain mrd = validateAndGetMrd(channelSession);
         logger.debug("MRD validated in Assign-Resource API request");
+
         PrecisionQueue queue = this.validateAndGetQueue(channelSession, request.getQueue(), mrd.getId());
         logger.debug("PrecisionQueue validated in Assign-Resource API request");
+
         // TODO: Executor service .. don't use completableFuture!
         CompletableFuture.runAsync(() -> this.taskManager.enqueueTask(channelSession, queue, mrd));
-        logger.debug("Task enqueued");
+
+        logger.info("Assign resource request handled gracefully | Topic: {}", request.getChannelSession().getTopicId());
         logger.debug(Constants.METHOD_ENDED);
         return "The request is received Successfully";
     }
@@ -90,7 +96,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         if (channelSession.getChannel().getChannelConnector() == null) {
             throw new IllegalArgumentException("ChannelSession.Channel.ChannelConnector is null");
         }
-        if (channelSession.getChannel().getChannelConnector().getChannelType() == null) {
+        if (channelSession.getChannel().getChannelType() == null) {
             throw new IllegalArgumentException("ChannelSession.Channel.ChannelConnector.ChannelType is null");
         }
         if (channelSession.getChannel().getChannelConfig() == null) {
@@ -112,7 +118,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @return the media routing domain
      */
     private MediaRoutingDomain validateAndGetMrd(ChannelSession channelSession) {
-        String mrdId = channelSession.getChannel().getChannelConnector().getChannelType().getMediaRoutingDomain();
+        String mrdId = channelSession.getChannel().getChannelType().getMediaRoutingDomain();
         MediaRoutingDomain mrd = this.mrdPool.findById(mrdId);
         if (mrd == null) {
             throw new IllegalArgumentException("MRD with id: " + mrdId + " not found in MRD-pool");

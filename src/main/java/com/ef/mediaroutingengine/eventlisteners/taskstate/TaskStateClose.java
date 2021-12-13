@@ -1,6 +1,5 @@
 package com.ef.mediaroutingengine.eventlisteners.taskstate;
 
-import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.TaskState;
@@ -42,17 +41,17 @@ public class TaskStateClose implements TaskStateModifier {
 
     @Override
     public void updateState(Task task, TaskState state) {
-        if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
-            this.precisionQueuesPool.endTask(task);
-        }
+        task.setTaskState(state);
+        this.precisionQueuesPool.endTask(task);
 
         if (state.getReasonCode() == null || !state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA)) {
             this.taskManager.endTaskFromAssignedAgent(task);
             this.tasksRepository.deleteById(task.getId().toString());
             this.taskManager.removeTask(task);
+            this.taskManager.publishTaskForReporting(task);
         } else if (state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA)) {
             this.taskManager.endTaskFromAgentOnRona(task);
-            this.taskManager.rerouteTask(task);
+            this.taskManager.rerouteReservedTask(task);
         }
     }
 }
