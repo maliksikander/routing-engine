@@ -18,6 +18,15 @@ public class AssignResourceRequest {
      */
     private String queue;
 
+    public AssignResourceRequest() {
+
+    }
+
+    public AssignResourceRequest(ChannelSession channelSession, String queue) {
+        this.channelSession = channelSession;
+        this.queue = queue;
+    }
+
     /**
      * Gets channel session.
      *

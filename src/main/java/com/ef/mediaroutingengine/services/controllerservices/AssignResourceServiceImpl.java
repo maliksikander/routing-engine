@@ -86,7 +86,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      *
      * @param channelSession the channel session
      */
-    private void validateChannelSession(ChannelSession channelSession) {
+    void validateChannelSession(ChannelSession channelSession) {
         if (channelSession == null) {
             throw new IllegalArgumentException("Channel Session is null");
         }
@@ -117,7 +117,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @param channelSession the channel session
      * @return the media routing domain
      */
-    private MediaRoutingDomain validateAndGetMrd(ChannelSession channelSession) {
+    MediaRoutingDomain validateAndGetMrd(ChannelSession channelSession) {
         String mrdId = channelSession.getChannel().getChannelType().getMediaRoutingDomain();
         MediaRoutingDomain mrd = this.mrdPool.findById(mrdId);
         if (mrd == null) {
@@ -134,7 +134,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @param mrdId          the mrd id
      * @return the precision queue
      */
-    private PrecisionQueue validateAndGetQueue(ChannelSession channelSession, String requestQueue, String mrdId) {
+    PrecisionQueue validateAndGetQueue(ChannelSession channelSession, String requestQueue, String mrdId) {
         String defaultQueue = channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingObjectId();
         if (defaultQueue == null && requestQueue == null) {
             throw new IllegalArgumentException("DefaultQueue and RequestedQueue both are null");
@@ -161,7 +161,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @param defaultQueue   the default queue
      * @return the precision queue from
      */
-    private PrecisionQueue getPrecisionQueueFrom(String requestedQueue, String defaultQueue) {
+    PrecisionQueue getPrecisionQueueFrom(String requestedQueue, String defaultQueue) {
         PrecisionQueue queue = this.precisionQueuesPool.findById(requestedQueue);
         // If requested queue not found, use default queue
         if (queue == null) {
