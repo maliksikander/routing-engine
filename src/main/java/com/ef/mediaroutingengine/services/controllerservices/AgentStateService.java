@@ -75,7 +75,7 @@ public class AgentStateService {
      * @param agentId    the agent id
      * @param agentState the agent state
      */
-    private void agentState(UUID agentId, AgentState agentState) {
+    void agentState(UUID agentId, AgentState agentState) {
         Agent agent = this.validateAndGetAgent(agentId);
         this.agentStateListener.propertyChange(agent, agentState);
     }
@@ -96,7 +96,7 @@ public class AgentStateService {
      * @param agentId the agent id
      * @return the agent
      */
-    private Agent validateAndGetAgent(UUID agentId) {
+    Agent validateAndGetAgent(UUID agentId) {
         Agent agent = this.agentsPool.findById(agentId);
         if (agent == null) {
             throw new NotFoundException("Agent: " + agentId + " not found");
