@@ -49,7 +49,7 @@ class TasksServiceTest {
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         ChannelSession channelSession = mock(ChannelSession.class);
         MediaRoutingDomain mrd = mock(MediaRoutingDomain.class);
-        Task task = new Task(channelSession, mrd, "queueId", taskState);
+        Task task = Task.getInstanceFrom(channelSession, mrd, "queueId", taskState);
 
         when(tasksPool.findById(task.getId())).thenReturn(task);
         TaskDto taskDto = tasksService.retrieveById(task.getId());

@@ -1,10 +1,24 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.RoutingAttributeType;
+import com.ef.mediaroutingengine.exceptions.NotFoundException;
+import com.ef.mediaroutingengine.model.Agent;
+import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
@@ -15,10 +29,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 @ExtendWith(MockitoExtension.class)
 class AgentsServiceImplTest {
@@ -42,12 +62,145 @@ class AgentsServiceImplTest {
                 mrdPool, precisionQueuesPool, agentPresenceRepository);
     }
 
+
     @Test
-    void testValidateAndSetRoutingAttributes() {
+    void test_create() {
         CCUser ccUser = getNewCcUser();
 
+        AgentsServiceImpl spy = Mockito.spy(agentsService);
 
+        doNothing().when(spy).validateAndSetRoutingAttributes(ccUser);
+        when(this.mrdPool.findAll()).thenReturn(new ArrayList<>());
+
+        spy.create(ccUser);
+
+        ArgumentCaptor<String> agentIdCaptor = ArgumentCaptor.forClass(String.class);
+
+        verify(this.agentPresenceRepository, times(1))
+                .save(agentIdCaptor.capture(), any());
+        assertEquals(ccUser.getKeycloakUser().getId().toString(), agentIdCaptor.getValue());
+
+        verify(this.precisionQueuesPool, times(1)).evaluateOnInsertForAll(any());
+        verify(this.agentsPool, times(1)).insert(any());
+        verify(this.repository, times(1)).insert(ccUser);
     }
+
+    @Nested
+    @DisplayName("update method tests")
+    class UpdateTest {
+        @Test
+        void throwsNotFoundException_when_agentDoesNotExistInRepository() {
+            CCUser ccUser = getNewCcUser();
+            UUID id = ccUser.getKeycloakUser().getId();
+            when(repository.existsById(id)).thenReturn(false);
+
+            assertThrows(NotFoundException.class, () -> agentsService.update(ccUser, id));
+        }
+
+        @Test
+        void when_updateSuccessful() {
+            CCUser ccUser = getNewCcUser();
+            UUID id = ccUser.getKeycloakUser().getId();
+
+            AgentsServiceImpl spy = Mockito.spy(agentsService);
+
+            when(repository.existsById(id)).thenReturn(true);
+            doNothing().when(spy).validateAndSetRoutingAttributes(ccUser);
+
+            Agent agent = mock(Agent.class);
+            when(agentsPool.findById(id)).thenReturn(agent);
+
+            spy.update(ccUser, id);
+
+            ArgumentCaptor<CCUser> ccUserCaptor = ArgumentCaptor.forClass(CCUser.class);
+            verify(agent, times(1)).updateFrom(ccUserCaptor.capture());
+            assertEquals(id, ccUserCaptor.getValue().getId());
+
+            verify(agentPresenceRepository, times(1)).updateCcUser(ccUser);
+            verify(precisionQueuesPool, times(1)).evaluateOnUpdateForAll(agent);
+            verify(repository,times(1)).save(ccUser);
+        }
+    }
+
+    @Nested
+    @DisplayName("delete method tests")
+    class DeleteTest {
+        @Test
+        void throwsNotFoundException_when_agentDoesNotExistInRepository() {
+            UUID id = UUID.randomUUID();
+            when(repository.existsById(id)).thenReturn(false);
+            assertThrows(NotFoundException.class, () -> agentsService.delete(id));
+        }
+
+        @Test
+        void returnsConflictResponse_when_agentHasTasks() {
+            UUID id = UUID.randomUUID();
+            Agent agent = mock(Agent.class);
+
+            List<Task> taskList = new ArrayList<>();
+            taskList.add(mock(Task.class));
+
+            when(repository.existsById(id)).thenReturn(true);
+            when(agentsPool.findById(id)).thenReturn(agent);
+            when(agent.getAllTasks()).thenReturn(taskList);
+
+            ResponseEntity<Object> response = agentsService.delete(id);
+            assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        }
+
+        @Test
+        void deletesAgentAndReturnsOkResponse_when_deleteSuccessful() {
+            UUID id = UUID.randomUUID();
+            Agent agent = mock(Agent.class);
+
+            when(repository.existsById(id)).thenReturn(true);
+            when(agentsPool.findById(id)).thenReturn(agent);
+            when(agent.getAllTasks()).thenReturn(new ArrayList<>());
+
+            ResponseEntity<Object> response = agentsService.delete(id);
+
+            verify(agentsPool, times(1)).deleteById(id);
+            verify(agentPresenceRepository, times(1)).deleteById(id.toString());
+            verify(precisionQueuesPool, times(1)).deleteFromAll(agent);
+            verify(repository, times(1)).deleteById(id);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+        }
+    }
+
+
+    @Nested
+    @DisplayName("validateAndSetRoutingAttributes method tests")
+    class ValidateAndSetRoutingAttributesTest {
+        @Test
+        void when_validationSuccessful() {
+            CCUser ccUser = getNewCcUser();
+
+            for (int i = 0; i < ccUser.getAssociatedRoutingAttributes().size(); i++) {
+                when(routingAttributesPool.findById(any())).thenReturn(mock(RoutingAttribute.class));
+            }
+            agentsService.validateAndSetRoutingAttributes(ccUser);
+
+            verifyNoMoreInteractions(routingAttributesPool);
+        }
+
+        @Test
+        void throwsNotFoundException_when_attributeNotFoundInPool() {
+            CCUser ccUser = getNewCcUser();
+            when(routingAttributesPool.findById(any())).thenReturn(null);
+            assertThrows(NotFoundException.class, () -> agentsService.validateAndSetRoutingAttributes(ccUser));
+        }
+
+        @Test
+        void doesNothing_when_associatedAttributesIsNull() {
+            CCUser ccUser = getNewCcUser();
+            ccUser.setAssociatedRoutingAttributes(null);
+
+            agentsService.validateAndSetRoutingAttributes(ccUser);
+            verifyNoInteractions(routingAttributesPool);
+        }
+    }
+
 
     private CCUser getNewCcUser() {
         List<AssociatedRoutingAttribute> attributes = new ArrayList<>();

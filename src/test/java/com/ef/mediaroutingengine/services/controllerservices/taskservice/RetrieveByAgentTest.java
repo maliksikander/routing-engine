@@ -52,7 +52,7 @@ class RetrieveByAgentTest {
 
     private Task getNewTask(UUID assignedTo) {
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = new Task(getNewChannelSession(), getNewMrd(), "queue", taskState);
+        Task task = Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), "queue", taskState);
         task.setAssignedTo(assignedTo);
         return task;
     }

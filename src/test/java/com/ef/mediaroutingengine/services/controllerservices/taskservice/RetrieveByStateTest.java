@@ -48,7 +48,7 @@ class RetrieveByStateTest {
 
     private Task getNewTask(Enums.TaskStateName stateName) {
         TaskState taskState = new TaskState(stateName, null);
-        return new Task(getNewChannelSession(), getNewMrd(), "queue", taskState);
+        return Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), "queue", taskState);
     }
 
     private ChannelSession getNewChannelSession() {

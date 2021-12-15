@@ -34,7 +34,7 @@ class RetrieveAllTest {
     void testFindTasks_returnsAllTasksInTasksPool() {
         List<Task> taskList = new ArrayList<>();
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        taskList.add(new Task(getNewChannelSession(), getNewMrd(), "queue", taskState));
+        taskList.add(Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), "queue", taskState));
 
         when(tasksPool.findAll()).thenReturn(taskList);
 
