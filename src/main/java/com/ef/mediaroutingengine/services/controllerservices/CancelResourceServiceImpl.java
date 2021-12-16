@@ -112,7 +112,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
         }
     }
 
-    private boolean isProcessable(Task task) {
+    boolean isProcessable(Task task) {
         if (task == null) {
             logger.info("No Task found on this topic, ignoring request");
             return false;
@@ -125,7 +125,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
         return !task.isMarkedForDeletion();
     }
 
-    private void endQueuedTask(Task task, PrecisionQueue precisionQueue, Enums.TaskStateReasonCode closeReasonCode) {
+    void endQueuedTask(Task task, PrecisionQueue precisionQueue, Enums.TaskStateReasonCode closeReasonCode) {
         task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), precisionQueue.getTaskScheduler());
         removeAndPublish(task, closeReasonCode);
     }
@@ -135,7 +135,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
      *
      * @param task the task
      */
-    private void endReservedTask(Task task, Enums.TaskStateReasonCode closeReasonCode) {
+    void endReservedTask(Task task, Enums.TaskStateReasonCode closeReasonCode) {
         boolean taskRevoked = this.restRequest.postRevokeTask(task);
         if (taskRevoked) {
             removeAndPublish(task, closeReasonCode);
@@ -154,7 +154,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
      *
      * @param task the task
      */
-    private void removeAndPublish(Task task, Enums.TaskStateReasonCode closeReasonCode) {
+    void removeAndPublish(Task task, Enums.TaskStateReasonCode closeReasonCode) {
         tasksPool.remove(task);
         tasksRepository.deleteById(task.getId().toString());
         logger.debug("Task {}, removed from in-memory pool and repository", task.getId());
