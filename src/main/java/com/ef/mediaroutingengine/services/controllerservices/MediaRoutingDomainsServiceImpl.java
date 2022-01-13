@@ -168,7 +168,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      *
      * @param mediaRoutingDomain the media routing domain
      */
-    private void updateMrdInTasks(MediaRoutingDomain mediaRoutingDomain) {
+    void updateMrdInTasks(MediaRoutingDomain mediaRoutingDomain) {
         Map<String, TaskDto> taskMap = new HashMap<>();
         for (TaskDto taskDto : this.tasksRepository.findAll()) {
             if (taskDto.getMrd().getId().equals(mediaRoutingDomain.getId())) {
@@ -184,7 +184,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      *
      * @param mediaRoutingDomain the media routing domain
      */
-    private void updateMrdInAgentMrdStateInAllAgentPresence(MediaRoutingDomain mediaRoutingDomain) {
+    void updateMrdInAgentMrdStateInAllAgentPresence(MediaRoutingDomain mediaRoutingDomain) {
         Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
         for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
             for (AgentMrdState agentMrdState : agentPresence.getAgentMrdStates()) {
@@ -244,7 +244,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      *
      * @param mrdId the mrd id
      */
-    private void deleteAgentMrdStateFromAllAgentPresence(String mrdId) {
+    void deleteAgentMrdStateFromAllAgentPresence(String mrdId) {
         Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
         for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
             deleteAgentMrdStateFromAgentPresence(mrdId, agentPresence);
@@ -259,7 +259,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      * @param mrdId         the mrd id
      * @param agentPresence the agent presence
      */
-    private void deleteAgentMrdStateFromAgentPresence(String mrdId, AgentPresence agentPresence) {
+    void deleteAgentMrdStateFromAgentPresence(String mrdId, AgentPresence agentPresence) {
         List<AgentMrdState> agentMrdStates = agentPresence.getAgentMrdStates();
         int index = -1;
         for (int i = 0; i < agentMrdStates.size(); i++) {
@@ -279,7 +279,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      * @param mediaRoutingDomain the media routing domain
      * @param id                 the id
      */
-    private void updatePrecisionQueues(MediaRoutingDomain mediaRoutingDomain, String id) {
+    void updatePrecisionQueues(MediaRoutingDomain mediaRoutingDomain, String id) {
         List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository.findByMrdId(id);
         if (precisionQueueEntities != null && !precisionQueueEntities.isEmpty()) {
             for (PrecisionQueueEntity precisionQueueEntity : precisionQueueEntities) {
