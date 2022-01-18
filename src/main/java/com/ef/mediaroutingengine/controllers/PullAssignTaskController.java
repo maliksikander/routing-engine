@@ -8,9 +8,12 @@ import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
+import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.services.controllerservices.PullAssignTaskService;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
+import com.ef.mediaroutingengine.services.pools.TasksPool;
+import java.util.List;
 import java.util.UUID;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +41,8 @@ public class PullAssignTaskController {
      */
     private final MrdPool mrdPool;
 
+    private final TasksPool tasksPool;
+
     /**
      * Instantiates a new Pull assign task controller.
      *
@@ -47,10 +52,11 @@ public class PullAssignTaskController {
      */
     @Autowired
     public PullAssignTaskController(PullAssignTaskService service,
-                                    AgentsPool agentsPool, MrdPool mrdPool) {
+                                    AgentsPool agentsPool, MrdPool mrdPool, TasksPool tasksPool) {
         this.service = service;
         this.agentsPool = agentsPool;
         this.mrdPool = mrdPool;
+        this.tasksPool = tasksPool;
     }
 
     /**
@@ -65,6 +71,16 @@ public class PullAssignTaskController {
         Agent agent = validateAndGetAgent(requestBody.getAgentId());
         MediaRoutingDomain mrd = validateAndGetMrd(requestBody.getChannelSession());
         validateAgentHasMrdState(agent, mrd);
+
+        UUID topicId = requestBody.getChannelSession().getTopicId();
+        List<Task> existingTasksOnTopic = tasksPool.findByConversationId(topicId);
+
+        for (Task task : existingTasksOnTopic) {
+            if (task.getAssignedTo().equals(agent.getId()) && task.getRoutingMode().equals(RoutingMode.PULL)) {
+                return new ResponseEntity<>(new TaskDto(task), HttpStatus.OK);
+            }
+        }
+
         TaskDto taskDto = this.service.assignTask(agent, mrd, requestBody.getChannelSession());
         return new ResponseEntity<>(taskDto, HttpStatus.OK);
     }
@@ -122,7 +138,7 @@ public class PullAssignTaskController {
     private void validateAgentHasMrdState(Agent agent, MediaRoutingDomain mrd) {
         if (agent.getAgentMrdState(mrd.getId()) == null) {
             throw new NotFoundException("Agent: " + agent.getId() + " does not have AgentMrdState for MRD: "
-            + mrd.getId());
+                    + mrd.getId());
         }
     }
 }
