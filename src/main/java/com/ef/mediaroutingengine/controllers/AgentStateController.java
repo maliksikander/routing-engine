@@ -44,7 +44,7 @@ public class AgentStateController {
      * @return ResponseEntity response entity
      */
     @PostMapping("/agent-login")
-    public ResponseEntity<Object> agentLogin(@Valid @RequestBody KeycloakUser request) {
+    public ResponseEntity<Object> agentLogin(@RequestBody KeycloakUser request) {
         this.agentStateService.agentLogin(request);
         return new ResponseEntity<>(new SuccessResponseBody("Agent login request received"), HttpStatus.OK);
     }
