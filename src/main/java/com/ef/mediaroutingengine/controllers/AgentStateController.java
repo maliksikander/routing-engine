@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.controllers;
 
-import com.ef.mediaroutingengine.dto.AgentLoginRequest;
+import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
 import com.ef.mediaroutingengine.dto.AgentStateChangeRequest;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
@@ -44,7 +44,7 @@ public class AgentStateController {
      * @return ResponseEntity response entity
      */
     @PostMapping("/agent-login")
-    public ResponseEntity<Object> agentLogin(@Valid @RequestBody AgentLoginRequest request) {
+    public ResponseEntity<Object> agentLogin(@RequestBody KeycloakUser request) {
         this.agentStateService.agentLogin(request);
         return new ResponseEntity<>(new SuccessResponseBody("Agent login request received"), HttpStatus.OK);
     }

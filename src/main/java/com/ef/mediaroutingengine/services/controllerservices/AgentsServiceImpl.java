@@ -82,10 +82,15 @@ public class AgentsServiceImpl implements AgentsService {
     @Override
     public CCUser create(CCUser ccUser) {
         logger.info("Request to add CCUser initiated | CCUser: {}", ccUser.getKeycloakUser().getId());
-        ccUser.setId(ccUser.getKeycloakUser().getId());
 
+        ccUser.setId(ccUser.getKeycloakUser().getId());
         this.validateAndSetRoutingAttributes(ccUser);
         logger.debug("CCUser's RoutingAttributes validated | CCUser: {}", ccUser.getId());
+
+        if (this.repository.existsById(ccUser.getId())) {
+            logger.debug("CCUser: {} exists, Updating existing CCUser", ccUser.getId());
+            return this.update(ccUser);
+        }
 
         Agent agent = new Agent(ccUser, mrdPool.findAll());
         logger.debug("Agent object created with associated MRDs | Agent: {}", agent.getId());
@@ -126,7 +131,11 @@ public class AgentsServiceImpl implements AgentsService {
         this.validateAndSetRoutingAttributes(ccUser);
         logger.debug("CCUser's RoutingAttributes validated | CCUser: {}", ccUser.getId());
 
-        Agent agent = this.agentsPool.findById(id);
+        return this.update(ccUser);
+    }
+
+    private CCUser update(CCUser ccUser) {
+        Agent agent = this.agentsPool.findById(ccUser.getId());
         agent.updateFrom(ccUser);
         logger.debug("Agent updated in in-memory Agents pool | Agent: {}", agent.getId());
 

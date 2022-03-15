@@ -1,15 +1,20 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
+import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.mediaroutingengine.commons.Enums;
-import com.ef.mediaroutingengine.dto.AgentLoginRequest;
 import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
 import com.ef.mediaroutingengine.dto.AgentStateChangeRequest;
 import com.ef.mediaroutingengine.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.eventlisteners.agentstate.AgentStateListener;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Agent;
+import com.ef.mediaroutingengine.model.AgentPresence;
 import com.ef.mediaroutingengine.model.AgentState;
+import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
+import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
+import com.ef.mediaroutingengine.services.pools.MrdPool;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -30,25 +35,44 @@ public class AgentStateService {
      * The Agent mrd state listener.
      */
     private final AgentMrdStateListener agentMrdStateListener;
-
     /**
      * The Agents pool.
      */
     private final AgentsPool agentsPool;
+    /**
+     * The Mrd pool.
+     */
+    private final MrdPool mrdPool;
+    /**
+     * The Agent presence repository.
+     */
+    private final AgentPresenceRepository agentPresenceRepository;
+    /**
+     * The Agents repository.
+     */
+    private final AgentsRepository agentsRepository;
 
     /**
      * Instantiates a new Agent state service.
      *
-     * @param agentStateListener    the agent state listener
-     * @param agentMrdStateListener the agent mrd state listener
-     * @param agentsPool            the agents pool
+     * @param agentStateListener      the agent state listener
+     * @param agentMrdStateListener   the agent mrd state listener
+     * @param agentsPool              the agents pool
+     * @param mrdPool                 the mrd pool
+     * @param agentPresenceRepository the agent presence repository
+     * @param agentsRepository        the agents repository
      */
     @Autowired
     public AgentStateService(AgentStateListener agentStateListener, AgentMrdStateListener agentMrdStateListener,
-                             AgentsPool agentsPool) {
+                             AgentsPool agentsPool, MrdPool mrdPool,
+                             AgentPresenceRepository agentPresenceRepository,
+                             AgentsRepository agentsRepository) {
         this.agentStateListener = agentStateListener;
         this.agentMrdStateListener = agentMrdStateListener;
         this.agentsPool = agentsPool;
+        this.mrdPool = mrdPool;
+        this.agentPresenceRepository = agentPresenceRepository;
+        this.agentsRepository = agentsRepository;
     }
 
     /**
@@ -56,8 +80,32 @@ public class AgentStateService {
      *
      * @param request AgentLoginRequest DTO.
      */
-    public void agentLogin(AgentLoginRequest request) {
-        this.agentState(request.getAgentId(), new AgentState(Enums.AgentStateName.LOGIN, null));
+    public void agentLogin(KeycloakUser request) {
+        Agent agent = this.agentsPool.findById(request.getId());
+        if (agent == null) {
+            CCUser ccUser = this.getCcUserInstance(request);
+            agent = new Agent(ccUser, mrdPool.findAll());
+            AgentPresence agentPresence = new AgentPresence(ccUser, agent.getState(), agent.getAgentMrdStates());
+
+            this.agentsRepository.save(ccUser);
+            this.agentPresenceRepository.save(agent.getId().toString(), agentPresence);
+            this.agentsPool.insert(agent);
+        }
+
+        this.agentStateListener.propertyChange(agent, new AgentState(Enums.AgentStateName.LOGIN, null));
+    }
+
+    /**
+     * Gets cc user instance.
+     *
+     * @param keycloakUser the keycloak user
+     * @return the cc user instance
+     */
+    private CCUser getCcUserInstance(KeycloakUser keycloakUser) {
+        CCUser ccUser = new CCUser();
+        ccUser.setId(keycloakUser.getId());
+        ccUser.setKeycloakUser(keycloakUser);
+        return ccUser;
     }
 
     /**
@@ -66,18 +114,8 @@ public class AgentStateService {
      * @param request the request
      */
     public void agentState(AgentStateChangeRequest request) {
-        this.agentState(request.getAgentId(), request.getState());
-    }
-
-    /**
-     * Agent state.
-     *
-     * @param agentId    the agent id
-     * @param agentState the agent state
-     */
-    void agentState(UUID agentId, AgentState agentState) {
-        Agent agent = this.validateAndGetAgent(agentId);
-        this.agentStateListener.propertyChange(agent, agentState);
+        Agent agent = this.validateAndGetAgent(request.getAgentId());
+        this.agentStateListener.propertyChange(agent, request.getState());
     }
 
     /**
