@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -14,8 +13,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.mediaroutingengine.commons.Enums;
-import com.ef.mediaroutingengine.dto.AgentLoginRequest;
 import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
 import com.ef.mediaroutingengine.dto.AgentStateChangeRequest;
 import com.ef.mediaroutingengine.eventlisteners.agentmrdstate.AgentMrdStateListener;
@@ -23,7 +22,13 @@ import com.ef.mediaroutingengine.eventlisteners.agentstate.AgentStateListener;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentState;
+import com.ef.mediaroutingengine.model.MediaRoutingDomain;
+import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
+import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
+import com.ef.mediaroutingengine.services.pools.MrdPool;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,12 +48,19 @@ class AgentStateServiceTest {
     private AgentMrdStateListener agentMrdStateListener;
     @Mock
     private AgentsPool agentsPool;
+    @Mock
+    private MrdPool mrdPool;
+    @Mock
+    private AgentPresenceRepository agentPresenceRepository;
+    @Mock
+    private AgentsRepository agentsRepository;
 
     private AgentStateService agentStateService;
 
     @BeforeEach
     void setUp() {
-        this.agentStateService = new AgentStateService(agentStateListener, agentMrdStateListener, agentsPool);
+        this.agentStateService = new AgentStateService(agentStateListener, agentMrdStateListener, agentsPool,
+                mrdPool, agentPresenceRepository, agentsRepository);
     }
 
     @Test
@@ -69,55 +81,80 @@ class AgentStateServiceTest {
         verifyNoMoreInteractions(agentMrdStateListener);
     }
 
-    @Nested
-    @DisplayName("agentState methods tests")
-    class AgentStateTest {
-        @Test
-        void with_arguments_agentId_and_agentState() {
-            UUID agentId = UUID.randomUUID();
-            AgentState agentState = new AgentState(Enums.AgentStateName.READY, null);
+    @Test
+    void testAgentState_callsAgentStateListener_withRequestedAgentState() {
+        UUID agentId = UUID.randomUUID();
+        AgentState agentState = new AgentState(Enums.AgentStateName.READY, null);
+        AgentStateChangeRequest request = new AgentStateChangeRequest(agentId, agentState);
 
-            Agent agent = mock(Agent.class);
-            AgentStateService spy = spy(agentStateService);
+        Agent agent = mock(Agent.class);
+        AgentStateService spy = spy(agentStateService);
+        doReturn(agent).when(spy).validateAndGetAgent(agentId);
 
-            doReturn(agent).when(spy).validateAndGetAgent(agentId);
-
-            spy.agentState(agentId, agentState);
-
-            verify(agentStateListener, times(1)).propertyChange(agent, agentState);
-            verifyNoMoreInteractions(agentStateListener);
-        }
-
-        @Test
-        void with_argument_agentStateChangeRequest() {
-            UUID agentId = UUID.randomUUID();
-            AgentState agentState = new AgentState(Enums.AgentStateName.READY, null);
-            AgentStateChangeRequest request = new AgentStateChangeRequest(agentId, agentState);
-
-            AgentStateService spy = spy(agentStateService);
-            doNothing().when(spy).agentState(any(), any());
-
-            spy.agentState(request);
-            verify(spy, times(1)).agentState(agentId, agentState);
-        }
+        spy.agentState(request);
+        verify(agentStateListener, times(1)).propertyChange(agent, agentState);
     }
 
-    @Test
-    void test_agentLogin() {
-        UUID agentId = UUID.randomUUID();
-        AgentLoginRequest request = new AgentLoginRequest();
-        request.setAgentId(agentId);
+    @Nested
+    @DisplayName("agentLogin method tests")
+    class AgentLoginTests {
+        @Test
+        void callsAgentStateListenerWithStateLogin_whenAgentFoundInPool() {
+            KeycloakUser request = getKeyCloakUserInstance();
+            Agent agent = mock(Agent.class);
 
-        AgentStateService spy = spy(agentStateService);
-        doNothing().when(spy).agentState(any(), any());
+            when(agentsPool.findById(request.getId())).thenReturn(agent);
+            agentStateService.agentLogin(request);
 
-        spy.agentLogin(request);
+            ArgumentCaptor<AgentState> captor = ArgumentCaptor.forClass(AgentState.class);
+            verify(agentStateListener, times(1)).propertyChange(eq(agent), captor.capture());
 
-        ArgumentCaptor<AgentState> captor = ArgumentCaptor.forClass(AgentState.class);
-        verify(spy, times(1)).agentState(eq(agentId), captor.capture());
+            assertEquals(Enums.AgentStateName.LOGIN, captor.getValue().getName());
+            assertNull(captor.getValue().getReasonCode());
+        }
 
-        assertEquals(Enums.AgentStateName.LOGIN, captor.getValue().getName());
-        assertNull(captor.getValue().getReasonCode());
+        @Test
+        void createsNewAgent_then_callsAgentStateListenerWithStateLogin_whenAgentNotFoundInPool() {
+            KeycloakUser request = getKeyCloakUserInstance();
+
+            when(agentsPool.findById(request.getId())).thenReturn(null);
+            when(mrdPool.findAll()).thenReturn(getMrdList());
+
+            agentStateService.agentLogin(request);
+
+            verify(agentsRepository, times(1)).save(any());
+            verify(agentPresenceRepository, times(1)).save(any(), any());
+            verify(agentsPool, times(1)).insert(any());
+
+
+            ArgumentCaptor<AgentState> captor = ArgumentCaptor.forClass(AgentState.class);
+            verify(agentStateListener, times(1)).propertyChange(any(), captor.capture());
+
+            assertEquals(Enums.AgentStateName.LOGIN, captor.getValue().getName());
+            assertNull(captor.getValue().getReasonCode());
+        }
+
+        private KeycloakUser getKeyCloakUserInstance() {
+            KeycloakUser keycloakUser = new KeycloakUser();
+            keycloakUser.setId(UUID.randomUUID());
+            keycloakUser.setUsername("user");
+            return keycloakUser;
+        }
+
+        private List<MediaRoutingDomain> getMrdList() {
+            List<MediaRoutingDomain> mrdList = new ArrayList<>();
+            mrdList.add(getNewMrdInstance("chat"));
+            mrdList.add(getNewMrdInstance("voice"));
+            return mrdList;
+        }
+
+        private MediaRoutingDomain getNewMrdInstance(String name) {
+            MediaRoutingDomain mrd = new MediaRoutingDomain();
+            mrd.setId(UUID.randomUUID().toString());
+            mrd.setName(name);
+            mrd.setMaxRequests(5);
+            return mrd;
+        }
     }
 
     @Nested
@@ -141,5 +178,4 @@ class AgentStateServiceTest {
             assertEquals(agent, found);
         }
     }
-
 }
