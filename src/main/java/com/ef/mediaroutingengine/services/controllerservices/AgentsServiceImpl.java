@@ -17,6 +17,7 @@ import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.RoutingAttributesPool;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -154,9 +155,11 @@ public class AgentsServiceImpl implements AgentsService {
 
     @Override
     public ResponseEntity<Object> delete(UUID id) {
-        logger.info("Request to delete CCUser initiated | CCUser: {}", id);
+        logger.info("Request to remove routing-attributes from CCUser initiated | CCUser: {}", id);
 
-        if (!this.repository.existsById(id)) {
+        Optional<CCUser> optionalCcUser = this.repository.findById(id);
+
+        if (optionalCcUser.isEmpty()) {
             String errorMessage = "Could not find CCUser resource to delete | CCUserId: " + id;
             logger.error(errorMessage);
             throw new NotFoundException(errorMessage);
@@ -172,19 +175,22 @@ public class AgentsServiceImpl implements AgentsService {
             return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
         }
 
-        this.agentsPool.deleteById(id);
-        logger.debug("Agent deleted from in-memory Agents pool | Agent: {}", id);
+        CCUser ccUser = optionalCcUser.get();
+        ccUser.setAssociatedRoutingAttributes(new ArrayList<>());
 
-        this.agentPresenceRepository.deleteById(id.toString());
-        logger.debug("Agent deleted from Agent Presence Repository | Agent: {}", id);
+        agent.updateFrom(ccUser);
+        logger.debug("All routing-attributes removed from Agent in in-memory pool | Agent: {}", id);
+
+        this.agentPresenceRepository.updateCcUser(ccUser);
+        logger.debug("All routing-attributes removed from Agent in Agent-Presence Repository | Agent: {}", id);
 
         this.precisionQueuesPool.deleteFromAll(agent);
         logger.debug("Agent's Association removed from all Queues | Agent: {}", id);
 
-        this.repository.deleteById(id);
-        logger.debug("Agent deleted from Agents Config DB | Agent: {}", id);
+        this.repository.save(ccUser);
+        logger.debug("All routing-attributes removed from Agent in Agents-Config-DB | Agent: {}", id);
 
-        logger.info("CCUser deleted successfully | CCUser: {}", id);
+        logger.info("Routing-attributes removed successfully from CCUser | CCUser: {}", id);
         return new ResponseEntity<>(new SuccessResponseBody("Successfully deleted"), HttpStatus.OK);
     }
 

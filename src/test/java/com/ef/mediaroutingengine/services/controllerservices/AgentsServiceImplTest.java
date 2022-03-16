@@ -27,6 +27,7 @@ import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.RoutingAttributesPool;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -128,7 +129,7 @@ class AgentsServiceImplTest {
         @Test
         void throwsNotFoundException_when_agentDoesNotExistInRepository() {
             UUID id = UUID.randomUUID();
-            when(repository.existsById(id)).thenReturn(false);
+            when(repository.findById(id)).thenReturn(Optional.empty());
             assertThrows(NotFoundException.class, () -> agentsService.delete(id));
         }
 
@@ -140,7 +141,9 @@ class AgentsServiceImplTest {
             List<Task> taskList = new ArrayList<>();
             taskList.add(mock(Task.class));
 
-            when(repository.existsById(id)).thenReturn(true);
+            Optional<CCUser> optionalCCUser = Optional.of(getNewCcUser());
+
+            when(repository.findById(id)).thenReturn(optionalCCUser);
             when(agentsPool.findById(id)).thenReturn(agent);
             when(agent.getAllTasks()).thenReturn(taskList);
 
@@ -153,16 +156,20 @@ class AgentsServiceImplTest {
             UUID id = UUID.randomUUID();
             Agent agent = mock(Agent.class);
 
-            when(repository.existsById(id)).thenReturn(true);
+            Optional<CCUser> optionalCCUser = Optional.of(getNewCcUser());
+
+            when(repository.findById(id)).thenReturn(optionalCCUser);
             when(agentsPool.findById(id)).thenReturn(agent);
             when(agent.getAllTasks()).thenReturn(new ArrayList<>());
 
             ResponseEntity<Object> response = agentsService.delete(id);
 
-            verify(agentsPool, times(1)).deleteById(id);
-            verify(agentPresenceRepository, times(1)).deleteById(id.toString());
+            CCUser ccUser = optionalCCUser.get();
+
+            verify(agent, times(1)).updateFrom(ccUser);
+            verify(agentPresenceRepository, times(1)).updateCcUser(ccUser);
             verify(precisionQueuesPool, times(1)).deleteFromAll(agent);
-            verify(repository, times(1)).deleteById(id);
+            verify(repository, times(1)).save(ccUser);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
         }
