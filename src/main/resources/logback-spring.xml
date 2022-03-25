@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <property name="LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(|){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(|){faint} %clr(%class{0}){cyan} %clr(|){faint} %clr(%method | Line:%L){magenta} %clr(|){faint} %m | %clr(%X{correlationId}){yellow} | %clr(%X{topicId}){blue} | %clr(%thread){red}%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
     <appender class="ch.qos.logback.core.ConsoleAppender" name="Console">
         <layout class="ch.qos.logback.classic.PatternLayout">
             <Pattern>
-                %d{yyyy-MM-dd HH:mm:ss,SSS} | %-5p | %m | %class{0}->%M Line:%L | %t%n
+                ${LOG_PATTERN}
             </Pattern>
         </layout>
     </appender>
@@ -12,7 +17,7 @@
 
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <Pattern>
-                %d{dd-MM-yyyy HH:mm:ss.SSS} [%thread] %-5level %logger{36}.%M - %msg%n
+                ${LOG_PATTERN}
             </Pattern>
         </encoder>
         <file>${LOG_PATH}/log.log</file>

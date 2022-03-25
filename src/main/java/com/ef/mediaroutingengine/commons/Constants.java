@@ -19,4 +19,12 @@ public final class Constants {
      * Used for Logging at the end of a method.
      */
     public static final String METHOD_ENDED = "method ended";
+    /**
+     * The constant MDC_TOPIC_ID.
+     */
+    public static final String MDC_TOPIC_ID = "topicId";
+    /**
+     * The constant MDC_CORRELATION_ID.
+     */
+    public static final String MDC_CORRELATION_ID = "correlationId";
 }

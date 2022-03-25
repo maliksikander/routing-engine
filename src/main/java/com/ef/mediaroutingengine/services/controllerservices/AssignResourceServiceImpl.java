@@ -12,6 +12,7 @@ import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -74,7 +75,14 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         logger.debug("PrecisionQueue validated in Assign-Resource API request");
 
         // TODO: Executor service .. don't use completableFuture!
-        CompletableFuture.runAsync(() -> this.taskManager.enqueueTask(channelSession, queue, mrd));
+        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+        CompletableFuture.runAsync(() -> {
+            // putting same correlation id and topic id from the caller thread into this thread
+            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+            MDC.put(Constants.MDC_TOPIC_ID, channelSession.getTopicId().toString());
+            this.taskManager.enqueueTask(channelSession, queue, mrd);
+            MDC.clear();
+        });
 
         logger.info("Assign resource request handled gracefully | Topic: {}", request.getChannelSession().getTopicId());
         logger.debug(Constants.METHOD_ENDED);

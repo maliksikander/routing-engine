@@ -16,9 +16,6 @@ public class MediaRoutingEngineApplication {
      * @param args list of command line arguments
      */
     public static void main(String[] args) {
-        //Todo: when the precision-queue is deleted from the config -> delete that queue associated with a
-        //Todo: task in the redis DB.
-
         ApplicationContext applicationContext = SpringApplication.run(MediaRoutingEngineApplication.class, args);
 
         Bootstrap bootstrap = applicationContext.getBean(Bootstrap.class);
