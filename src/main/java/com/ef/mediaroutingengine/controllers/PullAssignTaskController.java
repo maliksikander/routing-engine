@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.controllers;
 
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.RoutingMode;
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.PullAssignTaskRequest;
 import com.ef.mediaroutingengine.dto.TaskDto;
@@ -16,6 +17,7 @@ import com.ef.mediaroutingengine.services.pools.TasksPool;
 import java.util.List;
 import java.util.UUID;
 import javax.validation.Valid;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -67,6 +69,8 @@ public class PullAssignTaskController {
      */
     @PostMapping("assign-task")
     public ResponseEntity<Object> assignTask(@Valid @RequestBody PullAssignTaskRequest requestBody) {
+        MDC.put(Constants.MDC_TOPIC_ID, requestBody.getChannelSession().getTopicId().toString());
+
         validateRoutingMode(requestBody.getChannelSession());
         Agent agent = validateAndGetAgent(requestBody.getAgentId());
         MediaRoutingDomain mrd = validateAndGetMrd(requestBody.getChannelSession());

@@ -1,7 +1,9 @@
 package com.ef.mediaroutingengine.controllers;
 
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.dto.AssignResourceRequest;
 import com.ef.mediaroutingengine.services.controllerservices.AssignResourceService;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -41,6 +43,7 @@ public class AssignResourceController {
     @PostMapping(value = "/assign-resource", consumes = "application/json",
             produces = "application/json")
     public ResponseEntity<String> assignResource(@RequestBody AssignResourceRequest request) {
+        MDC.put(Constants.MDC_TOPIC_ID, request.getChannelSession().getTopicId().toString());
         return new ResponseEntity<>(this.assignResourceService.assign(request), HttpStatus.OK);
     }
 }

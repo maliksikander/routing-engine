@@ -1,10 +1,12 @@
 package com.ef.mediaroutingengine.controllers;
 
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.dto.CancelResourceRequest;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.services.controllerservices.CancelResourceService;
 import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,7 +41,14 @@ public class CancelResourceController {
      */
     @PostMapping("/cancel-resource")
     public ResponseEntity<Object> cancelResource(@Valid @RequestBody CancelResourceRequest request) {
-        CompletableFuture.runAsync(() -> service.cancelResource(request));
+        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+        CompletableFuture.runAsync(() -> {
+            // putting same correlation id from the caller thread into this thread
+            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+            MDC.put(Constants.MDC_TOPIC_ID, request.getTopicId().toString());
+            service.cancelResource(request);
+            MDC.clear();
+        });
         return ResponseEntity.accepted().body(new SuccessResponseBody("Request to cancel request "
                 + "received successfully"));
     }

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Serializable;
+import java.util.UUID;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -23,6 +24,7 @@ import javax.jms.Topic;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -210,6 +212,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
 
     @Override
     public void onMessage(Message message) {
+        MDC.put(Constants.MDC_CORRELATION_ID, UUID.randomUUID().toString());
         logger.debug(Constants.METHOD_STARTED);
         try {
             Enums.JmsEventName event = Enums.JmsEventName.valueOf(message.getJMSType());
@@ -221,6 +224,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
         }
 
         logger.debug(Constants.METHOD_ENDED);
+        MDC.clear();
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.eventlisteners.agentstate;
 
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.model.Agent;
@@ -10,6 +11,7 @@ import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -62,7 +64,13 @@ public class AgentStateListener {
      */
     public void propertyChange(Agent agent, AgentState newState) {
         logger.debug("Agent state listener called asynchronously");
-        CompletableFuture.runAsync(() -> this.run(agent, newState));
+        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+        CompletableFuture.runAsync(() -> {
+            // putting same correlation id from the caller thread into this thread
+            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+            this.run(agent, newState);
+            MDC.clear();
+        });
     }
 
 
