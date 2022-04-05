@@ -21,6 +21,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,6 +135,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
         TextMessage messageToSend = this.publisherSession.createTextMessage();
         messageToSend.setText(messageStr);
         messageToSend.setJMSType(eventName.name());
+        messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
 
         this.publisher.send(messageToSend);
 
@@ -157,6 +159,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
             TextMessage messageToSend = session.createTextMessage();
             messageToSend.setText(messageStr);
             messageToSend.setJMSType(CimEventName.TASK_STATE_CHANGED.name());
+            messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
 
             producer.send(messageToSend);
             logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
@@ -212,9 +215,10 @@ public class ActivemqCommunicator implements JmsCommunicator {
 
     @Override
     public void onMessage(Message message) {
-        MDC.put(Constants.MDC_CORRELATION_ID, UUID.randomUUID().toString());
-        logger.debug(Constants.METHOD_STARTED);
         try {
+            MDC.put(Constants.MDC_CORRELATION_ID, this.getCorrelationId(message));
+            logger.debug(Constants.METHOD_STARTED);
+
             Enums.JmsEventName event = Enums.JmsEventName.valueOf(message.getJMSType());
             this.jmsEventsService.handleEvent(event, message);
             message.acknowledge();
@@ -225,6 +229,14 @@ public class ActivemqCommunicator implements JmsCommunicator {
 
         logger.debug(Constants.METHOD_ENDED);
         MDC.clear();
+    }
+
+    private String getCorrelationId(Message message) throws JMSException {
+        String correlationId = message.getJMSCorrelationID();
+        if (StringUtils.isBlank(correlationId)) {
+            correlationId = UUID.randomUUID().toString();
+        }
+        return correlationId;
     }
 
     @Override
