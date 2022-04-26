@@ -6,7 +6,9 @@ import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.queue.PriorityQueue;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -519,5 +521,28 @@ public class PrecisionQueue implements Queue {
      */
     public boolean isEmpty() {
         return this.serviceQueue.size() < 1;
+    }
+
+    /**
+     * Gets all associated agents.
+     *
+     * @return the all associated agents
+     */
+    public List<Agent> getAllAssociatedAgents() {
+        if (this.steps == null || this.steps.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // To retrieve Unique Agents from Steps
+        Map<UUID, Agent> agentMap = new ConcurrentHashMap<>();
+        for (Step step : this.steps) {
+            for (Agent agent : step.getAssociatedAgents()) {
+                agentMap.putIfAbsent(agent.getId(), agent);
+            }
+        }
+
+        List<Agent> agents = new ArrayList<>();
+        agentMap.forEach((k, v) -> agents.add(v));
+        return agents;
     }
 }
