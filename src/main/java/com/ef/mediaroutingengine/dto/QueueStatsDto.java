@@ -4,6 +4,7 @@ package com.ef.mediaroutingengine.dto;
  * The type Queue stats dto.
  */
 public class QueueStatsDto {
+    private String id;
     /**
      * The Name.
      */
@@ -56,7 +57,8 @@ public class QueueStatsDto {
      * @param queueTaskStats  the queue task stats
      * @param queueAgentStats the queue agent stats
      */
-    public QueueStatsDto(String name, QueueTaskStats queueTaskStats, QueueAgentStats queueAgentStats) {
+    public QueueStatsDto(String id, String name, QueueTaskStats queueTaskStats, QueueAgentStats queueAgentStats) {
+        this.id = id;
         this.name = name;
         this.totalQueued = queueTaskStats.getTotalQueued();
         this.longestInQueue = queueTaskStats.getLongestInQueue();
@@ -67,6 +69,14 @@ public class QueueStatsDto {
         this.activeAgents = queueAgentStats.getActiveAgents();
         this.pendingNotReadyAgents = queueAgentStats.getPendingNotReadyAgents();
         this.busyAgents = queueAgentStats.getBusyAgents();
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     /**
