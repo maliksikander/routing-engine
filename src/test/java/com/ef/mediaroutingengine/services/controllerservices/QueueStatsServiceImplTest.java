@@ -110,6 +110,7 @@ class QueueStatsServiceImplTest {
 
         QueueStatsDto queueStatsDto = spy.getQueueStateFor(queue);
 
+        assertEquals(queueId, queueStatsDto.getId());
         assertEquals("queue1", queueStatsDto.getName());
 
         assertEquals(1, queueStatsDto.getTotalQueued());

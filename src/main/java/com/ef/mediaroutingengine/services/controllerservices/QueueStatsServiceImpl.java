@@ -72,7 +72,7 @@ public class QueueStatsServiceImpl implements QueueStatsService {
         logger.debug("Successfully generated Tasks stats Summary for queue: {}", queue.getId());
         QueueAgentStats queueAgentStats = this.getQueueAgentStats(queue);
         logger.debug("Successfully generated Agents stats Summary for queue: {}", queue.getId());
-        return new QueueStatsDto(queue.getName(), queueTaskStats, queueAgentStats);
+        return new QueueStatsDto(queue.getId(), queue.getName(), queueTaskStats, queueAgentStats);
     }
 
     QueueTaskStats getQueueTaskStats(String queueId) {
