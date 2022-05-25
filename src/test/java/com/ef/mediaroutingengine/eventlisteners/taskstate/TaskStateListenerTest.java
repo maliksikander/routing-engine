@@ -14,14 +14,12 @@ import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
-import java.beans.PropertyChangeEvent;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationContext;
 
 @ExtendWith(MockitoExtension.class)
 class TaskStateListenerTest {
@@ -31,53 +29,34 @@ class TaskStateListenerTest {
     @Mock
     private TaskStateModifierFactory factory;
     @Mock
-    private ApplicationContext applicationContext;
+    private JmsCommunicator jmsCommunicator;
 
     @BeforeEach
     void setUp() {
-        this.taskStateListener = new TaskStateListener(tasksPool, factory, applicationContext);
-    }
-
-    @Test
-    void testPropertyChange_when_propertyNameIsNotTaskState() {
-        PropertyChangeEvent evt = getPropertyChangeEvent("NotTaskState");
-        taskStateListener.propertyChange(evt);
-
-        verifyNoInteractions(tasksPool);
-        verifyNoInteractions(factory);
-        verifyNoInteractions(applicationContext);
+        this.taskStateListener = new TaskStateListener(tasksPool, factory, jmsCommunicator);
     }
 
     @Test
     void testPropertyChange_when_taskNotFoundInTasksPool() {
-        PropertyChangeEvent evt = getPropertyChangeEvent(Enums.EventName.TASK_STATE.toString());
-
         when(tasksPool.findById(any())).thenReturn(null);
-        taskStateListener.propertyChange(evt);
+        taskStateListener.propertyChange(getNewRequest());
 
         verifyNoInteractions(factory);
-        verifyNoInteractions(applicationContext);
+        verifyNoInteractions(jmsCommunicator);
     }
 
     @Test
     void testPropertyChange_when_taskFoundInTasksPool() {
-        PropertyChangeEvent evt = getPropertyChangeEvent(Enums.EventName.TASK_STATE.toString());
         Task task = mock(Task.class);
         TaskStateModifier taskStateModifier = mock(TaskStateModifier.class);
-        JmsCommunicator jmsCommunicator = mock(JmsCommunicator.class);
 
         when(tasksPool.findById(any())).thenReturn(task);
         when(factory.getModifier(any())).thenReturn(taskStateModifier);
-        when(this.applicationContext.getBean(JmsCommunicator.class)).thenReturn(jmsCommunicator);
 
-        taskStateListener.propertyChange(evt);
+        taskStateListener.propertyChange(getNewRequest());
 
         verify(taskStateModifier, times(1)).updateState(eq(task), any());
         verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
-    }
-
-    private PropertyChangeEvent getPropertyChangeEvent(String propertyName) {
-        return new PropertyChangeEvent(this, propertyName, null, getNewRequest());
     }
 
     private TaskStateChangeRequest getNewRequest() {
