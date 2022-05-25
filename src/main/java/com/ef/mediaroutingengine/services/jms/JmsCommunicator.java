@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.Serializable;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
-import javax.jms.MessageListener;
 
 /**
  * This interface describes a message communication service to be used
@@ -21,7 +20,7 @@ import javax.jms.MessageListener;
  *
  * <p>It also provides a stop() method to stop the connection gracefully.
  */
-public interface JmsCommunicator extends MessageListener, ExceptionListener {
+public interface JmsCommunicator extends ExceptionListener {
     /**
      * To initialize a connection and a topic subscriber and publisher
      * on that connection.

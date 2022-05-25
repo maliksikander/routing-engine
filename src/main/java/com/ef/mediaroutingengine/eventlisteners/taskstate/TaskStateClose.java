@@ -48,7 +48,6 @@ public class TaskStateClose implements TaskStateModifier {
             this.taskManager.endTaskFromAssignedAgent(task);
             this.tasksRepository.deleteById(task.getId().toString());
             this.taskManager.removeTask(task);
-            this.taskManager.publishTaskForReporting(task);
         } else if (state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA)) {
             this.taskManager.endTaskFromAgentOnRona(task);
             this.taskManager.rerouteReservedTask(task);
