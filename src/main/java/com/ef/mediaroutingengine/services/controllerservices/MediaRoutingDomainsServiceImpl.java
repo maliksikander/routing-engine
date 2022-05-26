@@ -190,6 +190,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             for (AgentMrdState agentMrdState : agentPresence.getAgentMrdStates()) {
                 if (agentMrdState.getMrd().getId().equals(mediaRoutingDomain.getId())) {
                     agentMrdState.setMrd(mediaRoutingDomain);
+                    agentMrdState.setMaxTask(mediaRoutingDomain.getMaxRequests());
                     agentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
                     break;
                 }

@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
+import com.ef.cim.objectmodel.AssociatedMrd;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
@@ -7,6 +8,7 @@ import com.ef.mediaroutingengine.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Agent;
+import com.ef.mediaroutingengine.model.AgentMrdState;
 import com.ef.mediaroutingengine.model.AgentPresence;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
@@ -96,6 +98,9 @@ public class AgentsServiceImpl implements AgentsService {
         Agent agent = new Agent(ccUser, mrdPool.findAll());
         logger.debug("Agent object created with associated MRDs | Agent: {}", agent.getId());
 
+        //update the Associated MRDs & their maxTask values here in the ccUserObject
+        this.setAssociatedMrdsAndTheirTasks(ccUser, agent.getAgentMrdStates());
+
         AgentPresence agentPresence = new AgentPresence(ccUser, agent.getState(), agent.getAgentMrdStates());
         this.agentPresenceRepository.save(agent.getId().toString(), agentPresence);
         logger.debug("Agent inserted in Agent Presence Repository | Agent: {}", agent.getId());
@@ -177,6 +182,7 @@ public class AgentsServiceImpl implements AgentsService {
 
         CCUser ccUser = optionalCcUser.get();
         ccUser.setAssociatedRoutingAttributes(new ArrayList<>());
+        ccUser.setAssociatedMrds(new ArrayList<>());
 
         agent.updateFrom(ccUser);
         logger.debug("All routing-attributes removed from Agent in in-memory pool | Agent: {}", id);
@@ -216,5 +222,20 @@ public class AgentsServiceImpl implements AgentsService {
             }
             associatedRoutingAttribute.setRoutingAttribute(routingAttribute);
         }
+    }
+
+    /**
+     * Validate and set Associated MRDs and their max tasks.
+     *
+     * @param ccUser the cc user
+     */
+    void setAssociatedMrdsAndTheirTasks(CCUser ccUser, List<AgentMrdState> agentMrdStates) {
+        if (agentMrdStates == null) {
+            logger.error("Could not find agent MRD states.", ccUser.getId());
+            return;
+        }
+        agentMrdStates.stream().forEach(
+                mrd -> ccUser.addAssociatedMrd(new AssociatedMrd(mrd.getMrd().getId(), mrd.getMaxTask()))
+        );
     }
 }

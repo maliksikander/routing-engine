@@ -139,12 +139,12 @@ public class AgentMrdState {
 
     @Override
     public String toString() {
-        return "AgentMrdState{" +
-                "mrd=" + mrd +
-                ", state=" + state +
-                ", stateChangeTime=" + stateChangeTime +
-                ", lastReadyStateChangeTime=" + lastReadyStateChangeTime +
-                ", maxTask=" + maxTask +
-                '}';
+        return "AgentMrdState{"
+                + "mrd=" + mrd
+                + ", state=" + state
+                + ", stateChangeTime=" + stateChangeTime
+                + ", lastReadyStateChangeTime=" + lastReadyStateChangeTime
+                + ", maxTask=" + maxTask
+                + '}';
     }
 }

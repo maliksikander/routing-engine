@@ -94,6 +94,18 @@ public class Agent {
         this.associatedRoutingAttributes.clear();
         ccUser.getAssociatedRoutingAttributes().forEach(o ->
                 associatedRoutingAttributes.put(o.getRoutingAttribute().getId(), o));
+
+
+        //This will read the AgentMrdState bases of MRD-id & update its max-task value.
+        ccUser.getAssociatedMrds().forEach(
+                associatedMrd -> {
+                    AgentMrdState agentMrdState = agentMrdStates.get(associatedMrd.getMrdId());
+                    if (agentMrdState != null) {
+                        agentMrdState.setMaxTask(associatedMrd.getMaxTask());
+                        agentMrdStates.put(associatedMrd.getMrdId(), agentMrdState);
+                    }
+                }
+        );
     }
 
     /**
@@ -380,8 +392,7 @@ public class Agent {
         // (Agent State is ready) AND (AgentMrdState is ready OR active) AND (No task is reserved for this agent)
         // Only one task can be *reserved* for an Agent at a time.
         return agentStateName.equals(Enums.AgentStateName.READY)
-                && (mrdState.equals(Enums.AgentMrdStateName.ACTIVE)
-                || mrdState.equals(Enums.AgentMrdStateName.READY))
+                && (mrdState.equals(Enums.AgentMrdStateName.ACTIVE) || mrdState.equals(Enums.AgentMrdStateName.READY))
                 && !this.isTaskReserved();
     }
 }
