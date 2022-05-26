@@ -53,10 +53,11 @@ class MediaRoutingDomainsServiceImplTest {
 
     private MediaRoutingDomainsServiceImpl mediaRoutingDomainsService;
 
+    private AgentsServiceImpl agentsService;
     @BeforeEach
     void setUp() {
         this.mediaRoutingDomainsService = new MediaRoutingDomainsServiceImpl(repository, precisionQueueRepository,
-                tasksPool, mrdPool, agentsPool, agentPresenceRepository, tasksRepository);
+                tasksPool, mrdPool, agentsPool, agentPresenceRepository, tasksRepository,agentsService);
     }
 
     @Nested

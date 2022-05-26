@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
+import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.MrdDeleteConflictResponse;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
@@ -74,6 +75,11 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     private final TasksRepository tasksRepository;
 
     /**
+     * The Agent Service Impl.
+     */
+    private final AgentsServiceImpl agentsService;
+
+    /**
      * Constructor, Autowired, loads the beans.
      *
      * @param repository               to communicate with MRD collection in DB
@@ -86,10 +92,10 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      */
     @Autowired
     public MediaRoutingDomainsServiceImpl(MediaRoutingDomainRepository repository,
-                                          PrecisionQueueRepository precisionQueueRepository,
-                                          TasksPool tasksPool, MrdPool mrdPool, AgentsPool agentsPool,
+                                          PrecisionQueueRepository precisionQueueRepository, TasksPool tasksPool,
+                                          MrdPool mrdPool, AgentsPool agentsPool,
                                           AgentPresenceRepository agentPresenceRepository,
-                                          TasksRepository tasksRepository) {
+                                          TasksRepository tasksRepository, AgentsServiceImpl agentsService) {
         this.repository = repository;
         this.precisionQueueRepository = precisionQueueRepository;
         this.tasksPool = tasksPool;
@@ -97,6 +103,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         this.agentsPool = agentsPool;
         this.agentPresenceRepository = agentPresenceRepository;
         this.tasksRepository = tasksRepository;
+        this.agentsService = agentsService;
     }
 
     @Override
@@ -153,6 +160,10 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         updateMrdInAgentMrdStateInAllAgentPresence(mediaRoutingDomain);
         logger.debug("MRD updated in AgentMrdState for Agents in Agent Presence Repository | MRD: {}", id);
 
+        updateAgentAssociatedMrdInDBForAllAgents(mediaRoutingDomain.getId(), mediaRoutingDomain.getMaxRequests());
+        logger.debug("MRD's maxRequest value has been updated as Agent AssociatedMrd's maxTask value in DB. | MRD: {}",
+                id);
+
         updateMrdInTasks(mediaRoutingDomain);
         logger.debug("MRD updated in Tasks inside Tasks Repository | MRD: {}", id);
         // Update MRD in MRD Config DB
@@ -162,6 +173,23 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         logger.info("MRD updated successfully | MRD: {}", id);
         return savedInDb;
     }
+
+
+    /**
+     * Update MRD's maxRequest value as Agent AssociatedMrd's maxTask value in DB.
+     */
+    void updateAgentAssociatedMrdInDBForAllAgents(String mrdId, int maxRequest) {
+        List<CCUser> agentsFromDB = agentsService.retrieve();
+        agentsFromDB.forEach(agent -> agent.getAssociatedMrds().forEach(associatedMrd -> {
+            if (mrdId.equals(associatedMrd.getMrdId())) {
+                associatedMrd.setMaxTask(maxRequest);
+                agentsService.update(agent, agent.getId());
+                logger.debug("MaxTask value has been updated to {}  against agent-id {} |", maxRequest,
+                        agent.getId());
+            }
+        }));
+    }
+
 
     /**
      * Update mrd in tasks.
