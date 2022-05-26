@@ -235,7 +235,8 @@ public class AgentsServiceImpl implements AgentsService {
             return;
         }
         agentMrdStates.stream().forEach(
-                mrd -> ccUser.addAssociatedMrd(new AssociatedMrd(mrd.getMrd().getId(), mrd.getMaxTask()))
+                mrd -> ccUser.addAssociatedMrd(new AssociatedMrd(mrd.getMrd().getId(), mrd.getMaxAgentTask(),
+                        mrd.getMaxAgentTask()))
         );
     }
 }

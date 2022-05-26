@@ -61,8 +61,7 @@ public class Agent {
         this.keycloakUser = ccUser.getKeycloakUser();
         if (ccUser.getAssociatedRoutingAttributes() != null) {
             for (AssociatedRoutingAttribute associatedRoutingAttribute : ccUser.getAssociatedRoutingAttributes()) {
-                this.associatedRoutingAttributes.put(
-                        associatedRoutingAttribute.getRoutingAttribute().getId(),
+                this.associatedRoutingAttributes.put(associatedRoutingAttribute.getRoutingAttribute().getId(),
                         associatedRoutingAttribute);
             }
         }
@@ -92,20 +91,17 @@ public class Agent {
     public void updateFrom(@NotNull CCUser ccUser) {
         this.keycloakUser = ccUser.getKeycloakUser();
         this.associatedRoutingAttributes.clear();
-        ccUser.getAssociatedRoutingAttributes().forEach(o ->
-                associatedRoutingAttributes.put(o.getRoutingAttribute().getId(), o));
+        ccUser.getAssociatedRoutingAttributes()
+                .forEach(o -> associatedRoutingAttributes.put(o.getRoutingAttribute().getId(), o));
 
-
-        //This will read the AgentMrdState bases of MRD-id & update its max-task value.
-        ccUser.getAssociatedMrds().forEach(
-                associatedMrd -> {
-                    AgentMrdState agentMrdState = agentMrdStates.get(associatedMrd.getMrdId());
-                    if (agentMrdState != null) {
-                        agentMrdState.setMaxTask(associatedMrd.getMaxTask());
-                        agentMrdStates.put(associatedMrd.getMrdId(), agentMrdState);
-                    }
-                }
-        );
+        //Update maxAgentTask in agentMrdStates if it is less than maxMrdRequest.
+        ccUser.getAssociatedMrds().forEach(associatedMrd -> {
+            AgentMrdState agentMrdState = agentMrdStates.get(associatedMrd.getMrdId());
+            if (agentMrdState != null && associatedMrd.getMaxAgentTask() <= associatedMrd.getMaxMrdRequest()) {
+                agentMrdState.setMaxAgentTask(associatedMrd.getMaxAgentTask());
+                agentMrdStates.put(associatedMrd.getMrdId(), agentMrdState);
+            }
+        });
     }
 
     /**
@@ -133,8 +129,8 @@ public class Agent {
         }
         this.removeReservedTask();
         this.addActiveTask(task);
-        logger.debug("Agent Id: {}. Task: {} assigned. Total tasks handling: {}.",
-                this.keycloakUser.getId(), task.getId(), this.activeTasks.size());
+        logger.debug("Agent Id: {}. Task: {} assigned. Total tasks handling: {}.", this.keycloakUser.getId(),
+                task.getId(), this.activeTasks.size());
     }
 
     /**
@@ -266,8 +262,8 @@ public class Agent {
      */
     public void setAgentMrdStates(List<AgentMrdState> agentMrdStateList) {
         this.agentMrdStates.clear();
-        agentMrdStateList.forEach(agentMrdState ->
-                this.agentMrdStates.put(agentMrdState.getMrd().getId(), agentMrdState));
+        agentMrdStateList.forEach(
+                agentMrdState -> this.agentMrdStates.put(agentMrdState.getMrd().getId(), agentMrdState));
     }
 
     /**

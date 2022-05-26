@@ -351,7 +351,7 @@ public class Bootstrap {
             AgentMrdState agentMrdStateInList = agentMrdStates.get(i);
             if (agentMrdStateInAgentPresence.getMrd().getId().equals(agentMrdStateInList.getMrd().getId())) {
                 agentMrdStateInAgentPresence.setMrd(agentMrdStateInList.getMrd());
-                agentMrdStateInAgentPresence.setMaxTask(agentMrdStateInList.getMaxTask());
+                agentMrdStateInAgentPresence.setMaxAgentTask(agentMrdStateInList.getMaxAgentTask());
                 agentMrdStates.set(i, agentMrdStateInAgentPresence);
                 break;
             }

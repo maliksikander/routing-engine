@@ -190,12 +190,11 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         List<CCUser> agentsFromDb = agentsService.retrieve();
         agentsFromDb.forEach(agent -> agent.getAssociatedMrds().forEach(associatedMrd -> {
             if (mrdId.equals(associatedMrd.getMrdId())) {
-                associatedMrd.setMaxTask(maxRequest);
+                associatedMrd.setMaxMrdRequest(maxRequest);
                 agentsService.update(agent, agent.getId());
                 logger.debug("MaxTask value has been updated to {}  against agent-id {} |", maxRequest, agent.getId());
 
                 changeAgentMrdStateToBusy(agent, mrdId, maxRequest);
-
             }
         }));
     }
@@ -242,7 +241,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             for (AgentMrdState agentMrdState : agentPresence.getAgentMrdStates()) {
                 if (agentMrdState.getMrd().getId().equals(mediaRoutingDomain.getId())) {
                     agentMrdState.setMrd(mediaRoutingDomain);
-                    agentMrdState.setMaxTask(mediaRoutingDomain.getMaxRequests());
+                    agentMrdState.setMaxAgentTask(mediaRoutingDomain.getMaxRequests());
                     agentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
                     break;
                 }
