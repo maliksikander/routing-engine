@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
 import com.ef.mediaroutingengine.dto.MrdDeleteConflictResponse;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.dto.TaskDto;
@@ -80,6 +81,11 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     private final AgentsServiceImpl agentsService;
 
     /**
+     * The Agent State Service.
+     */
+    private final AgentStateService agentStateService;
+
+    /**
      * Constructor, Autowired, loads the beans.
      *
      * @param repository               to communicate with MRD collection in DB
@@ -95,7 +101,8 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
                                           PrecisionQueueRepository precisionQueueRepository, TasksPool tasksPool,
                                           MrdPool mrdPool, AgentsPool agentsPool,
                                           AgentPresenceRepository agentPresenceRepository,
-                                          TasksRepository tasksRepository, AgentsServiceImpl agentsService) {
+                                          TasksRepository tasksRepository, AgentsServiceImpl agentsService,
+                                          AgentStateService agentStateService) {
         this.repository = repository;
         this.precisionQueueRepository = precisionQueueRepository;
         this.tasksPool = tasksPool;
@@ -104,6 +111,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         this.agentPresenceRepository = agentPresenceRepository;
         this.tasksRepository = tasksRepository;
         this.agentsService = agentsService;
+        this.agentStateService = agentStateService;
     }
 
     @Override
@@ -160,7 +168,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         updateMrdInAgentMrdStateInAllAgentPresence(mediaRoutingDomain);
         logger.debug("MRD updated in AgentMrdState for Agents in Agent Presence Repository | MRD: {}", id);
 
-        updateAgentAssociatedMrdInDBForAllAgents(mediaRoutingDomain.getId(), mediaRoutingDomain.getMaxRequests());
+        updateAgentAssociatedMrdInDbForAllAgents(mediaRoutingDomain.getId(), mediaRoutingDomain.getMaxRequests());
         logger.debug("MRD's maxRequest value has been updated as Agent AssociatedMrd's maxTask value in DB. | MRD: {}",
                 id);
 
@@ -178,18 +186,34 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     /**
      * Update MRD's maxRequest value as Agent AssociatedMrd's maxTask value in DB.
      */
-    void updateAgentAssociatedMrdInDBForAllAgents(String mrdId, int maxRequest) {
-        List<CCUser> agentsFromDB = agentsService.retrieve();
-        agentsFromDB.forEach(agent -> agent.getAssociatedMrds().forEach(associatedMrd -> {
+    void updateAgentAssociatedMrdInDbForAllAgents(String mrdId, int maxRequest) {
+        List<CCUser> agentsFromDb = agentsService.retrieve();
+        agentsFromDb.forEach(agent -> agent.getAssociatedMrds().forEach(associatedMrd -> {
             if (mrdId.equals(associatedMrd.getMrdId())) {
                 associatedMrd.setMaxTask(maxRequest);
                 agentsService.update(agent, agent.getId());
-                logger.debug("MaxTask value has been updated to {}  against agent-id {} |", maxRequest,
-                        agent.getId());
+                logger.debug("MaxTask value has been updated to {}  against agent-id {} |", maxRequest, agent.getId());
+
+                changeAgentMrdStateToBusy(agent, mrdId, maxRequest);
+
             }
         }));
     }
 
+    /**
+     * This method will change the Agent MRD State to BUSY
+     * if the agent Task count is greater than the MRD's new maxRequest value.
+     */
+    void changeAgentMrdStateToBusy(CCUser agent, String mrdId, int maxRequest) {
+        int agentTasks = this.tasksPool.findByAgent(agent.getId()).size();
+        logger.debug("Total Tasks against agent-id {} =  {} & maxRequest = {} |", agent.getId(), agentTasks,
+                maxRequest);
+        if (agentTasks >= maxRequest) {
+            AgentMrdStateChangeRequest request =
+                    new AgentMrdStateChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.BUSY);
+            agentStateService.agentMrdState(request);
+        }
+    }
 
     /**
      * Update mrd in tasks.
