@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
+import com.ef.cim.objectmodel.AssociatedMrd;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
@@ -136,6 +137,11 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         }
         this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
         logger.debug("MRD associated to all Agents in Agent presence Repository | MRD: {}", inserted.getId());
+        //Add newly added MRD as Associated MRD for all agents in DB
+        addMrdAsAssociatedMrdForAllAgentsInDb(inserted);
+        logger.debug("MRD has been saved as Associated MRD for all agents in DB | MRD: {}",
+                inserted.getId());
+
         // Insert in MRD config DB
         logger.info("MRD successfully created | MRD: {}", inserted.getId());
         return inserted;
@@ -182,6 +188,22 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         return savedInDb;
     }
 
+
+    /**
+     * Add newly added MRD as Associated MRD for all agents in DB.
+     */
+    private void addMrdAsAssociatedMrdForAllAgentsInDb(MediaRoutingDomain mediaRoutingDomain) {
+        AssociatedMrd associatedMrd = new AssociatedMrd(mediaRoutingDomain.getId(), mediaRoutingDomain.getMaxRequests(),
+                mediaRoutingDomain.getMaxRequests());
+
+        List<CCUser> agentsFromDb = agentsService.retrieve();
+        agentsFromDb.forEach(
+                agent -> {
+                    agent.getAssociatedMrds().add(associatedMrd);
+                    agentsService.update(agent, agent.getId());
+                }
+        );
+    }
 
     /**
      * Update MRD's maxRequest value as Agent AssociatedMrd's maxTask value in DB.
