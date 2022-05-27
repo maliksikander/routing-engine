@@ -138,6 +138,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         }
         this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
         logger.debug("MRD associated to all Agents in Agent presence Repository | MRD: {}", inserted.getId());
+
         //Add newly added MRD as Associated MRD for all agents in DB
         addMrdAsAssociatedMrdForAllAgentsInDb(inserted);
         logger.debug("MRD has been saved as Associated MRD for all agents in DB | MRD: {}",
@@ -163,7 +164,6 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             logger.error(errorMessage);
             throw new NotFoundException(errorMessage);
         }
-
         mediaRoutingDomain.setId(id);
 
         this.updatePrecisionQueues(mediaRoutingDomain, id);
@@ -175,12 +175,12 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         updateMrdInAgentMrdStateInAllAgentPresence(mediaRoutingDomain);
         logger.debug("MRD updated in AgentMrdState for Agents in Agent Presence Repository | MRD: {}", id);
 
-        updateAgentAssociatedMrdInDbForAllAgents(mediaRoutingDomain.getId(), mediaRoutingDomain.getMaxRequests());
-        logger.debug("MRD's maxRequest value has been updated as Agent AssociatedMrd's maxTask value in DB. | MRD: {}",
-                id);
-
         updateMrdInTasks(mediaRoutingDomain);
         logger.debug("MRD updated in Tasks inside Tasks Repository | MRD: {}", id);
+
+        changeAgentMrdStateIfAgentActiveTasksGreaterThanMrdMaxRequest(mediaRoutingDomain.getId(),
+                mediaRoutingDomain.getMaxRequests());
+
         // Update MRD in MRD Config DB
         MediaRoutingDomain savedInDb = this.repository.save(mediaRoutingDomain);
         logger.debug("MRD updated in MRD Config DB");
@@ -308,53 +308,6 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     }
 
     /**
-     * Add newly added MRD as Associated MRD for all agents in DB.
-     */
-    private void addMrdAsAssociatedMrdForAllAgentsInDb(MediaRoutingDomain mediaRoutingDomain) {
-        AssociatedMrd associatedMrd = new AssociatedMrd(mediaRoutingDomain.getId(), mediaRoutingDomain.getMaxRequests(),
-                mediaRoutingDomain.getMaxRequests());
-
-        List<CCUser> agentsFromDb = agentsService.retrieve();
-        agentsFromDb.forEach(
-                agent -> {
-                    agent.addAssociatedMrd(associatedMrd);
-                    agentsService.saveUpdatedAgentInDb(agent);
-                }
-        );
-    }
-
-    /**
-     * Update MRD's maxRequest value as Agent AssociatedMrd's maxTask value in DB.
-     */
-    void updateAgentAssociatedMrdInDbForAllAgents(String mrdId, int maxRequest) {
-        List<CCUser> agentsFromDb = agentsService.retrieve();
-        agentsFromDb.forEach(agent -> agent.getAssociatedMrds().forEach(associatedMrd -> {
-            if (mrdId.equals(associatedMrd.getMrdId())) {
-                associatedMrd.setMaxMrdRequest(maxRequest);
-                agentsService.update(agent, agent.getId());
-                logger.debug("MaxTask value has been updated to {}  against agent-id {} |", maxRequest, agent.getId());
-
-                changeAgentMrdStateToBusy(agent, mrdId, maxRequest);
-            }
-        }));
-    }
-
-    /**
-     * This method will change the Agent MRD State to BUSY
-     * if the agent Task count is greater than the MRD's new maxRequest value.
-     */
-    void changeAgentMrdStateToBusy(CCUser agent, String mrdId, int maxRequest) {
-        int agentTasks = this.tasksPool.findByAgent(agent.getId()).size();
-        logger.debug("Total Tasks against agent-id {} =  {} & maxRequest = {} |", agent.getId(), agentTasks,
-                maxRequest);
-        if (agentTasks >= maxRequest) {
-            AgentMrdStateChangeRequest request =
-                    new AgentMrdStateChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.BUSY);
-            agentStateService.agentMrdState(request);
-        }
-    }
-
-    /**
      * Update mrd in tasks.
      *
      * @param mediaRoutingDomain the media routing domain
@@ -388,5 +341,49 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             }
         }
         this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
+    }
+
+    /**
+     * Change Agent MRD state if agent active tasks are greater than Mrd MaxRequest for all agents.
+     */
+    private void changeAgentMrdStateIfAgentActiveTasksGreaterThanMrdMaxRequest(String mrdId, int maxRequest) {
+        List<CCUser> agentsFromDb = agentsService.retrieve();
+        agentsFromDb.forEach(agent -> agent.getAssociatedMrds().forEach(associatedMrd -> {
+            if (mrdId.equals(associatedMrd.getMrdId())) {
+                changeAgentMrdStateToBusy(agent, mrdId, maxRequest);
+                return;
+            }
+        }));
+    }
+
+    /**
+     * This method will change the Agent MRD State to BUSY
+     * if the agent Task count is greater than the MRD's new maxRequest value.
+     */
+    void changeAgentMrdStateToBusy(CCUser agent, String mrdId, int maxRequest) {
+        int agentTasks = this.tasksPool.findByAgent(agent.getId()).size();
+        logger.debug("Total Tasks against agent-id {} =  {} & maxRequest = {} |", agent.getId(), agentTasks,
+                maxRequest);
+        if (agentTasks >= maxRequest) {
+            AgentMrdStateChangeRequest request =
+                    new AgentMrdStateChangeRequest(agent.getId(), mrdId, Enums.AgentMrdStateName.BUSY);
+            agentStateService.agentMrdState(request);
+        }
+    }
+
+    /**
+     * Add newly added MRD as Associated MRD for all agents in DB.
+     */
+    private void addMrdAsAssociatedMrdForAllAgentsInDb(MediaRoutingDomain mediaRoutingDomain) {
+        AssociatedMrd associatedMrd =
+                new AssociatedMrd(mediaRoutingDomain.getId(), mediaRoutingDomain.getMaxRequests());
+
+        List<CCUser> agentsFromDb = agentsService.retrieve();
+        agentsFromDb.forEach(
+                agent -> {
+                    agent.addAssociatedMrd(associatedMrd);
+                    agentsService.saveUpdatedAgentInDb(agent);
+                }
+        );
     }
 }

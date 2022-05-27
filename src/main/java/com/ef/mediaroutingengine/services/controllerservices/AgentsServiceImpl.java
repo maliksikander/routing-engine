@@ -99,7 +99,7 @@ public class AgentsServiceImpl implements AgentsService {
         logger.debug("Agent object created with associated MRDs | Agent: {}", agent.getId());
 
         //update the Associated MRDs & their maxTask values here in the ccUserObject
-        this.setAssociatedMrdsAndTheirTasks(ccUser, agent.getAgentMrdStates());
+        this.setAssociatedMrdsAndMaxAgentTasks(ccUser, agent.getAgentMrdStates());
 
         AgentPresence agentPresence = new AgentPresence(ccUser, agent.getState(), agent.getAgentMrdStates());
         this.agentPresenceRepository.save(agent.getId().toString(), agentPresence);
@@ -229,15 +229,13 @@ public class AgentsServiceImpl implements AgentsService {
      *
      * @param ccUser the cc user
      */
-    void setAssociatedMrdsAndTheirTasks(CCUser ccUser, List<AgentMrdState> agentMrdStates) {
+    void setAssociatedMrdsAndMaxAgentTasks(CCUser ccUser, List<AgentMrdState> agentMrdStates) {
         if (agentMrdStates == null) {
-            logger.error("Could not find agent MRD states.", ccUser.getId());
+            logger.error("Could not find agent MRD states. {} ", ccUser.getId());
             return;
         }
-        agentMrdStates.stream().forEach(
-                mrd -> ccUser.addAssociatedMrd(new AssociatedMrd(mrd.getMrd().getId(), mrd.getMaxAgentTask(),
-                        mrd.getMaxAgentTask()))
-        );
+        agentMrdStates.forEach(
+                mrd -> ccUser.addAssociatedMrd(new AssociatedMrd(mrd.getMrd().getId(), mrd.getMaxAgentTask())));
     }
 
     void saveUpdatedAgentInDb(CCUser agent) {
