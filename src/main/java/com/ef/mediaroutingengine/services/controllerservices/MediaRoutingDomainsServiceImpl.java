@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -188,6 +189,123 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         return savedInDb;
     }
 
+    @Override
+    @Transactional
+    public ResponseEntity<Object> delete(String id) {
+        logger.info("Delete MRD request initiated | MRD: {}", id);
+
+        if (!this.repository.existsById(id)) {
+            String errorMessage = "Could not find the MRD resource to delete | MRD: " + id;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
+        }
+
+        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository.findByMrdId(id);
+        List<Task> tasks = this.tasksPool.findByMrdId(id);
+
+        if (precisionQueueEntities.isEmpty() && tasks.isEmpty()) {
+            for (Agent agent : this.agentsPool.findAll()) {
+                agent.deleteAgentMrdState(id);
+            }
+            logger.debug("AgentMrdState deleted from Agents in in-memory Agents pool | MRD: {}", id);
+
+            deleteAgentMrdStateFromAllAgentPresence(id);
+            logger.debug("AgentMrdState deleted from Agents in Agent Presence Repository | MRD: {}", id);
+
+            deleteAssociatedMrdForAllAgentsInDb(id);
+            logger.debug("AssociatedMrd deleted for all Agents in DB | MRD: {}", id);
+
+            this.mrdPool.deleteById(id);
+            logger.debug("MRD deleted from in-memory MRD pool | MRD: {}", id);
+
+            // Delete MRD from MRD config DB
+            this.repository.deleteById(id);
+            logger.debug("MRD deleted from MRD Config DB | MRD: {}", id);
+
+            logger.info("MRD deleted successfully | MRD: {}", id);
+            return new ResponseEntity<>(new SuccessResponseBody("Successfully Deleted"), HttpStatus.OK);
+        }
+
+        logger.info("Could not delete MRD: {}. It is associated to queues or tasks", id);
+        List<TaskDto> taskDtoList = new ArrayList<>();
+        tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
+        return new ResponseEntity<>(new MrdDeleteConflictResponse(precisionQueueEntities, taskDtoList),
+                HttpStatus.CONFLICT);
+    }
+
+    /**
+     * Delete associated MRD for all agents in DB.
+     */
+    private void deleteAssociatedMrdForAllAgentsInDb(String mrdId) {
+        List<CCUser> agentsFromDb = agentsService.retrieve();
+        agentsFromDb.forEach(agent -> {
+                    AtomicInteger position = new AtomicInteger(-1);
+                    agent.getAssociatedMrds().forEach(
+                            associatedMrd -> {
+                                if (associatedMrd.getMrdId().equals(mrdId)) {
+                                    position.set(agent.getAssociatedMrds().indexOf(associatedMrd));
+                                    return;
+                                }
+                            }
+                    );
+                    if (position.get() != -1) {
+                        agent.getAssociatedMrds().remove(position.get());
+                        agentsService.saveUpdatedAgentInDb(agent);
+                    }
+                }
+        );
+    }
+
+
+    /**
+     * Delete agent mrd state from all agent presence.
+     *
+     * @param mrdId the mrd id
+     */
+    void deleteAgentMrdStateFromAllAgentPresence(String mrdId) {
+        Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
+        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
+            deleteAgentMrdStateFromAgentPresence(mrdId, agentPresence);
+            agentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
+        }
+        this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
+    }
+
+    /**
+     * Delete agent mrd state from agent presence.
+     *
+     * @param mrdId         the mrd id
+     * @param agentPresence the agent presence
+     */
+    void deleteAgentMrdStateFromAgentPresence(String mrdId, AgentPresence agentPresence) {
+        List<AgentMrdState> agentMrdStates = agentPresence.getAgentMrdStates();
+        int index = -1;
+        for (int i = 0; i < agentMrdStates.size(); i++) {
+            if (agentMrdStates.get(i).getMrd().getId().equals(mrdId)) {
+                index = i;
+                break;
+            }
+        }
+        if (index > -1) {
+            agentMrdStates.remove(index);
+        }
+    }
+
+    /**
+     * Update precision queues.
+     *
+     * @param mediaRoutingDomain the media routing domain
+     * @param id                 the id
+     */
+    void updatePrecisionQueues(MediaRoutingDomain mediaRoutingDomain, String id) {
+        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository.findByMrdId(id);
+        if (precisionQueueEntities != null && !precisionQueueEntities.isEmpty()) {
+            for (PrecisionQueueEntity precisionQueueEntity : precisionQueueEntities) {
+                precisionQueueEntity.setMrd(mediaRoutingDomain);
+            }
+            this.precisionQueueRepository.saveAll(precisionQueueEntities);
+        }
+    }
 
     /**
      * Add newly added MRD as Associated MRD for all agents in DB.
@@ -199,8 +317,8 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         List<CCUser> agentsFromDb = agentsService.retrieve();
         agentsFromDb.forEach(
                 agent -> {
-                    agent.getAssociatedMrds().add(associatedMrd);
-                    agentsService.update(agent, agent.getId());
+                    agent.addAssociatedMrd(associatedMrd);
+                    agentsService.saveUpdatedAgentInDb(agent);
                 }
         );
     }
@@ -270,96 +388,5 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             }
         }
         this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
-    }
-
-    @Override
-    @Transactional
-    public ResponseEntity<Object> delete(String id) {
-        logger.info("Delete MRD request initiated | MRD: {}", id);
-
-        if (!this.repository.existsById(id)) {
-            String errorMessage = "Could not find the MRD resource to delete | MRD: " + id;
-            logger.error(errorMessage);
-            throw new NotFoundException(errorMessage);
-        }
-
-        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository.findByMrdId(id);
-        List<Task> tasks = this.tasksPool.findByMrdId(id);
-
-        if (precisionQueueEntities.isEmpty() && tasks.isEmpty()) {
-            for (Agent agent : this.agentsPool.findAll()) {
-                agent.deleteAgentMrdState(id);
-            }
-            logger.debug("AgentMrdState deleted from Agents in in-memory Agents pool | MRD: {}", id);
-
-            deleteAgentMrdStateFromAllAgentPresence(id);
-            logger.debug("AgentMrdState deleted from Agents in Agent Presence Repository | MRD: {}", id);
-
-            this.mrdPool.deleteById(id);
-            logger.debug("MRD deleted from in-memory MRD pool | MRD: {}", id);
-
-            // Delete MRD from MRD config DB
-            this.repository.deleteById(id);
-            logger.debug("MRD deleted from MRD Config DB | MRD: {}", id);
-
-            logger.info("MRD deleted successfully | MRD: {}", id);
-            return new ResponseEntity<>(new SuccessResponseBody("Successfully Deleted"), HttpStatus.OK);
-        }
-
-        logger.info("Could not delete MRD: {}. It is associated to queues or tasks", id);
-        List<TaskDto> taskDtoList = new ArrayList<>();
-        tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
-        return new ResponseEntity<>(new MrdDeleteConflictResponse(precisionQueueEntities, taskDtoList),
-                HttpStatus.CONFLICT);
-    }
-
-    /**
-     * Delete agent mrd state from all agent presence.
-     *
-     * @param mrdId the mrd id
-     */
-    void deleteAgentMrdStateFromAllAgentPresence(String mrdId) {
-        Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
-        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
-            deleteAgentMrdStateFromAgentPresence(mrdId, agentPresence);
-            agentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
-        }
-        this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
-    }
-
-    /**
-     * Delete agent mrd state from agent presence.
-     *
-     * @param mrdId         the mrd id
-     * @param agentPresence the agent presence
-     */
-    void deleteAgentMrdStateFromAgentPresence(String mrdId, AgentPresence agentPresence) {
-        List<AgentMrdState> agentMrdStates = agentPresence.getAgentMrdStates();
-        int index = -1;
-        for (int i = 0; i < agentMrdStates.size(); i++) {
-            if (agentMrdStates.get(i).getMrd().getId().equals(mrdId)) {
-                index = i;
-                break;
-            }
-        }
-        if (index > -1) {
-            agentMrdStates.remove(index);
-        }
-    }
-
-    /**
-     * Update precision queues.
-     *
-     * @param mediaRoutingDomain the media routing domain
-     * @param id                 the id
-     */
-    void updatePrecisionQueues(MediaRoutingDomain mediaRoutingDomain, String id) {
-        List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository.findByMrdId(id);
-        if (precisionQueueEntities != null && !precisionQueueEntities.isEmpty()) {
-            for (PrecisionQueueEntity precisionQueueEntity : precisionQueueEntities) {
-                precisionQueueEntity.setMrd(mediaRoutingDomain);
-            }
-            this.precisionQueueRepository.saveAll(precisionQueueEntities);
-        }
     }
 }

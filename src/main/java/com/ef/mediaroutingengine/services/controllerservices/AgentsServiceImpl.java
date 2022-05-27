@@ -239,4 +239,9 @@ public class AgentsServiceImpl implements AgentsService {
                         mrd.getMaxAgentTask()))
         );
     }
+
+    void saveUpdatedAgentInDb(CCUser agent) {
+        repository.save(agent);
+        logger.debug("Agent updated in Agents config DB | Agent: {}", agent.getId());
+    }
 }
