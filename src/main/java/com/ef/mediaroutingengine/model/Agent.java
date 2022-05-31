@@ -94,12 +94,16 @@ public class Agent {
         ccUser.getAssociatedRoutingAttributes()
                 .forEach(o -> associatedRoutingAttributes.put(o.getRoutingAttribute().getId(), o));
 
-        //Update maxAgentTask in agentMrdStates.
+        this.updateMaxAgentTaskInAgentMrdStates(ccUser);
+
+    }
+
+    private void updateMaxAgentTaskInAgentMrdStates(CCUser ccUser) {
         ccUser.getAssociatedMrds().forEach(associatedMrd -> {
-            AgentMrdState agentMrdState = agentMrdStates.get(associatedMrd.getMrdId());
-            if (agentMrdState != null) {
+            AgentMrdState agentMrdState = this.agentMrdStates.get(associatedMrd.getMrdId());
+            if (agentMrdState != null && agentMrdState.getMaxAgentTask() != associatedMrd.getMaxAgentTask()) {
                 agentMrdState.setMaxAgentTask(associatedMrd.getMaxAgentTask());
-                agentMrdStates.put(associatedMrd.getMrdId(), agentMrdState);
+                this.agentMrdStates.put(associatedMrd.getMrdId(), agentMrdState);
             }
         });
     }

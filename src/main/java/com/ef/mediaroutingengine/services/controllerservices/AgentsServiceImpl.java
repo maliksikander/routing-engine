@@ -4,6 +4,8 @@ import com.ef.cim.objectmodel.AssociatedMrd;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
+import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
@@ -59,6 +61,9 @@ public class AgentsServiceImpl implements AgentsService {
      */
     private final AgentPresenceRepository agentPresenceRepository;
 
+
+    private final AgentStateService agentStateService;
+
     /**
      * Constructor. Autowired, loads the beans.
      *
@@ -68,18 +73,21 @@ public class AgentsServiceImpl implements AgentsService {
      * @param mrdPool                 the mrd pool
      * @param precisionQueuesPool     the precision queues pool
      * @param agentPresenceRepository the agent presence repository
+     * @param agentStateService       the agent state service
      */
     @Autowired
     public AgentsServiceImpl(AgentsRepository repository,
                              RoutingAttributesPool routingAttributesPool, AgentsPool agentsPool,
                              MrdPool mrdPool, PrecisionQueuesPool precisionQueuesPool,
-                             AgentPresenceRepository agentPresenceRepository) {
+                             AgentPresenceRepository agentPresenceRepository,
+                             AgentStateService agentStateService) {
         this.repository = repository;
         this.routingAttributesPool = routingAttributesPool;
         this.agentsPool = agentsPool;
         this.mrdPool = mrdPool;
         this.precisionQueuesPool = precisionQueuesPool;
         this.agentPresenceRepository = agentPresenceRepository;
+        this.agentStateService = agentStateService;
     }
 
     @Override
@@ -145,6 +153,8 @@ public class AgentsServiceImpl implements AgentsService {
         agent.updateFrom(ccUser);
         logger.debug("Agent updated in in-memory Agents pool | Agent: {}", agent.getId());
 
+        this.updateAgentMrdState(ccUser);
+
         this.agentPresenceRepository.updateCcUser(ccUser);
         logger.debug("Agent updated in Agent Presence Repository | Agent: {}", agent.getId());
 
@@ -156,6 +166,37 @@ public class AgentsServiceImpl implements AgentsService {
 
         logger.info("CCUser updated successfully | CCUser: {}", ccUser.getId());
         return savedInDb;
+    }
+
+    void updateAgentMrdState(CCUser ccUser) {
+        UUID agentId = ccUser.getId();
+
+        ccUser.getAssociatedMrds().forEach(
+                associatedMrd -> {
+                    String mrdId = associatedMrd.getMrdId();
+                    int maxAgentTask = associatedMrd.getMaxAgentTask();
+
+                    int agentActivePushTasks = this.agentsPool.findById(agentId).getNoOfActivePushTasks(mrdId);
+                    logger.debug("Agent-ID : {} --- MRD-ID : {} --- Active Push-Tasks = {} --- & maxAgentTask = {} |",
+                            agentId, mrdId,
+                            agentActivePushTasks,
+                            maxAgentTask);
+
+                    if (agentActivePushTasks >= maxAgentTask) {
+                        AgentMrdStateChangeRequest request =
+                                new AgentMrdStateChangeRequest(agentId, mrdId, Enums.AgentMrdStateName.BUSY);
+                        agentStateService.agentMrdState(request);
+                        logger.debug("MRD state has been changed to BUSY. |");
+                    }
+
+                    if (agentActivePushTasks < maxAgentTask && agentActivePushTasks != 0) {
+                        AgentMrdStateChangeRequest request =
+                                new AgentMrdStateChangeRequest(agentId, mrdId, Enums.AgentMrdStateName.ACTIVE);
+                        agentStateService.agentMrdState(request);
+                        logger.debug("MRD state has been changed to ACTIVE. |");
+                    }
+                }
+        );
     }
 
     @Override
