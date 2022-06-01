@@ -125,17 +125,18 @@ public class TaskManager {
         String mrdId = task.getMrd().getId();
         Enums.AgentMrdStateName currentMrdState = agent.getAgentMrdState(mrdId).getState();
         int noOfTasks = agent.getNoOfActivePushTasks(mrdId);
+        int maxAgentTasks = agent.getAgentMrdState(mrdId).getMaxAgentTask();
 
         if (currentMrdState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY) && noOfTasks < 1) {
             this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.NOT_READY, true);
         } else if (currentMrdState.equals(Enums.AgentMrdStateName.BUSY)) {
             if (noOfTasks == 0) {
                 this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.READY, true);
-            } else if (noOfTasks < task.getMrd().getMaxRequests()) {
+            } else if (noOfTasks < maxAgentTasks) {
                 this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, true);
             }
         } else if (currentMrdState.equals(Enums.AgentMrdStateName.ACTIVE)) {
-            if (noOfTasks >= task.getMrd().getMaxRequests()) {
+            if (noOfTasks >= maxAgentTasks) {
                 this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.BUSY, true);
             } else if (noOfTasks < 1) {
                 this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.READY, true);
@@ -171,7 +172,7 @@ public class TaskManager {
      */
     public void updateAgentMrdState(Agent agent, String mrdId) {
         int noOfActiveTasks = agent.getNoOfActivePushTasks(mrdId);
-        int maxRequestAllowed = agent.getAgentMrdState(mrdId).getMrd().getMaxRequests();
+        int maxRequestAllowed = agent.getAgentMrdState(mrdId).getMaxAgentTask();
 
         if (noOfActiveTasks >= maxRequestAllowed) {
             this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.BUSY, false);

@@ -61,8 +61,7 @@ public class Agent {
         this.keycloakUser = ccUser.getKeycloakUser();
         if (ccUser.getAssociatedRoutingAttributes() != null) {
             for (AssociatedRoutingAttribute associatedRoutingAttribute : ccUser.getAssociatedRoutingAttributes()) {
-                this.associatedRoutingAttributes.put(
-                        associatedRoutingAttribute.getRoutingAttribute().getId(),
+                this.associatedRoutingAttributes.put(associatedRoutingAttribute.getRoutingAttribute().getId(),
                         associatedRoutingAttribute);
             }
         }
@@ -92,8 +91,21 @@ public class Agent {
     public void updateFrom(@NotNull CCUser ccUser) {
         this.keycloakUser = ccUser.getKeycloakUser();
         this.associatedRoutingAttributes.clear();
-        ccUser.getAssociatedRoutingAttributes().forEach(o ->
-                associatedRoutingAttributes.put(o.getRoutingAttribute().getId(), o));
+        ccUser.getAssociatedRoutingAttributes()
+                .forEach(o -> associatedRoutingAttributes.put(o.getRoutingAttribute().getId(), o));
+
+        this.updateMaxAgentTaskInAgentMrdStates(ccUser);
+
+    }
+
+    private void updateMaxAgentTaskInAgentMrdStates(CCUser ccUser) {
+        ccUser.getAssociatedMrds().forEach(associatedMrd -> {
+            AgentMrdState agentMrdState = this.agentMrdStates.get(associatedMrd.getMrdId());
+            if (agentMrdState != null && agentMrdState.getMaxAgentTask() != associatedMrd.getMaxAgentTask()) {
+                agentMrdState.setMaxAgentTask(associatedMrd.getMaxAgentTask());
+                this.agentMrdStates.put(associatedMrd.getMrdId(), agentMrdState);
+            }
+        });
     }
 
     /**
@@ -121,8 +133,8 @@ public class Agent {
         }
         this.removeReservedTask();
         this.addActiveTask(task);
-        logger.debug("Agent Id: {}. Task: {} assigned. Total tasks handling: {}.",
-                this.keycloakUser.getId(), task.getId(), this.activeTasks.size());
+        logger.debug("Agent Id: {}. Task: {} assigned. Total tasks handling: {}.", this.keycloakUser.getId(),
+                task.getId(), this.activeTasks.size());
     }
 
     /**
@@ -254,8 +266,8 @@ public class Agent {
      */
     public void setAgentMrdStates(List<AgentMrdState> agentMrdStateList) {
         this.agentMrdStates.clear();
-        agentMrdStateList.forEach(agentMrdState ->
-                this.agentMrdStates.put(agentMrdState.getMrd().getId(), agentMrdState));
+        agentMrdStateList.forEach(
+                agentMrdState -> this.agentMrdStates.put(agentMrdState.getMrd().getId(), agentMrdState));
     }
 
     /**
@@ -380,8 +392,7 @@ public class Agent {
         // (Agent State is ready) AND (AgentMrdState is ready OR active) AND (No task is reserved for this agent)
         // Only one task can be *reserved* for an Agent at a time.
         return agentStateName.equals(Enums.AgentStateName.READY)
-                && (mrdState.equals(Enums.AgentMrdStateName.ACTIVE)
-                || mrdState.equals(Enums.AgentMrdStateName.READY))
+                && (mrdState.equals(Enums.AgentMrdStateName.ACTIVE) || mrdState.equals(Enums.AgentMrdStateName.READY))
                 && !this.isTaskReserved();
     }
 }

@@ -275,8 +275,8 @@ public class Bootstrap {
     private void replaceRoutingAttributesInCcUsers(List<CCUser> ccUsers) {
         for (CCUser ccUser : ccUsers) {
             for (AssociatedRoutingAttribute entry : ccUser.getAssociatedRoutingAttributes()) {
-                RoutingAttribute routingAttribute = this.routingAttributesPool
-                        .findById(entry.getRoutingAttribute().getId());
+                RoutingAttribute routingAttribute = this.routingAttributesPool.findById(entry.getRoutingAttribute()
+                        .getId());
                 entry.setRoutingAttribute(routingAttribute);
             }
         }
@@ -351,6 +351,7 @@ public class Bootstrap {
             AgentMrdState agentMrdStateInList = agentMrdStates.get(i);
             if (agentMrdStateInAgentPresence.getMrd().getId().equals(agentMrdStateInList.getMrd().getId())) {
                 agentMrdStateInAgentPresence.setMrd(agentMrdStateInList.getMrd());
+                agentMrdStateInAgentPresence.setMaxAgentTask(agentMrdStateInList.getMaxAgentTask());
                 agentMrdStates.set(i, agentMrdStateInAgentPresence);
                 break;
             }

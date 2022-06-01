@@ -31,7 +31,7 @@ public interface MediaRoutingDomainsService {
      * @param id                 the id
      * @return the media routing domain
      */
-    MediaRoutingDomain update(MediaRoutingDomain mediaRoutingDomain, String id);
+    ResponseEntity<Object> update(MediaRoutingDomain mediaRoutingDomain, String id);
 
     /**
      * Delete MRD.

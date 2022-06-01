@@ -1,7 +1,10 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
+import com.ef.cim.objectmodel.AssociatedMrd;
+import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.MrdDeleteConflictResponse;
+import com.ef.mediaroutingengine.dto.MrdUpdateConflictResponse;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
@@ -22,6 +25,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,6 +79,16 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     private final TasksRepository tasksRepository;
 
     /**
+     * The Agent Service Impl.
+     */
+    private final AgentsServiceImpl agentsService;
+
+    /**
+     * The Agent State Service.
+     */
+    private final AgentStateService agentStateService;
+
+    /**
      * Constructor, Autowired, loads the beans.
      *
      * @param repository               to communicate with MRD collection in DB
@@ -86,10 +101,11 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      */
     @Autowired
     public MediaRoutingDomainsServiceImpl(MediaRoutingDomainRepository repository,
-                                          PrecisionQueueRepository precisionQueueRepository,
-                                          TasksPool tasksPool, MrdPool mrdPool, AgentsPool agentsPool,
+                                          PrecisionQueueRepository precisionQueueRepository, TasksPool tasksPool,
+                                          MrdPool mrdPool, AgentsPool agentsPool,
                                           AgentPresenceRepository agentPresenceRepository,
-                                          TasksRepository tasksRepository) {
+                                          TasksRepository tasksRepository, AgentsServiceImpl agentsService,
+                                          AgentStateService agentStateService) {
         this.repository = repository;
         this.precisionQueueRepository = precisionQueueRepository;
         this.tasksPool = tasksPool;
@@ -97,6 +113,8 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         this.agentsPool = agentsPool;
         this.agentPresenceRepository = agentPresenceRepository;
         this.tasksRepository = tasksRepository;
+        this.agentsService = agentsService;
+        this.agentStateService = agentStateService;
     }
 
     @Override
@@ -121,6 +139,11 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         }
         this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
         logger.debug("MRD associated to all Agents in Agent presence Repository | MRD: {}", inserted.getId());
+
+        //Add newly added MRD as Associated MRD for all agents in DB
+        addMrdAsAssociatedMrdForAllAgentsInDb(inserted);
+        logger.debug("MRD has been saved as Associated MRD for all agents in DB | MRD: {}", inserted.getId());
+
         // Insert in MRD config DB
         logger.info("MRD successfully created | MRD: {}", inserted.getId());
         return inserted;
@@ -133,7 +156,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
 
     @Override
     @Transactional
-    public MediaRoutingDomain update(MediaRoutingDomain mediaRoutingDomain, String id) {
+    public ResponseEntity<Object> update(MediaRoutingDomain mediaRoutingDomain, String id) {
         logger.info("Update MRD request initiated for MRD: {}", id);
 
         if (!this.repository.existsById(id)) {
@@ -141,8 +164,21 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             logger.error(errorMessage);
             throw new NotFoundException(errorMessage);
         }
-
         mediaRoutingDomain.setId(id);
+
+        List<CCUser> agentsWithConflictedMaxTask =
+                getAgentsWithConflictedMaxTasks(id, mediaRoutingDomain.getMaxRequests());
+
+        if (!agentsWithConflictedMaxTask.isEmpty()) {
+            String reason = new StringBuilder("Failed to update the MRD : ").append(mediaRoutingDomain.getName())
+                    .append(".Because the following agents have MaxTask against this MRD which are greater than ")
+                    .append("the new MRD maxRequest value i.e. ").append(mediaRoutingDomain.getMaxRequests())
+                    .append(".Please update the agentMaxTask before updating the MRD MaxRequest.").toString();
+
+            return new ResponseEntity<>(
+                    new MrdUpdateConflictResponse(mediaRoutingDomain.getName(), reason, agentsWithConflictedMaxTask),
+                    HttpStatus.CONFLICT);
+        }
 
         this.updatePrecisionQueues(mediaRoutingDomain, id);
         logger.debug("MRD updated in precision-queues inside PrecisionQueue Config DB | MRD: {}", id);
@@ -155,47 +191,13 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
 
         updateMrdInTasks(mediaRoutingDomain);
         logger.debug("MRD updated in Tasks inside Tasks Repository | MRD: {}", id);
+
         // Update MRD in MRD Config DB
         MediaRoutingDomain savedInDb = this.repository.save(mediaRoutingDomain);
         logger.debug("MRD updated in MRD Config DB");
 
         logger.info("MRD updated successfully | MRD: {}", id);
-        return savedInDb;
-    }
-
-    /**
-     * Update mrd in tasks.
-     *
-     * @param mediaRoutingDomain the media routing domain
-     */
-    void updateMrdInTasks(MediaRoutingDomain mediaRoutingDomain) {
-        Map<String, TaskDto> taskMap = new HashMap<>();
-        for (TaskDto taskDto : this.tasksRepository.findAll()) {
-            if (taskDto.getMrd().getId().equals(mediaRoutingDomain.getId())) {
-                taskDto.setMrd(mediaRoutingDomain);
-                taskMap.put(taskDto.getId().toString(), taskDto);
-            }
-        }
-        this.tasksRepository.saveAllByKeyValueMap(taskMap);
-    }
-
-    /**
-     * Update mrd in agent mrd state in all agent presence.
-     *
-     * @param mediaRoutingDomain the media routing domain
-     */
-    void updateMrdInAgentMrdStateInAllAgentPresence(MediaRoutingDomain mediaRoutingDomain) {
-        Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
-        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
-            for (AgentMrdState agentMrdState : agentPresence.getAgentMrdStates()) {
-                if (agentMrdState.getMrd().getId().equals(mediaRoutingDomain.getId())) {
-                    agentMrdState.setMrd(mediaRoutingDomain);
-                    agentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
-                    break;
-                }
-            }
-        }
-        this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
+        return new ResponseEntity<>(savedInDb, HttpStatus.OK);
     }
 
     @Override
@@ -221,6 +223,9 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             deleteAgentMrdStateFromAllAgentPresence(id);
             logger.debug("AgentMrdState deleted from Agents in Agent Presence Repository | MRD: {}", id);
 
+            deleteAssociatedMrdForAllAgentsInDb(id);
+            logger.debug("AssociatedMrd deleted for all Agents in DB | MRD: {}", id);
+
             this.mrdPool.deleteById(id);
             logger.debug("MRD deleted from in-memory MRD pool | MRD: {}", id);
 
@@ -238,6 +243,27 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         return new ResponseEntity<>(new MrdDeleteConflictResponse(precisionQueueEntities, taskDtoList),
                 HttpStatus.CONFLICT);
     }
+
+    /**
+     * Delete associated MRD for all agents in DB.
+     */
+    private void deleteAssociatedMrdForAllAgentsInDb(String mrdId) {
+        List<CCUser> agentsFromDb = agentsService.retrieve();
+        agentsFromDb.forEach(agent -> {
+            AtomicInteger position = new AtomicInteger(-1);
+            agent.getAssociatedMrds().forEach(associatedMrd -> {
+                if (associatedMrd.getMrdId().equals(mrdId)) {
+                    position.set(agent.getAssociatedMrds().indexOf(associatedMrd));
+                    return;
+                }
+            });
+            if (position.get() != -1) {
+                agent.getAssociatedMrds().remove(position.get());
+                agentsService.saveUpdatedAgentInDb(agent);
+            }
+        });
+    }
+
 
     /**
      * Delete agent mrd state from all agent presence.
@@ -287,5 +313,86 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             }
             this.precisionQueueRepository.saveAll(precisionQueueEntities);
         }
+    }
+
+    /**
+     * Update mrd in tasks.
+     *
+     * @param mediaRoutingDomain the media routing domain
+     */
+    void updateMrdInTasks(MediaRoutingDomain mediaRoutingDomain) {
+        Map<String, TaskDto> taskMap = new HashMap<>();
+        for (TaskDto taskDto : this.tasksRepository.findAll()) {
+            if (taskDto.getMrd().getId().equals(mediaRoutingDomain.getId())) {
+                taskDto.setMrd(mediaRoutingDomain);
+                taskMap.put(taskDto.getId().toString(), taskDto);
+            }
+        }
+        this.tasksRepository.saveAllByKeyValueMap(taskMap);
+    }
+
+    /**
+     * Update mrd in agent mrd state in all agent presence.
+     *
+     * @param mediaRoutingDomain the media routing domain
+     */
+    void updateMrdInAgentMrdStateInAllAgentPresence(MediaRoutingDomain mediaRoutingDomain) {
+        Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
+        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
+            for (AgentMrdState agentMrdState : agentPresence.getAgentMrdStates()) {
+                if (agentMrdState.getMrd().getId().equals(mediaRoutingDomain.getId())) {
+                    agentMrdState.setMrd(mediaRoutingDomain);
+                    agentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
+                    break;
+                }
+            }
+        }
+        this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
+    }
+
+    /**
+     * This method will return a list of CCUser (Agents) ,
+     * who's maxAgentTask against the MRD (which is supposed to be updated) is greater than the maxMrdRequest.
+     */
+    private List<CCUser> getAgentsWithConflictedMaxTasks(String mrdId, int maxRequest) {
+        List<CCUser> agentsWithConflictedMaxTasks = new ArrayList<>();
+
+        List<CCUser> agentsFromDb = agentsService.retrieve();
+        agentsFromDb.forEach(agent -> agent.getAssociatedMrds().forEach(associatedMrd -> {
+            if (mrdId.equals(associatedMrd.getMrdId())
+                    && isAgentMaxTasksGreaterThanMrdMaxRequestValue(agent.getId(), associatedMrd.getMaxAgentTask(),
+                    maxRequest)) {
+                agentsWithConflictedMaxTasks.add(agent);
+            }
+        }));
+        return agentsWithConflictedMaxTasks;
+    }
+
+    /**
+     * This method will return TRUE
+     * if an agent's maxTasks value against an MRD is greater than new MRD's maxRequest Value.
+     */
+    private boolean isAgentMaxTasksGreaterThanMrdMaxRequestValue(UUID agentId, int maxAgentTask, int mrdMaxRequest) {
+        logger.trace("isAgentMaxTasksGreaterThanMrdMaxRequestValue started. |");
+        if (maxAgentTask > mrdMaxRequest) {
+            logger.info("The agent ID : {} has maxAgentTask = {} which are greater than mrdMaxRequest = {}", agentId,
+                    maxAgentTask, mrdMaxRequest);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Add newly added MRD as Associated MRD for all agents in DB.
+     */
+    private void addMrdAsAssociatedMrdForAllAgentsInDb(MediaRoutingDomain mediaRoutingDomain) {
+        AssociatedMrd associatedMrd =
+                new AssociatedMrd(mediaRoutingDomain.getId(), mediaRoutingDomain.getMaxRequests());
+
+        List<CCUser> agentsFromDb = agentsService.retrieve();
+        agentsFromDb.forEach(agent -> {
+            agent.addAssociatedMrd(associatedMrd);
+            agentsService.saveUpdatedAgentInDb(agent);
+        });
     }
 }
