@@ -72,7 +72,7 @@ public class MediaRoutingDomainsController {
     @PutMapping(value = "/media-routing-domains/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateMediaRoutingDomain(
             @Valid @RequestBody MediaRoutingDomain requestBody, @PathVariable String id) {
-        return this.service.update(requestBody, id);
+        return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
     }
 
     /**

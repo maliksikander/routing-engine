@@ -56,13 +56,11 @@ class AgentsServiceImplTest {
     private PrecisionQueuesPool precisionQueuesPool;
     @Mock
     private AgentPresenceRepository agentPresenceRepository;
-    @Mock
-    private AgentStateService agentStateService;
 
     @BeforeEach
     void setUp() {
         this.agentsService = new AgentsServiceImpl(repository, routingAttributesPool, agentsPool,
-                mrdPool, precisionQueuesPool, agentPresenceRepository, agentStateService);
+                mrdPool, precisionQueuesPool, agentPresenceRepository);
     }
 
 
@@ -121,7 +119,7 @@ class AgentsServiceImplTest {
 
             verify(agentPresenceRepository, times(1)).updateCcUser(ccUser);
             verify(precisionQueuesPool, times(1)).evaluateOnUpdateForAll(agent);
-            verify(repository, times(1)).save(ccUser);
+            verify(repository,times(1)).save(ccUser);
         }
     }
 

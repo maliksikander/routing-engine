@@ -23,7 +23,7 @@ public class MrdStateReady implements MrdStateDelegate {
                 if (agent.getNoOfActivePushTasks(agentMrdState.getMrd().getId()) < 1) {
                     return Enums.AgentMrdStateName.READY;
                 } else if (agent.getNoOfActivePushTasks(agentMrdState.getMrd().getId())
-                        == agentMrdState.getMaxAgentTask()) {
+                        == agentMrdState.getMrd().getMaxRequests()) {
                     return Enums.AgentMrdStateName.BUSY;
                 } else {
                     return Enums.AgentMrdStateName.ACTIVE;

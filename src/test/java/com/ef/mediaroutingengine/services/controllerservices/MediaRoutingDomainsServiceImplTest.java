@@ -53,21 +53,16 @@ class MediaRoutingDomainsServiceImplTest {
 
     private MediaRoutingDomainsServiceImpl mediaRoutingDomainsService;
 
-    private AgentsServiceImpl agentsService;
-
-    private AgentStateService agentStateService;
-
     @BeforeEach
     void setUp() {
         this.mediaRoutingDomainsService = new MediaRoutingDomainsServiceImpl(repository, precisionQueueRepository,
-                tasksPool, mrdPool, agentsPool, agentPresenceRepository, tasksRepository, agentsService,
-                agentStateService);
+                tasksPool, mrdPool, agentsPool, agentPresenceRepository, tasksRepository);
     }
 
     @Nested
     @DisplayName("delete method tests")
     class DeleteTest {
-
+        
     }
 
     @Test

@@ -26,14 +26,10 @@ public class AgentMrdState {
     private Timestamp lastReadyStateChangeTime;
 
     /**
-     * The maximum tasks this agent can accept against this MRD.
-     */
-    private int maxAgentTask;
-
-    /**
      * Instantiates a new Agent mrd state.
      */
     public AgentMrdState() {
+
     }
 
     /**
@@ -49,7 +45,6 @@ public class AgentMrdState {
 
         LocalDateTime longTimeAgo = LocalDateTime.of(1990, 4, 2, 12, 1);
         this.lastReadyStateChangeTime = Timestamp.valueOf(longTimeAgo);
-        this.maxAgentTask = mrd.getMaxRequests();
     }
 
     /**
@@ -129,14 +124,6 @@ public class AgentMrdState {
         this.lastReadyStateChangeTime = lastReadyStateChangeTime;
     }
 
-    public int getMaxAgentTask() {
-        return maxAgentTask;
-    }
-
-    public void setMaxAgentTask(int maxAgentTask) {
-        this.maxAgentTask = maxAgentTask;
-    }
-
     @Override
     public String toString() {
         return "AgentMrdState{"
@@ -144,7 +131,6 @@ public class AgentMrdState {
                 + ", state=" + state
                 + ", stateChangeTime=" + stateChangeTime
                 + ", lastReadyStateChangeTime=" + lastReadyStateChangeTime
-                + ", maxAgentTask=" + maxAgentTask
                 + '}';
     }
 }
