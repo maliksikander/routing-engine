@@ -20,7 +20,7 @@ public class AssignTaskRequest {
     /**
      * The Topic id.
      */
-    private UUID topicId;
+    private UUID conversationId;
     /**
      * The Task id.
      */
@@ -67,17 +67,17 @@ public class AssignTaskRequest {
      *
      * @return the topic id
      */
-    public UUID getTopicId() {
-        return topicId;
+    public UUID getConversationId() {
+        return conversationId;
     }
 
     /**
      * Sets topic id.
      *
-     * @param topicId the topic id
+     * @param conversationId the topic id
      */
-    public void setTopicId(UUID topicId) {
-        this.topicId = topicId;
+    public void setConversationId(UUID conversationId) {
+        this.conversationId = conversationId;
     }
 
     /**

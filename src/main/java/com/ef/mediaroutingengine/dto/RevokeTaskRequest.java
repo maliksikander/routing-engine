@@ -15,7 +15,7 @@ public class RevokeTaskRequest {
      */
     private UUID agentId;
 
-    private UUID topicId;
+    private UUID conversationId;
 
     public RevokeTaskRequest() {
 
@@ -26,12 +26,12 @@ public class RevokeTaskRequest {
      *
      * @param taskId  the task id
      * @param agentId the agent id
-     * @param topicId the topic id
+     * @param conversationId the topic id
      */
-    public RevokeTaskRequest(UUID taskId, UUID agentId, UUID topicId) {
+    public RevokeTaskRequest(UUID taskId, UUID agentId, UUID conversationId) {
         this.taskId = taskId;
         this.agentId = agentId;
-        this.topicId = topicId;
+        this.conversationId = conversationId;
     }
 
     /**
@@ -70,11 +70,11 @@ public class RevokeTaskRequest {
         this.agentId = agentId;
     }
 
-    public UUID getTopicId() {
-        return topicId;
+    public UUID getConversationId() {
+        return conversationId;
     }
 
-    public void setTopicId(UUID topicId) {
-        this.topicId = topicId;
+    public void setConversationId(UUID conversationId) {
+        this.conversationId = conversationId;
     }
 }

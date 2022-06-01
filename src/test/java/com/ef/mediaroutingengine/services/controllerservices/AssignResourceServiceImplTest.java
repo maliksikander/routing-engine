@@ -285,7 +285,7 @@ class AssignResourceServiceImplTest {
         Channel channel = getChannelInstance();
         ChannelSession channelSession = new ChannelSession();
         channelSession.setChannel(channel);
-        channelSession.setTopicId(UUID.randomUUID());
+        channelSession.setConversationId(UUID.randomUUID());
         return channelSession;
     }
 

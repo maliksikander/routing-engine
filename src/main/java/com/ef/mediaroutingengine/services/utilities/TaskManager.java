@@ -207,7 +207,7 @@ public class TaskManager {
      * @param channelSession the channel session
      */
     private void scheduleAgentRequestTimeoutTask(ChannelSession channelSession) {
-        UUID topicId = channelSession.getTopicId();
+        UUID topicId = channelSession.getConversationId();
         long delay = getDelay(channelSession);
         // If a previous Agent request Ttl timer task exist cancel and remove it.
         this.cancelAgentRequestTtlTimerTask(topicId);

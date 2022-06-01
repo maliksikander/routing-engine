@@ -233,7 +233,7 @@ class CancelResourceServiceImplTest {
 
     private Task getTaskInstance(UUID topicId, TaskState taskState) {
         ChannelSession channelSession = new ChannelSession();
-        channelSession.setTopicId(topicId);
+        channelSession.setConversationId(topicId);
         return Task.getInstanceFrom(channelSession, null, UUID.randomUUID().toString(), taskState);
     }
 }
