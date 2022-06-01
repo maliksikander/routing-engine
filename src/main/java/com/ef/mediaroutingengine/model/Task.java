@@ -349,7 +349,7 @@ public class Task {
      * @return the topic id
      */
     public UUID getTopicId() {
-        return this.channelSession.getTopicId();
+        return this.channelSession.getConversationId();
     }
 
     /**

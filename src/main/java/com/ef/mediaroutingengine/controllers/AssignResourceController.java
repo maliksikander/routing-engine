@@ -43,7 +43,7 @@ public class AssignResourceController {
     @PostMapping(value = "/assign-resource", consumes = "application/json",
             produces = "application/json")
     public ResponseEntity<String> assignResource(@RequestBody AssignResourceRequest request) {
-        MDC.put(Constants.MDC_TOPIC_ID, request.getChannelSession().getTopicId().toString());
+        MDC.put(Constants.MDC_TOPIC_ID, request.getChannelSession().getConversationId().toString());
         return new ResponseEntity<>(this.assignResourceService.assign(request), HttpStatus.OK);
     }
 }

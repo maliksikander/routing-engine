@@ -12,6 +12,9 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.MessageProducer;
@@ -42,17 +45,25 @@ public class ActivemqCommunicator implements JmsCommunicator {
      */
     Connection connection;
     /**
-     * The Publisher.
+     * The State Change Event Publisher Session.
      */
-    MessageProducer publisher;
+    private Session stateChangeEventPublisherSession;
     /**
-     * The Publisher session.
+     * The State Change Event Publisher.
      */
-    private Session publisherSession;
+    MessageProducer stateChangeEventPublisher;
     /**
-     * The Topic name.
+     * The Conversation Event Publisher Session.
      */
-    private String topicName;
+    private Session conversationEventPublisherSession;
+    /**
+     * The Conversation event publisher.
+     */
+    MessageProducer conversationEventPublisher;
+    /**
+     * The Topics.
+     */
+    private final List<String> topics = new ArrayList<>();
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -76,19 +87,21 @@ public class ActivemqCommunicator implements JmsCommunicator {
     }
 
     @Override
-    public void init(String topic) throws JMSException {
+    public void init(String stateChangeTopic, String conversationTopic) throws JMSException {
         logger.debug(Constants.METHOD_STARTED);
-        if (topic == null) {
-            String errorMessage = "Topic is null";
-            logger.error(errorMessage);
-            throw new IllegalArgumentException(errorMessage);
-        }
 
-        this.topicName = topic;
+        this.topics.add(stateChangeTopic);
+        this.topics.add(conversationTopic);
 
         try {
-            this.setPublisher();
-            logger.info("Publisher successfully initialized for topic '{}'", this.topicName);
+            this.stateChangeEventPublisherSession = createPublisherSession();
+            this.stateChangeEventPublisher = createPublisher(stateChangeEventPublisherSession, stateChangeTopic);
+
+            this.conversationEventPublisherSession = createPublisherSession();
+            this.conversationEventPublisher = createPublisher(conversationEventPublisherSession, conversationTopic);
+
+            logger.info("Publisher successfully initialized for topics: '{}' and '{}'",
+                    stateChangeTopic, conversationTopic);
         } catch (JMSException jmsException) {
             logger.error(ExceptionUtils.getMessage(jmsException));
             logger.error(ExceptionUtils.getStackTrace(jmsException));
@@ -104,46 +117,44 @@ public class ActivemqCommunicator implements JmsCommunicator {
             throws JMSException, JsonProcessingException {
         logger.debug(Constants.METHOD_STARTED);
 
-        StateChangeEvent stateChangeEvent = new StateChangeEvent(eventName, message, this.topicName);
+        StateChangeEvent stateChangeEvent = new StateChangeEvent(eventName, message, this.topics.get(0));
 
         String messageStr = this.objectMapper.writeValueAsString(stateChangeEvent);
 
-        TextMessage messageToSend = this.publisherSession.createTextMessage();
+        TextMessage messageToSend = this.stateChangeEventPublisherSession.createTextMessage();
         messageToSend.setText(messageStr);
         messageToSend.setJMSType(eventName.name());
         messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
 
-        this.publisher.send(messageToSend);
+        this.stateChangeEventPublisher.send(messageToSend);
 
-        logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'", eventName, messageStr, topicName);
+        logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
+                eventName, messageStr, topics.get(0));
         logger.debug(Constants.METHOD_ENDED);
     }
 
     @Override
     public void publishTaskStateChangeForReporting(Task task) {
-        String topic = task.getTopicId().toString();
-        try (
-                Session session = this.connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                MessageProducer producer = session.createProducer(session.createTopic(topic))
-        ) {
-
+        try {
             if (task.isMarkedForDeletion()) {
                 task.setTaskStateFromMarkedForDeletion();
             }
 
-            String messageStr = this.getSerializedCimEvent(new TaskDto(task));
-            TextMessage messageToSend = session.createTextMessage();
+            String messageStr = this.getSerializedCimEvent(new TaskDto(task), task.getTopicId());
+            TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
             messageToSend.setText(messageStr);
+
             messageToSend.setJMSType(CimEventName.TASK_STATE_CHANGED.name());
             messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
 
-            producer.send(messageToSend);
+            conversationEventPublisher.send(messageToSend);
+
             logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
-                    CimEventName.TASK_STATE_CHANGED, messageStr, topicName);
-        } catch (Exception e) {
-            logger.error(ExceptionUtils.getMessage(e));
-            logger.error(ExceptionUtils.getStackTrace(e));
+                    CimEventName.TASK_STATE_CHANGED, messageStr, topics.get(1));
+        } catch (JMSException | JsonProcessingException e) {
+            e.printStackTrace();
         }
+
     }
 
     /**
@@ -153,8 +164,9 @@ public class ActivemqCommunicator implements JmsCommunicator {
      * @return the serialized cim event
      * @throws JsonProcessingException the json processing exception
      */
-    private String getSerializedCimEvent(Serializable message) throws JsonProcessingException {
-        CimEvent cimEvent = new CimEvent(message, CimEventName.TASK_STATE_CHANGED, CimEventType.NOTIFICATION);
+    private String getSerializedCimEvent(Serializable message, UUID conversationId) throws JsonProcessingException {
+        CimEvent cimEvent = new CimEvent(message, CimEventName.TASK_STATE_CHANGED, CimEventType.NOTIFICATION,
+                conversationId);
         return this.objectMapper.writeValueAsString(cimEvent);
     }
 
@@ -162,20 +174,27 @@ public class ActivemqCommunicator implements JmsCommunicator {
     public void stop() throws JMSException {
         logger.debug(Constants.METHOD_STARTED);
 
-        if (this.publisher != null) {
-            this.publisher.close();
-            this.publisher = null;
-            logger.debug("Publisher closed on topic: {}", this.topicName);
-        }
-        if (this.publisherSession != null) {
-            this.publisherSession.close();
-            this.publisherSession = null;
-            logger.debug("PublisherSession closed on topic: {}", this.topicName);
-        }
+        this.stopPublisher(stateChangeEventPublisher);
+        this.stopPublisherSession(stateChangeEventPublisherSession);
 
-        logger.info("Communication stopped successfully on Topic: '{}'", this.topicName);
+        this.stopPublisher(conversationEventPublisher);
+        this.stopPublisherSession(conversationEventPublisherSession);
+
+        logger.info("Communication stopped successfully on all topics");
 
         logger.debug(Constants.METHOD_ENDED);
+    }
+
+    private void stopPublisher(MessageProducer publisher) throws JMSException {
+        if (publisher != null) {
+            publisher.close();
+        }
+    }
+
+    private void stopPublisherSession(Session publisherSession) throws JMSException {
+        if (publisherSession != null) {
+            publisherSession.close();
+        }
     }
 
     @Override
@@ -184,8 +203,8 @@ public class ActivemqCommunicator implements JmsCommunicator {
         logger.error(ExceptionUtils.getStackTrace(ex));
     }
 
-    public String getTopic() {
-        return this.topicName;
+    private Session createPublisherSession() throws JMSException {
+        return this.connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
     /**
@@ -193,16 +212,14 @@ public class ActivemqCommunicator implements JmsCommunicator {
      *
      * @throws JMSException exception
      */
-    private void setPublisher() throws JMSException {
-        logger.debug("Method started for Topic: '{}'", this.topicName);
+    private MessageProducer createPublisher(Session publisherSession, String topicName) throws JMSException {
+        logger.debug("Method started for Topic: '{}'", topicName);
 
-        this.publisherSession = this.connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        logger.debug("ActivemqServiceImpl.setPublisher | Session created successfully");
+        Topic destination = publisherSession.createTopic(topicName);
+        MessageProducer publisher = this.stateChangeEventPublisherSession.createProducer(destination);
+        logger.debug("Publisher created successfully");
 
-        Topic destination = this.publisherSession.createTopic(this.topicName);
-        this.publisher = this.publisherSession.createProducer(destination);
-        logger.debug("ActivemqServiceImpl.setPublisher | Publisher created successfully");
-
-        logger.debug("Method ended for Topic: '{}'", this.topicName);
+        logger.debug("Method ended for Topic: '{}'", topicName);
+        return publisher;
     }
 }

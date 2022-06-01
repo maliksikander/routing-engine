@@ -25,10 +25,11 @@ public interface JmsCommunicator extends ExceptionListener {
      * To initialize a connection and a topic subscriber and publisher
      * on that connection.
      *
-     * @param topic Topic name/id to subscribe to or publish messages to.
-     * @throws JMSException exception
+     * @param stateChangeTopic the state change topic
+     * @param customerTopic    the customer topic
+     * @throws JMSException the jms exception
      */
-    void init(String topic) throws JMSException;
+    void init(String stateChangeTopic, String customerTopic) throws JMSException;
 
     /**
      * To stop the connection, if it has been initialized, gracefully.
@@ -36,13 +37,6 @@ public interface JmsCommunicator extends ExceptionListener {
      * @throws JMSException exception
      */
     void stop() throws JMSException;
-
-    /**
-     * Gets topic.
-     *
-     * @return the topic
-     */
-    String getTopic();
 
     /**
      * Publish.

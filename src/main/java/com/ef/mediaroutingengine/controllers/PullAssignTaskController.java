@@ -69,14 +69,14 @@ public class PullAssignTaskController {
      */
     @PostMapping("assign-task")
     public ResponseEntity<Object> assignTask(@Valid @RequestBody PullAssignTaskRequest requestBody) {
-        MDC.put(Constants.MDC_TOPIC_ID, requestBody.getChannelSession().getTopicId().toString());
+        MDC.put(Constants.MDC_TOPIC_ID, requestBody.getChannelSession().getConversationId().toString());
 
         validateRoutingMode(requestBody.getChannelSession());
         Agent agent = validateAndGetAgent(requestBody.getAgentId());
         MediaRoutingDomain mrd = validateAndGetMrd(requestBody.getChannelSession());
         validateAgentHasMrdState(agent, mrd);
 
-        UUID topicId = requestBody.getChannelSession().getTopicId();
+        UUID topicId = requestBody.getChannelSession().getConversationId();
         List<Task> existingTasksOnTopic = tasksPool.findByConversationId(topicId);
 
         for (Task task : existingTasksOnTopic) {

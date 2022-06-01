@@ -60,7 +60,7 @@ class RetrieveByAgentTest {
     private ChannelSession getNewChannelSession() {
         ChannelSession channelSession = new ChannelSession();
         channelSession.setId(UUID.randomUUID());
-        channelSession.setTopicId(UUID.randomUUID());
+        channelSession.setConversationId(UUID.randomUUID());
         return channelSession;
     }
 

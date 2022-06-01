@@ -92,7 +92,7 @@ public class RestRequest {
         AssignTaskRequest request = new AssignTaskRequest();
         request.setChannelSession(channelSession);
         request.setCcUser(agent);
-        request.setTopicId(topicId);
+        request.setConversationId(topicId);
         request.setTaskId(taskId);
 
         try {

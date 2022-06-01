@@ -159,7 +159,7 @@ public class Bootstrap {
      */
     public boolean subscribeToStateEventsChannel() {
         try {
-            this.jmsCommunicator.init("STATE_CHANNEL");
+            this.jmsCommunicator.init("STATE_CHANNEL", "conversation-topic");
             logger.info("Successfully subscribed to JMS topic: STATE_CHANNEL");
             return true;
         } catch (JMSException jmsException) {

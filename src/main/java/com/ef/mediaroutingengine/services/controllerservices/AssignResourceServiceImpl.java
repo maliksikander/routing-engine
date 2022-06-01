@@ -62,7 +62,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     @Override
     public String assign(AssignResourceRequest request) {
         logger.debug(Constants.METHOD_STARTED);
-        logger.info("Assign resource request initiated | Topic: {}", request.getChannelSession().getTopicId());
+        logger.info("Assign resource request initiated | Topic: {}", request.getChannelSession().getConversationId());
 
         ChannelSession channelSession = request.getChannelSession();
         validateChannelSession(channelSession);
@@ -79,12 +79,13 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         CompletableFuture.runAsync(() -> {
             // putting same correlation id and topic id from the caller thread into this thread
             MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
-            MDC.put(Constants.MDC_TOPIC_ID, channelSession.getTopicId().toString());
+            MDC.put(Constants.MDC_TOPIC_ID, channelSession.getConversationId().toString());
             this.taskManager.enqueueTask(channelSession, queue, mrd);
             MDC.clear();
         });
 
-        logger.info("Assign resource request handled gracefully | Topic: {}", request.getChannelSession().getTopicId());
+        logger.info("Assign resource request handled gracefully | Topic: {}",
+                request.getChannelSession().getConversationId());
         logger.debug(Constants.METHOD_ENDED);
         return "The request is received Successfully";
     }
