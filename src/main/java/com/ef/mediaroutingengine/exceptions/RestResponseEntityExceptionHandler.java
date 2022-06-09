@@ -155,6 +155,34 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
     }
 
     /**
+     * Handle conflict exception response entity.
+     *
+     * @param ex the ex
+     * @return the response entity
+     */
+    @ExceptionHandler({ConflictException.class})
+    public ResponseEntity<Object> handleConflictException(final ConflictException ex) {
+        logger.error(ex.getMessage());
+        String error = "error.conflict";
+        ErrorResponseBody responseBody = new ErrorResponseBody(error, ex.getMessage());
+        return new ResponseEntity<>(responseBody, HttpStatus.CONFLICT);
+    }
+
+    /**
+     * Handle forbidden exception response entity.
+     *
+     * @param ex the ex
+     * @return the response entity
+     */
+    @ExceptionHandler({ForbiddenException.class})
+    public ResponseEntity<Object> handleForbiddenException(final ForbiddenException ex) {
+        logger.error(ex.getMessage());
+        String error = "error.forbidden";
+        ErrorResponseBody responseBody = new ErrorResponseBody(error, ex.getMessage());
+        return new ResponseEntity<>(responseBody, HttpStatus.FORBIDDEN);
+    }
+
+    /**
      * Handles Malformed url exception.
      *
      * @param ex MalformedURLException object

@@ -29,7 +29,7 @@ public class Task {
     /**
      * The Channel session.
      */
-    private final ChannelSession channelSession;
+    private ChannelSession channelSession;
     /**
      * The Mrd.
      */
@@ -152,8 +152,8 @@ public class Task {
      * @param channelSession the channel session
      * @return the instance
      */
-    public static Task getInstanceFrom(UUID agentId, MediaRoutingDomain mrd, ChannelSession channelSession) {
-        TaskState taskState = new TaskState(Enums.TaskStateName.ACTIVE, null);
+    public static Task getInstanceFrom(UUID agentId, MediaRoutingDomain mrd,
+                                       TaskState taskState, ChannelSession channelSession) {
         Task task = getInstanceFrom(channelSession, mrd, null, taskState);
         task.setAssignedTo(agentId);
         return task;
@@ -177,6 +177,10 @@ public class Task {
      */
     public ChannelSession getChannelSession() {
         return channelSession;
+    }
+
+    public void setChannelSession(ChannelSession channelSession) {
+        this.channelSession = channelSession;
     }
 
     /**

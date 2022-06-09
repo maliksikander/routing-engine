@@ -12,6 +12,8 @@ import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.TaskState;
+import com.ef.mediaroutingengine.repositories.TasksRepository;
+import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,11 +31,15 @@ class TasksServiceTest {
     @Mock
     private TasksPool tasksPool;
     @Mock
+    private TasksRepository tasksRepository;
+    @Mock
     private TasksRetrieverFactory factory;
+    @Mock
+    private JmsCommunicator jmsCommunicator;
 
     @BeforeEach
     void setUp() {
-        this.tasksService = new TasksService(tasksPool, factory);
+        this.tasksService = new TasksService(tasksPool, tasksRepository, factory, jmsCommunicator);
     }
 
     @Test

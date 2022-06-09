@@ -191,7 +191,15 @@ public class Bootstrap {
         this.agentsPool.loadPoolFrom(ccUsers);
         logger.debug("Agents pool loaded DB");
 
-        this.mrdPool.loadPoolFrom(mediaRoutingDomainRepository.findAll());
+        List<MediaRoutingDomain> mrdList = mediaRoutingDomainRepository.findAll();
+
+        if (!voiceMrdExists(mrdList)) {
+            MediaRoutingDomain voiceMrd = createVoiceMrd();
+            this.mediaRoutingDomainRepository.save(voiceMrd);
+            mrdList.add(voiceMrd);
+        }
+
+        this.mrdPool.loadPoolFrom(mrdList);
         logger.debug("MRDs pool loaded from DB");
         // Set Agent and AgentMRD states after MRD pool is loaded as it is required for agent-mrd states.
         this.setAgentStates();
@@ -234,6 +242,24 @@ public class Bootstrap {
         logger.info("Task pool size: {}", this.tasksPool.size());
 
         logger.debug(Constants.METHOD_ENDED);
+    }
+
+    private boolean voiceMrdExists(List<MediaRoutingDomain> mrdList) {
+        for (MediaRoutingDomain mrd : mrdList) {
+            if (mrd.getId().equals(Constants.VOICE_MRD_ID)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private MediaRoutingDomain createVoiceMrd() {
+        MediaRoutingDomain voiceMrd = new MediaRoutingDomain();
+        voiceMrd.setId(Constants.VOICE_MRD_ID);
+        voiceMrd.setName("VOICE");
+        voiceMrd.setDescription("Standard voice MRD");
+        voiceMrd.setMaxRequests(1);
+        return voiceMrd;
     }
 
     /**

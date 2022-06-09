@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.MediaRoutingDomain;
@@ -62,6 +63,7 @@ class TaskStateActiveTest {
         when(agentsPool.findById(any())).thenReturn(agent);
         when(task.getTopicId()).thenReturn(topicId).thenReturn(topicId);
         when(task.getMrd()).thenReturn(mrd);
+        when(task.getRoutingMode()).thenReturn(RoutingMode.PUSH);
 
         taskStateActive.updateState(task, taskState);
 

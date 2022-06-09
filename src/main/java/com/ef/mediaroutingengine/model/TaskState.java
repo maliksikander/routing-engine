@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.model;
 
 import com.ef.mediaroutingengine.commons.Enums;
 import java.io.Serializable;
+import javax.validation.constraints.NotNull;
 
 /**
  * The type Task state.
@@ -10,6 +11,7 @@ public class TaskState implements Serializable {
     /**
      * The Name.
      */
+    @NotNull
     private Enums.TaskStateName name;
     /**
      * The Reason code.
