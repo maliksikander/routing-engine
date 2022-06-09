@@ -51,6 +51,7 @@ public class Agent {
      * The Reserved task.
      */
     private Task reservedTask;
+    private Task voiceReservedTask;
 
     /**
      * Default constructor, An Agent object can only be created from a CCUser object.
@@ -125,6 +126,11 @@ public class Agent {
                 this.keycloakUser.getId(), task.getId(), this.activeTasks.size());
     }
 
+    public void assignExternalTask(Task task) {
+        this.voiceReservedTask = null;
+        this.addActiveTask(task);
+    }
+
     /**
      * Add a task to the Active tasks list.
      *
@@ -187,6 +193,9 @@ public class Agent {
         List<Task> result = this.getActiveTasksList();
         if (reservedTask != null) {
             result.add(reservedTask);
+        }
+        if (voiceReservedTask != null) {
+            result.add(voiceReservedTask);
         }
         return result;
     }
@@ -318,6 +327,14 @@ public class Agent {
 
     public Task getReservedTask() {
         return this.reservedTask;
+    }
+
+    public Task getVoiceReservedTask() {
+        return voiceReservedTask;
+    }
+
+    public void setVoiceReservedTask(Task voiceReservedTask) {
+        this.voiceReservedTask = voiceReservedTask;
     }
 
     /**

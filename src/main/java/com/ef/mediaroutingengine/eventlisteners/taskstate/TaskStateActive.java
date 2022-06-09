@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.eventlisteners.taskstate;
 
+import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.TaskState;
@@ -47,11 +48,20 @@ public class TaskStateActive implements TaskStateModifier {
             logger.error("Could not update task state to Active, Assigned Agent not found");
             return;
         }
+
         task.setTaskState(state);
         task.setStartTime(System.currentTimeMillis());
-        this.taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
-        this.taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
-        agent.assignPushTask(task);
+
+        RoutingMode routingMode = task.getRoutingMode();
+
+        if (routingMode.equals(RoutingMode.PUSH)) {
+            this.taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
+            this.taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
+            agent.assignPushTask(task);
+        } else if (routingMode.equals(RoutingMode.EXTERNAL)) {
+            agent.assignExternalTask(task);
+        }
+
         this.taskManager.updateAgentMrdState(agent, task.getMrd().getId());
     }
 }

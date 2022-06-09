@@ -9,7 +9,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.ef.mediaroutingengine.commons.Enums;
-import com.ef.mediaroutingengine.dto.TaskStateChangeRequest;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
@@ -39,7 +38,7 @@ class TaskStateListenerTest {
     @Test
     void testPropertyChange_when_taskNotFoundInTasksPool() {
         when(tasksPool.findById(any())).thenReturn(null);
-        taskStateListener.propertyChange(getNewRequest());
+        taskStateListener.propertyChange(UUID.randomUUID(), new TaskState(Enums.TaskStateName.ACTIVE, null));
 
         verifyNoInteractions(factory);
         verifyNoInteractions(jmsCommunicator);
@@ -53,14 +52,9 @@ class TaskStateListenerTest {
         when(tasksPool.findById(any())).thenReturn(task);
         when(factory.getModifier(any())).thenReturn(taskStateModifier);
 
-        taskStateListener.propertyChange(getNewRequest());
+        taskStateListener.propertyChange(UUID.randomUUID(), new TaskState(Enums.TaskStateName.ACTIVE, null));
 
         verify(taskStateModifier, times(1)).updateState(eq(task), any());
         verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
-    }
-
-    private TaskStateChangeRequest getNewRequest() {
-        TaskState requestedState = new TaskState(Enums.TaskStateName.ACTIVE, null);
-        return new TaskStateChangeRequest(UUID.randomUUID(), requestedState);
     }
 }

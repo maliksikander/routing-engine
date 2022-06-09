@@ -1,9 +1,11 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
+import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.MrdDeleteConflictResponse;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.dto.TaskDto;
+import com.ef.mediaroutingengine.exceptions.ForbiddenException;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.AgentMrdState;
@@ -142,6 +144,12 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             throw new NotFoundException(errorMessage);
         }
 
+        if (id.equals(Constants.VOICE_MRD_ID)) {
+            String errorMessage = "Update operation is forbidden for the VOICE MRD";
+            logger.error(errorMessage);
+            throw new ForbiddenException(errorMessage);
+        }
+
         mediaRoutingDomain.setId(id);
 
         this.updatePrecisionQueues(mediaRoutingDomain, id);
@@ -207,6 +215,12 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             String errorMessage = "Could not find the MRD resource to delete | MRD: " + id;
             logger.error(errorMessage);
             throw new NotFoundException(errorMessage);
+        }
+
+        if (id.equals(Constants.VOICE_MRD_ID)) {
+            String errorMessage = "Delete operation is forbidden for the VOICE MRD";
+            logger.error(errorMessage);
+            throw new ForbiddenException(errorMessage);
         }
 
         List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository.findByMrdId(id);

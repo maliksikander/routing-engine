@@ -27,4 +27,8 @@ public final class Constants {
      * The constant MDC_CORRELATION_ID.
      */
     public static final String MDC_CORRELATION_ID = "correlationId";
+    /**
+     * The constant VOICE_MRD_ID.
+     */
+    public static final String VOICE_MRD_ID = "6298b744b777de61844f616b";
 }
