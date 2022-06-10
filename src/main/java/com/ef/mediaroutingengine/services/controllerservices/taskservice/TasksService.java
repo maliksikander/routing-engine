@@ -137,9 +137,9 @@ public class TasksService {
     }
 
     private TaskDto assignExternalTask(Agent agent, MediaRoutingDomain mrd, TaskState taskState) {
-        if (agent.getVoiceReservedTask() != null) {
-            throw new ConflictException("This Agent is already reserved for an external task");
-        }
+//        if (agent.getVoiceReservedTask() != null) {
+//            throw new ConflictException("This Agent is already reserved for an external task");
+//        }
 
         Task task = createTask(agent, mrd, taskState, null);
         agent.setVoiceReservedTask(task);
