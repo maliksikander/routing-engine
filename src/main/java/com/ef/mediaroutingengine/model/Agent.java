@@ -1,10 +1,14 @@
 package com.ef.mediaroutingengine.model;
 
+import com.ef.cim.objectmodel.AgentMrdState;
+import com.ef.cim.objectmodel.AgentState;
+import com.ef.cim.objectmodel.AssociatedMrd;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
-import com.ef.mediaroutingengine.commons.Enums;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -95,6 +99,18 @@ public class Agent {
         this.associatedRoutingAttributes.clear();
         ccUser.getAssociatedRoutingAttributes().forEach(o ->
                 associatedRoutingAttributes.put(o.getRoutingAttribute().getId(), o));
+
+        this.updateMaxAgentTaskInAgentMrdStates(ccUser);
+    }
+
+    private void updateMaxAgentTaskInAgentMrdStates(CCUser ccUser) {
+        ccUser.getAssociatedMrds().forEach(associatedMrd -> {
+            AgentMrdState agentMrdState = this.agentMrdStates.get(associatedMrd.getMrdId());
+            if (agentMrdState != null && agentMrdState.getMaxAgentTasks() != associatedMrd.getMaxAgentTasks()) {
+                agentMrdState.setMaxAgentTasks(associatedMrd.getMaxAgentTasks());
+                this.agentMrdStates.put(associatedMrd.getMrdId(), agentMrdState);
+            }
+        });
     }
 
     /**
@@ -361,6 +377,7 @@ public class Agent {
         ccUser.setId(this.getId());
         ccUser.setKeycloakUser(this.keycloakUser);
         ccUser.setAssociatedRoutingAttributes(getAssociatedRoutingAttributesList());
+        ccUser.setAssociatedMrds(getAssociatedMrdsList());
         return ccUser;
     }
 
@@ -373,6 +390,20 @@ public class Agent {
         List<AssociatedRoutingAttribute> associatedRoutingAttributeList = new ArrayList<>();
         this.associatedRoutingAttributes.forEach((k, v) -> associatedRoutingAttributeList.add(v));
         return associatedRoutingAttributeList;
+    }
+
+    /**
+     * Gets associated MRDs list.
+     *
+     * @return the associated MRDs list
+     */
+    private List<AssociatedMrd> getAssociatedMrdsList() {
+        List<AssociatedMrd> associatedMrdList = new ArrayList<>();
+        this.getAgentMrdStates().forEach(
+                agentMrdState -> associatedMrdList.add(
+                        new AssociatedMrd(agentMrdState.getMrd().getId(), agentMrdState.getMaxAgentTasks()))
+        );
+        return associatedMrdList;
     }
 
     /**

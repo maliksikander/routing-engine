@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.mockcontrollers;
 
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

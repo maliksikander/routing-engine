@@ -5,9 +5,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.model.TaskState;
 import org.junit.jupiter.api.Test;
 
 class TaskStateOtherTest {

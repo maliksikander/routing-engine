@@ -1,9 +1,9 @@
 package com.ef.mediaroutingengine.eventlisteners.taskstate;
 
 import com.ef.cim.objectmodel.RoutingMode;
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import org.slf4j.Logger;

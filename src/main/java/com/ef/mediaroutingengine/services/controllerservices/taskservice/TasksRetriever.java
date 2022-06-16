@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.services.controllerservices.taskservice;
 
-import com.ef.mediaroutingengine.dto.TaskDto;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import java.util.List;
 
 /**

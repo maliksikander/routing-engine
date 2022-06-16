@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.eventlisteners.agentstate;
 
+import com.ef.cim.objectmodel.AgentState;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.AgentState;
 
 /**
  * The interface Agent state delegate.

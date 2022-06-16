@@ -3,11 +3,11 @@ package com.ef.mediaroutingengine.services.jms;
 import com.ef.cim.objectmodel.CimEvent;
 import com.ef.cim.objectmodel.CimEventName;
 import com.ef.cim.objectmodel.CimEventType;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.commons.Constants;
-import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.StateChangeEvent;
-import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.services.utilities.AdapterUtility;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -140,7 +140,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
                 task.setTaskStateFromMarkedForDeletion();
             }
 
-            String messageStr = this.getSerializedCimEvent(new TaskDto(task), task.getTopicId());
+            String messageStr = this.getSerializedCimEvent(AdapterUtility.createTaskDtoFrom(task), task.getTopicId());
             TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
             messageToSend.setText(messageStr);
 

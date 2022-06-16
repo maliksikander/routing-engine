@@ -1,9 +1,9 @@
 package com.ef.mediaroutingengine.repositories;
 
+import com.ef.cim.objectmodel.AgentMrdState;
+import com.ef.cim.objectmodel.AgentPresence;
+import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.CCUser;
-import com.ef.mediaroutingengine.model.AgentMrdState;
-import com.ef.mediaroutingengine.model.AgentPresence;
-import com.ef.mediaroutingengine.model.AgentState;
 import com.ef.mediaroutingengine.services.redis.RedisClient;
 import com.ef.mediaroutingengine.services.redis.RedisJsonDao;
 import java.sql.Timestamp;

@@ -1,8 +1,9 @@
 package com.ef.mediaroutingengine.services.controllerservices.taskservice;
 
-import com.ef.mediaroutingengine.dto.TaskDto;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
+import com.ef.mediaroutingengine.services.utilities.AdapterUtility;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -37,7 +38,7 @@ public class RetrieveByAgent implements TasksRetriever {
         for (Task task : tasksPool.findAll()) {
             UUID assignedTo = task.getAssignedTo();
             if (assignedTo != null && assignedTo.equals(agentId)) {
-                result.add(new TaskDto(task));
+                result.add(AdapterUtility.createTaskDtoFrom(task));
             }
         }
         return result;

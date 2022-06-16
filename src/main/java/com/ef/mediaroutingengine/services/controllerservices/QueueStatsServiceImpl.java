@@ -1,12 +1,12 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.mediaroutingengine.dto.QueueAgentStats;
 import com.ef.mediaroutingengine.dto.QueueStatsDto;
 import com.ef.mediaroutingengine.dto.QueueTaskStats;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;

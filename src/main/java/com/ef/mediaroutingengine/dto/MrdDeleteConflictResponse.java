@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.dto;
 
-import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import java.util.List;
 
 /**

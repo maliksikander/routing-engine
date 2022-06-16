@@ -1,5 +1,8 @@
 package com.ef.mediaroutingengine.model;
 
+import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.StepEntity;
 import com.ef.mediaroutingengine.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.services.TaskRouter;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;

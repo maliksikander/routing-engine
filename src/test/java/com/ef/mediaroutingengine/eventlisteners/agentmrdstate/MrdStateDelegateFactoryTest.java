@@ -3,7 +3,7 @@ package com.ef.mediaroutingengine.eventlisteners.agentmrdstate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.Enums;
 import org.junit.jupiter.api.Test;
 
 class MrdStateDelegateFactoryTest {

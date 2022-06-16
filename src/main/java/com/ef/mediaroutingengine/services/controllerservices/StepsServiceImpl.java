@@ -1,22 +1,23 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
+import com.ef.cim.objectmodel.ExpressionEntity;
+import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.RoutingAttribute;
+import com.ef.cim.objectmodel.StepEntity;
+import com.ef.cim.objectmodel.TermEntity;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
-import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.model.ExpressionEntity;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
-import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Step;
-import com.ef.mediaroutingengine.model.StepEntity;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.model.TaskStep;
-import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.RoutingAttributesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
+import com.ef.mediaroutingengine.services.utilities.AdapterUtility;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -199,7 +200,7 @@ public class StepsServiceImpl implements StepsService {
             logger.info("Could not Delete Step {} from Queue {}, there are tasks associated to Queue with "
                     + "only one step configured", id, queueId);
             List<TaskDto> taskDtoList = new ArrayList<>();
-            tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
+            tasks.forEach(task -> taskDtoList.add(AdapterUtility.createTaskDtoFrom(task)));
             return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
         }
     }

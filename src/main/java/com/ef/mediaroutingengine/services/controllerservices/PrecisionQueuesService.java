@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
+import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.dto.PrecisionQueueRequestBody;
-import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 

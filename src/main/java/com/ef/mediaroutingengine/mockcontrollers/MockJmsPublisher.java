@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.mockcontrollers;
 
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.dto.StateChangeEvent;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.fasterxml.jackson.core.JsonProcessingException;

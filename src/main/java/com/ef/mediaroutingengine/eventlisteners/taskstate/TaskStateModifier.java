@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.eventlisteners.taskstate;
 
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.model.TaskState;
 
 /**
  * The interface Task state modifier.

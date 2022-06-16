@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.dto;
 
 import com.ef.cim.objectmodel.CCUser;
-import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import java.util.List;
 
 /**

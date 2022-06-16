@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.dto;
 
 import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.mediaroutingengine.model.TaskState;
+import com.ef.cim.objectmodel.TaskState;
 import java.util.UUID;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

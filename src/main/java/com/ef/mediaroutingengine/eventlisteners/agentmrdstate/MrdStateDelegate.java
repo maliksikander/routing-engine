@@ -1,8 +1,8 @@
 package com.ef.mediaroutingengine.eventlisteners.agentmrdstate;
 
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.AgentMrdState;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.AgentMrdState;
 
 /**
  * The interface Mrd state delegate.

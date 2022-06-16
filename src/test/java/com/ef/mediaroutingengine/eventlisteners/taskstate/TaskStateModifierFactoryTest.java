@@ -2,7 +2,7 @@ package com.ef.mediaroutingengine.eventlisteners.taskstate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;

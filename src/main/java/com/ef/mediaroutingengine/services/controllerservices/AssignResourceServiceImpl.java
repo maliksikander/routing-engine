@@ -1,10 +1,10 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.dto.AssignResourceRequest;
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;

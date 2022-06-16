@@ -2,10 +2,9 @@ package com.ef.mediaroutingengine.bootstrap;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.repositories.MediaRoutingDomainRepository;

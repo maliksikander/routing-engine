@@ -11,9 +11,13 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import com.ef.cim.objectmodel.AgentMrdState;
+import com.ef.cim.objectmodel.AssociatedMrd;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.RoutingAttributeType;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
@@ -29,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,10 +43,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 @ExtendWith(MockitoExtension.class)
+@ExtendWith(OutputCaptureExtension.class)
 class AgentsServiceImplTest {
     AgentsServiceImpl agentsService;
     @Mock
@@ -56,11 +64,14 @@ class AgentsServiceImplTest {
     private PrecisionQueuesPool precisionQueuesPool;
     @Mock
     private AgentPresenceRepository agentPresenceRepository;
+    @Mock
+    private AgentStateService agentStateService;
 
     @BeforeEach
     void setUp() {
-        this.agentsService = new AgentsServiceImpl(repository, routingAttributesPool, agentsPool,
-                mrdPool, precisionQueuesPool, agentPresenceRepository);
+        this.agentsService =
+                new AgentsServiceImpl(repository, routingAttributesPool, agentsPool, mrdPool, precisionQueuesPool,
+                        agentPresenceRepository, agentStateService);
     }
 
 
@@ -101,6 +112,7 @@ class AgentsServiceImplTest {
         @Test
         void when_updateSuccessful() {
             CCUser ccUser = getNewCcUser();
+            String mrdId = ccUser.getAssociatedMrds().get(0).getMrdId();
             UUID id = ccUser.getKeycloakUser().getId();
 
             AgentsServiceImpl spy = Mockito.spy(agentsService);
@@ -110,6 +122,7 @@ class AgentsServiceImplTest {
 
             Agent agent = mock(Agent.class);
             when(agentsPool.findById(id)).thenReturn(agent);
+            when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.BUSY));
 
             spy.update(ccUser, id);
 
@@ -119,7 +132,7 @@ class AgentsServiceImplTest {
 
             verify(agentPresenceRepository, times(1)).updateCcUser(ccUser);
             verify(precisionQueuesPool, times(1)).evaluateOnUpdateForAll(agent);
-            verify(repository,times(1)).save(ccUser);
+            verify(repository, times(1)).save(ccUser);
         }
     }
 
@@ -208,6 +221,51 @@ class AgentsServiceImplTest {
         }
     }
 
+    @Test
+    void test_saveUpdatedAgentInDb(CapturedOutput output) {
+        CCUser agent = getNewCcUser();
+        agentsService.saveUpdatedAgentInDb(agent);
+        verify(repository, times(1)).save(agent);
+        Assertions.assertThat(output).contains("Agent updated in Agents config DB");
+    }
+
+    @Test
+    void test_setAssociatedMrdsAndMaxAgentTasks() {
+        CCUser agent = getNewCcUser();
+        List<AgentMrdState> agentMrdStates = List.of(getAgentMrdState(Enums.AgentMrdStateName.ACTIVE));
+        agentsService.setAssociatedMrdsAndMaxAgentTasks(agent, agentMrdStates);
+        assertEquals(2, agent.getAssociatedMrds().size());
+    }
+
+    @Test
+    void test_updateAgentMrdStateToBusy_whenActivePushTaskGreaterOrEqualToMrdMaxRequests(CapturedOutput output) {
+        CCUser ccUser = getNewCcUser();
+        String mrdId = ccUser.getAssociatedMrds().get(0).getMrdId();
+        Agent agent = mock(Agent.class);
+
+        when(agentsPool.findById(ccUser.getId())).thenReturn(agent);
+        when(agent.getNoOfActivePushTasks(mrdId)).thenReturn(12);
+        when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.ACTIVE));
+
+        agentsService.updateAgentMrdState(ccUser);
+        Assertions.assertThat(output).contains("MRD state has been changed from ACTIVE to BUSY.");
+    }
+
+    @Test
+    void test_updateAgentMrdStateToActive_whenActivePushTaskLessThanMrdMaxRequests(CapturedOutput output) {
+        CCUser ccUser = getNewCcUser();
+        String mrdId = ccUser.getAssociatedMrds().get(0).getMrdId();
+        Agent agent = mock(Agent.class);
+
+        when(agentsPool.findById(ccUser.getId())).thenReturn(agent);
+        when(agent.getNoOfActivePushTasks(mrdId)).thenReturn(3);
+        when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.BUSY));
+
+        agentsService.updateAgentMrdState(ccUser);
+        Assertions.assertThat(output).contains("MRD state has been changed from BUSY to ACTIVE.");
+
+    }
+
 
     private CCUser getNewCcUser() {
         List<AssociatedRoutingAttribute> attributes = new ArrayList<>();
@@ -216,6 +274,10 @@ class AgentsServiceImplTest {
         CCUser ccUser = new CCUser();
         ccUser.setKeycloakUser(getNewKeyClockUser());
         ccUser.setAssociatedRoutingAttributes(attributes);
+        ccUser.setId(ccUser.getKeycloakUser().getId());
+
+        AssociatedMrd associatedMrd = new AssociatedMrd(UUID.randomUUID().toString(), 5);
+        ccUser.addAssociatedMrd(associatedMrd);
         return ccUser;
     }
 
@@ -240,5 +302,14 @@ class AgentsServiceImplTest {
         associatedRoutingAttribute.setRoutingAttribute(getNewAttribute(name, type));
         associatedRoutingAttribute.setValue(value);
         return associatedRoutingAttribute;
+    }
+
+    private AgentMrdState getAgentMrdState(Enums.AgentMrdStateName state) {
+        AgentMrdState agentMrdState = new AgentMrdState();
+        MediaRoutingDomain mediaRoutingDomain = new MediaRoutingDomainsServiceImplTest().getMrdInstance(UUID.randomUUID().toString());
+        agentMrdState.setMrd(mediaRoutingDomain);
+        agentMrdState.setState(state);
+        agentMrdState.setMaxAgentTasks(10);
+        return agentMrdState;
     }
 }

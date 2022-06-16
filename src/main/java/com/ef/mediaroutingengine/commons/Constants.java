@@ -31,4 +31,9 @@ public final class Constants {
      * The constant VOICE_MRD_ID.
      */
     public static final String VOICE_MRD_ID = "6298b744b777de61844f616b";
+
+    /**
+     * The constant UTILITY_CLASS.
+     */
+    public static final String UTILITY_CLASS = "Utility classes having static members can't instantiated.";
 }

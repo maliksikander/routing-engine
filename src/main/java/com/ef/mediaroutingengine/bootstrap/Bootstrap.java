@@ -1,22 +1,22 @@
 package com.ef.mediaroutingengine.bootstrap;
 
+import com.ef.cim.objectmodel.AgentMrdState;
+import com.ef.cim.objectmodel.AgentPresence;
+import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.ExpressionEntity;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.RoutingMode;
+import com.ef.cim.objectmodel.StepEntity;
+import com.ef.cim.objectmodel.TermEntity;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.commons.Constants;
-import com.ef.mediaroutingengine.commons.Enums;
-import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.AgentMrdState;
-import com.ef.mediaroutingengine.model.AgentPresence;
-import com.ef.mediaroutingengine.model.AgentState;
-import com.ef.mediaroutingengine.model.ExpressionEntity;
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
-import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
-import com.ef.mediaroutingengine.model.StepEntity;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.repositories.MediaRoutingDomainRepository;
@@ -109,19 +109,19 @@ public class Bootstrap {
     /**
      * Default Constructor. Loads the dependency beans.
      *
-     * @param agentsRepository               Agents config repository DAO
-     * @param mediaRoutingDomainRepository   Media-routing-domains config repository DAO
-     * @param precisionQueueRepository Precision-Queues config repository DAO
-     * @param tasksRepository                Tasks Repository DAO
-     * @param agentPresenceRepository        AgentPresence Repository DAO
-     * @param routingAttributeRepository     the routing attribute repository
-     * @param agentsPool                     Agents Pool bean
-     * @param mrdPool                        MRD Pool bean
-     * @param precisionQueuesPool            Precision-Queues Pool bean
-     * @param routingAttributesPool          the routing attributes pool
-     * @param tasksPool                      Tasks pool bean
-     * @param taskManager                    the task manager
-     * @param jmsCommunicator                JMS Communicator
+     * @param agentsRepository             Agents config repository DAO
+     * @param mediaRoutingDomainRepository Media-routing-domains config repository DAO
+     * @param precisionQueueRepository     Precision-Queues config repository DAO
+     * @param tasksRepository              Tasks Repository DAO
+     * @param agentPresenceRepository      AgentPresence Repository DAO
+     * @param routingAttributeRepository   the routing attribute repository
+     * @param agentsPool                   Agents Pool bean
+     * @param mrdPool                      MRD Pool bean
+     * @param precisionQueuesPool          Precision-Queues Pool bean
+     * @param routingAttributesPool        the routing attributes pool
+     * @param tasksPool                    Tasks pool bean
+     * @param taskManager                  the task manager
+     * @param jmsCommunicator              JMS Communicator
      */
     @Autowired
     public Bootstrap(AgentsRepository agentsRepository,
@@ -377,6 +377,7 @@ public class Bootstrap {
             AgentMrdState agentMrdStateInList = agentMrdStates.get(i);
             if (agentMrdStateInAgentPresence.getMrd().getId().equals(agentMrdStateInList.getMrd().getId())) {
                 agentMrdStateInAgentPresence.setMrd(agentMrdStateInList.getMrd());
+                agentMrdStateInAgentPresence.setMaxAgentTasks(agentMrdStateInList.getMaxAgentTasks());
                 agentMrdStates.set(i, agentMrdStateInAgentPresence);
                 break;
             }

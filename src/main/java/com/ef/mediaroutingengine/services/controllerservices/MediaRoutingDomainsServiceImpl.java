@@ -1,17 +1,20 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
+import com.ef.cim.objectmodel.AgentMrdState;
+import com.ef.cim.objectmodel.AgentPresence;
+import com.ef.cim.objectmodel.AssociatedMrd;
+import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.commons.Constants;
-import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.MrdDeleteConflictResponse;
+import com.ef.mediaroutingengine.dto.MrdUpdateConflictResponse;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
-import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.exceptions.ForbiddenException;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.AgentMrdState;
-import com.ef.mediaroutingengine.model.AgentPresence;
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
-import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.repositories.MediaRoutingDomainRepository;
@@ -20,10 +23,14 @@ import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
+import com.ef.mediaroutingengine.services.utilities.AdapterUtility;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,6 +83,11 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     private final TasksRepository tasksRepository;
 
     /**
+     * The Agent Service Impl.
+     */
+    private final AgentsServiceImpl agentsService;
+
+    /**
      * Constructor, Autowired, loads the beans.
      *
      * @param repository               to communicate with MRD collection in DB
@@ -91,7 +103,8 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
                                           PrecisionQueueRepository precisionQueueRepository,
                                           TasksPool tasksPool, MrdPool mrdPool, AgentsPool agentsPool,
                                           AgentPresenceRepository agentPresenceRepository,
-                                          TasksRepository tasksRepository) {
+                                          TasksRepository tasksRepository,
+                                          AgentsServiceImpl agentsService) {
         this.repository = repository;
         this.precisionQueueRepository = precisionQueueRepository;
         this.tasksPool = tasksPool;
@@ -99,6 +112,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         this.agentsPool = agentsPool;
         this.agentPresenceRepository = agentPresenceRepository;
         this.tasksRepository = tasksRepository;
+        this.agentsService = agentsService;
     }
 
     @Override
@@ -123,6 +137,11 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         }
         this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
         logger.debug("MRD associated to all Agents in Agent presence Repository | MRD: {}", inserted.getId());
+
+        //Add newly added MRD as Associated MRD for all agents in DB
+        addMrdAsAssociatedMrdForAllAgentsInDb(inserted);
+        logger.debug("MRD has been saved as Associated MRD for all agents in DB | MRD: {}", inserted.getId());
+
         // Insert in MRD config DB
         logger.info("MRD successfully created | MRD: {}", inserted.getId());
         return inserted;
@@ -135,7 +154,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
 
     @Override
     @Transactional
-    public MediaRoutingDomain update(MediaRoutingDomain mediaRoutingDomain, String id) {
+    public ResponseEntity<Object> update(MediaRoutingDomain mediaRoutingDomain, String id) {
         logger.info("Update MRD request initiated for MRD: {}", id);
 
         if (!this.repository.existsById(id)) {
@@ -151,6 +170,20 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         }
 
         mediaRoutingDomain.setId(id);
+        List<CCUser> agentsWithConflictedMaxTask =
+                getAgentsWithConflictedMaxTasks(id, mediaRoutingDomain.getMaxRequests());
+
+        if (!agentsWithConflictedMaxTask.isEmpty()) {
+            logger.debug("agentsWithConflictedMaxTask = {} against MRD ID : {}", agentsWithConflictedMaxTask.size(),
+                    id);
+            String reason = new StringBuilder("Failed to update the MRD : ").append(mediaRoutingDomain.getName())
+                    .append(".Because the following agents have MaxTask against this MRD which are greater than ")
+                    .append("the new MRD maxRequest value i.e. ").append(mediaRoutingDomain.getMaxRequests())
+                    .append(".Please update the agentMaxTask before updating the MRD MaxRequest.").toString();
+
+            return new ResponseEntity<>(new MrdUpdateConflictResponse(mediaRoutingDomain.getName(), reason,
+                    agentsWithConflictedMaxTask), HttpStatus.CONFLICT);
+        }
 
         this.updatePrecisionQueues(mediaRoutingDomain, id);
         logger.debug("MRD updated in precision-queues inside PrecisionQueue Config DB | MRD: {}", id);
@@ -168,7 +201,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         logger.debug("MRD updated in MRD Config DB");
 
         logger.info("MRD updated successfully | MRD: {}", id);
-        return savedInDb;
+        return new ResponseEntity<>(savedInDb, HttpStatus.OK);
     }
 
     /**
@@ -235,6 +268,9 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             deleteAgentMrdStateFromAllAgentPresence(id);
             logger.debug("AgentMrdState deleted from Agents in Agent Presence Repository | MRD: {}", id);
 
+            deleteAssociatedMrdForAllAgentsFromDb(id);
+            logger.debug("AssociatedMrd deleted for all Agents in DB | MRD: {}", id);
+
             this.mrdPool.deleteById(id);
             logger.debug("MRD deleted from in-memory MRD pool | MRD: {}", id);
 
@@ -248,7 +284,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
 
         logger.info("Could not delete MRD: {}. It is associated to queues or tasks", id);
         List<TaskDto> taskDtoList = new ArrayList<>();
-        tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
+        tasks.forEach(task -> taskDtoList.add(AdapterUtility.createTaskDtoFrom(task)));
         return new ResponseEntity<>(new MrdDeleteConflictResponse(precisionQueueEntities, taskDtoList),
                 HttpStatus.CONFLICT);
     }
@@ -301,5 +337,72 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             }
             this.precisionQueueRepository.saveAll(precisionQueueEntities);
         }
+    }
+
+    /**
+     * This method will return a list of Agents ,
+     * who's maxAgentTask against the MRD (which is supposed to be updated) is greater than the maxMrdRequest.
+     */
+    List<CCUser> getAgentsWithConflictedMaxTasks(String mrdId, int maxRequest) {
+        List<CCUser> agentsWithConflictedMaxTasks = new ArrayList<>();
+        List<Agent> agents = agentsPool.findAll();
+
+        agents.forEach(agent -> {
+            AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
+            if (agentMrdState != null
+                    && isMaxAgentTasksGreaterThanMrdMaxRequestValue(agent.getId(), agentMrdState.getMaxAgentTasks(),
+                    maxRequest)) {
+                agentsWithConflictedMaxTasks.add(agent.toCcUser());
+            }
+        });
+
+        return agentsWithConflictedMaxTasks;
+    }
+
+    /**
+     * This method will return TRUE
+     * if an agent's maxTasks value against an MRD is greater than new MRDs maxRequest Value.
+     */
+    boolean isMaxAgentTasksGreaterThanMrdMaxRequestValue(UUID agentId, int maxAgentTask, int mrdMaxRequest) {
+        logger.trace("isMaxAgentTasksGreaterThanMrdMaxRequestValue started. |");
+        if (maxAgentTask > mrdMaxRequest) {
+            logger.info("The agent ID : {} has maxAgentTask = {} which are greater than mrdMaxRequest = {}", agentId,
+                    maxAgentTask, mrdMaxRequest);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Add newly added MRD as Associated MRD for all agents in DB.
+     */
+    void addMrdAsAssociatedMrdForAllAgentsInDb(@NotNull MediaRoutingDomain mediaRoutingDomain) {
+        AssociatedMrd associatedMrd =
+                new AssociatedMrd(mediaRoutingDomain.getId(), mediaRoutingDomain.getMaxRequests());
+
+        List<CCUser> agentsFromDb = agentsService.retrieve();
+        agentsFromDb.forEach(agent -> {
+            agent.addAssociatedMrd(associatedMrd);
+            agentsService.saveUpdatedAgentInDb(agent);
+        });
+    }
+
+    /**
+     * Delete associated MRD for all agents in DB.
+     */
+    void deleteAssociatedMrdForAllAgentsFromDb(String mrdId) {
+        List<CCUser> agentsFromDb = agentsService.retrieve();
+        agentsFromDb.forEach(agent -> {
+            AtomicInteger position = new AtomicInteger(-1);
+            agent.getAssociatedMrds().forEach(associatedMrd -> {
+                if (associatedMrd.getMrdId().equals(mrdId)) {
+                    position.set(agent.getAssociatedMrds().indexOf(associatedMrd));
+                }
+            });
+            if (position.get() != -1) {
+                agent.getAssociatedMrds().remove(position.get());
+                agentsService.saveUpdatedAgentInDb(agent);
+            }
+        });
     }
 }

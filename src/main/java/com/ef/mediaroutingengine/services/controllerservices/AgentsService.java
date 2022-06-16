@@ -32,7 +32,7 @@ public interface AgentsService {
      * @param id    the id
      * @return the cc user
      */
-    CCUser update(CCUser agent, UUID id);
+    ResponseEntity<Object> update(CCUser agent, UUID id);
 
     /**
      * Delete.

@@ -58,7 +58,7 @@ public class PriorityQueue {
      */
     public Task dequeue(boolean poll) {
         for (int i = this.noOfQueueLevels; i >= 1; i--) {
-            if (this.multiLevelQueueMap.get(i).size() > 0) {
+            if (!this.multiLevelQueueMap.get(i).isEmpty()) {
                 return poll
                         ? this.multiLevelQueueMap.get(i).poll()
                         : this.multiLevelQueueMap.get(i).peek();
@@ -106,7 +106,7 @@ public class PriorityQueue {
             for (Iterator<?> it = queue.iterator(); it.hasNext(); ) {
                 Task iter = (Task) it.next();
                 System.out.println(iter);
-                if (iter.getId().equals(taskId)) {
+                if (iter.getId().toString().equals(taskId)) {
                     index = previousQueuesSize + k;
                     return index;
                 }
@@ -127,7 +127,7 @@ public class PriorityQueue {
         for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
             for (Iterator<?> it = entry.getValue().iterator(); it.hasNext(); ) {
                 Task iter = (Task) it.next();
-                if (iter.getId().equals(taskId)) {
+                if (iter.getId().toString().equals(taskId)) {
                     return iter;
                 }
             }

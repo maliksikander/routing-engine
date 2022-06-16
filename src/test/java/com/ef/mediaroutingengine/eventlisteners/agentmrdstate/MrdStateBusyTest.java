@@ -2,17 +2,17 @@ package com.ef.mediaroutingengine.eventlisteners.agentmrdstate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.AgentMrdState;
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.Nested;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)

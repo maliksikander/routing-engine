@@ -1,8 +1,8 @@
 package com.ef.mediaroutingengine.mockcontrollers;
 
-import com.ef.mediaroutingengine.commons.Enums;
-import com.ef.mediaroutingengine.dto.TaskDto;
-import com.ef.mediaroutingengine.model.TaskState;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

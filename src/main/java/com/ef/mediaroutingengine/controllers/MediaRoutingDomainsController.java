@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.controllers;
 
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.mediaroutingengine.services.controllerservices.MediaRoutingDomainsService;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +72,7 @@ public class MediaRoutingDomainsController {
     @PutMapping(value = "/media-routing-domains/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateMediaRoutingDomain(
             @Valid @RequestBody MediaRoutingDomain requestBody, @PathVariable String id) {
-        return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
+        return this.service.update(requestBody, id);
     }
 
     /**

@@ -1,9 +1,10 @@
 package com.ef.mediaroutingengine.services.controllerservices.taskservice;
 
-import com.ef.mediaroutingengine.commons.Enums;
-import com.ef.mediaroutingengine.dto.TaskDto;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
+import com.ef.mediaroutingengine.services.utilities.AdapterUtility;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -45,7 +46,7 @@ public class RetrieveByAgentAndState implements TasksRetriever {
             UUID assignedTo = task.getAssignedTo();
             if (assignedTo != null && assignedTo.equals(this.agentId)
                     && task.getTaskState().getName().equals(this.stateName)) {
-                result.add(new TaskDto(task));
+                result.add(AdapterUtility.createTaskDtoFrom(task));
             }
         }
         return result;

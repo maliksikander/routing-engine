@@ -1,5 +1,7 @@
 package com.ef.mediaroutingengine.model;
 
+import com.ef.cim.objectmodel.ExpressionEntity;
+import com.ef.cim.objectmodel.TermEntity;
 import java.util.ArrayList;
 import java.util.List;
 
