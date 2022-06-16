@@ -10,10 +10,8 @@ import com.ef.mediaroutingengine.model.Expression;
 import com.ef.mediaroutingengine.model.Step;
 import com.ef.mediaroutingengine.model.Term;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 
 class MyTesting {

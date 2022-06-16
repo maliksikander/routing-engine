@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.controllers;
 
-import com.ef.mediaroutingengine.model.StepEntity;
+import com.ef.cim.objectmodel.StepEntity;
 import com.ef.mediaroutingengine.services.controllerservices.StepsService;
 import java.util.UUID;
 import javax.validation.Valid;

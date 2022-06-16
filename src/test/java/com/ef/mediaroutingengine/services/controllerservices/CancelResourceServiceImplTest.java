@@ -12,12 +12,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.dto.CancelResourceRequest;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.TaskRouter;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;

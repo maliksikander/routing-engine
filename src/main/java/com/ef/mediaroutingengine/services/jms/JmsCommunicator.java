@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.services.jms;
 
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.model.Task;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.Serializable;

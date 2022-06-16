@@ -1,8 +1,8 @@
 package com.ef.mediaroutingengine.services.pools;
 
+import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
-import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.services.TaskRouter;
 import java.util.ArrayList;

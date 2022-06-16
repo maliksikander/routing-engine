@@ -1,18 +1,17 @@
 package com.ef.mediaroutingengine.services.utilities;
 
+import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.commons.Constants;
-import com.ef.mediaroutingengine.commons.Enums;
-import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.eventlisteners.agentstate.AgentStateListener;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.AgentState;
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
@@ -125,17 +124,18 @@ public class TaskManager {
         String mrdId = task.getMrd().getId();
         Enums.AgentMrdStateName currentMrdState = agent.getAgentMrdState(mrdId).getState();
         int noOfTasks = agent.getNoOfActivePushTasks(mrdId);
+        int maxAgentTasks = agent.getAgentMrdState(mrdId).getMaxAgentTasks();
 
         if (currentMrdState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY) && noOfTasks < 1) {
             this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.NOT_READY, true);
         } else if (currentMrdState.equals(Enums.AgentMrdStateName.BUSY)) {
             if (noOfTasks == 0) {
                 this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.READY, true);
-            } else if (noOfTasks < task.getMrd().getMaxRequests()) {
+            } else if (noOfTasks < maxAgentTasks) {
                 this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, true);
             }
         } else if (currentMrdState.equals(Enums.AgentMrdStateName.ACTIVE)) {
-            if (noOfTasks >= task.getMrd().getMaxRequests()) {
+            if (noOfTasks >= maxAgentTasks) {
                 this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.BUSY, true);
             } else if (noOfTasks < 1) {
                 this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.READY, true);
@@ -171,8 +171,7 @@ public class TaskManager {
      */
     public void updateAgentMrdState(Agent agent, String mrdId) {
         int noOfActiveTasks = agent.getNoOfActivePushTasks(mrdId);
-        int maxRequestAllowed = agent.getAgentMrdState(mrdId).getMrd().getMaxRequests();
-
+        int maxRequestAllowed = agent.getAgentMrdState(mrdId).getMaxAgentTasks();
         if (noOfActiveTasks >= maxRequestAllowed) {
             this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.BUSY, false);
         } else if (noOfActiveTasks == 1) {
@@ -225,7 +224,7 @@ public class TaskManager {
         this.tasksPool.add(task);
         logger.debug("Task: {} added in tasks pool", task.getId());
 
-        this.tasksRepository.save(task.getId().toString(), new TaskDto(task));
+        this.tasksRepository.save(task.getId().toString(), AdapterUtility.createTaskDtoFrom(task));
         logger.debug("Task: {} saved in tasks repository", task.getId());
     }
 

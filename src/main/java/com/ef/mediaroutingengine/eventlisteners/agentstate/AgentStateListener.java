@@ -1,11 +1,11 @@
 package com.ef.mediaroutingengine.eventlisteners.agentstate;
 
+import com.ef.cim.objectmodel.AgentPresence;
+import com.ef.cim.objectmodel.AgentState;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.commons.Constants;
-import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.AgentPresence;
-import com.ef.mediaroutingengine.model.AgentState;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import java.util.concurrent.CompletableFuture;

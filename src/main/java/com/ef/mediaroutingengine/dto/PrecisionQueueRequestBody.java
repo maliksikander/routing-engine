@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.dto;
 
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;

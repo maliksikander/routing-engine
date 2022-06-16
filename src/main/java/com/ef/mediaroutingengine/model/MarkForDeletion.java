@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.model;
 
-import com.ef.mediaroutingengine.commons.Enums;
+
+import com.ef.cim.objectmodel.Enums;
 
 /**
  * The type Mark for deletion.

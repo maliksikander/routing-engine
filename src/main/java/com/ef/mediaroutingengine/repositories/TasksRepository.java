@@ -1,8 +1,8 @@
 package com.ef.mediaroutingengine.repositories;
 
 import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.mediaroutingengine.dto.TaskDto;
-import com.ef.mediaroutingengine.model.TaskState;
+import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.services.redis.RedisClient;
 import com.ef.mediaroutingengine.services.redis.RedisJsonDao;
 import java.util.UUID;

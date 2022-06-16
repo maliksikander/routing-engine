@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.model;
 
 import com.ef.cim.objectmodel.RoutingAttribute;
+import com.ef.cim.objectmodel.TermEntity;
 
 /**
  * The type Term.

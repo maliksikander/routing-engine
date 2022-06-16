@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.dto;
 
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.Enums;
 import java.util.UUID;
 import javax.validation.constraints.NotNull;
 

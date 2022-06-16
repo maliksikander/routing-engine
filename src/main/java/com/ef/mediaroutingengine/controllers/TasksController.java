@@ -1,18 +1,18 @@
 package com.ef.mediaroutingengine.controllers;
 
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.dto.PullAssignTaskRequest;
-import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.dto.UpdateTaskRequest;
 import com.ef.mediaroutingengine.eventlisteners.taskstate.TaskStateListener;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.services.controllerservices.taskservice.TasksService;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
+import com.ef.mediaroutingengine.services.utilities.AdapterUtility;
 import java.util.Optional;
 import java.util.UUID;
 import javax.validation.Valid;
@@ -96,7 +96,7 @@ public class TasksController {
         if (updatedTask == null) {
             throw new NotFoundException("No task found for id: " + taskId);
         }
-        return ResponseEntity.ok().body(new TaskDto(updatedTask));
+        return ResponseEntity.ok().body(AdapterUtility.createTaskDtoFrom(updatedTask));
     }
 
     @PostMapping("/{taskId}/update")

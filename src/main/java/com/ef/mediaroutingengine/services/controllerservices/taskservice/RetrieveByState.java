@@ -1,9 +1,10 @@
 package com.ef.mediaroutingengine.services.controllerservices.taskservice;
 
-import com.ef.mediaroutingengine.commons.Enums;
-import com.ef.mediaroutingengine.dto.TaskDto;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
+import com.ef.mediaroutingengine.services.utilities.AdapterUtility;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +37,7 @@ public class RetrieveByState implements TasksRetriever {
         List<TaskDto> result = new ArrayList<>();
         for (Task task : this.tasksPool.findAll()) {
             if (task.getTaskState().getName().equals(this.stateName)) {
-                result.add(new TaskDto(task));
+                result.add(AdapterUtility.createTaskDtoFrom(task));
             }
         }
         return result;

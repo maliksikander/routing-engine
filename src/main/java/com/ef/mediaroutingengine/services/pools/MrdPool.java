@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.services.pools;
 
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

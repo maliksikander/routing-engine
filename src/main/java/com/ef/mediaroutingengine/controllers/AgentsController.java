@@ -71,7 +71,7 @@ public class AgentsController {
     @PutMapping(value = "/agents/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> updateAgent(@PathVariable UUID id,
                                               @Valid @RequestBody CCUser requestBody) {
-        return new ResponseEntity<>(this.service.update(requestBody, id), HttpStatus.OK);
+        return this.service.update(requestBody, id);
     }
 
     /**

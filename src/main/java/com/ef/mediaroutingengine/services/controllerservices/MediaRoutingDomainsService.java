@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 
@@ -31,13 +31,13 @@ public interface MediaRoutingDomainsService {
      * @param id                 the id
      * @return the media routing domain
      */
-    MediaRoutingDomain update(MediaRoutingDomain mediaRoutingDomain, String id);
-
+    ResponseEntity<Object> update(MediaRoutingDomain mediaRoutingDomain, String id);
     /**
      * Delete MRD.
      *
      * @param id the id
      * @return Http response entity
      */
+
     ResponseEntity<Object> delete(String id);
 }

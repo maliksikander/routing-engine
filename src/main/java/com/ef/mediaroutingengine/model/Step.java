@@ -3,6 +3,8 @@ package com.ef.mediaroutingengine.model;
 import static com.ef.mediaroutingengine.services.utilities.StepCriteriaBuilder.buildCriteria;
 import static com.ef.mediaroutingengine.services.utilities.StepCriteriaEvaluator.evaluate;
 
+import com.ef.cim.objectmodel.ExpressionEntity;
+import com.ef.cim.objectmodel.StepEntity;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;

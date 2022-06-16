@@ -2,13 +2,13 @@ package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.ExpressionEntity;
+import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.RoutingAttribute;
+import com.ef.cim.objectmodel.StepEntity;
+import com.ef.cim.objectmodel.TermEntity;
 import com.ef.mediaroutingengine.dto.RoutingAttributeDeleteConflictResponse;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.model.ExpressionEntity;
-import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
-import com.ef.mediaroutingengine.model.StepEntity;
-import com.ef.mediaroutingengine.model.TermEntity;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.repositories.RoutingAttributeRepository;

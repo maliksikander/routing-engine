@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.dto;
 
-import com.ef.mediaroutingengine.model.AgentPresence;
+import com.ef.cim.objectmodel.AgentPresence;
 import java.io.Serializable;
 
 /**

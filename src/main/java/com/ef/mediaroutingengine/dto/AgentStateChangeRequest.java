@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.dto;
 
-import com.ef.mediaroutingengine.model.AgentState;
+import com.ef.cim.objectmodel.AgentState;
 import java.util.UUID;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;

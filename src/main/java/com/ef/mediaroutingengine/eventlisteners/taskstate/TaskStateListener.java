@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.eventlisteners.taskstate;
 
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import java.util.UUID;

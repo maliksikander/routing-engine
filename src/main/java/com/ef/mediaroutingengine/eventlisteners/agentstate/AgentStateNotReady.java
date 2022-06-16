@@ -1,9 +1,9 @@
 package com.ef.mediaroutingengine.eventlisteners.agentstate;
 
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.AgentMrdState;
+import com.ef.cim.objectmodel.AgentState;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.AgentMrdState;
-import com.ef.mediaroutingengine.model.AgentState;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import java.util.List;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;

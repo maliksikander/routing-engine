@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
-import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
-import com.ef.mediaroutingengine.model.StepEntity;
+import com.ef.cim.objectmodel.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.StepEntity;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 

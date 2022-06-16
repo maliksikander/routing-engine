@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.services.pools;
 
-import com.ef.mediaroutingengine.commons.Enums;
+
+import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.model.Task;
 import java.util.ArrayList;
 import java.util.List;

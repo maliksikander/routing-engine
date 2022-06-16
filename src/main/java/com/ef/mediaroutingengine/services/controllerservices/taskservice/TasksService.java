@@ -1,19 +1,19 @@
 package com.ef.mediaroutingengine.services.controllerservices.taskservice;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
-import com.ef.mediaroutingengine.commons.Enums;
-import com.ef.mediaroutingengine.dto.TaskDto;
+import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.dto.UpdateTaskRequest;
-import com.ef.mediaroutingengine.exceptions.ConflictException;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.model.TaskState;
 import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
+import com.ef.mediaroutingengine.services.utilities.AdapterUtility;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -63,7 +63,7 @@ public class TasksService {
     public TaskDto retrieveById(UUID taskId) {
         Task task = this.tasksPool.findById(taskId);
         if (task != null) {
-            return new TaskDto(task);
+            return AdapterUtility.createTaskDtoFrom(task);
         } else {
             throw new NotFoundException("Task not found in Task pool");
         }
@@ -97,7 +97,7 @@ public class TasksService {
         task.setChannelSession(reqBody.getChannelSession());
         this.tasksRepository.updateChannelSession(taskId, reqBody.getChannelSession());
         jmsCommunicator.publishTaskStateChangeForReporting(task);
-        return new TaskDto(task);
+        return AdapterUtility.createTaskDtoFrom(task);
     }
 
     /**
@@ -125,7 +125,7 @@ public class TasksService {
         List<Task> existingTasksOnTopic = tasksPool.findByConversationId(conversationId);
         for (Task task : existingTasksOnTopic) {
             if (task.getAssignedTo().equals(agent.getId()) && task.getRoutingMode().equals(RoutingMode.PULL)) {
-                return new TaskDto(task);
+                return AdapterUtility.createTaskDtoFrom(task);
             }
         }
 
@@ -133,7 +133,7 @@ public class TasksService {
         agent.addActiveTask(task);
         this.jmsCommunicator.publishTaskStateChangeForReporting(task);
 
-        return new TaskDto(task);
+        return AdapterUtility.createTaskDtoFrom(task);
     }
 
     private TaskDto assignExternalTask(Agent agent, MediaRoutingDomain mrd, TaskState taskState) {
@@ -143,13 +143,13 @@ public class TasksService {
 
         Task task = createTask(agent, mrd, taskState, null);
         agent.setVoiceReservedTask(task);
-        return new TaskDto(task);
+        return AdapterUtility.createTaskDtoFrom(task);
     }
 
     private Task createTask(Agent agent, MediaRoutingDomain mrd, TaskState state, ChannelSession channelSession) {
         Task task = Task.getInstanceFrom(agent.getId(), mrd, state, channelSession);
         this.tasksPool.add(task);
-        this.tasksRepository.save(task.getId().toString(), new TaskDto(task));
+        this.tasksRepository.save(task.getId().toString(), AdapterUtility.createTaskDtoFrom(task));
         return task;
     }
 }

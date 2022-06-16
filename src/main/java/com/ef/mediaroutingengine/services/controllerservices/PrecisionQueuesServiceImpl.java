@@ -1,19 +1,20 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.dto.SuccessResponseBody;
-import com.ef.mediaroutingengine.dto.TaskDto;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.model.MediaRoutingDomain;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
-import com.ef.mediaroutingengine.model.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.repositories.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.services.TaskRouter;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
+import com.ef.mediaroutingengine.services.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
@@ -81,7 +82,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         this.validateAndSetMrd(requestBody);
         logger.debug("MRD validated for PrecisionQueue");
 
-        PrecisionQueueEntity inserted = repository.insert(new PrecisionQueueEntity(requestBody));
+        PrecisionQueueEntity inserted = repository.insert(AdapterUtility.createQueueEntityFrom(requestBody));
         logger.debug("PrecisionQueue inserted in PrecisionQueue Config DB | Queue: {}", inserted.getId());
 
         this.precisionQueuesPool.insert(new PrecisionQueue(inserted, getTaskSchedulerBean()));
@@ -122,7 +123,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         }
 
         PrecisionQueueEntity precisionQueueEntity = existing.get();
-        precisionQueueEntity.updateQueue(requestBody);
+        AdapterUtility.updateQueueEntityFrom(requestBody, precisionQueueEntity);
 
         this.precisionQueuesPool.findById(id).updateQueue(requestBody);
         logger.debug("PrecisionQueue updated in in-memory PrecisionQueue pool | Queue: {}", id);
@@ -162,7 +163,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
 
         logger.info("Could not delete PrecisionQueue, there are tasks associated to it | Queue: {}", id);
         List<TaskDto> taskDtoList = new ArrayList<>();
-        tasks.forEach(task -> taskDtoList.add(new TaskDto(task)));
+        tasks.forEach(task -> taskDtoList.add(AdapterUtility.createTaskDtoFrom(task)));
         return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
     }
 

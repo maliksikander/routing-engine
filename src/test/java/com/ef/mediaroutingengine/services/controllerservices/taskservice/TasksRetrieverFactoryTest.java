@@ -2,7 +2,7 @@ package com.ef.mediaroutingengine.services.controllerservices.taskservice;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.ef.mediaroutingengine.commons.Enums;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.services.pools.TasksPool;
 import java.util.Optional;
 import java.util.UUID;

@@ -1,20 +1,23 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
+import com.ef.cim.objectmodel.AgentPresence;
+import com.ef.cim.objectmodel.AgentState;
+import com.ef.cim.objectmodel.AssociatedMrd;
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.mediaroutingengine.commons.Enums;
 import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
 import com.ef.mediaroutingengine.dto.AgentStateChangeRequest;
 import com.ef.mediaroutingengine.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.eventlisteners.agentstate.AgentStateListener;
 import com.ef.mediaroutingengine.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.model.Agent;
-import com.ef.mediaroutingengine.model.AgentPresence;
-import com.ef.mediaroutingengine.model.AgentState;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
 import com.ef.mediaroutingengine.repositories.AgentsRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -105,7 +108,20 @@ public class AgentStateService {
         CCUser ccUser = new CCUser();
         ccUser.setId(keycloakUser.getId());
         ccUser.setKeycloakUser(keycloakUser);
+        ccUser.setAssociatedMrds(getAssociatedMrds());
         return ccUser;
+    }
+
+    /**
+     * Get associated MRDs including all MRDs in the pool.
+     */
+    private List<AssociatedMrd> getAssociatedMrds() {
+        List<AssociatedMrd> associatedMrds = new ArrayList<>();
+        this.mrdPool.findAll().forEach(
+                mediaRoutingDomain -> associatedMrds.add(
+                        new AssociatedMrd(mediaRoutingDomain.getId(), mediaRoutingDomain.getMaxRequests()))
+        );
+        return associatedMrds;
     }
 
     /**
