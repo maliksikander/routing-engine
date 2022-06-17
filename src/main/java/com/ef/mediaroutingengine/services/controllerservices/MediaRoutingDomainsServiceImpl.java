@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.AgentPresence;
-import com.ef.cim.objectmodel.AssociatedMrd;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
@@ -29,8 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -138,8 +135,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
         logger.debug("MRD associated to all Agents in Agent presence Repository | MRD: {}", inserted.getId());
 
-        //Add newly added MRD as Associated MRD for all agents in DB
-        addMrdAsAssociatedMrdForAllAgentsInDb(inserted);
+        this.updateAllAgentsInDb();
         logger.debug("MRD has been saved as Associated MRD for all agents in DB | MRD: {}", inserted.getId());
 
         // Insert in MRD config DB
@@ -280,7 +276,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             deleteAgentMrdStateFromAllAgentPresence(id);
             logger.debug("AgentMrdState deleted from Agents in Agent Presence Repository | MRD: {}", id);
 
-            deleteAssociatedMrdForAllAgentsFromDb(id);
+            this.updateAllAgentsInDb();
             logger.debug("AssociatedMrd deleted for all Agents in DB | MRD: {}", id);
 
             this.mrdPool.deleteById(id);
@@ -357,7 +353,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      */
     List<CCUser> getAgentsWithConflictedMaxTasks(String mrdId, int maxRequest) {
         List<CCUser> agentsWithConflictedMaxTasks = new ArrayList<>();
-        List<Agent> agents = agentsPool.findAll();
+        List<Agent> agents = this.agentsPool.findAll();
 
         agents.forEach(agent -> {
             AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
@@ -386,35 +382,11 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     }
 
     /**
-     * Add newly added MRD as Associated MRD for all agents in DB.
+     * This will update all agents in DB.
      */
-    void addMrdAsAssociatedMrdForAllAgentsInDb(@NotNull MediaRoutingDomain mediaRoutingDomain) {
-        AssociatedMrd associatedMrd =
-                new AssociatedMrd(mediaRoutingDomain.getId(), mediaRoutingDomain.getMaxRequests());
-
-        List<CCUser> agentsFromDb = agentsService.retrieve();
-        agentsFromDb.forEach(agent -> {
-            agent.addAssociatedMrd(associatedMrd);
-            agentsService.saveUpdatedAgentInDb(agent);
-        });
-    }
-
-    /**
-     * Delete associated MRD for all agents in DB.
-     */
-    void deleteAssociatedMrdForAllAgentsFromDb(String mrdId) {
-        List<CCUser> agentsFromDb = agentsService.retrieve();
-        agentsFromDb.forEach(agent -> {
-            AtomicInteger position = new AtomicInteger(-1);
-            agent.getAssociatedMrds().forEach(associatedMrd -> {
-                if (associatedMrd.getMrdId().equals(mrdId)) {
-                    position.set(agent.getAssociatedMrds().indexOf(associatedMrd));
-                }
-            });
-            if (position.get() != -1) {
-                agent.getAssociatedMrds().remove(position.get());
-                agentsService.saveUpdatedAgentInDb(agent);
-            }
-        });
+    void updateAllAgentsInDb() {
+        List<Agent> agents = this.agentsPool.findAll();
+        agents.forEach(agent -> agentsService.saveUpdatedAgentInDb(agent.toCcUser()));
+        logger.debug("All Agents has been updated in DB. |");
     }
 }

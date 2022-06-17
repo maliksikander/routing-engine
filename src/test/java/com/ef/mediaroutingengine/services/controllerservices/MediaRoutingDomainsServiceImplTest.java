@@ -28,6 +28,7 @@ import com.ef.mediaroutingengine.services.pools.TasksPool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -36,8 +37,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 @ExtendWith(MockitoExtension.class)
+@ExtendWith(OutputCaptureExtension.class)
 class MediaRoutingDomainsServiceImplTest {
     @Mock
     private MediaRoutingDomainRepository repository;
@@ -145,12 +149,18 @@ class MediaRoutingDomainsServiceImplTest {
     }
 
     @Test
-    void test_addMrdAsAssociatedMrdForAllAgentsInDb() {
-        List<CCUser> ccUsers = new ArrayList<>();
-        ccUsers.add(getCcUserInstance(UUID.randomUUID().toString()));
-        when(agentsService.retrieve()).thenReturn(ccUsers);
-        mediaRoutingDomainsService.addMrdAsAssociatedMrdForAllAgentsInDb(getMrdInstance(UUID.randomUUID().toString()));
-        assertEquals(2, agentsService.retrieve().get(0).getAssociatedMrds().size());
+    void test_addMrdAsAssociatedMrdForAllAgentsInDb(CapturedOutput output) {
+        String mrdId = UUID.randomUUID().toString();
+        Agent agent = new Agent(getCcUserInstance(mrdId));
+        AgentMrdState agentMrdState = new AgentMrdState(getMrdInstance(mrdId), Enums.AgentMrdStateName.NOT_READY);
+        agent.addAgentMrdState(agentMrdState);
+
+        List<Agent> agentList = new ArrayList<>();
+        agentList.add(agent);
+        when(agentsPool.findAll()).thenReturn(agentList);
+
+        mediaRoutingDomainsService.updateAllAgentsInDb();
+        Assertions.assertThat(output).contains("All Agents has been updated in DB.");
     }
 
     @Test
@@ -178,21 +188,26 @@ class MediaRoutingDomainsServiceImplTest {
     }
 
     @Test
-    void test_deleteAssociatedMrdForAllAgentsFromDb() {
-        CCUser agent = getCcUserInstance(UUID.randomUUID().toString());
-        List<CCUser> ccUsers = new ArrayList<>();
-        ccUsers.add(agent);
+    void test_deleteAssociatedMrdForAllAgentsFromDb(CapturedOutput output) {
+        String mrdId = UUID.randomUUID().toString();
+        Agent agent = new Agent(getCcUserInstance(mrdId));
+        agent.deleteAgentMrdState(mrdId);
 
-        when(agentsService.retrieve()).thenReturn(ccUsers);
+        List<Agent> agentList = new ArrayList<>();
+        agentList.add(agent);
+        when(agentsPool.findAll()).thenReturn(agentList);
 
-        mediaRoutingDomainsService.deleteAssociatedMrdForAllAgentsFromDb(agent.getAssociatedMrds().get(0).getMrdId());
-        assertEquals(0, agentsService.retrieve().get(0).getAssociatedMrds().size());
+        mediaRoutingDomainsService.updateAllAgentsInDb();
+        assertEquals(0, agentsPool.findAll().get(0).getAgentMrdStates().size());
+
+        Assertions.assertThat(output).contains("All Agents has been updated in DB.");
     }
 
     private List<AgentMrdState> getAgentMrdStateList(int size) {
         List<AgentMrdState> agentMrdStates = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            agentMrdStates.add(new AgentMrdState(getMrdInstance(UUID.randomUUID().toString()), Enums.AgentMrdStateName.NOT_READY));
+            agentMrdStates.add(
+                    new AgentMrdState(getMrdInstance(UUID.randomUUID().toString()), Enums.AgentMrdStateName.NOT_READY));
         }
         return agentMrdStates;
     }
