@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.dto.PrecisionQueueRequestBody;
-import java.util.List;
 import org.springframework.http.ResponseEntity;
 
 /**
@@ -23,7 +22,7 @@ public interface PrecisionQueuesService {
      *
      * @return the list
      */
-    List<PrecisionQueueEntity> retrieve();
+    ResponseEntity<Object> retrieve(String queueId);
 
     /**
      * Update precision queue entity.

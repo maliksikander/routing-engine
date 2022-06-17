@@ -55,9 +55,9 @@ public class MediaRoutingDomainsController {
      * @return list of all MRDs as response-body with status-code 200.
      */
     @CrossOrigin(origins = "*")
-    @GetMapping(value = "/media-routing-domains", produces = "application/json")
-    public ResponseEntity<Object> retrieveMediaRoutingDomains() {
-        return new ResponseEntity<>(this.service.retrieve(), HttpStatus.OK);
+    @GetMapping(value = {"/media-routing-domains", "/media-routing-domains/{mrdId}"}, produces = "application/json")
+    public ResponseEntity<Object> retrieveMediaRoutingDomains(@PathVariable(required = false) String mrdId) {
+        return this.service.retrieve(mrdId);
     }
 
     /**

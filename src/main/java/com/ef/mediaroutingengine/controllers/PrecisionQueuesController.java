@@ -53,9 +53,9 @@ public class PrecisionQueuesController {
      * @return list of all PrecisionQueues as response-body with status-code 200.
      */
     @CrossOrigin(origins = "*")
-    @GetMapping(value = "/precision-queues", produces = "application/json")
-    public ResponseEntity<Object> retrieve() {
-        return new ResponseEntity<>(this.service.retrieve(), HttpStatus.OK);
+    @GetMapping(value = {"/precision-queues", "/precision-queues/{queueId}"}, produces = "application/json")
+    public ResponseEntity<Object> retrieve(@PathVariable(required = false) String queueId) {
+        return this.service.retrieve(queueId);
     }
 
     /**
