@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -55,8 +56,9 @@ public class MediaRoutingDomainsController {
      * @return list of all MRDs as response-body with status-code 200.
      */
     @CrossOrigin(origins = "*")
-    @GetMapping(value = {"/media-routing-domains", "/media-routing-domains/{mrdId}"}, produces = "application/json")
-    public ResponseEntity<Object> retrieveMediaRoutingDomains(@PathVariable(required = false) String mrdId) {
+    @GetMapping(value = "/media-routing-domains", produces = "application/json")
+    public ResponseEntity<Object> retrieveMediaRoutingDomains(
+            @RequestParam(required = false, value = "mrdId") String mrdId) {
         return this.service.retrieve(mrdId);
     }
 
