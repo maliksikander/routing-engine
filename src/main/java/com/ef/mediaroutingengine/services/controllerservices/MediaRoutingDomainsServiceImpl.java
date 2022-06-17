@@ -148,8 +148,20 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
     }
 
     @Override
-    public List<MediaRoutingDomain> retrieve() {
-        return repository.findAll();
+    public ResponseEntity<Object> retrieve(String mrdId) {
+        if (mrdId != null && !repository.existsById(mrdId)) {
+            String errorMessage = "Could not find the MRD resource with id: " + mrdId;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
+        }
+
+        if (mrdId != null && repository.existsById(mrdId)) {
+            MediaRoutingDomain mediaRoutingDomain = this.repository.findById(mrdId).get();
+            logger.debug("MRD existed in DB. | MRD: {}", mediaRoutingDomain);
+            return new ResponseEntity<>(mediaRoutingDomain, HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(repository.findAll(), HttpStatus.OK);
     }
 
     @Override

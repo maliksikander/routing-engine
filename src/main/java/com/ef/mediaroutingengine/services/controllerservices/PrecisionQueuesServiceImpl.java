@@ -103,8 +103,19 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     }
 
     @Override
-    public List<PrecisionQueueEntity> retrieve() {
-        return this.repository.findAll();
+    public ResponseEntity<Object> retrieve(String queueId) {
+        if (queueId != null && !repository.existsById(queueId)) {
+            String errorMessage = "Could not find the PrecisionQueue resource with id: " + queueId;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
+        }
+
+        if (queueId != null && repository.existsById(queueId)) {
+            PrecisionQueueEntity precisionQueue = this.repository.findById(queueId).get();
+            logger.debug("PrecisionQueue existed in DB. | PrecisionQueue:  {}", precisionQueue);
+            return new ResponseEntity<>(precisionQueue, HttpStatus.OK);
+        }
+        return new ResponseEntity<>(repository.findAll(), HttpStatus.OK);
     }
 
     @Override
