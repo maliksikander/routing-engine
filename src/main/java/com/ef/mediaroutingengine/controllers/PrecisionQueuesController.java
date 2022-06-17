@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -53,8 +54,8 @@ public class PrecisionQueuesController {
      * @return list of all PrecisionQueues as response-body with status-code 200.
      */
     @CrossOrigin(origins = "*")
-    @GetMapping(value = {"/precision-queues", "/precision-queues/{queueId}"}, produces = "application/json")
-    public ResponseEntity<Object> retrieve(@PathVariable(required = false) String queueId) {
+    @GetMapping(value = "/precision-queues", produces = "application/json")
+    public ResponseEntity<Object> retrieve(@RequestParam(required = false, value = "queueId") String queueId) {
         return this.service.retrieve(queueId);
     }
 
