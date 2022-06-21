@@ -148,6 +148,11 @@ public class TasksService {
 
     private Task createTask(Agent agent, MediaRoutingDomain mrd, TaskState state, ChannelSession channelSession) {
         Task task = Task.getInstanceFrom(agent.getId(), mrd, state, channelSession);
+
+        if (state.getName().equals(Enums.TaskStateName.ACTIVE)) {
+            task.setStartTime(System.currentTimeMillis());
+        }
+
         this.tasksPool.add(task);
         this.tasksRepository.save(task.getId().toString(), AdapterUtility.createTaskDtoFrom(task));
         return task;

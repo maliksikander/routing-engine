@@ -25,13 +25,18 @@ public final class AdapterUtility {
     public static TaskDto createTaskDtoFrom(Task task) {
         TaskDto taskDto = new TaskDto();
         taskDto.setId(task.getId());
+
         taskDto.setChannelSession(task.getChannelSession());
         taskDto.setMrd(task.getMrd());
         taskDto.setQueue(task.getQueue());
+
         taskDto.setPriority(task.getPriority());
         taskDto.setState(task.getTaskState());
         taskDto.setAssignedTo(task.getAssignedTo());
+
         taskDto.setEnqueueTime(task.getEnqueueTime());
+        taskDto.setAnswerTime(task.getStartTime());
+        taskDto.setHandleTime(task.getHandlingTime());
         return taskDto;
     }
 

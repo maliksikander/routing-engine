@@ -57,7 +57,7 @@ public class TaskStateModifierFactory {
         if (state.equals(Enums.TaskStateName.CLOSED)) {
             return new TaskStateClose(tasksRepository, precisionQueuesPool, taskManager);
         } else if (state.equals(Enums.TaskStateName.ACTIVE)) {
-            return new TaskStateActive(taskManager, agentsPool);
+            return new TaskStateActive(taskManager, agentsPool, tasksRepository);
         } else {
             return new TaskStateOther();
         }

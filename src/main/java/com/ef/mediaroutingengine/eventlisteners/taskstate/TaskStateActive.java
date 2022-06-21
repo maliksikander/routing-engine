@@ -4,7 +4,9 @@ import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
+import com.ef.mediaroutingengine.services.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,7 @@ public class TaskStateActive implements TaskStateModifier {
      * The Agents pool.
      */
     private final AgentsPool agentsPool;
+    private final TasksRepository tasksRepository;
 
     /**
      * Default Constructor. Loads the dependencies.
@@ -36,9 +39,11 @@ public class TaskStateActive implements TaskStateModifier {
      * @param agentsPool  pool of all agents
      */
     @Autowired
-    public TaskStateActive(TaskManager taskManager, AgentsPool agentsPool) {
+    public TaskStateActive(TaskManager taskManager, AgentsPool agentsPool,
+                           TasksRepository tasksRepository) {
         this.taskManager = taskManager;
         this.agentsPool = agentsPool;
+        this.tasksRepository = tasksRepository;
     }
 
     @Override
@@ -51,6 +56,8 @@ public class TaskStateActive implements TaskStateModifier {
 
         task.setTaskState(state);
         task.setStartTime(System.currentTimeMillis());
+
+        this.tasksRepository.save(task.getId().toString(), AdapterUtility.createTaskDtoFrom(task));
 
         RoutingMode routingMode = task.getRoutingMode();
 

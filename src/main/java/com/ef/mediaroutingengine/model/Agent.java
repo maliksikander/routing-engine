@@ -168,16 +168,7 @@ public class Agent {
      */
     public void removeTask(Task task) {
         String mrdId = task.getMrd().getId();
-        List<Task> taskList = this.activeTasks.get(mrdId);
-        if (taskList.contains(task)) {
-            if (task.getStartTime() != null) {
-                task.setHandlingTime(System.currentTimeMillis() - task.getStartTime());
-            } else {
-                task.setHandlingTime(0L);
-            }
-            task.setStartTime(System.currentTimeMillis());
-            taskList.remove(task);
-        }
+        this.activeTasks.get(mrdId).remove(task);
     }
 
     /**

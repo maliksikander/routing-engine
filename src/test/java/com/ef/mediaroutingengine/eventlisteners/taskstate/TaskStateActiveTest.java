@@ -15,6 +15,7 @@ import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.Task;
+import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.pools.AgentsPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.util.UUID;
@@ -31,10 +32,12 @@ class TaskStateActiveTest {
     private TaskManager taskManager;
     @Mock
     private AgentsPool agentsPool;
+    @Mock
+    private TasksRepository tasksRepository;
 
     @BeforeEach
     void setUp() {
-        this.taskStateActive = new TaskStateActive(taskManager, agentsPool);
+        this.taskStateActive = new TaskStateActive(taskManager, agentsPool, tasksRepository);
     }
 
     @Test
@@ -61,6 +64,7 @@ class TaskStateActiveTest {
 
         when(task.getAssignedTo()).thenReturn(UUID.randomUUID());
         when(agentsPool.findById(any())).thenReturn(agent);
+        when(task.getId()).thenReturn(UUID.randomUUID());
         when(task.getTopicId()).thenReturn(topicId).thenReturn(topicId);
         when(task.getMrd()).thenReturn(mrd);
         when(task.getRoutingMode()).thenReturn(RoutingMode.PUSH);
@@ -69,12 +73,12 @@ class TaskStateActiveTest {
 
         verify(task, times(1)).setTaskState(taskState);
         verify(task, times(1)).setStartTime(anyLong());
+        verify(tasksRepository, times(1)).save(any(), any());
         verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(topicId);
         verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(topicId);
         verify(agent, times(1)).assignPushTask(task);
         verify(taskManager, times(1)).updateAgentMrdState(agent, mrd.getId());
 
-        verifyNoMoreInteractions(task);
         verifyNoMoreInteractions(taskManager);
         verifyNoMoreInteractions(agent);
 
