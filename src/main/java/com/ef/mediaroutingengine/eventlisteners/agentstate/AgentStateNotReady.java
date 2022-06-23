@@ -44,7 +44,10 @@ public class AgentStateNotReady implements AgentStateDelegate {
         if (currentState.equals(Enums.AgentStateName.READY)) {
             List<String> exceptTheseMrd = this.getMrdWithReservedTasks(agent);
 
-            agent.setState(newState);
+            if (exceptTheseMrd.isEmpty()) {
+                agent.setState(newState);
+            }
+
             this.updateAgentMrdStates(agent, exceptTheseMrd);
 
             this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());
