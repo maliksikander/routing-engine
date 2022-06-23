@@ -1,20 +1,17 @@
 package com.ef.mediaroutingengine.eventlisteners.taskstate;
 
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.model.Task;
-import com.ef.mediaroutingengine.repositories.TasksRepository;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
+import java.util.UUID;
 
 /**
  * The type Task state close.
  */
 public class TaskStateClose implements TaskStateModifier {
-    /**
-     * The Tasks repository.
-     */
-    private final TasksRepository tasksRepository;
     /**
      * The Precision queues pool.
      */
@@ -27,13 +24,10 @@ public class TaskStateClose implements TaskStateModifier {
     /**
      * Default constructor. Loads the dependencies.
      *
-     * @param tasksRepository     Tasks Repository DAO
      * @param precisionQueuesPool Pool of all precision queues
      * @param taskManager         handles tasks closing.
      */
-    public TaskStateClose(TasksRepository tasksRepository, PrecisionQueuesPool precisionQueuesPool,
-                          TaskManager taskManager) {
-        this.tasksRepository = tasksRepository;
+    public TaskStateClose(PrecisionQueuesPool precisionQueuesPool, TaskManager taskManager) {
         this.precisionQueuesPool = precisionQueuesPool;
         this.taskManager = taskManager;
     }
@@ -42,14 +36,24 @@ public class TaskStateClose implements TaskStateModifier {
     @Override
     public void updateState(Task task, TaskState state) {
         task.setTaskState(state);
+
         this.precisionQueuesPool.endTask(task);
+        this.taskManager.removeFromPoolAndRepository(task);
 
         if (state.getReasonCode() == null || !state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA)) {
+            if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
+                UUID topicId = task.getTopicId();
+                this.taskManager.cancelAgentRequestTtlTimerTask(topicId);
+                this.taskManager.removeAgentRequestTtlTimerTask(topicId);
+            }
+
             this.taskManager.endTaskFromAssignedAgent(task);
-            this.tasksRepository.deleteById(task.getId().toString());
-            this.taskManager.removeTask(task);
-        } else if (state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA)) {
-            this.taskManager.endTaskFromAgentOnRona(task);
+            return;
+        }
+
+        // Close with Rona
+        this.taskManager.endTaskFromAgentOnRona(task);
+        if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
             this.taskManager.rerouteReservedTask(task);
         }
     }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -53,36 +54,11 @@ class AgentStateNotReadyTest {
         when(agent.getNoOfActivePushTasks(agentMrdStateList.get(1).getMrd().getId())).thenReturn(0);
         when(agent.getNoOfActivePushTasks(agentMrdStateList.get(2).getMrd().getId())).thenReturn(2);
 
-        this.agentStateNotReady.updateAgentMrdStates(agent);
+        this.agentStateNotReady.updateAgentMrdStates(agent, new ArrayList<>());
 
         assertEquals(Enums.AgentMrdStateName.NOT_READY, agentMrdStateList.get(0).getState());
         assertEquals(Enums.AgentMrdStateName.NOT_READY, agentMrdStateList.get(1).getState());
         assertEquals(Enums.AgentMrdStateName.PENDING_NOT_READY, agentMrdStateList.get(2).getState());
-    }
-
-    @Test
-    void test_updateReadyStateToNotReady() {
-        List<AgentMrdState> agentMrdStateList = new ArrayList<>();
-        agentMrdStateList.add(new AgentMrdState(getNewMrd("Chat"), Enums.AgentMrdStateName.NOT_READY));
-
-        Agent agent = getNewAgent();
-        agent.setAgentMrdStates(agentMrdStateList);
-
-        AgentState newState = new AgentState(Enums.AgentStateName.NOT_READY, null);
-        AgentStateNotReady spy = Mockito.spy(agentStateNotReady);
-
-        // No need to test the updateAgentMrdStates. it is already tested.
-        when(spy.updateAgentMrdStates(agent)).thenReturn(agentMrdStateList);
-        spy.updateReadyStateToNotReady(agent, newState);
-
-        // Assert that new state has been set for the agent
-        assertEquals(newState, agent.getState());
-        // verify correct calls to the repository are made
-        verify(agentPresenceRepository, times(1))
-                .updateAgentState(agent.getId(), newState);
-        verify(agentPresenceRepository, times(1))
-                .updateAgentMrdStateList(agent.getId(), agentMrdStateList);
-        verifyNoMoreInteractions(this.agentPresenceRepository);
     }
 
     @Test
@@ -93,10 +69,18 @@ class AgentStateNotReadyTest {
         AgentState newState = new AgentState(Enums.AgentStateName.NOT_READY, null);
 
         AgentStateNotReady spy = Mockito.spy(agentStateNotReady);
-        // no need to test readyToNotReady method again, it is already tested.
-        doNothing().when(spy).updateReadyStateToNotReady(agent, newState);
+        List<String> mrdStateExceptionList = new ArrayList<>();
 
-        assertTrue(spy.updateState(agent, newState));
+        doReturn(mrdStateExceptionList).when(spy).getMrdWithReservedTasks(agent);
+        doNothing().when(spy).updateAgentMrdStates(agent, mrdStateExceptionList);
+
+        boolean isUpdated = spy.updateState(agent, newState);
+
+        verify(agentPresenceRepository, times(1)).updateAgentState(agent.getId(), newState);
+        verify(agentPresenceRepository, times(1)).updateAgentMrdStateList(agent.getId(),
+                agent.getAgentMrdStates());
+
+        assertTrue(isUpdated);
     }
 
     @Test
@@ -111,8 +95,7 @@ class AgentStateNotReadyTest {
         // Assert that agent's state is updated to new state
         assertEquals(newState, agent.getState());
         // Verify that correct repository calls are made.
-        verify(this.agentPresenceRepository, times(1))
-                .updateAgentState(agent.getId(), newState);
+        verify(this.agentPresenceRepository, times(1)).updateAgentState(agent.getId(), newState);
         verifyNoMoreInteractions(this.agentPresenceRepository);
         // Assert return value is true.
         assertTrue(isStateUpdated);

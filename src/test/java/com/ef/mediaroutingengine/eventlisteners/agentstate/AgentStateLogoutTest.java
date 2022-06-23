@@ -45,7 +45,7 @@ class AgentStateLogoutTest {
     }
 
     @Test
-    void test_closeActiveTasks() {
+    void test_handleActiveTasks() {
         Agent agent = mock(Agent.class);
 
         List<Task> activeTasks = new ArrayList<>();
@@ -54,33 +54,50 @@ class AgentStateLogoutTest {
 
         when(agent.getActiveTasksList()).thenReturn(activeTasks);
 
-        this.agentStateLogout.closeActiveTasks(agent);
+        this.agentStateLogout.handleActiveTasks(agent);
 
         verify(this.taskManager, times(activeTasks.size())).removeTaskOnAgentLogout(any());
         verifyNoMoreInteractions(this.taskManager);
     }
 
     @Test
-    void test_rerouteReservedTask_when_reservedTaskIsNull() {
+    void test_handleReservedTask_when_nonVoiceReservedTaskIsNullAndVoiceReservedTaskIsNull() {
         Agent agent = mock(Agent.class);
         when(agent.getReservedTask()).thenReturn(null);
+        when(agent.getVoiceReservedTask()).thenReturn(null);
 
-        this.agentStateLogout.rerouteReservedTask(agent);
+        this.agentStateLogout.handleReservedTasks(agent);
         verifyNoInteractions(this.taskManager);
         verifyNoMoreInteractions(agent);
     }
 
     @Test
-    void test_rerouteReservedTask_when_reservedTaskIsNotNull() {
+    void test_handleReservedTask_when_nonVoiceReservedTaskIsNotNull() {
         Agent agent = mock(Agent.class);
         Task reservedTask = mock(Task.class);
 
         when(agent.getReservedTask()).thenReturn(reservedTask);
+        when(agent.getVoiceReservedTask()).thenReturn(null);
 
-        this.agentStateLogout.rerouteReservedTask(agent);
+        this.agentStateLogout.handleReservedTasks(agent);
 
+        verify(this.taskManager, times(1)).removeFromPoolAndRepository(reservedTask);
         verify(this.taskManager, times(1)).rerouteReservedTask(reservedTask);
-        verify(agent, times(1)).removeReservedTask();
+        verifyNoMoreInteractions(this.taskManager);
+        verifyNoMoreInteractions(agent);
+    }
+
+    @Test
+    void test_handleReservedTask_when_voiceReservedTaskIsNotNull() {
+        Agent agent = mock(Agent.class);
+        Task reservedTask = mock(Task.class);
+
+        when(agent.getReservedTask()).thenReturn(null);
+        when(agent.getVoiceReservedTask()).thenReturn(reservedTask);
+
+        this.agentStateLogout.handleReservedTasks(agent);
+
+        verify(this.taskManager, times(1)).removeFromPoolAndRepository(reservedTask);
         verifyNoMoreInteractions(this.taskManager);
         verifyNoMoreInteractions(agent);
     }
@@ -92,8 +109,8 @@ class AgentStateLogoutTest {
 
         spy.handleAgentTasks(agent);
 
-        verify(spy, times(1)).rerouteReservedTask(agent);
-        verify(spy, times(1)).closeActiveTasks(agent);
+        verify(spy, times(1)).handleReservedTasks(agent);
+        verify(spy, times(1)).handleActiveTasks(agent);
         verify(agent, times(1)).clearAllTasks();
     }
 

@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.eventlisteners.agentstate;
 import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
@@ -58,20 +59,29 @@ public class AgentStateLogout implements AgentStateDelegate {
      * @param agent the agent
      */
     void handleAgentTasks(Agent agent) {
-        rerouteReservedTask(agent);
-        closeActiveTasks(agent);
+        handleReservedTasks(agent);
+        handleActiveTasks(agent);
         agent.clearAllTasks();
     }
 
-    void rerouteReservedTask(Agent agent) {
-        Task reservedTask = agent.getReservedTask();
-        if (reservedTask != null) {
-            this.taskManager.rerouteReservedTask(reservedTask);
-            agent.removeReservedTask();
+    void handleReservedTasks(Agent agent) {
+        TaskState closeTaskState = new TaskState(Enums.TaskStateName.CLOSED, null);
+
+        Task nonVoiceReservedTask = agent.getReservedTask();
+        if (nonVoiceReservedTask != null) {
+            nonVoiceReservedTask.setTaskState(closeTaskState);
+            this.taskManager.removeFromPoolAndRepository(nonVoiceReservedTask);
+            this.taskManager.rerouteReservedTask(nonVoiceReservedTask);
+        }
+
+        Task voiceReservedTask = agent.getVoiceReservedTask();
+        if (voiceReservedTask != null) {
+            voiceReservedTask.setTaskState(closeTaskState);
+            this.taskManager.removeFromPoolAndRepository(voiceReservedTask);
         }
     }
 
-    void closeActiveTasks(Agent agent) {
+    void handleActiveTasks(Agent agent) {
         for (Task task : agent.getActiveTasksList()) {
             this.taskManager.removeTaskOnAgentLogout(task);
         }

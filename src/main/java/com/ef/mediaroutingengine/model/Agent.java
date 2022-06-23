@@ -223,6 +223,8 @@ public class Agent {
      */
     public void clearAllTasks() {
         this.activeTasks.replaceAll((i, v) -> Collections.synchronizedList(new ArrayList<>()));
+        this.reservedTask = null;
+        this.voiceReservedTask = null;
     }
 
     /**

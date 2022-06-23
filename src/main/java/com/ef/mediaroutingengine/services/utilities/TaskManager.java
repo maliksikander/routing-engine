@@ -157,7 +157,11 @@ public class TaskManager {
         Agent agent = this.agentsPool.findById(task.getAssignedTo());
 
         if (agent != null) {
-            agent.removeReservedTask();
+            if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
+                agent.removeReservedTask();
+            } else {
+                agent.setVoiceReservedTask(null);
+            }
             AgentState agentState = new AgentState(Enums.AgentStateName.NOT_READY, null);
             this.agentStateListener().propertyChange(agent, agentState);
         }
@@ -274,12 +278,10 @@ public class TaskManager {
      * @param currentTask the current task
      */
     public void rerouteReservedTask(Task currentTask) {
-        this.removeFromPoolAndRepository(currentTask);
         // If Agent request Ttl has ended.
         if (currentTask.isMarkedForDeletion()) {
             this.requestTtlTimers.remove(currentTask.getTopicId());
             this.restRequest.postNoAgentAvailable(currentTask.getTopicId().toString());
-            this.publishTaskForReporting(currentTask);
             return;
         }
 
@@ -307,20 +309,6 @@ public class TaskManager {
     }
 
     /**
-     * Removes the task from the pool by the task id.
-     *
-     * @param task the task to be removed
-     */
-    public void removeTask(Task task) {
-        logger.debug("Going to remove task: {}", task.getId());
-        if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
-            this.cancelAgentRequestTtlTimerTask(task.getTopicId());
-            this.requestTtlTimers.remove(task.getTopicId());
-        }
-        this.tasksPool.remove(task);
-    }
-
-    /**
      * Remove old task for reroute.
      *
      * @param task the task
@@ -328,6 +316,7 @@ public class TaskManager {
     public void removeFromPoolAndRepository(Task task) {
         this.tasksRepository.deleteById(task.getId().toString());
         this.tasksPool.remove(task);
+        this.publishTaskForReporting(task);
     }
 
     /**
@@ -347,7 +336,6 @@ public class TaskManager {
     public void removeTaskOnAgentLogout(Task task) {
         task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, null));
         this.removeFromPoolAndRepository(task);
-        this.publishTaskForReporting(task);
     }
 
     /**
