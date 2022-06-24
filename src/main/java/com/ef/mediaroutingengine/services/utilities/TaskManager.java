@@ -111,7 +111,7 @@ public class TaskManager {
             return;
         }
 
-        if (routingMode.equals(RoutingMode.PUSH)) {
+        if (routingMode.equals(RoutingMode.PUSH) || routingMode.equals(RoutingMode.EXTERNAL)) {
             this.endPushTaskFromAssignedAgent(task, agent);
         } else if (routingMode.equals(RoutingMode.PULL)) {
             this.endPullTaskFromAssignedAgent(task, agent);

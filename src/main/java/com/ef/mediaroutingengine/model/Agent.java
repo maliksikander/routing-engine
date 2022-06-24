@@ -184,7 +184,8 @@ public class Agent {
         }
         int counter = 0;
         for (Task task : taskList) {
-            if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
+            RoutingMode routingMode = task.getRoutingMode();
+            if (routingMode.equals(RoutingMode.PUSH) || routingMode.equals(RoutingMode.EXTERNAL)) {
                 counter++;
             }
         }
