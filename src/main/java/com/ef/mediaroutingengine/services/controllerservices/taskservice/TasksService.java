@@ -131,6 +131,7 @@ public class TasksService {
 
         Task task = createTask(agent, mrd, taskState, channelSession);
         agent.addActiveTask(task);
+        this.jmsCommunicator.publishTaskStateChangeForReporting(task);
 
         return AdapterUtility.createTaskDtoFrom(task);
     }
@@ -156,7 +157,6 @@ public class TasksService {
 
         this.tasksPool.add(task);
         this.tasksRepository.save(task.getId().toString(), AdapterUtility.createTaskDtoFrom(task));
-        this.jmsCommunicator.publishTaskStateChangeForReporting(task);
         return task;
     }
 }
