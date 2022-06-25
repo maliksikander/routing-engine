@@ -95,7 +95,6 @@ class TaskStateCloseTest {
 
         verify(precisionQueuesPool, times(1)).endTask(task);
         verify(taskManager, times(1)).removeFromPoolAndRepository(task);
-        verify(taskManager, times(1)).endTaskFromAgentOnRona(task);
 
         verifyNoMoreInteractions(precisionQueuesPool);
         verifyNoMoreInteractions(taskManager);

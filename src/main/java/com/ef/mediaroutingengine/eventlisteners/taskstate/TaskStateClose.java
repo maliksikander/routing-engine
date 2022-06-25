@@ -52,8 +52,8 @@ public class TaskStateClose implements TaskStateModifier {
         }
 
         // Close with Rona
-        this.taskManager.endTaskFromAgentOnRona(task);
         if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
+            this.taskManager.endTaskFromAgentOnRona(task);
             this.taskManager.rerouteReservedTask(task);
         }
     }

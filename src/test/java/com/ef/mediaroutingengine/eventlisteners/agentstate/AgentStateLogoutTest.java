@@ -7,7 +7,6 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -61,43 +60,16 @@ class AgentStateLogoutTest {
     }
 
     @Test
-    void test_handleReservedTask_when_nonVoiceReservedTaskIsNullAndVoiceReservedTaskIsNull() {
-        Agent agent = mock(Agent.class);
-        when(agent.getReservedTask()).thenReturn(null);
-        when(agent.getVoiceReservedTask()).thenReturn(null);
-
-        this.agentStateLogout.handleReservedTasks(agent);
-        verifyNoInteractions(this.taskManager);
-        verifyNoMoreInteractions(agent);
-    }
-
-    @Test
-    void test_handleReservedTask_when_nonVoiceReservedTaskIsNotNull() {
+    void test_handleReservedTask_when_reservedTaskIsNotNull() {
         Agent agent = mock(Agent.class);
         Task reservedTask = mock(Task.class);
 
         when(agent.getReservedTask()).thenReturn(reservedTask);
-        when(agent.getVoiceReservedTask()).thenReturn(null);
 
         this.agentStateLogout.handleReservedTasks(agent);
 
         verify(this.taskManager, times(1)).removeFromPoolAndRepository(reservedTask);
         verify(this.taskManager, times(1)).rerouteReservedTask(reservedTask);
-        verifyNoMoreInteractions(this.taskManager);
-        verifyNoMoreInteractions(agent);
-    }
-
-    @Test
-    void test_handleReservedTask_when_voiceReservedTaskIsNotNull() {
-        Agent agent = mock(Agent.class);
-        Task reservedTask = mock(Task.class);
-
-        when(agent.getReservedTask()).thenReturn(null);
-        when(agent.getVoiceReservedTask()).thenReturn(reservedTask);
-
-        this.agentStateLogout.handleReservedTasks(agent);
-
-        verify(this.taskManager, times(1)).removeFromPoolAndRepository(reservedTask);
         verifyNoMoreInteractions(this.taskManager);
         verifyNoMoreInteractions(agent);
     }

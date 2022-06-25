@@ -65,19 +65,11 @@ public class AgentStateLogout implements AgentStateDelegate {
     }
 
     void handleReservedTasks(Agent agent) {
-        TaskState closeTaskState = new TaskState(Enums.TaskStateName.CLOSED, null);
-
-        Task nonVoiceReservedTask = agent.getReservedTask();
-        if (nonVoiceReservedTask != null) {
-            nonVoiceReservedTask.setTaskState(closeTaskState);
-            this.taskManager.removeFromPoolAndRepository(nonVoiceReservedTask);
-            this.taskManager.rerouteReservedTask(nonVoiceReservedTask);
-        }
-
-        Task voiceReservedTask = agent.getVoiceReservedTask();
-        if (voiceReservedTask != null) {
-            voiceReservedTask.setTaskState(closeTaskState);
-            this.taskManager.removeFromPoolAndRepository(voiceReservedTask);
+        Task reservedTask = agent.getReservedTask();
+        if (reservedTask != null) {
+            reservedTask.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, null));
+            this.taskManager.removeFromPoolAndRepository(reservedTask);
+            this.taskManager.rerouteReservedTask(reservedTask);
         }
     }
 

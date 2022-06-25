@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -54,7 +53,7 @@ class AgentStateNotReadyTest {
         when(agent.getNoOfActivePushTasks(agentMrdStateList.get(1).getMrd().getId())).thenReturn(0);
         when(agent.getNoOfActivePushTasks(agentMrdStateList.get(2).getMrd().getId())).thenReturn(2);
 
-        this.agentStateNotReady.updateAgentMrdStates(agent, new ArrayList<>());
+        this.agentStateNotReady.updateAgentMrdStates(agent, null);
 
         assertEquals(Enums.AgentMrdStateName.NOT_READY, agentMrdStateList.get(0).getState());
         assertEquals(Enums.AgentMrdStateName.NOT_READY, agentMrdStateList.get(1).getState());
@@ -69,10 +68,8 @@ class AgentStateNotReadyTest {
         AgentState newState = new AgentState(Enums.AgentStateName.NOT_READY, null);
 
         AgentStateNotReady spy = Mockito.spy(agentStateNotReady);
-        List<String> mrdStateExceptionList = new ArrayList<>();
 
-        doReturn(mrdStateExceptionList).when(spy).getMrdWithReservedTasks(agent);
-        doNothing().when(spy).updateAgentMrdStates(agent, mrdStateExceptionList);
+        doNothing().when(spy).updateAgentMrdStates(agent, null);
 
         boolean isUpdated = spy.updateState(agent, newState);
 

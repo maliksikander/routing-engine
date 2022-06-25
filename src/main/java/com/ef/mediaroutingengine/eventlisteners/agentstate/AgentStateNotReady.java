@@ -5,7 +5,6 @@ import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.model.Agent;
 import com.ef.mediaroutingengine.repositories.AgentPresenceRepository;
-import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -42,13 +41,15 @@ public class AgentStateNotReady implements AgentStateDelegate {
         }
 
         if (currentState.equals(Enums.AgentStateName.READY)) {
-            List<String> exceptTheseMrd = this.getMrdWithReservedTasks(agent);
-
-            if (exceptTheseMrd.isEmpty()) {
-                agent.setState(newState);
+            if (agent.getReservedTask() != null) {
+                String exceptThisMrd = agent.getReservedTask().getMrd().getId();
+                this.updateAgentMrdStates(agent, exceptThisMrd);
+                this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
+                return false;
             }
 
-            this.updateAgentMrdStates(agent, exceptTheseMrd);
+            agent.setState(newState);
+            this.updateAgentMrdStates(agent, null);
 
             this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());
             this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
@@ -59,12 +60,12 @@ public class AgentStateNotReady implements AgentStateDelegate {
         return false;
     }
 
-    void updateAgentMrdStates(Agent agent, List<String> except) {
+    void updateAgentMrdStates(Agent agent, String except) {
         List<AgentMrdState> agentMrdStates = agent.getAgentMrdStates();
         for (AgentMrdState agentMrdState : agentMrdStates) {
             String mrdId = agentMrdState.getMrd().getId();
 
-            if (isMrdInExceptionList(mrdId, except)) {
+            if (mrdId.equals(except)) {
                 continue;
             }
 
@@ -74,31 +75,5 @@ public class AgentStateNotReady implements AgentStateDelegate {
                 agentMrdState.setState(Enums.AgentMrdStateName.NOT_READY);
             }
         }
-    }
-
-    List<String> getMrdWithReservedTasks(Agent agent) {
-        List<String> mrdListWithReservedTasks = new ArrayList<>();
-
-        if (agent.getReservedTask() != null && agent.getVoiceReservedTask() != null) {
-            mrdListWithReservedTasks.add(agent.getReservedTask().getMrd().getId());
-            mrdListWithReservedTasks.add(agent.getVoiceReservedTask().getMrd().getId());
-        } else if (agent.getReservedTask() != null) {
-            mrdListWithReservedTasks.add(agent.getReservedTask().getMrd().getId());
-        } else if (agent.getVoiceReservedTask() != null) {
-            mrdListWithReservedTasks.add(agent.getVoiceReservedTask().getMrd().getId());
-        }
-
-        return mrdListWithReservedTasks;
-
-    }
-
-    private boolean isMrdInExceptionList(String mrdId, List<String> exceptionList) {
-        for (String exception : exceptionList) {
-            if (mrdId.equals(exception)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

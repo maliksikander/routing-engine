@@ -115,6 +115,11 @@ public class Task {
                                        String queue, TaskState state) {
         Task task = new Task(UUID.randomUUID(), channelSession, mrd, queue);
         task.setTaskState(state);
+
+        if (state.getName().equals(Enums.TaskStateName.ACTIVE)) {
+            task.setStartTime(System.currentTimeMillis());
+        }
+
         return task;
     }
 

@@ -111,11 +111,12 @@ public class TaskManager {
             return;
         }
 
-        if (routingMode.equals(RoutingMode.PUSH) || routingMode.equals(RoutingMode.EXTERNAL)) {
+        if (routingMode.equals(RoutingMode.PUSH)) {
             this.endPushTaskFromAssignedAgent(task, agent);
-        } else if (routingMode.equals(RoutingMode.PULL)) {
-            this.endPullTaskFromAssignedAgent(task, agent);
+            return;
         }
+
+        this.endPullTaskFromAssignedAgent(task, agent);
     }
 
     private void endPushTaskFromAssignedAgent(Task task, Agent agent) {
@@ -157,11 +158,7 @@ public class TaskManager {
         Agent agent = this.agentsPool.findById(task.getAssignedTo());
 
         if (agent != null) {
-            if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
-                agent.removeReservedTask();
-            } else {
-                agent.setVoiceReservedTask(null);
-            }
+            agent.removeReservedTask();
             AgentState agentState = new AgentState(Enums.AgentStateName.NOT_READY, null);
             this.agentStateListener().propertyChange(agent, agentState);
         }

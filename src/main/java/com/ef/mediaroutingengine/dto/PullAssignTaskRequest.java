@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.dto;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
 import java.util.UUID;
 import javax.validation.constraints.NotNull;
@@ -25,5 +26,8 @@ public class PullAssignTaskRequest {
     private String mrdId;
     @NotNull
     private TaskState taskState;
+    @NotNull
+    private RoutingMode routingMode;
+    @NotNull
     private ChannelSession channelSession;
 }

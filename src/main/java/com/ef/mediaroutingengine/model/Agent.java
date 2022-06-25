@@ -55,7 +55,6 @@ public class Agent {
      * The Reserved task.
      */
     private Task reservedTask;
-    private Task voiceReservedTask;
 
     /**
      * Default constructor, An Agent object can only be created from a CCUser object.
@@ -142,11 +141,6 @@ public class Agent {
                 this.keycloakUser.getId(), task.getId(), this.activeTasks.size());
     }
 
-    public void assignExternalTask(Task task) {
-        this.voiceReservedTask = null;
-        this.addActiveTask(task);
-    }
-
     /**
      * Add a task to the Active tasks list.
      *
@@ -185,7 +179,7 @@ public class Agent {
         int counter = 0;
         for (Task task : taskList) {
             RoutingMode routingMode = task.getRoutingMode();
-            if (routingMode.equals(RoutingMode.PUSH) || routingMode.equals(RoutingMode.EXTERNAL)) {
+            if (routingMode.equals(RoutingMode.PUSH)) {
                 counter++;
             }
         }
@@ -201,9 +195,6 @@ public class Agent {
         List<Task> result = this.getActiveTasksList();
         if (reservedTask != null) {
             result.add(reservedTask);
-        }
-        if (voiceReservedTask != null) {
-            result.add(voiceReservedTask);
         }
         return result;
     }
@@ -225,7 +216,6 @@ public class Agent {
     public void clearAllTasks() {
         this.activeTasks.replaceAll((i, v) -> Collections.synchronizedList(new ArrayList<>()));
         this.reservedTask = null;
-        this.voiceReservedTask = null;
     }
 
     /**
@@ -339,14 +329,6 @@ public class Agent {
         return this.reservedTask;
     }
 
-    public Task getVoiceReservedTask() {
-        return voiceReservedTask;
-    }
-
-    public void setVoiceReservedTask(Task voiceReservedTask) {
-        this.voiceReservedTask = voiceReservedTask;
-    }
-
     /**
      * Returns the last ready state change time for an associated mrd state.
      *
@@ -371,7 +353,7 @@ public class Agent {
         ccUser.setId(this.getId());
         ccUser.setKeycloakUser(this.keycloakUser);
         ccUser.setAssociatedRoutingAttributes(getAssociatedRoutingAttributesList());
-        ccUser.setAssociatedMrds(getAssociatedMrdsList());
+        ccUser.setAssociatedMrds(getAssociatedMrdList());
         return ccUser;
     }
 
@@ -391,7 +373,7 @@ public class Agent {
      *
      * @return the associated MRDs list
      */
-    private List<AssociatedMrd> getAssociatedMrdsList() {
+    private List<AssociatedMrd> getAssociatedMrdList() {
         List<AssociatedMrd> associatedMrdList = new ArrayList<>();
         this.getAgentMrdStates().forEach(
                 agentMrdState -> associatedMrdList.add(

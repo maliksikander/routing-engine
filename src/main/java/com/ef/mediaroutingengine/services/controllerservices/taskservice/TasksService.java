@@ -3,7 +3,6 @@ package com.ef.mediaroutingengine.services.controllerservices.taskservice;
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.dto.UpdateTaskRequest;
@@ -111,38 +110,17 @@ public class TasksService {
      */
     public TaskDto assignTask(Agent agent, MediaRoutingDomain mrd, TaskState taskState,
                               ChannelSession channelSession) {
-        if (channelSession != null) {
-            return assignPullTask(agent, mrd, taskState, channelSession);
-        } else {
-            return assignExternalTask(agent, mrd, taskState);
-        }
-    }
-
-    private TaskDto assignPullTask(Agent agent, MediaRoutingDomain mrd,
-                                   TaskState taskState, ChannelSession channelSession) {
         UUID conversationId = channelSession.getConversationId();
 
         List<Task> existingTasksOnTopic = tasksPool.findByConversationId(conversationId);
         for (Task task : existingTasksOnTopic) {
-            if (task.getAssignedTo().equals(agent.getId()) && task.getRoutingMode().equals(RoutingMode.PULL)) {
+            if (task.getAssignedTo().equals(agent.getId())) {
                 return AdapterUtility.createTaskDtoFrom(task);
             }
         }
 
         Task task = createTask(agent, mrd, taskState, channelSession);
         agent.addActiveTask(task);
-        this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-
-        return AdapterUtility.createTaskDtoFrom(task);
-    }
-
-    private TaskDto assignExternalTask(Agent agent, MediaRoutingDomain mrd, TaskState taskState) {
-//        if (agent.getVoiceReservedTask() != null) {
-//            throw new ConflictException("This Agent is already reserved for an external task");
-//        }
-
-        Task task = createTask(agent, mrd, taskState, null);
-        agent.setVoiceReservedTask(task);
 
 
         return AdapterUtility.createTaskDtoFrom(task);
@@ -151,12 +129,10 @@ public class TasksService {
     private Task createTask(Agent agent, MediaRoutingDomain mrd, TaskState state, ChannelSession channelSession) {
         Task task = Task.getInstanceFrom(agent.getId(), mrd, state, channelSession);
 
-        if (state.getName().equals(Enums.TaskStateName.ACTIVE)) {
-            task.setStartTime(System.currentTimeMillis());
-        }
-
         this.tasksPool.add(task);
         this.tasksRepository.save(task.getId().toString(), AdapterUtility.createTaskDtoFrom(task));
+        this.jmsCommunicator.publishTaskStateChangeForReporting(task);
+
         return task;
     }
 }

@@ -59,16 +59,12 @@ public class TaskStateActive implements TaskStateModifier {
 
         this.tasksRepository.save(task.getId().toString(), AdapterUtility.createTaskDtoFrom(task));
 
-        RoutingMode routingMode = task.getRoutingMode();
-
-        if (routingMode.equals(RoutingMode.PUSH)) {
+        if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
             this.taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
             this.taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
             agent.assignPushTask(task);
-        } else if (routingMode.equals(RoutingMode.EXTERNAL)) {
-            agent.assignExternalTask(task);
-        }
 
-        this.taskManager.updateAgentMrdState(agent, task.getMrd().getId());
+            this.taskManager.updateAgentMrdState(agent, task.getMrd().getId());
+        }
     }
 }

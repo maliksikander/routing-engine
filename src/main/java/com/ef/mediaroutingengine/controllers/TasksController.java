@@ -1,7 +1,9 @@
 package com.ef.mediaroutingengine.controllers;
 
+import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.dto.PullAssignTaskRequest;
 import com.ef.mediaroutingengine.dto.UpdateTaskRequest;
@@ -116,9 +118,17 @@ public class TasksController {
         Agent agent = this.validateAndGetAgent(reqBody.getAgentId());
         MediaRoutingDomain mrd = this.validateAndGetMrd(reqBody.getMrdId());
         validateAgentHasMrdState(agent, mrd);
+        validateChannelSession(reqBody.getChannelSession());
 
-        return ResponseEntity.ok().body(this.service.assignTask(agent, mrd,
-                reqBody.getTaskState(), reqBody.getChannelSession()));
+        return ResponseEntity.ok().body(this.service.assignTask(agent, mrd, reqBody.getTaskState(),
+                reqBody.getChannelSession()));
+    }
+
+    private void validateChannelSession(ChannelSession channelSession) {
+        RoutingMode routingMode = channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingMode();
+        if (routingMode == null || routingMode.equals(RoutingMode.PUSH)) {
+            throw new IllegalArgumentException("Invalid Routing mode in channelSession, It should be Pull or External");
+        }
     }
 
     private Agent validateAndGetAgent(UUID agentId) {
