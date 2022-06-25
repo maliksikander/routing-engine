@@ -6,6 +6,7 @@ import com.ef.cim.objectmodel.AssociatedMrd;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.mediaroutingengine.dto.AgentMrdStateChangeRequest;
 import com.ef.mediaroutingengine.dto.AgentStateChangeRequest;
 import com.ef.mediaroutingengine.eventlisteners.agentmrdstate.AgentMrdStateListener;
@@ -19,6 +20,8 @@ import com.ef.mediaroutingengine.services.pools.MrdPool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -30,6 +33,8 @@ import org.springframework.stereotype.Service;
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AgentStateService {
+    private final Logger logger = LoggerFactory.getLogger(AgentStateService.class);
+
     /**
      * The Agent state listener.
      */
@@ -84,8 +89,11 @@ public class AgentStateService {
      * @param request AgentLoginRequest DTO.
      */
     public void agentLogin(KeycloakUser request) {
+        logger.info("Request to Login Agent initiated for agent: {}", request.getId());
         Agent agent = this.agentsPool.findById(request.getId());
         if (agent == null) {
+            logger.info("Agent does not exist, creating new agent..");
+
             CCUser ccUser = this.getCcUserInstance(request);
             agent = new Agent(ccUser, mrdPool.findAll());
             AgentPresence agentPresence = new AgentPresence(ccUser, agent.getState(), agent.getAgentMrdStates());
@@ -93,6 +101,8 @@ public class AgentStateService {
             this.agentsRepository.save(ccUser);
             this.agentPresenceRepository.save(agent.getId().toString(), agentPresence);
             this.agentsPool.insert(agent);
+
+            logger.info("New Agent created successfully, Changing agent state to Login..");
         }
 
         this.agentStateListener.propertyChange(agent, new AgentState(Enums.AgentStateName.LOGIN, null));
@@ -108,20 +118,19 @@ public class AgentStateService {
         CCUser ccUser = new CCUser();
         ccUser.setId(keycloakUser.getId());
         ccUser.setKeycloakUser(keycloakUser);
-        ccUser.setAssociatedMrds(getAssociatedMrds());
+        ccUser.setAssociatedMrds(getAssociatedMrdList());
         return ccUser;
     }
 
     /**
      * Get associated MRDs including all MRDs in the pool.
      */
-    private List<AssociatedMrd> getAssociatedMrds() {
-        List<AssociatedMrd> associatedMrds = new ArrayList<>();
-        this.mrdPool.findAll().forEach(
-                mediaRoutingDomain -> associatedMrds.add(
-                        new AssociatedMrd(mediaRoutingDomain.getId(), mediaRoutingDomain.getMaxRequests()))
-        );
-        return associatedMrds;
+    private List<AssociatedMrd> getAssociatedMrdList() {
+        List<AssociatedMrd> associatedMrdList = new ArrayList<>();
+        List<MediaRoutingDomain> mrdList = this.mrdPool.findAll();
+
+        mrdList.forEach(mrd -> associatedMrdList.add(new AssociatedMrd(mrd.getId(), mrd.getMaxRequests())));
+        return associatedMrdList;
     }
 
     /**
