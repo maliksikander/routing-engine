@@ -162,6 +162,11 @@ public class AgentsServiceImpl implements AgentsService {
 
     private CCUser update(CCUser ccUser) {
         Agent agent = this.agentsPool.findById(ccUser.getId());
+
+        if (ccUser.getAssociatedMrds().isEmpty()) {
+            ccUser.setAssociatedMrds(agent.toCcUser().getAssociatedMrds());
+        }
+
         agent.updateFrom(ccUser);
         logger.debug("Agent updated in in-memory Agents pool | Agent: {}", agent.getId());
 
@@ -361,18 +366,16 @@ public class AgentsServiceImpl implements AgentsService {
     private String getAssociatedMrdUpdateConflictReason(boolean isInvalidMaxAgentTasks, UUID id) {
         String reason = "";
         if (isInvalidMaxAgentTasks) {
-            reason = new StringBuilder("Failed to update the Agent with ID : ").append(id)
-                    .append(".Because the following Associated MRDs have agentMaxTasks less than 0")
-                    .append(".The agentMaxTasks value should be >= 0.")
-                    .toString();
+            reason = "Failed to update the Agent with ID : " + id
+                    + ".Because the following Associated MRDs have agentMaxTasks less than 0"
+                    + ".The agentMaxTasks value should be >= 0.";
         }
 
         if (!isInvalidMaxAgentTasks) {
-            reason = new StringBuilder("Failed to update the Agent with ID : ").append(id)
-                    .append(".Because the following Associated MRDs have MaxTasks which are greater than")
-                    .append("the concerned MRD's maxRequest value")
-                    .append(".The new agentMaxTasks value should be <= MRD MaxRequest against a particular MRD.")
-                    .toString();
+            reason = "Failed to update the Agent with ID : " + id
+                    + ".Because the following Associated MRDs have MaxTasks which are greater than"
+                    + "the concerned MRD maxRequest value"
+                    + ".The new agentMaxTasks value should be <= MRD MaxRequest against a particular MRD.";
         }
         return reason;
     }
