@@ -79,6 +79,8 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     public PrecisionQueueEntity create(PrecisionQueueRequestBody requestBody) {
         logger.info("Create PrecisionQueue request initiated");
 
+        this.throwExceptionIfQueueNameIsNotUnique(requestBody, null);
+
         this.validateAndSetMrd(requestBody);
         logger.debug("MRD validated for PrecisionQueue");
 
@@ -121,6 +123,8 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     @Override
     public PrecisionQueueEntity update(PrecisionQueueRequestBody requestBody, String id) {
         logger.info("Update PrecisionQueue request initiated | Queue: {}", id);
+
+        this.throwExceptionIfQueueNameIsNotUnique(requestBody, id);
 
         requestBody.setId(id);
         this.validateAndSetMrd(requestBody);
@@ -176,6 +180,16 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         List<TaskDto> taskDtoList = new ArrayList<>();
         tasks.forEach(task -> taskDtoList.add(AdapterUtility.createTaskDtoFrom(task)));
         return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
+    }
+
+    void throwExceptionIfQueueNameIsNotUnique(PrecisionQueueRequestBody requestBody, String queueId) {
+        for (PrecisionQueue queue : this.precisionQueuesPool.toList()) {
+            if (!queue.getId().equals(queueId) && queue.getName().equals(requestBody.getName())) {
+                String errorMessage = "A queue already exist with name: " + requestBody.getName();
+                logger.error(errorMessage);
+                throw new IllegalArgumentException(errorMessage);
+            }
+        }
     }
 
     /**
