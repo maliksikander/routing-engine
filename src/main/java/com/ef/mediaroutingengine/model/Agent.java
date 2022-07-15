@@ -397,7 +397,7 @@ public class Agent {
      * @param mrdId the mrd id
      * @return the boolean
      */
-    public boolean isAvailableForRouting(String mrdId) {
+    public boolean isAvailableForRouting(String mrdId, UUID conversationId) {
         Enums.AgentStateName agentStateName = this.agentState.getName();
         Enums.AgentMrdStateName mrdState = this.getAgentMrdState(mrdId).getState();
 
@@ -405,7 +405,13 @@ public class Agent {
         // Only one task can be *reserved* for an Agent at a time.
         return agentStateName.equals(Enums.AgentStateName.READY)
                 && (mrdState.equals(Enums.AgentMrdStateName.ACTIVE)
-                || mrdState.equals(Enums.AgentMrdStateName.READY))
-                && !this.isTaskReserved();
+                    || mrdState.equals(Enums.AgentMrdStateName.READY))
+                && !this.isTaskReserved()
+                && !this.isActiveOn(conversationId);
+    }
+
+    boolean isActiveOn(UUID conversationId) {
+        return this.getActiveTasksList().stream()
+                .anyMatch(task -> task.getTopicId().equals(conversationId));
     }
 }

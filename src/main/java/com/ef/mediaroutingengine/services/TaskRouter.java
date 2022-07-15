@@ -152,7 +152,7 @@ public class TaskRouter implements PropertyChangeListener {
             for (int i = 0; i < currentStepIndex + 1; i++) {
                 Step step = precisionQueue.getStepAt(i);
                 logger.info("Step: {} searching in queue: {}", i, precisionQueue.getName());
-                Agent agent = this.getAvailableAgentWithLeastActiveTasks(step);
+                Agent agent = this.getAvailableAgentWithLeastActiveTasks(step, task.getTopicId());
                 if (agent != null) {
                     logger.debug("Agent: {} is available to schedule task: {}", agent.getId(), task.getId());
                     this.assignTaskTo(agent, task);
@@ -174,7 +174,7 @@ public class TaskRouter implements PropertyChangeListener {
         if (lastAssignedAgentId != null) {
             Agent agent = this.agentsPool.findById(lastAssignedAgentId);
             String mrdId = this.precisionQueue.getMrd().getId();
-            if (agent != null && agent.isAvailableForRouting(mrdId)) {
+            if (agent != null && agent.isAvailableForRouting(mrdId, task.getTopicId())) {
                 assignTaskTo(agent, task);
                 return true;
             }
@@ -188,7 +188,7 @@ public class TaskRouter implements PropertyChangeListener {
      * @param step the step
      * @return the available agent with the least number of active tasks
      */
-    private Agent getAvailableAgentWithLeastActiveTasks(Step step) {
+    private Agent getAvailableAgentWithLeastActiveTasks(Step step, UUID conversationId) {
         List<Agent> sortedAgentList = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE,
                 this.precisionQueue.getMrd().getId());
         int lowestNumberOfTasks = Integer.MAX_VALUE;
@@ -198,7 +198,7 @@ public class TaskRouter implements PropertyChangeListener {
             String mrdId = this.precisionQueue.getMrd().getId();
             int noOfTasksOnMrd = agent.getNoOfActivePushTasks(mrdId);
 
-            if (agent.isAvailableForRouting(mrdId) && noOfTasksOnMrd < lowestNumberOfTasks) {
+            if (agent.isAvailableForRouting(mrdId, conversationId) && noOfTasksOnMrd < lowestNumberOfTasks) {
                 lowestNumberOfTasks = noOfTasksOnMrd;
                 result = agent;
             }
