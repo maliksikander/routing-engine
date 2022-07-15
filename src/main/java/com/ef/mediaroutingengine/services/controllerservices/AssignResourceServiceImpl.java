@@ -1,14 +1,19 @@
 package com.ef.mediaroutingengine.services.controllerservices;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.commons.Constants;
 import com.ef.mediaroutingengine.dto.AssignResourceRequest;
 import com.ef.mediaroutingengine.model.PrecisionQueue;
+import com.ef.mediaroutingengine.model.Task;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
+import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +39,8 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * The Task manager.
      */
     private final TaskManager taskManager;
+
+    private final TasksPool tasksPool;
     /**
      * The Precision queues pool.
      */
@@ -51,18 +58,22 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @param mrdPool             the mrd pool
      */
     @Autowired
-    public AssignResourceServiceImpl(TaskManager taskManager,
+    public AssignResourceServiceImpl(TaskManager taskManager, TasksPool tasksPool,
                                      PrecisionQueuesPool precisionQueuesPool,
                                      MrdPool mrdPool) {
         this.taskManager = taskManager;
+        this.tasksPool = tasksPool;
         this.precisionQueuesPool = precisionQueuesPool;
         this.mrdPool = mrdPool;
     }
 
     @Override
     public String assign(AssignResourceRequest request) {
-        logger.debug(Constants.METHOD_STARTED);
-        logger.info("Assign resource request initiated | Topic: {}", request.getChannelSession().getConversationId());
+        UUID conversationId = request.getChannelSession().getConversationId();
+
+        logger.info("Assign resource request initiated | Conversation: {}", conversationId);
+
+        this.throwExceptionIfRequestExistsFor(conversationId);
 
         ChannelSession channelSession = request.getChannelSession();
         validateChannelSession(channelSession);
@@ -86,8 +97,21 @@ public class AssignResourceServiceImpl implements AssignResourceService {
 
         logger.info("Assign resource request handled gracefully | Topic: {}",
                 request.getChannelSession().getConversationId());
-        logger.debug(Constants.METHOD_ENDED);
         return "The request is received Successfully";
+    }
+
+    void throwExceptionIfRequestExistsFor(UUID conversationId) {
+        List<Task> existingTasks = this.tasksPool.findByConversationId(conversationId);
+
+        for (Task task : existingTasks) {
+            Enums.TaskStateName stateName = task.getTaskState().getName();
+
+            if (stateName.equals(Enums.TaskStateName.QUEUED) || stateName.equals(Enums.TaskStateName.RESERVED)) {
+                String error = "A previous request is still in process of finding agent on this conversation";
+                logger.error(error);
+                throw new IllegalStateException(error);
+            }
+        }
     }
 
     /**

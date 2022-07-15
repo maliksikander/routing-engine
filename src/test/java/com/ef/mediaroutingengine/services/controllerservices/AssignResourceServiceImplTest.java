@@ -21,6 +21,7 @@ import com.ef.mediaroutingengine.model.PrecisionQueue;
 import com.ef.mediaroutingengine.model.Step;
 import com.ef.mediaroutingengine.services.pools.MrdPool;
 import com.ef.mediaroutingengine.services.pools.PrecisionQueuesPool;
+import com.ef.mediaroutingengine.services.pools.TasksPool;
 import com.ef.mediaroutingengine.services.utilities.TaskManager;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,8 @@ class AssignResourceServiceImplTest {
     @Mock
     private TaskManager taskManager;
     @Mock
+    private TasksPool tasksPool;
+    @Mock
     private PrecisionQueuesPool precisionQueuesPool;
     @Mock
     private MrdPool mrdPool;
@@ -47,7 +50,7 @@ class AssignResourceServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        this.assignResourceService = new AssignResourceServiceImpl(taskManager, precisionQueuesPool, mrdPool);
+        this.assignResourceService = new AssignResourceServiceImpl(taskManager, tasksPool, precisionQueuesPool, mrdPool);
     }
 
     @Test
