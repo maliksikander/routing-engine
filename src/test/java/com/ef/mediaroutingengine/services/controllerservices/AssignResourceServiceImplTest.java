@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -68,9 +69,9 @@ class AssignResourceServiceImplTest {
         doNothing().when(spy).validateChannelSession(channelSession);
         doReturn(mrd).when(spy).validateAndGetMrd(channelSession);
         when(mrd.getId()).thenReturn(mrdId);
-        doReturn(queue).when(spy).validateAndGetQueue(channelSession, requestedQueue, mrdId);
+        doReturn(queue).when(spy).validateAndGetQueue(channelSession, requestedQueue, mrdId, false);
 
-        String response = spy.assign(request);
+        String response = spy.assign(request, false);
         assertEquals("The request is received Successfully", response);
     }
 
@@ -163,7 +164,7 @@ class AssignResourceServiceImplTest {
             String mrdId = UUID.randomUUID().toString();
 
             assertThrows(IllegalArgumentException.class,
-                    () -> assignResourceService.validateAndGetQueue(channelSession, null, mrdId));
+                    () -> assignResourceService.validateAndGetQueue(channelSession, null, mrdId, false));
         }
 
         @Test
@@ -172,10 +173,10 @@ class AssignResourceServiceImplTest {
             String mrdId = UUID.randomUUID().toString();
 
             AssignResourceServiceImpl spy = Mockito.spy(assignResourceService);
-            doReturn(null).when(spy).getPrecisionQueueFrom(any(), any());
+            doReturn(null).when(spy).getPrecisionQueueFrom(any(), any(), eq(Boolean.FALSE));
 
             assertThrows(IllegalArgumentException.class,
-                    () -> spy.validateAndGetQueue(channelSession, null, mrdId));
+                    () -> spy.validateAndGetQueue(channelSession, null, mrdId, false));
         }
 
         @Test
@@ -186,7 +187,7 @@ class AssignResourceServiceImplTest {
             AssignResourceServiceImpl spy = Mockito.spy(assignResourceService);
 
             PrecisionQueue queueFound = mock(PrecisionQueue.class);
-            doReturn(queueFound).when(spy).getPrecisionQueueFrom(any(), any());
+            doReturn(queueFound).when(spy).getPrecisionQueueFrom(any(), any(), eq(Boolean.FALSE));
 
             MediaRoutingDomain mrdFoundInQueue = new MediaRoutingDomain();
             mrdFoundInQueue.setId(UUID.randomUUID().toString());
@@ -194,7 +195,7 @@ class AssignResourceServiceImplTest {
             when(queueFound.getMrd()).thenReturn(mrdFoundInQueue);
 
             assertThrows(IllegalArgumentException.class,
-                    () -> spy.validateAndGetQueue(channelSession, requestedQueue, mrdId));
+                    () -> spy.validateAndGetQueue(channelSession, requestedQueue, mrdId, false));
         }
 
         @Test
@@ -205,7 +206,7 @@ class AssignResourceServiceImplTest {
             AssignResourceServiceImpl spy = Mockito.spy(assignResourceService);
 
             PrecisionQueue queueFound = mock(PrecisionQueue.class);
-            doReturn(queueFound).when(spy).getPrecisionQueueFrom(any(), any());
+            doReturn(queueFound).when(spy).getPrecisionQueueFrom(any(), any(), eq(Boolean.FALSE));
 
             MediaRoutingDomain mrdFoundInQueue = new MediaRoutingDomain();
             mrdFoundInQueue.setId(mrdId);
@@ -214,7 +215,7 @@ class AssignResourceServiceImplTest {
             when(queueFound.getSteps()).thenReturn(new ArrayList<>());
 
             assertThrows(IllegalStateException.class,
-                    () -> spy.validateAndGetQueue(channelSession, requestedQueue, mrdId));
+                    () -> spy.validateAndGetQueue(channelSession, requestedQueue, mrdId, false));
         }
 
         @Test
@@ -225,7 +226,7 @@ class AssignResourceServiceImplTest {
             AssignResourceServiceImpl spy = Mockito.spy(assignResourceService);
 
             PrecisionQueue queueFound = mock(PrecisionQueue.class);
-            doReturn(queueFound).when(spy).getPrecisionQueueFrom(any(), any());
+            doReturn(queueFound).when(spy).getPrecisionQueueFrom(any(), any(), eq(Boolean.FALSE));
 
             MediaRoutingDomain mrdFoundInQueue = new MediaRoutingDomain();
             mrdFoundInQueue.setId(mrdId);
@@ -235,7 +236,7 @@ class AssignResourceServiceImplTest {
             when(queueFound.getMrd()).thenReturn(mrdFoundInQueue);
             when(queueFound.getSteps()).thenReturn(stepList);
 
-            PrecisionQueue result = spy.validateAndGetQueue(channelSession, requestedQueue, mrdId);
+            PrecisionQueue result = spy.validateAndGetQueue(channelSession, requestedQueue, mrdId, false);
             assertEquals(queueFound, result);
         }
     }
@@ -251,7 +252,7 @@ class AssignResourceServiceImplTest {
             PrecisionQueue requestedQueue = mock(PrecisionQueue.class);
             when(precisionQueuesPool.findById(requestedQueueId)).thenReturn(requestedQueue);
 
-            PrecisionQueue found = assignResourceService.getPrecisionQueueFrom(requestedQueueId, defaultQueueId);
+            PrecisionQueue found = assignResourceService.getPrecisionQueueFrom(requestedQueueId, defaultQueueId, false);
 
             assertEquals(requestedQueue, found);
         }
@@ -265,7 +266,7 @@ class AssignResourceServiceImplTest {
             when(precisionQueuesPool.findById(requestedQueueId)).thenReturn(null);
             when(precisionQueuesPool.findById(defaultQueueId)).thenReturn(defaultQueue);
 
-            PrecisionQueue found = assignResourceService.getPrecisionQueueFrom(requestedQueueId, defaultQueueId);
+            PrecisionQueue found = assignResourceService.getPrecisionQueueFrom(requestedQueueId, defaultQueueId, false);
 
             assertEquals(defaultQueue, found);
         }
@@ -278,7 +279,7 @@ class AssignResourceServiceImplTest {
             when(precisionQueuesPool.findById(requestedQueueId)).thenReturn(null);
             when(precisionQueuesPool.findById(defaultQueueId)).thenReturn(null);
 
-            PrecisionQueue found = assignResourceService.getPrecisionQueueFrom(requestedQueueId, defaultQueueId);
+            PrecisionQueue found = assignResourceService.getPrecisionQueueFrom(requestedQueueId, defaultQueueId, false);
 
             assertNull(found);
         }

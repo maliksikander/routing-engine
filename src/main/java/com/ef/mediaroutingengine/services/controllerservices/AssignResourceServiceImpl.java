@@ -68,7 +68,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     }
 
     @Override
-    public String assign(AssignResourceRequest request) {
+    public String assign(AssignResourceRequest request, boolean useQueueName) {
         UUID conversationId = request.getChannelSession().getConversationId();
 
         logger.info("Assign resource request initiated | Conversation: {}", conversationId);
@@ -82,7 +82,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         MediaRoutingDomain mrd = validateAndGetMrd(channelSession);
         logger.debug("MRD validated in Assign-Resource API request");
 
-        PrecisionQueue queue = this.validateAndGetQueue(channelSession, request.getQueue(), mrd.getId());
+        PrecisionQueue queue = this.validateAndGetQueue(channelSession, request.getQueue(), mrd.getId(), useQueueName);
         logger.debug("PrecisionQueue validated in Assign-Resource API request");
 
         // TODO: Executor service .. don't use completableFuture!
@@ -167,12 +167,13 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @param mrdId          the mrd id
      * @return the precision queue
      */
-    PrecisionQueue validateAndGetQueue(ChannelSession channelSession, String requestQueue, String mrdId) {
+    PrecisionQueue validateAndGetQueue(ChannelSession channelSession, String requestQueue, String mrdId,
+                                       boolean useQueueName) {
         String defaultQueue = channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingObjectId();
         if (defaultQueue == null && requestQueue == null) {
             throw new IllegalArgumentException("DefaultQueue and RequestedQueue both are null");
         }
-        PrecisionQueue queue = getPrecisionQueueFrom(requestQueue, defaultQueue);
+        PrecisionQueue queue = getPrecisionQueueFrom(requestQueue, defaultQueue, useQueueName);
         if (queue == null) {
             throw new IllegalArgumentException("Could not find PrecisionQueue for this request");
         }
@@ -194,8 +195,15 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * @param defaultQueue   the default queue
      * @return the precision queue from
      */
-    PrecisionQueue getPrecisionQueueFrom(String requestedQueue, String defaultQueue) {
-        PrecisionQueue queue = this.precisionQueuesPool.findById(requestedQueue);
+    PrecisionQueue getPrecisionQueueFrom(String requestedQueue, String defaultQueue, boolean useQueueName) {
+        PrecisionQueue queue;
+
+        if (useQueueName) {
+            queue = this.precisionQueuesPool.findByName(requestedQueue);
+        } else {
+            queue = this.precisionQueuesPool.findById(requestedQueue);
+        }
+
         // If requested queue not found, use default queue
         if (queue == null) {
             queue = this.precisionQueuesPool.findById(defaultQueue);

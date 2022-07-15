@@ -68,6 +68,21 @@ public class PrecisionQueuesPool {
     }
 
     /**
+     * Find by name precision queue.
+     *
+     * @param name the name
+     * @return the precision queue
+     */
+    public PrecisionQueue findByName(String name) {
+        for (PrecisionQueue queue : this.precisionQueues.values()) {
+            if (queue.getName().equals(name)) {
+                return queue;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Removes precision-queue from the redis-cache if id found.
      *
      * @param id of precision-queue to be removed.
