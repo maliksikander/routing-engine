@@ -67,7 +67,9 @@ public class AgentStateLogout implements AgentStateDelegate {
     void handleReservedTasks(Agent agent) {
         Task reservedTask = agent.getReservedTask();
         if (reservedTask != null) {
-            reservedTask.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, null));
+            TaskState taskState = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.AGENT_LOGOUT);
+            reservedTask.setTaskState(taskState);
+
             this.taskManager.removeFromPoolAndRepository(reservedTask);
             this.taskManager.rerouteReservedTask(reservedTask);
         }
@@ -75,7 +77,8 @@ public class AgentStateLogout implements AgentStateDelegate {
 
     void handleActiveTasks(Agent agent) {
         for (Task task : agent.getActiveTasksList()) {
-            this.taskManager.removeTaskOnAgentLogout(task);
+            task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.AGENT_LOGOUT));
+            this.taskManager.removeFromPoolAndRepository(task);
         }
     }
 }

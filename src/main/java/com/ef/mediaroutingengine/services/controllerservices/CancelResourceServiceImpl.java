@@ -84,7 +84,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
     public void cancelResource(CancelResourceRequest request) {
         logger.info("Cancel resource request initiated | topic: {}", request.getTopicId());
 
-        Task task = tasksPool.findFirstByConversationId(request.getTopicId());
+        Task task = tasksPool.findInProcessTaskFor(request.getTopicId());
         if (!isProcessable(task)) {
             return;
         }
@@ -115,11 +115,6 @@ public class CancelResourceServiceImpl implements CancelResourceService {
     boolean isProcessable(Task task) {
         if (task == null) {
             logger.info("No Task found on this topic, ignoring request");
-            return false;
-        }
-        Enums.TaskStateName state = task.getTaskState().getName();
-        if (!(state.equals(Enums.TaskStateName.QUEUED) || state.equals(Enums.TaskStateName.RESERVED))) {
-            logger.info("Task: {} is not in QUEUED or RESERVED state, ignoring request", task.getId());
             return false;
         }
         return !task.isMarkedForDeletion();

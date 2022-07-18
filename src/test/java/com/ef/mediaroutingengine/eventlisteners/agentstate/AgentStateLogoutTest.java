@@ -55,7 +55,7 @@ class AgentStateLogoutTest {
 
         this.agentStateLogout.handleActiveTasks(agent);
 
-        verify(this.taskManager, times(activeTasks.size())).removeTaskOnAgentLogout(any());
+        verify(this.taskManager, times(activeTasks.size())).removeFromPoolAndRepository(any());
         verifyNoMoreInteractions(this.taskManager);
     }
 

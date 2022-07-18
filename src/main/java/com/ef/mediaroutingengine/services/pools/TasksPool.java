@@ -91,18 +91,21 @@ public class TasksPool {
     }
 
     /**
-     * Returns task by conversationId from the task pool.
+     * Find in process task for task.
      *
-     * @param conversationId the conversation-id to search task by
-     * @return task if found, null otherwise
+     * @param conversationId the conversation id
+     * @return the task
      */
-    public Task findFirstByConversationId(UUID conversationId) {
-        for (Task task : this.allTasks) {
-            if (task.getTopicId().equals(conversationId)) {
-                return task;
-            }
-        }
-        return null;
+    public Task findInProcessTaskFor(UUID conversationId) {
+        return this.allTasks.stream()
+                .filter(t -> {
+                    Enums.TaskStateName stateName = t.getTaskState().getName();
+                    return t.getTopicId().equals(conversationId)
+                            && (stateName.equals(Enums.TaskStateName.QUEUED)
+                            || stateName.equals(Enums.TaskStateName.RESERVED));
+                })
+                .findFirst()
+                .orElse(null);
     }
 
     /**
@@ -115,39 +118,6 @@ public class TasksPool {
         List<Task> result = new ArrayList<>();
         for (Task task : this.allTasks) {
             if (task.getTopicId().equals(conversationId)) {
-                result.add(task);
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Find by agent list.
-     *
-     * @param agentId the agent id
-     * @return the list
-     */
-    public List<Task> findByAgent(UUID agentId) {
-        List<Task> result = new ArrayList<>();
-        for (Task task : this.allTasks) {
-            UUID assignedTo = task.getAssignedTo();
-            if (assignedTo != null && assignedTo.equals(agentId)) {
-                result.add(task);
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Find by state name list.
-     *
-     * @param stateName the state name
-     * @return the list
-     */
-    public List<Task> findByStateName(Enums.TaskStateName stateName) {
-        List<Task> result = new ArrayList<>();
-        for (Task task : this.allTasks) {
-            if (task.getTaskState().getName().equals(stateName)) {
                 result.add(task);
             }
         }

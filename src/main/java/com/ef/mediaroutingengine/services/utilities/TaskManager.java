@@ -326,16 +326,6 @@ public class TaskManager {
     }
 
     /**
-     * End pull task on agent logout.
-     *
-     * @param task the task
-     */
-    public void removeTaskOnAgentLogout(Task task) {
-        task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, null));
-        this.removeFromPoolAndRepository(task);
-    }
-
-    /**
      * Add property change listener.
      *
      * @param property the property
@@ -393,9 +383,11 @@ public class TaskManager {
 
         public void run() {
             logger.debug(Constants.METHOD_STARTED);
-            Task task = TaskManager.this.tasksPool.findFirstByConversationId(topicId);
+
+            Task task = TaskManager.this.tasksPool.findInProcessTaskFor(this.topicId);
+
             if (task == null) {
-                logger.error("Task not found in task pool | AgentRequestTtl Timer run method returning...");
+                logger.error("No In-Process Task found for this conversation, method returning...");
                 return;
             }
 

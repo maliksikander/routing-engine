@@ -72,7 +72,7 @@ class CancelResourceServiceImplTest {
             Task task = mock(Task.class);
             CancelResourceServiceImpl spy = Mockito.spy(cancelResourceService);
 
-            when(tasksPool.findFirstByConversationId(request.getTopicId())).thenReturn(task);
+            when(tasksPool.findInProcessTaskFor(request.getTopicId())).thenReturn(task);
             doReturn(false).when(spy).isProcessable(task);
 
             spy.cancelResource(request);
@@ -88,7 +88,7 @@ class CancelResourceServiceImplTest {
             PriorityQueue serviceQueue = mock(PriorityQueue.class);
             CancelResourceServiceImpl spy = Mockito.spy(cancelResourceService);
 
-            when(tasksPool.findFirstByConversationId(request.getTopicId())).thenReturn(task);
+            when(tasksPool.findInProcessTaskFor(request.getTopicId())).thenReturn(task);
             doReturn(true).when(spy).isProcessable(task);
             when(precisionQueuesPool.findById(task.getQueue())).thenReturn(precisionQueue);
             when(precisionQueue.getServiceQueue()).thenReturn(serviceQueue);
@@ -110,7 +110,7 @@ class CancelResourceServiceImplTest {
             PriorityQueue serviceQueue = mock(PriorityQueue.class);
             CancelResourceServiceImpl spy = Mockito.spy(cancelResourceService);
 
-            when(tasksPool.findFirstByConversationId(request.getTopicId())).thenReturn(task);
+            when(tasksPool.findInProcessTaskFor(request.getTopicId())).thenReturn(task);
             doReturn(true).when(spy).isProcessable(task);
             when(precisionQueuesPool.findById(task.getQueue())).thenReturn(precisionQueue);
             when(precisionQueue.getServiceQueue()).thenReturn(serviceQueue);
@@ -133,20 +133,9 @@ class CancelResourceServiceImplTest {
         }
 
         @Test
-        void returnsFalse_when_taskStateIsNotQueuedOrReserved() {
-            Task task = mock(Task.class);
-            TaskState taskState = new TaskState(Enums.TaskStateName.ACTIVE, null);
-
-            when(task.getTaskState()).thenReturn(taskState);
-            assertFalse(cancelResourceService.isProcessable(task));
-        }
-
-        @Test
         void returnsFalse_when_taskIsAlreadyMarkedForDeletion() {
             Task task = mock(Task.class);
-            TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
 
-            when(task.getTaskState()).thenReturn(taskState);
             when(task.isMarkedForDeletion()).thenReturn(true);
             assertFalse(cancelResourceService.isProcessable(task));
         }
