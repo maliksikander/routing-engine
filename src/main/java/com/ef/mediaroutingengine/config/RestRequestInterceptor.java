@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.config;
 
-import com.ef.mediaroutingengine.commons.Constants;
+import com.ef.mediaroutingengine.global.commons.Constants;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
