@@ -2,9 +2,9 @@ package com.ef.mediaroutingengine.agentstatemanager.controller;
 
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentMrdStateChangeRequest;
+import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateApiRes;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangeRequest;
 import com.ef.mediaroutingengine.agentstatemanager.service.AgentStateService;
-import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -46,7 +46,9 @@ public class AgentStateController {
     @PostMapping("/agent-login")
     public ResponseEntity<Object> agentLogin(@RequestBody KeycloakUser request) {
         this.agentStateService.agentLogin(request);
-        return new ResponseEntity<>(new SuccessResponseBody("Agent login request received"), HttpStatus.OK);
+
+        AgentStateApiRes resBody = new AgentStateApiRes(request.getId(), "Agent login request received");
+        return new ResponseEntity<>(resBody, HttpStatus.OK);
     }
 
     /**
@@ -58,7 +60,9 @@ public class AgentStateController {
     @PutMapping("/agent-state")
     public ResponseEntity<Object> agentState(@Valid @RequestBody AgentStateChangeRequest request) {
         this.agentStateService.agentState(request);
-        return new ResponseEntity<>(new SuccessResponseBody("Agent state change request received"), HttpStatus.OK);
+
+        AgentStateApiRes resBody = new AgentStateApiRes(request.getAgentId(), "Agent state change request received");
+        return new ResponseEntity<>(resBody, HttpStatus.OK);
     }
 
     /**
@@ -70,7 +74,9 @@ public class AgentStateController {
     @PutMapping("/mrd-state")
     public ResponseEntity<Object> mrdState(@Valid @RequestBody AgentMrdStateChangeRequest request) {
         this.agentStateService.agentMrdState(request);
-        return new ResponseEntity<>(new SuccessResponseBody("Agent MRD state change request received"),
-                HttpStatus.OK);
+
+        String resMessage = "Agent MRD state change request received";
+        AgentStateApiRes resBody = new AgentStateApiRes(request.getAgentId(), resMessage);
+        return new ResponseEntity<>(resBody, HttpStatus.OK);
     }
 }
