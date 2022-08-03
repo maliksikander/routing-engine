@@ -10,7 +10,6 @@ import com.ef.mediaroutingengine.routing.dto.NoAgentAvailableRequest;
 import com.ef.mediaroutingengine.routing.dto.RevokeTaskRequest;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.time.Duration;
-import java.util.UUID;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +57,7 @@ public class RestRequest {
      * @param agent   The agent that has been reserved on this topic.
      * @return The HTTP response from the API call.
      */
-    public ResponseEntity<String> postAgentReserved(UUID topicId, CCUser agent) {
+    public ResponseEntity<String> postAgentReserved(String topicId, CCUser agent) {
         AgentReservedRequest requestBody = new AgentReservedRequest();
         requestBody.setAgent(agent);
         requestBody.setTopicId(topicId);
@@ -88,7 +87,7 @@ public class RestRequest {
      * @return true if request successful, false otherwise.
      */
     public boolean postAssignTask(ChannelSession channelSession, CCUser agent,
-                                  UUID topicId, UUID taskId) {
+                                  String topicId, String taskId) {
         AssignTaskRequest request = new AssignTaskRequest();
         request.setChannelSession(channelSession);
         request.setCcUser(agent);

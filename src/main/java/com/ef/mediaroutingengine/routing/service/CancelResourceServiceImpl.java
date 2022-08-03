@@ -151,7 +151,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
      */
     void removeAndPublish(Task task, Enums.TaskStateReasonCode closeReasonCode) {
         tasksPool.remove(task);
-        tasksRepository.deleteById(task.getId().toString());
+        tasksRepository.deleteById(task.getId());
         logger.debug("Task {}, removed from in-memory pool and repository", task.getId());
 
         task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, closeReasonCode));

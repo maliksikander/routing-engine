@@ -6,7 +6,6 @@ import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +23,7 @@ public class AgentsPool {
     /**
      * The Agents.
      */
-    private final Map<UUID, Agent> agents = new ConcurrentHashMap<>();
+    private final Map<String, Agent> agents = new ConcurrentHashMap<>();
 
     /**
      * Loads the pool at start of the application.
@@ -55,7 +54,7 @@ public class AgentsPool {
      * @param id find the agent by this id.
      * @return Agent if found, null otherwise.
      */
-    public Agent findById(UUID id) {
+    public Agent findById(String id) {
         if (id == null) {
             return null;
         }
@@ -78,7 +77,7 @@ public class AgentsPool {
      *
      * @param id the id
      */
-    public void deleteById(UUID id) {
+    public void deleteById(String id) {
         if (id != null) {
             this.agents.remove(id);
         }

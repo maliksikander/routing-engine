@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import javax.jms.JMSException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -353,10 +352,10 @@ public class Bootstrap {
      *
      * @return Map of AgentPresence Objects with agentId as the key.
      */
-    private Map<UUID, AgentPresence> getCurrentAgentPresenceMap() {
+    private Map<String, AgentPresence> getCurrentAgentPresenceMap() {
         List<AgentPresence> currentAgentPresenceList = this.agentPresenceRepository.findAll();
         logger.debug("Fetched List of all AgentPresence objects from Redis Collection successfully");
-        Map<UUID, AgentPresence> currentAgentPresenceMap = new HashMap<>();
+        Map<String, AgentPresence> currentAgentPresenceMap = new HashMap<>();
         for (AgentPresence agentPresence : currentAgentPresenceList) {
             currentAgentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
         }
@@ -391,7 +390,7 @@ public class Bootstrap {
      * collection, the 'previous' states will be fetched from the Redis collection and set for this agent.
      */
     private void setAgentStates() {
-        Map<UUID, AgentPresence> currentAgentPresenceMap = this.getCurrentAgentPresenceMap();
+        Map<String, AgentPresence> currentAgentPresenceMap = this.getCurrentAgentPresenceMap();
         // AgentPresence Repository is flushed so that newly-updated, fresh Objects are added.
         this.agentPresenceRepository.deleteAll();
         logger.debug("AgentPresence Repository flushed successfully.");
@@ -414,7 +413,7 @@ public class Bootstrap {
             }
             agent.setState(agentState);
             agent.setAgentMrdStates(agentMrdStates);
-            updatedAgentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
+            updatedAgentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
         }
         logger.debug("Agent states for agents in in-memory pool set successfully");
         this.agentPresenceRepository.saveAllByKeyValueMap(updatedAgentPresenceMap);

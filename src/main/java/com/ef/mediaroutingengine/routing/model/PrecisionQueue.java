@@ -12,7 +12,6 @@ import com.ef.mediaroutingengine.taskmanager.model.TaskStep;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -297,7 +296,7 @@ public class PrecisionQueue implements Queue {
      *
      * @param id the id
      */
-    public void deleteStepById(UUID id) {
+    public void deleteStepById(String id) {
         int index = findStepIndex(id);
         synchronized (this.steps) {
             if (index > -1) {
@@ -312,7 +311,7 @@ public class PrecisionQueue implements Queue {
      * @param id the id
      * @return the int
      */
-    public int findStepIndex(UUID id) {
+    public int findStepIndex(String id) {
         for (int i = 0; i < steps.size(); i++) {
             if (steps.get(i).getId().equals(id)) {
                 return i;
@@ -539,7 +538,7 @@ public class PrecisionQueue implements Queue {
         }
 
         // To retrieve Unique Agents from Steps
-        Map<UUID, Agent> agentMap = new ConcurrentHashMap<>();
+        Map<String, Agent> agentMap = new ConcurrentHashMap<>();
         for (Step step : this.steps) {
             for (Agent agent : step.getAssociatedAgents()) {
                 agentMap.putIfAbsent(agent.getId(), agent);

@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -130,7 +129,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
         for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
             agentPresence.getAgentMrdStates().add(agentMrdState);
-            agentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
+            agentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
         }
         this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
         logger.debug("MRD associated to all Agents in Agent presence Repository | MRD: {}", inserted.getId());
@@ -222,7 +221,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         for (TaskDto taskDto : this.tasksRepository.findAll()) {
             if (taskDto.getMrd().getId().equals(mediaRoutingDomain.getId())) {
                 taskDto.setMrd(mediaRoutingDomain);
-                taskMap.put(taskDto.getId().toString(), taskDto);
+                taskMap.put(taskDto.getId(), taskDto);
             }
         }
         this.tasksRepository.saveAllByKeyValueMap(taskMap);
@@ -239,7 +238,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             for (AgentMrdState agentMrdState : agentPresence.getAgentMrdStates()) {
                 if (agentMrdState.getMrd().getId().equals(mediaRoutingDomain.getId())) {
                     agentMrdState.setMrd(mediaRoutingDomain);
-                    agentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
+                    agentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
                     break;
                 }
             }
@@ -306,7 +305,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
         for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
             deleteAgentMrdStateFromAgentPresence(mrdId, agentPresence);
-            agentPresenceMap.put(agentPresence.getAgent().getId().toString(), agentPresence);
+            agentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
         }
         this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
     }
@@ -371,7 +370,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      * This method will return TRUE
      * if an agent's maxTasks value against an MRD is greater than new MRDs maxRequest Value.
      */
-    boolean isMaxAgentTasksGreaterThanMrdMaxRequestValue(UUID agentId, int maxAgentTask, int mrdMaxRequest) {
+    boolean isMaxAgentTasksGreaterThanMrdMaxRequestValue(String agentId, int maxAgentTask, int mrdMaxRequest) {
         logger.trace("isMaxAgentTasksGreaterThanMrdMaxRequestValue started. |");
         if (maxAgentTask > mrdMaxRequest) {
             logger.info("The agent ID : {} has maxAgentTask = {} which are greater than mrdMaxRequest = {}", agentId,

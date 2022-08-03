@@ -3,7 +3,6 @@ package com.ef.mediaroutingengine.taskmanager.dto;
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
-import java.util.UUID;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,7 +20,7 @@ import lombok.ToString;
 @NoArgsConstructor
 public class PullAssignTaskRequest {
     @NotNull
-    private UUID agentId;
+    private String agentId;
     @NotNull
     private String mrdId;
     @NotNull

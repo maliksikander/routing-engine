@@ -15,8 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-;
-
 @ExtendWith(MockitoExtension.class)
 class MrdStateActiveTest {
     MrdStateActive mrdStateActive = new MrdStateActive();
@@ -82,7 +80,7 @@ class MrdStateActiveTest {
 
     private Agent getNewAgent() {
         KeycloakUser keycloakUser = new KeycloakUser();
-        keycloakUser.setId(UUID.randomUUID());
+        keycloakUser.setId(UUID.randomUUID().toString());
         CCUser ccUser = new CCUser();
         ccUser.setKeycloakUser(keycloakUser);
         return new Agent(ccUser);

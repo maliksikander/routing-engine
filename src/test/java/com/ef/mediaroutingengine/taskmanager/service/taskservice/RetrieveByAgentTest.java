@@ -24,7 +24,7 @@ class RetrieveByAgentTest {
     RetrieveByAgent retrieveByAgent;
     @Mock
     TasksPool tasksPool;
-    UUID agentId = UUID.randomUUID();
+    String agentId = UUID.randomUUID().toString();
 
     @BeforeEach
     void setUp() {
@@ -42,7 +42,7 @@ class RetrieveByAgentTest {
         taskList.add(getNewTask(agentId));
         taskList.add(getNewTask(agentId));
         taskList.add(getNewTask(null));
-        taskList.add(getNewTask(UUID.randomUUID()));
+        taskList.add(getNewTask(UUID.randomUUID().toString()));
 
         when(tasksPool.findAll()).thenReturn(taskList);
 
@@ -50,7 +50,7 @@ class RetrieveByAgentTest {
         assertEquals(2, result.size());
     }
 
-    private Task getNewTask(UUID assignedTo) {
+    private Task getNewTask(String assignedTo) {
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         Task task = Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), "queue", taskState);
         task.setAssignedTo(assignedTo);
@@ -59,8 +59,8 @@ class RetrieveByAgentTest {
 
     private ChannelSession getNewChannelSession() {
         ChannelSession channelSession = new ChannelSession();
-        channelSession.setId(UUID.randomUUID());
-        channelSession.setConversationId(UUID.randomUUID());
+        channelSession.setId(UUID.randomUUID().toString());
+        channelSession.setConversationId(UUID.randomUUID().toString());
         return channelSession;
     }
 

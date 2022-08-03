@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.routing.dto;
 
 import com.ef.cim.objectmodel.Enums;
-import java.util.UUID;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -12,7 +11,7 @@ public class CancelResourceRequest {
      * The Topic id.
      */
     @NotNull(message = "topicId cannot be null")
-    private UUID topicId;
+    private String topicId;
     /**
      * The Reason code.
      */
@@ -23,7 +22,7 @@ public class CancelResourceRequest {
      *
      * @return the topic id
      */
-    public UUID getTopicId() {
+    public String getTopicId() {
         return topicId;
     }
 
@@ -32,7 +31,7 @@ public class CancelResourceRequest {
      *
      * @param topicId the topic id
      */
-    public void setTopicId(UUID topicId) {
+    public void setTopicId(String topicId) {
         this.topicId = topicId;
     }
 

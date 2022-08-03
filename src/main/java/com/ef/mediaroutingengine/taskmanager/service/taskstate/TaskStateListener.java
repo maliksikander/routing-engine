@@ -4,7 +4,6 @@ import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +56,7 @@ public class TaskStateListener {
      * @param requestedState the request state
      * @return the task
      */
-    public Task propertyChange(UUID taskId, TaskState requestedState) {
+    public Task propertyChange(String taskId, TaskState requestedState) {
         logger.info("Task state change listener called");
 
         Task task = tasksPool.findById(taskId);

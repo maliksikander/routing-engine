@@ -1,6 +1,8 @@
 package com.ef.mediaroutingengine.routing.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -137,15 +139,15 @@ class MediaRoutingDomainsServiceImplTest {
     @Test
     void test_whenMaxAgentTasksGreaterThanMrdMaxRequestValue_ReturnTrue() {
         boolean result = mediaRoutingDomainsService.isMaxAgentTasksGreaterThanMrdMaxRequestValue(
-                UUID.randomUUID(), 7, 5);
-        assertEquals(true, result);
+                UUID.randomUUID().toString(), 7, 5);
+        assertTrue(result);
     }
 
     @Test
     void test_whenMaxAgentTasksLessThanMrdMaxRequestValue_ReturnFalse() {
         boolean result = mediaRoutingDomainsService.isMaxAgentTasksGreaterThanMrdMaxRequestValue(
-                UUID.randomUUID(), 12, 15);
-        assertEquals(false, result);
+                UUID.randomUUID().toString(), 12, 15);
+        assertFalse(result);
     }
 
     @Test
@@ -183,7 +185,7 @@ class MediaRoutingDomainsServiceImplTest {
                 mediaRoutingDomainsService.getAgentsWithConflictedMaxTasks(ccUser.getAssociatedMrds().get(0).getMrdId(),
                         mrdMaxRequest);
 
-        assertTrue(conflictedAgents.size() != 0);
+        assertNotEquals(0, conflictedAgents.size());
         assertEquals(agent.getId(), conflictedAgents.get(0).getId());
     }
 
@@ -221,7 +223,7 @@ class MediaRoutingDomainsServiceImplTest {
 
     private CCUser getCcUserInstance(String associatedMrdId) {
         KeycloakUser keycloakUser = new KeycloakUser();
-        keycloakUser.setId(UUID.randomUUID());
+        keycloakUser.setId(UUID.randomUUID().toString());
 
         CCUser ccUser = new CCUser();
         ccUser.setKeycloakUser(keycloakUser);

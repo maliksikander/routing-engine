@@ -91,7 +91,7 @@ class AgentsServiceImplTest {
 
         verify(this.agentPresenceRepository, times(1))
                 .save(agentIdCaptor.capture(), any());
-        assertEquals(ccUser.getKeycloakUser().getId().toString(), agentIdCaptor.getValue());
+        assertEquals(ccUser.getKeycloakUser().getId(), agentIdCaptor.getValue());
 
         verify(this.precisionQueuesPool, times(1)).evaluateOnInsertForAll(any());
         verify(this.agentsPool, times(1)).insert(any());
@@ -104,7 +104,7 @@ class AgentsServiceImplTest {
         @Test
         void throwsNotFoundException_when_agentDoesNotExistInRepository() {
             CCUser ccUser = getNewCcUser();
-            UUID id = ccUser.getKeycloakUser().getId();
+            String id = ccUser.getKeycloakUser().getId();
             when(repository.existsById(id)).thenReturn(false);
 
             assertThrows(NotFoundException.class, () -> agentsService.update(ccUser, id));
@@ -114,7 +114,7 @@ class AgentsServiceImplTest {
         void when_updateSuccessful() {
             CCUser ccUser = getNewCcUser();
             String mrdId = ccUser.getAssociatedMrds().get(0).getMrdId();
-            UUID id = ccUser.getKeycloakUser().getId();
+            String id = ccUser.getKeycloakUser().getId();
 
             AgentsServiceImpl spy = Mockito.spy(agentsService);
 
@@ -142,14 +142,14 @@ class AgentsServiceImplTest {
     class DeleteTest {
         @Test
         void throwsNotFoundException_when_agentDoesNotExistInRepository() {
-            UUID id = UUID.randomUUID();
+            String id = UUID.randomUUID().toString();
             when(repository.findById(id)).thenReturn(Optional.empty());
             assertThrows(NotFoundException.class, () -> agentsService.delete(id));
         }
 
         @Test
         void returnsConflictResponse_when_agentHasTasks() {
-            UUID id = UUID.randomUUID();
+            String id = UUID.randomUUID().toString();
             Agent agent = mock(Agent.class);
 
             List<Task> taskList = new ArrayList<>();
@@ -167,7 +167,7 @@ class AgentsServiceImplTest {
 
         @Test
         void deletesAgentAndReturnsOkResponse_when_deleteSuccessful() {
-            UUID id = UUID.randomUUID();
+            String id = UUID.randomUUID().toString();
             Agent agent = mock(Agent.class);
 
             Optional<CCUser> optionalCCUser = Optional.of(getNewCcUser());
@@ -284,7 +284,7 @@ class AgentsServiceImplTest {
 
     private KeycloakUser getNewKeyClockUser() {
         KeycloakUser keycloakUser = new KeycloakUser();
-        keycloakUser.setId(UUID.randomUUID());
+        keycloakUser.setId(UUID.randomUUID().toString());
         return keycloakUser;
     }
 

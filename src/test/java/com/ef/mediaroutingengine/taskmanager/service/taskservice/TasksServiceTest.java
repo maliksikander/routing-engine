@@ -45,7 +45,7 @@ class TasksServiceTest {
 
     @Test
     void testRetrieveById_throwsNotFoundException_when_taskNotFoundInTasksPool() {
-        UUID taskId = UUID.randomUUID();
+        String taskId = UUID.randomUUID().toString();
         when(tasksPool.findById(taskId)).thenReturn(null);
 
         assertThrows(NotFoundException.class, () -> tasksService.retrieveById(taskId));
@@ -70,7 +70,7 @@ class TasksServiceTest {
     @Test
     void testRetrieve() {
         TasksRetriever tasksRetriever = mock(TasksRetriever.class);
-        Optional<UUID> agentId = Optional.of(UUID.randomUUID());
+        Optional<String> agentId = Optional.of(UUID.randomUUID().toString());
         Optional<Enums.TaskStateName> taskState = Optional.of(Enums.TaskStateName.QUEUED);
         List<TaskDto> taskDtoList = new ArrayList<>();
         taskDtoList.add(new TaskDto());

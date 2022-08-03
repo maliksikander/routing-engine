@@ -25,7 +25,6 @@ import java.beans.PropertyChangeSupport;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +68,7 @@ public class TaskManager {
     /**
      * The Request ttl timers.
      */
-    private final Map<UUID, TaskManager.RequestTtlTimer> requestTtlTimers;
+    private final Map<String, TaskManager.RequestTtlTimer> requestTtlTimers;
     /**
      * The Change support.
      */
@@ -209,7 +208,7 @@ public class TaskManager {
      * @param channelSession the channel session
      */
     private void scheduleAgentRequestTimeoutTask(ChannelSession channelSession) {
-        UUID topicId = channelSession.getConversationId();
+        String topicId = channelSession.getConversationId();
         long delay = getDelay(channelSession);
         // If a previous Agent request Ttl timer task exist cancel and remove it.
         this.cancelAgentRequestTtlTimerTask(topicId);
@@ -227,7 +226,7 @@ public class TaskManager {
         this.tasksPool.add(task);
         logger.debug("Task: {} added in tasks pool", task.getId());
 
-        this.tasksRepository.save(task.getId().toString(), AdapterUtility.createTaskDtoFrom(task));
+        this.tasksRepository.save(task.getId(), AdapterUtility.createTaskDtoFrom(task));
         logger.debug("Task: {} saved in tasks repository", task.getId());
     }
 
@@ -280,7 +279,7 @@ public class TaskManager {
         // If Agent request Ttl has ended.
         if (currentTask.isMarkedForDeletion()) {
             this.requestTtlTimers.remove(currentTask.getTopicId());
-            this.restRequest.postNoAgentAvailable(currentTask.getTopicId().toString());
+            this.restRequest.postNoAgentAvailable(currentTask.getTopicId());
             return;
         }
 
@@ -295,7 +294,7 @@ public class TaskManager {
      *
      * @param topicId timer task for this topicId is cancelled.
      */
-    public void cancelAgentRequestTtlTimerTask(UUID topicId) {
+    public void cancelAgentRequestTtlTimerTask(String topicId) {
         TaskManager.RequestTtlTimer requestTtlTimer = this.requestTtlTimers.get(topicId);
         if (requestTtlTimer == null) {
             return;
@@ -313,7 +312,7 @@ public class TaskManager {
      * @param task the task
      */
     public void removeFromPoolAndRepository(Task task) {
-        this.tasksRepository.deleteById(task.getId().toString());
+        this.tasksRepository.deleteById(task.getId());
         this.tasksPool.remove(task);
         this.publishTaskForReporting(task);
     }
@@ -323,7 +322,7 @@ public class TaskManager {
      *
      * @param topicId the topic id
      */
-    public void removeAgentRequestTtlTimerTask(UUID topicId) {
+    public void removeAgentRequestTtlTimerTask(String topicId) {
         this.requestTtlTimers.remove(topicId);
     }
 
@@ -372,14 +371,14 @@ public class TaskManager {
         /**
          * The Topic id.
          */
-        private final UUID topicId;
+        private final String topicId;
 
         /**
          * Instantiates a new Request ttl timer.
          *
          * @param topicId the topic id
          */
-        public RequestTtlTimer(UUID topicId) {
+        public RequestTtlTimer(String topicId) {
             this.topicId = topicId;
         }
 
@@ -402,12 +401,12 @@ public class TaskManager {
                     queue.removeTask(task);
                 }
                 // Remove task from redis.
-                TaskManager.this.tasksRepository.deleteById(task.getId().toString());
+                TaskManager.this.tasksRepository.deleteById(task.getId());
                 // Remove task from task pool
                 TaskManager.this.tasksPool.remove(task);
                 TaskManager.this.requestTtlTimers.remove(this.topicId);
                 // post no agent available
-                TaskManager.this.restRequest.postNoAgentAvailable(this.topicId.toString());
+                TaskManager.this.restRequest.postNoAgentAvailable(this.topicId);
                 //publish task for reporting
                 TaskManager.this.publishTaskForReporting(task);
                 logger.debug("Agent request TTL expired. Queued task: {} removed", task.getId());

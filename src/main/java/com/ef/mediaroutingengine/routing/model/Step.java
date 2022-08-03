@@ -18,7 +18,7 @@ public class Step {
     /**
      * The step id.
      */
-    private final UUID id;
+    private final String id;
     /**
      * The Associated agents.
      */
@@ -36,7 +36,7 @@ public class Step {
      * Instantiates a new Step.
      */
     public Step() {
-        this.id = UUID.randomUUID();
+        this.id = UUID.randomUUID().toString();
         this.expressions = new ArrayList<>();
         this.associatedAgents = new ArrayList<>();
     }
@@ -58,7 +58,7 @@ public class Step {
      *
      * @return the id
      */
-    public UUID getId() {
+    public String getId() {
         return id;
     }
 
@@ -185,7 +185,7 @@ public class Step {
      * @param id the id
      * @return the index of
      */
-    private int getIndexOf(UUID id) {
+    private int getIndexOf(String id) {
         for (int i = 0; i < associatedAgents.size(); i++) {
             if (associatedAgents.get(i).getId().equals(id)) {
                 return i;
@@ -208,7 +208,7 @@ public class Step {
      *
      * @param id id of the agent to be removed
      */
-    public void removeAssociatedAgent(UUID id) {
+    public void removeAssociatedAgent(String id) {
         synchronized (this.associatedAgents) {
             int index = this.getIndexOf(id);
             if (index > -1) {

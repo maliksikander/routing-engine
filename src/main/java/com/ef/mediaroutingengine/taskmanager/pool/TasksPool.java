@@ -5,7 +5,6 @@ import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -81,7 +80,7 @@ public class TasksPool {
      * @param taskId id of the task to find
      * @return TaskService object if found, null otherwise
      */
-    public Task findById(UUID taskId) {
+    public Task findById(String taskId) {
         for (Task task : this.allTasks) {
             if (task.getId().equals(taskId)) {
                 return task;
@@ -96,7 +95,7 @@ public class TasksPool {
      * @param conversationId the conversation id
      * @return the task
      */
-    public Task findInProcessTaskFor(UUID conversationId) {
+    public Task findInProcessTaskFor(String conversationId) {
         return this.allTasks.stream()
                 .filter(t -> {
                     Enums.TaskStateName stateName = t.getTaskState().getName();
@@ -114,7 +113,7 @@ public class TasksPool {
      * @param conversationId the conversation id
      * @return the list
      */
-    public List<Task> findByConversationId(UUID conversationId) {
+    public List<Task> findByConversationId(String conversationId) {
         List<Task> result = new ArrayList<>();
         for (Task task : this.allTasks) {
             if (task.getTopicId().equals(conversationId)) {

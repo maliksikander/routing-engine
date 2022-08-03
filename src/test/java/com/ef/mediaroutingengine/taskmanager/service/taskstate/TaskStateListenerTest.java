@@ -38,7 +38,7 @@ class TaskStateListenerTest {
     @Test
     void testPropertyChange_when_taskNotFoundInTasksPool() {
         when(tasksPool.findById(any())).thenReturn(null);
-        taskStateListener.propertyChange(UUID.randomUUID(), new TaskState(Enums.TaskStateName.ACTIVE, null));
+        taskStateListener.propertyChange(UUID.randomUUID().toString(), new TaskState(Enums.TaskStateName.ACTIVE, null));
 
         verifyNoInteractions(factory);
         verifyNoInteractions(jmsCommunicator);
@@ -52,7 +52,7 @@ class TaskStateListenerTest {
         when(tasksPool.findById(any())).thenReturn(task);
         when(factory.getModifier(any())).thenReturn(taskStateModifier);
 
-        taskStateListener.propertyChange(UUID.randomUUID(), new TaskState(Enums.TaskStateName.ACTIVE, null));
+        taskStateListener.propertyChange(UUID.randomUUID().toString(), new TaskState(Enums.TaskStateName.ACTIVE, null));
 
         verify(taskStateModifier, times(1)).updateState(eq(task), any());
         verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);

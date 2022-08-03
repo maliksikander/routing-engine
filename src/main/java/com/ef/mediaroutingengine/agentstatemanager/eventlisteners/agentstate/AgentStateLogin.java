@@ -70,7 +70,7 @@ public class AgentStateLogin implements AgentStateDelegate {
         for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
             agentMrdState.setState(Enums.AgentMrdStateName.LOGIN);
         }
-        AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId().toString());
+        AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId());
         agentPresence.setState(agent.getState());
         agentPresence.setAgentMrdStates(agent.getAgentMrdStates());
         this.publish(agentPresence);

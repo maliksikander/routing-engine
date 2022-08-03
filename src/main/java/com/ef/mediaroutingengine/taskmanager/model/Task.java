@@ -28,7 +28,7 @@ public class Task {
     /**
      * The ID.
      */
-    private final UUID id;
+    private final String id;
     /**
      * The Mrd.
      */
@@ -64,7 +64,7 @@ public class Task {
     /**
      * The Assigned to.
      */
-    private UUID assignedTo;
+    private String assignedTo;
     /**
      * The Enqueue time.
      */
@@ -90,7 +90,7 @@ public class Task {
      * @param mrd            the mrd
      * @param queue          the queue
      */
-    private Task(UUID id, ChannelSession channelSession, MediaRoutingDomain mrd, String queue) {
+    private Task(String id, ChannelSession channelSession, MediaRoutingDomain mrd, String queue) {
         this.id = id;
         this.channelSession = channelSession;
         this.mrd = mrd;
@@ -114,7 +114,7 @@ public class Task {
      */
     public static Task getInstanceFrom(ChannelSession channelSession, MediaRoutingDomain mrd,
                                        String queue, TaskState state) {
-        Task task = new Task(UUID.randomUUID(), channelSession, mrd, queue);
+        Task task = new Task(UUID.randomUUID().toString(), channelSession, mrd, queue);
         task.setTaskState(state);
 
         if (state.getName().equals(Enums.TaskStateName.ACTIVE)) {
@@ -160,7 +160,7 @@ public class Task {
      * @param channelSession the channel session
      * @return the instance
      */
-    public static Task getInstanceFrom(UUID agentId, MediaRoutingDomain mrd,
+    public static Task getInstanceFrom(String agentId, MediaRoutingDomain mrd,
                                        TaskState taskState, ChannelSession channelSession) {
         Task task = getInstanceFrom(channelSession, mrd, null, taskState);
         task.setAssignedTo(agentId);
@@ -174,7 +174,7 @@ public class Task {
      *
      * @return the id
      */
-    public UUID getId() {
+    public String getId() {
         return this.id;
     }
 
@@ -250,7 +250,7 @@ public class Task {
      *
      * @return the assigned to
      */
-    public UUID getAssignedTo() {
+    public String getAssignedTo() {
         return assignedTo;
     }
 
@@ -259,7 +259,7 @@ public class Task {
      *
      * @param assignedTo the assigned to
      */
-    public void setAssignedTo(UUID assignedTo) {
+    public void setAssignedTo(String assignedTo) {
         this.assignedTo = assignedTo;
     }
 
@@ -360,7 +360,7 @@ public class Task {
      *
      * @return the topic id
      */
-    public UUID getTopicId() {
+    public String getTopicId() {
         return this.channelSession.getConversationId();
     }
 
@@ -379,7 +379,7 @@ public class Task {
      * @return the last assigned agent id
      */
 // TODO: Implement it correctly
-    public UUID getLastAssignedAgentId() {
+    public String getLastAssignedAgentId() {
         return null;
     }
 

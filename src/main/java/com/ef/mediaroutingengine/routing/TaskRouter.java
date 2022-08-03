@@ -17,7 +17,6 @@ import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
-import java.util.UUID;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -170,7 +169,7 @@ public class TaskRouter implements PropertyChangeListener {
      * @return the boolean
      */
     private boolean assignToLastAssignedAgent(Task task) {
-        UUID lastAssignedAgentId = task.getLastAssignedAgentId();
+        String lastAssignedAgentId = task.getLastAssignedAgentId();
         if (lastAssignedAgentId != null) {
             Agent agent = this.agentsPool.findById(lastAssignedAgentId);
             String mrdId = this.precisionQueue.getMrd().getId();
@@ -188,7 +187,7 @@ public class TaskRouter implements PropertyChangeListener {
      * @param step the step
      * @return the available agent with the least number of active tasks
      */
-    private Agent getAvailableAgentWithLeastActiveTasks(Step step, UUID conversationId) {
+    private Agent getAvailableAgentWithLeastActiveTasks(Step step, String conversationId) {
         List<Agent> sortedAgentList = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE,
                 this.precisionQueue.getMrd().getId());
         int lowestNumberOfTasks = Integer.MAX_VALUE;
@@ -247,7 +246,7 @@ public class TaskRouter implements PropertyChangeListener {
      * @param state   the state
      * @param agentId the agent id
      */
-    private void changeStateOf(Task task, TaskState state, UUID agentId) {
+    private void changeStateOf(Task task, TaskState state, String agentId) {
         task.setTaskState(state);
         this.tasksRepository.changeState(task.getId(), state);
         task.setAssignedTo(agentId);

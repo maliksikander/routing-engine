@@ -127,7 +127,7 @@ class AgentStateLogoutTest {
 
     private Agent getNewAgent() {
         KeycloakUser keycloakUser = new KeycloakUser();
-        keycloakUser.setId(UUID.randomUUID());
+        keycloakUser.setId(UUID.randomUUID().toString());
         CCUser ccUser = new CCUser();
         ccUser.setKeycloakUser(keycloakUser);
         return new Agent(ccUser);

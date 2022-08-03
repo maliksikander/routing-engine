@@ -78,7 +78,7 @@ class AgentStateLoginTest {
         AgentStateLogin spy = Mockito.spy(agentStateLogin);
 
         AgentPresence agentPresence = mock(AgentPresence.class);
-        when(agentPresenceRepository.find(agent.getId().toString())).thenReturn(agentPresence);
+        when(agentPresenceRepository.find(agent.getId())).thenReturn(agentPresence);
         // No need to test publish again, it is already tested.
         doNothing().when(spy).publish(agentPresence);
         // calling the testing method
@@ -148,7 +148,7 @@ class AgentStateLoginTest {
 
     private Agent getNewAgent() {
         KeycloakUser keycloakUser = new KeycloakUser();
-        keycloakUser.setId(UUID.randomUUID());
+        keycloakUser.setId(UUID.randomUUID().toString());
         CCUser ccUser = new CCUser();
         ccUser.setKeycloakUser(keycloakUser);
         return new Agent(ccUser);

@@ -28,7 +28,6 @@ import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,7 +114,7 @@ public class AgentsServiceImpl implements AgentsService {
         logger.debug("Agent object created with associated MRDs | Agent: {}", agent.getId());
 
         AgentPresence agentPresence = new AgentPresence(ccUser, agent.getState(), agent.getAgentMrdStates());
-        this.agentPresenceRepository.save(agent.getId().toString(), agentPresence);
+        this.agentPresenceRepository.save(agent.getId(), agentPresence);
         logger.debug("Agent inserted in Agent Presence Repository | Agent: {}", agent.getId());
 
         //update the Associated MRDs & their maxTask values here in the ccUserObject
@@ -140,7 +139,7 @@ public class AgentsServiceImpl implements AgentsService {
     }
 
     @Override
-    public ResponseEntity<Object> update(CCUser ccUser, UUID id) {
+    public ResponseEntity<Object> update(CCUser ccUser, String id) {
         logger.info("Request to update CCUser initiated | CCUser: {}", id);
 
         if (!this.repository.existsById(id)) {
@@ -187,7 +186,7 @@ public class AgentsServiceImpl implements AgentsService {
     }
 
     @Override
-    public ResponseEntity<Object> delete(UUID id) {
+    public ResponseEntity<Object> delete(String id) {
         logger.info("Request to remove routing-attributes from CCUser initiated | CCUser: {}", id);
 
         Optional<CCUser> optionalCcUser = this.repository.findById(id);
@@ -255,7 +254,7 @@ public class AgentsServiceImpl implements AgentsService {
      * This method will update the Agent MRD State.
      */
     protected void updateAgentMrdState(CCUser ccUser) {
-        UUID agentId = ccUser.getId();
+        String agentId = ccUser.getId();
         Agent agent = this.agentsPool.findById(agentId);
         AgentState agentState = agent.getState();
 
@@ -298,7 +297,8 @@ public class AgentsServiceImpl implements AgentsService {
     /**
      * This method will prepare the AgentMrdStateChange Request and update the state.
      */
-    private void putAgentMrdStateChangeRequest(UUID agentId, String mrdId, Enums.AgentMrdStateName agentMrdStateName) {
+    private void putAgentMrdStateChangeRequest(String agentId, String mrdId,
+                                               Enums.AgentMrdStateName agentMrdStateName) {
         AgentMrdStateChangeRequest request =
                 new AgentMrdStateChangeRequest(agentId, mrdId, agentMrdStateName);
         agentStateService.agentMrdState(request);
@@ -364,7 +364,7 @@ public class AgentsServiceImpl implements AgentsService {
     /**
      * This method will return the Reason behind the conflict of Associated MRD Update of an Agent.
      */
-    private String getAssociatedMrdUpdateConflictReason(boolean isInvalidMaxAgentTasks, UUID id) {
+    private String getAssociatedMrdUpdateConflictReason(boolean isInvalidMaxAgentTasks, String id) {
         String reason = "";
         if (isInvalidMaxAgentTasks) {
             reason = "Failed to update the Agent with ID : " + id

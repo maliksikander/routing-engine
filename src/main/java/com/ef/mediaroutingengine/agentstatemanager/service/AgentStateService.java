@@ -19,7 +19,6 @@ import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -99,7 +98,7 @@ public class AgentStateService {
             AgentPresence agentPresence = new AgentPresence(ccUser, agent.getState(), agent.getAgentMrdStates());
 
             this.agentsRepository.save(ccUser);
-            this.agentPresenceRepository.save(agent.getId().toString(), agentPresence);
+            this.agentPresenceRepository.save(agent.getId(), agentPresence);
             this.agentsPool.insert(agent);
 
             logger.info("New Agent created successfully, Changing agent state to Login..");
@@ -159,7 +158,7 @@ public class AgentStateService {
      * @param agentId the agent id
      * @return the agent
      */
-    Agent validateAndGetAgent(UUID agentId) {
+    Agent validateAndGetAgent(String agentId) {
         Agent agent = this.agentsPool.findById(agentId);
         if (agent == null) {
             throw new NotFoundException("Agent: " + agentId + " not found");

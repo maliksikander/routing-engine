@@ -2,13 +2,21 @@ package com.ef.mediaroutingengine.routing.dto;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.ChannelSession;
-import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  * The type Assign task request.
  */
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
 public class AssignTaskRequest {
-
     /**
      * The Channel session.
      */
@@ -20,81 +28,9 @@ public class AssignTaskRequest {
     /**
      * The Topic id.
      */
-    private UUID conversationId;
+    private String conversationId;
     /**
      * The Task id.
      */
-    private UUID taskId;
-
-    /**
-     * Gets channel session.
-     *
-     * @return the channel session
-     */
-    public ChannelSession getChannelSession() {
-        return channelSession;
-    }
-
-    /**
-     * Sets channel session.
-     *
-     * @param channelSession the channel session
-     */
-    public void setChannelSession(ChannelSession channelSession) {
-        this.channelSession = channelSession;
-    }
-
-    /**
-     * Gets cc user.
-     *
-     * @return the cc user
-     */
-    public CCUser getCcUser() {
-        return ccUser;
-    }
-
-    /**
-     * Sets cc user.
-     *
-     * @param ccUser the cc user
-     */
-    public void setCcUser(CCUser ccUser) {
-        this.ccUser = ccUser;
-    }
-
-    /**
-     * Gets topic id.
-     *
-     * @return the topic id
-     */
-    public UUID getConversationId() {
-        return conversationId;
-    }
-
-    /**
-     * Sets topic id.
-     *
-     * @param conversationId the topic id
-     */
-    public void setConversationId(UUID conversationId) {
-        this.conversationId = conversationId;
-    }
-
-    /**
-     * Gets task id.
-     *
-     * @return the task id
-     */
-    public UUID getTaskId() {
-        return taskId;
-    }
-
-    /**
-     * Sets task id.
-     *
-     * @param taskId the task id
-     */
-    public void setTaskId(UUID taskId) {
-        this.taskId = taskId;
-    }
+    private String taskId;
 }

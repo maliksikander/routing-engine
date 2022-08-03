@@ -2,20 +2,29 @@ package com.ef.mediaroutingengine.agentstatemanager.dto;
 
 import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.agentstatemanager.controller.AgentStateController;
-import java.util.UUID;
 import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  * An AgentMrdStateChangeRequest object is used by the
  * {@link AgentStateController#mrdState(AgentMrdStateChangeRequest)
  * MRD-State-Change}*** API as Request Body.
  */
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
 public class AgentMrdStateChangeRequest {
     /**
      * ID of the agent, for which the MRD-state-change is requested.
      */
     @NotNull
-    UUID agentId;
+    String agentId;
     /**
      * Agent's Associated MRD for which the state change is requested.
      */
@@ -26,87 +35,4 @@ public class AgentMrdStateChangeRequest {
      */
     @NotNull
     Enums.AgentMrdStateName state;
-
-    /**
-     * Default constructor for Jackson Serialization and deserialization.
-     */
-    public AgentMrdStateChangeRequest() {
-
-    }
-
-    /**
-     * Parameterized Constructor.
-     *
-     * @param agentId Agent for which the MRD-state-change is requested
-     * @param mrdId   MRD for which the state change is requested
-     * @param state   new Agent-MRD-state requested
-     */
-    public AgentMrdStateChangeRequest(UUID agentId, String mrdId, Enums.AgentMrdStateName state) {
-        this.agentId = agentId;
-        this.mrdId = mrdId;
-        this.state = state;
-    }
-
-    /**
-     * Returns the value of agentId.
-     *
-     * @return the value of the agentId, an {@link UUID UUID} object or null
-     */
-    public UUID getAgentId() {
-        return agentId;
-    }
-
-    /**
-     * Sets the agentId field.
-     *
-     * @param agentId value to set
-     */
-    public void setAgentId(UUID agentId) {
-        this.agentId = agentId;
-    }
-
-    /**
-     * Returns the value of mrdId.
-     *
-     * @return the value of the mrdId, an {@link UUID UUID} object, or null
-     */
-    public String getMrdId() {
-        return mrdId;
-    }
-
-    /**
-     * Sets the mrdId field.
-     *
-     * @param mrdId value to set
-     */
-    public void setMrdId(String mrdId) {
-        this.mrdId = mrdId;
-    }
-
-    /**
-     * Returns the value of state.
-     *
-     * @return the value of state, an {@link Enums.AgentMrdStateName AgentMrdStateName} object, or null
-     */
-    public Enums.AgentMrdStateName getState() {
-        return state;
-    }
-
-    /**
-     * Sets the state field.
-     *
-     * @param state value of the state
-     */
-    public void setState(Enums.AgentMrdStateName state) {
-        this.state = state;
-    }
-
-    @Override
-    public String toString() {
-        return "AgentMrdStateChangeRequest{"
-                + "agentId=" + agentId
-                + ", mrdId=" + mrdId
-                + ", state=" + state
-                + '}';
-    }
 }

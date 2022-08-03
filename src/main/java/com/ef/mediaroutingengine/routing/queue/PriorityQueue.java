@@ -1,12 +1,10 @@
 package com.ef.mediaroutingengine.routing.queue;
 
 import com.ef.mediaroutingengine.taskmanager.model.Task;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.validation.constraints.NotNull;
@@ -22,14 +20,14 @@ public class PriorityQueue {
     /**
      * The No of queue levels.
      */
-    private final int noOfQueueLevels = 11;
+    private static final int NO_OF_QUEUE_LEVELS = 11;
 
     /**
      * Instantiates a new Priority queue.
      */
     public PriorityQueue() {
         this.multiLevelQueueMap = new ConcurrentHashMap<>();
-        for (int i = this.noOfQueueLevels; i >= 1; i--) {
+        for (int i = NO_OF_QUEUE_LEVELS; i >= 1; i--) {
             this.multiLevelQueueMap.put(i, new ConcurrentLinkedQueue<>());
         }
     }
@@ -57,7 +55,7 @@ public class PriorityQueue {
      * @return the task service in both cases (poll or peak), returns null if task not found
      */
     public Task dequeue(boolean poll) {
-        for (int i = this.noOfQueueLevels; i >= 1; i--) {
+        for (int i = NO_OF_QUEUE_LEVELS; i >= 1; i--) {
             if (!this.multiLevelQueueMap.get(i).isEmpty()) {
                 return poll
                         ? this.multiLevelQueueMap.get(i).poll()
@@ -74,21 +72,10 @@ public class PriorityQueue {
      */
     public int size() {
         int size = 0;
-        for (int i = this.noOfQueueLevels; i >= 1; i--) {
+        for (int i = NO_OF_QUEUE_LEVELS; i >= 1; i--) {
             size = size + this.multiLevelQueueMap.get(i).size();
         }
         return size;
-    }
-
-    /**
-     * Get task service.
-     *
-     * @param index the index of task service
-     * @return the task service
-     */
-    public Task get(int index) {
-        // TODO: implement this method
-        return null;
     }
 
     /**
@@ -100,13 +87,11 @@ public class PriorityQueue {
     public int indexOf(String taskId) {
         int index = -1;
         int previousQueuesSize = 0;
-        for (int i = this.noOfQueueLevels; i >= 1; i--) {
+        for (int i = NO_OF_QUEUE_LEVELS; i >= 1; i--) {
             Queue<Task> queue = this.multiLevelQueueMap.get(i);
             int k = 0;
-            for (Iterator<?> it = queue.iterator(); it.hasNext(); ) {
-                Task iter = (Task) it.next();
-                System.out.println(iter);
-                if (iter.getId().toString().equals(taskId)) {
+            for (Task task : queue) {
+                if (task.getId().equals(taskId)) {
                     index = previousQueuesSize + k;
                     return index;
                 }
@@ -125,10 +110,9 @@ public class PriorityQueue {
      */
     public Task getTask(String taskId) {
         for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
-            for (Iterator<?> it = entry.getValue().iterator(); it.hasNext(); ) {
-                Task iter = (Task) it.next();
-                if (iter.getId().toString().equals(taskId)) {
-                    return iter;
+            for (Task task : entry.getValue()) {
+                if (task.getId().equals(taskId)) {
+                    return task;
                 }
             }
         }
@@ -151,7 +135,7 @@ public class PriorityQueue {
      * @param taskId the task id
      * @return the boolean
      */
-    public boolean taskExists(UUID taskId) {
+    public boolean taskExists(String taskId) {
         for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
             for (Task task1 : entry.getValue()) {
                 if (taskId.equals(task1.getId())) {
@@ -170,11 +154,9 @@ public class PriorityQueue {
      */
     public boolean remove(@NotNull Task task) {
         for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
-            Iterator it = entry.getValue().iterator();
-            while (it.hasNext()) {
-                Task i = (Task) it.next();
-                if (i.getId().equals(task.getId())) {
-                    entry.getValue().remove(i);
+            for (Task t : entry.getValue()) {
+                if (t.getId().equals(task.getId())) {
+                    entry.getValue().remove(t);
                     return true;
                 }
             }
@@ -213,10 +195,9 @@ public class PriorityQueue {
      */
     public long getMaxTime() {
         long maxTime = 0;
-        for (Map.Entry entry : this.multiLevelQueueMap.entrySet()) {
-            if (((ConcurrentLinkedQueue) entry.getValue()).peek() != null) {
-                long queueMaxTime = System.currentTimeMillis()
-                        - ((ConcurrentLinkedQueue<Task>) entry.getValue()).peek().getEnqueueTime();
+        for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
+            if ((entry.getValue()).peek() != null) {
+                long queueMaxTime = System.currentTimeMillis() - (entry.getValue()).peek().getEnqueueTime();
                 if (queueMaxTime > maxTime) {
                     maxTime = queueMaxTime;
                 }
@@ -227,15 +208,20 @@ public class PriorityQueue {
 
     @Override
     public String toString() {
-        String result = "->/";
-        for (int i = this.noOfQueueLevels; i >= 1; i--) {
-            for (Iterator<?> it = this.multiLevelQueueMap.get(i).iterator(); it.hasNext(); ) {
-                result = result + ((Task) it.next()).getId() + ",";
+        StringBuilder result = new StringBuilder("->/");
+
+        for (int i = NO_OF_QUEUE_LEVELS; i >= 1; i--) {
+            for (Task task : this.multiLevelQueueMap.get(i)) {
+                result.append(task.getId()).append(",");
             }
         }
-        result = result.substring(result.length() - 1).equalsIgnoreCase("/")
-                ? result + "/<-"
-                : result.substring(0, result.length() - 1) + "/<-";
-        return result;
+
+        String strResult = result.toString();
+        String end = strResult.substring(strResult.length() - 1).equalsIgnoreCase("/")
+                ? strResult + "/<-" : strResult.substring(0, strResult.length() - 1) + "/<-";
+
+        result.append(end);
+
+        return result.toString();
     }
 }

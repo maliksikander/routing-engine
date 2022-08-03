@@ -16,7 +16,6 @@ import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.service.TasksService;
 import com.ef.mediaroutingengine.taskmanager.service.taskstate.TaskStateListener;
 import java.util.Optional;
-import java.util.UUID;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -67,7 +66,7 @@ public class TasksController {
      * @return the response entity
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Object> retrieveById(@PathVariable UUID id) {
+    public ResponseEntity<Object> retrieveById(@PathVariable String id) {
         return new ResponseEntity<>(this.service.retrieveById(id), HttpStatus.OK);
     }
 
@@ -79,7 +78,7 @@ public class TasksController {
      * @return the response entity
      */
     @GetMapping("")
-    public ResponseEntity<Object> retrieve(@RequestParam Optional<UUID> agentId,
+    public ResponseEntity<Object> retrieve(@RequestParam Optional<String> agentId,
                                            @RequestParam Optional<Enums.TaskStateName> taskState) {
         return new ResponseEntity<>(this.service.retrieve(agentId, taskState), HttpStatus.OK);
     }
@@ -92,7 +91,7 @@ public class TasksController {
      * @return the response entity
      */
     @PostMapping("/{taskId}/change-state")
-    public ResponseEntity<Object> changeTaskState(@PathVariable UUID taskId,
+    public ResponseEntity<Object> changeTaskState(@PathVariable String taskId,
                                                   @Valid @RequestBody TaskState request) {
         Task updatedTask = taskStateListener.propertyChange(taskId, request);
         if (updatedTask == null) {
@@ -102,7 +101,7 @@ public class TasksController {
     }
 
     @PostMapping("/{taskId}/update")
-    public ResponseEntity<Object> updateTask(@PathVariable UUID taskId,
+    public ResponseEntity<Object> updateTask(@PathVariable String taskId,
                                              @RequestBody UpdateTaskRequest reqBody) {
         return ResponseEntity.ok().body(this.service.updateTask(taskId, reqBody));
     }
@@ -131,7 +130,7 @@ public class TasksController {
         }
     }
 
-    private Agent validateAndGetAgent(UUID agentId) {
+    private Agent validateAndGetAgent(String agentId) {
         Agent agent = this.agentsPool.findById(agentId);
         if (agent == null) {
             throw new NotFoundException("Agent: " + agentId + " not found");

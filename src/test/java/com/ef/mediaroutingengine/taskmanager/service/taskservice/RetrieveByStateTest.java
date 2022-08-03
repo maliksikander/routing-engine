@@ -53,8 +53,8 @@ class RetrieveByStateTest {
 
     private ChannelSession getNewChannelSession() {
         ChannelSession channelSession = new ChannelSession();
-        channelSession.setId(UUID.randomUUID());
-        channelSession.setConversationId(UUID.randomUUID());
+        channelSession.setId(UUID.randomUUID().toString());
+        channelSession.setConversationId(UUID.randomUUID().toString());
         return channelSession;
     }
 

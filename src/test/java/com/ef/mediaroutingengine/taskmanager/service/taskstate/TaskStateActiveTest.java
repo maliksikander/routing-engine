@@ -45,7 +45,7 @@ class TaskStateActiveTest {
         Task task = mock(Task.class);
         TaskState taskState = new TaskState(Enums.TaskStateName.ACTIVE, null);
 
-        when(task.getAssignedTo()).thenReturn(UUID.randomUUID());
+        when(task.getAssignedTo()).thenReturn(UUID.randomUUID().toString());
         when(agentsPool.findById(any())).thenReturn(null);
 
         taskStateActive.updateState(task, taskState);
@@ -59,12 +59,12 @@ class TaskStateActiveTest {
         Task task = mock(Task.class);
         TaskState taskState = new TaskState(Enums.TaskStateName.ACTIVE, null);
         Agent agent = mock(Agent.class);
-        UUID topicId = UUID.randomUUID();
+        String topicId = UUID.randomUUID().toString();
         MediaRoutingDomain mrd = getNewMrd();
 
-        when(task.getAssignedTo()).thenReturn(UUID.randomUUID());
+        when(task.getAssignedTo()).thenReturn(UUID.randomUUID().toString());
         when(agentsPool.findById(any())).thenReturn(agent);
-        when(task.getId()).thenReturn(UUID.randomUUID());
+        when(task.getId()).thenReturn(UUID.randomUUID().toString());
         when(task.getTopicId()).thenReturn(topicId).thenReturn(topicId);
         when(task.getMrd()).thenReturn(mrd);
         when(task.getRoutingMode()).thenReturn(RoutingMode.PUSH);

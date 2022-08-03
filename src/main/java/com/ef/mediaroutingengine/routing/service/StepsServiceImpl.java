@@ -21,7 +21,6 @@ import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,7 +113,7 @@ public class StepsServiceImpl implements StepsService {
     }
 
     @Override
-    public PrecisionQueueEntity update(UUID id, String queueId, StepEntity stepEntity) {
+    public PrecisionQueueEntity update(String id, String queueId, StepEntity stepEntity) {
         logger.info("Update Step {} in queue {} request initiated", id, queueId);
 
         Optional<PrecisionQueueEntity> existing = this.repository.findById(queueId);
@@ -151,7 +150,7 @@ public class StepsServiceImpl implements StepsService {
     }
 
     @Override
-    public ResponseEntity<Object> delete(String queueId, UUID id) {
+    public ResponseEntity<Object> delete(String queueId, String id) {
         logger.info("Delete Step {} in Queue {} request initiated", id, queueId);
 
         PrecisionQueue precisionQueue = this.precisionQueuesPool.findById(queueId);
@@ -182,14 +181,14 @@ public class StepsServiceImpl implements StepsService {
         }
     }
 
-    private void deleteStep(PrecisionQueue precisionQueue, PrecisionQueueEntity precisionQueueEntity, UUID id) {
+    private void deleteStep(PrecisionQueue precisionQueue, PrecisionQueueEntity precisionQueueEntity, String id) {
         precisionQueueEntity.deleteStepById(id);
         precisionQueue.deleteStepById(id);
         this.repository.save(precisionQueueEntity);
     }
 
     private ResponseEntity<Object> onlyOneStep(String queueId, PrecisionQueue precisionQueue,
-                                               PrecisionQueueEntity precisionQueueEntity, UUID id) {
+                                               PrecisionQueueEntity precisionQueueEntity, String id) {
         List<Task> tasks = this.tasksPool.findByQueueId(queueId);
         if (tasks.isEmpty()) {
             deleteStep(precisionQueue, precisionQueueEntity, id);
@@ -206,7 +205,7 @@ public class StepsServiceImpl implements StepsService {
 
     private ResponseEntity<Object> moreThanOneSteps(PrecisionQueue precisionQueue,
                                                     PrecisionQueueEntity precisionQueueEntity,
-                                                    UUID id, int stepIndex) {
+                                                    String id, int stepIndex) {
         if (stepIndex == precisionQueue.getSteps().size() - 1) {
             lastStep(precisionQueue, stepIndex, id);
         } else {
@@ -217,7 +216,7 @@ public class StepsServiceImpl implements StepsService {
         return new ResponseEntity<>(new SuccessResponseBody("Successfully Deleted"), HttpStatus.OK);
     }
 
-    private void lastStep(PrecisionQueue precisionQueue, int stepIndex, UUID id) {
+    private void lastStep(PrecisionQueue precisionQueue, int stepIndex, String id) {
         synchronized (precisionQueue.getServiceQueue()) {
             for (Task task : precisionQueue.getTasks()) {
                 if (task.getCurrentStep() != null && task.getCurrentStep().getStep().getId().equals(id)) {
@@ -228,7 +227,7 @@ public class StepsServiceImpl implements StepsService {
         }
     }
 
-    private void notLastStep(PrecisionQueue precisionQueue, int stepIndex, UUID id) {
+    private void notLastStep(PrecisionQueue precisionQueue, int stepIndex, String id) {
         synchronized (precisionQueue.getServiceQueue()) {
             for (Task task : precisionQueue.getTasks()) {
                 if (task.getCurrentStep() != null && task.getCurrentStep().getStep().getId().equals(id)) {

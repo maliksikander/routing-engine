@@ -96,7 +96,7 @@ class AgentMrdStateListenerTest {
         Agent agent = getNewAgent();
 
         AgentPresence agentPresence = mock(AgentPresence.class);
-        when(agentPresenceRepository.find(agent.getId().toString())).thenReturn(agentPresence);
+        when(agentPresenceRepository.find(agent.getId())).thenReturn(agentPresence);
 
         listener.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED);
 
@@ -227,7 +227,7 @@ class AgentMrdStateListenerTest {
 
     private Agent getNewAgent() {
         KeycloakUser keycloakUser = new KeycloakUser();
-        keycloakUser.setId(UUID.randomUUID());
+        keycloakUser.setId(UUID.randomUUID().toString());
         CCUser ccUser = new CCUser();
         ccUser.setKeycloakUser(keycloakUser);
         return new Agent(ccUser);

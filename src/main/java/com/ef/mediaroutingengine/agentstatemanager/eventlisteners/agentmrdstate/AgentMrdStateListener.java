@@ -156,7 +156,7 @@ public class AgentMrdStateListener {
      */
     void publish(Agent agent, Enums.JmsEventName eventName) {
         try {
-            AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId().toString());
+            AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId());
             AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, false);
             jmsCommunicator.publish(res, eventName);
         } catch (Exception e) {

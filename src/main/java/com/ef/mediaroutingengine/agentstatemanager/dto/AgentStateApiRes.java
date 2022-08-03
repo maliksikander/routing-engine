@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.agentstatemanager.dto;
 
 import java.sql.Timestamp;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,7 +17,7 @@ public class AgentStateApiRes {
     /**
      * The Agent id.
      */
-    private UUID agentId;
+    private String agentId;
     /**
      * The Timestamp.
      */
@@ -34,7 +33,7 @@ public class AgentStateApiRes {
      * @param agentId the agent id
      * @param message the message
      */
-    public AgentStateApiRes(UUID agentId, String message) {
+    public AgentStateApiRes(String agentId, String message) {
         this.agentId = agentId;
         this.message = message;
     }

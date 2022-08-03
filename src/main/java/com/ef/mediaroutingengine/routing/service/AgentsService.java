@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.cim.objectmodel.CCUser;
 import java.util.List;
-import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 
 /**
@@ -32,7 +31,7 @@ public interface AgentsService {
      * @param id    the id
      * @return the cc user
      */
-    ResponseEntity<Object> update(CCUser agent, UUID id);
+    ResponseEntity<Object> update(CCUser agent, String id);
 
     /**
      * Delete.
@@ -40,5 +39,5 @@ public interface AgentsService {
      * @param id the id
      * @return the response entity
      */
-    ResponseEntity<Object> delete(UUID id);
+    ResponseEntity<Object> delete(String id);
 }

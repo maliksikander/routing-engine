@@ -6,7 +6,6 @@ import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
-import java.util.UUID;
 
 /**
  * The type Task state close.
@@ -42,7 +41,7 @@ public class TaskStateClose implements TaskStateModifier {
 
         if (state.getReasonCode() == null || !state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA)) {
             if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
-                UUID topicId = task.getTopicId();
+                String topicId = task.getTopicId();
                 this.taskManager.cancelAgentRequestTtlTimerTask(topicId);
                 this.taskManager.removeAgentRequestTtlTimerTask(topicId);
             }

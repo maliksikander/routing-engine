@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.MessageProducer;
@@ -163,7 +162,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
      * @return the serialized cim event
      * @throws JsonProcessingException the json processing exception
      */
-    private String getSerializedCimEvent(Serializable message, UUID conversationId) throws JsonProcessingException {
+    private String getSerializedCimEvent(Serializable message, String conversationId) throws JsonProcessingException {
         CimEvent cimEvent = new CimEvent(message, CimEventName.TASK_STATE_CHANGED, CimEventType.NOTIFICATION,
                 conversationId);
         return this.objectMapper.writeValueAsString(cimEvent);

@@ -136,7 +136,7 @@ class MyTesting {
 
     private KeycloakUser getKeycloakUser(String firstname, String lastname) {
         KeycloakUser keycloakUser = new KeycloakUser();
-        keycloakUser.setId(UUID.randomUUID());
+        keycloakUser.setId(UUID.randomUUID().toString());
         keycloakUser.setRoles(new ArrayList<>());
         keycloakUser.setPermittedResources(null);
         keycloakUser.setRealm("realm1");

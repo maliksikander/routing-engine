@@ -65,7 +65,7 @@ class AgentStateServiceTest {
 
     @Test
     void test_agentMrdState() {
-        UUID agentId = UUID.randomUUID();
+        String agentId = UUID.randomUUID().toString();
         Agent agent = mock(Agent.class);
         AgentStateService spy = Mockito.spy(agentStateService);
 
@@ -83,7 +83,7 @@ class AgentStateServiceTest {
 
     @Test
     void testAgentState_callsAgentStateListener_withRequestedAgentState() {
-        UUID agentId = UUID.randomUUID();
+        String agentId = UUID.randomUUID().toString();
         AgentState agentState = new AgentState(Enums.AgentStateName.READY, null);
         AgentStateChangeRequest request = new AgentStateChangeRequest(agentId, agentState);
 
@@ -136,7 +136,7 @@ class AgentStateServiceTest {
 
         private KeycloakUser getKeyCloakUserInstance() {
             KeycloakUser keycloakUser = new KeycloakUser();
-            keycloakUser.setId(UUID.randomUUID());
+            keycloakUser.setId(UUID.randomUUID().toString());
             keycloakUser.setUsername("user");
             return keycloakUser;
         }
@@ -162,14 +162,14 @@ class AgentStateServiceTest {
     class ValidateAndGetAgentTest {
         @Test
         void throwsNotFoundException_when_agentNotFoundInPool() {
-            UUID agentId = UUID.randomUUID();
+            String agentId = UUID.randomUUID().toString();
             when(agentsPool.findById(agentId)).thenReturn(null);
             assertThrows(NotFoundException.class, () -> agentStateService.validateAndGetAgent(agentId));
         }
 
         @Test
         void returnsAgent_when_validationSuccessful() {
-            UUID agentId = UUID.randomUUID();
+            String agentId = UUID.randomUUID().toString();
             Agent agent = mock(Agent.class);
 
             when(agentsPool.findById(agentId)).thenReturn(agent);

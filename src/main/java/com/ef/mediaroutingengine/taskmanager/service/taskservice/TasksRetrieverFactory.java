@@ -3,7 +3,6 @@ package com.ef.mediaroutingengine.taskmanager.service.taskservice;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import java.util.Optional;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +33,7 @@ public class TasksRetrieverFactory {
      * @param stateName the state name
      * @return the retriever
      */
-    public TasksRetriever getRetriever(Optional<UUID> agentId, Optional<Enums.TaskStateName> stateName) {
+    public TasksRetriever getRetriever(Optional<String> agentId, Optional<Enums.TaskStateName> stateName) {
         if (agentId.isPresent() && stateName.isPresent()) {
             return new RetrieveByAgentAndState(this.tasksPool, agentId.get(), stateName.get());
         } else if (agentId.isPresent()) {

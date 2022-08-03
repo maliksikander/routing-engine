@@ -8,7 +8,6 @@ import com.ef.mediaroutingengine.global.redis.RedisClient;
 import com.ef.mediaroutingengine.global.redis.RedisJsonDao;
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -35,10 +34,9 @@ public class AgentPresenceRepository extends RedisJsonDao<AgentPresence> {
      * @param agentState Agent-state to be updated
      * @return true if state change successful, false otherwise
      */
-    public boolean updateAgentState(UUID agentId, AgentState agentState) {
-        String id = agentId.toString();
-        this.updateField(id, ".state", agentState);
-        return this.updateField(id, ".stateChangeTime", new Timestamp(System.currentTimeMillis()));
+    public boolean updateAgentState(String agentId, AgentState agentState) {
+        this.updateField(agentId, ".state", agentState);
+        return this.updateField(agentId, ".stateChangeTime", new Timestamp(System.currentTimeMillis()));
     }
 
     /**
@@ -48,8 +46,8 @@ public class AgentPresenceRepository extends RedisJsonDao<AgentPresence> {
      * @param agentMrdStates the agent mrd states
      * @return the boolean
      */
-    public boolean updateAgentMrdStateList(UUID agentId, List<AgentMrdState> agentMrdStates) {
-        return this.updateField(agentId.toString(), ".agentMrdStates", agentMrdStates);
+    public boolean updateAgentMrdStateList(String agentId, List<AgentMrdState> agentMrdStates) {
+        return this.updateField(agentId, ".agentMrdStates", agentMrdStates);
     }
 
     /**
@@ -59,6 +57,6 @@ public class AgentPresenceRepository extends RedisJsonDao<AgentPresence> {
      * @return the boolean
      */
     public boolean updateCcUser(CCUser ccUser) {
-        return this.updateField(ccUser.getId().toString(), ".agent", ccUser);
+        return this.updateField(ccUser.getId(), ".agent", ccUser);
     }
 }

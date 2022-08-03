@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.routing.controller;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.routing.service.AgentsService;
-import java.util.UUID;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -69,7 +68,7 @@ public class AgentsController {
      */
     @CrossOrigin(origins = "*")
     @PutMapping(value = "/agents/{id}", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Object> updateAgent(@PathVariable UUID id,
+    public ResponseEntity<Object> updateAgent(@PathVariable String id,
                                               @Valid @RequestBody CCUser requestBody) {
         return this.service.update(requestBody, id);
     }
@@ -82,7 +81,7 @@ public class AgentsController {
      */
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = "/agents/{id}", produces = "application/json")
-    public ResponseEntity<Object> deleteAgent(@PathVariable UUID id) {
+    public ResponseEntity<Object> deleteAgent(@PathVariable String id) {
         return this.service.delete(id);
     }
 }

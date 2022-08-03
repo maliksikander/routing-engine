@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.routing.controller;
 
 import com.ef.cim.objectmodel.StepEntity;
 import com.ef.mediaroutingengine.routing.service.StepsService;
-import java.util.UUID;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -59,7 +58,7 @@ public class StepsController {
     @CrossOrigin(origins = "*")
     @PutMapping("/precision-queues/{queueId}/steps/{id}")
     public ResponseEntity<Object> update(@Valid @RequestBody StepEntity stepEntity,
-                                         @PathVariable String queueId, @PathVariable UUID id) {
+                                         @PathVariable String queueId, @PathVariable String id) {
         return new ResponseEntity<>(this.service.update(id, queueId, stepEntity), HttpStatus.OK);
     }
 
@@ -72,7 +71,7 @@ public class StepsController {
      */
     @CrossOrigin(origins = "*")
     @DeleteMapping("/precision-queues/{queueId}/steps/{id}")
-    public ResponseEntity<Object> delete(@PathVariable String queueId, @PathVariable UUID id) {
+    public ResponseEntity<Object> delete(@PathVariable String queueId, @PathVariable String id) {
         return this.service.delete(queueId, id);
     }
 }

@@ -6,7 +6,6 @@ import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * The type Retrieve by agent.
@@ -19,7 +18,7 @@ public class RetrieveByAgent implements TasksRetriever {
     /**
      * The Agent id.
      */
-    private final UUID agentId;
+    private final String agentId;
 
     /**
      * Instantiates a new Retrieve by agent.
@@ -27,7 +26,7 @@ public class RetrieveByAgent implements TasksRetriever {
      * @param tasksPool the tasks pool
      * @param agentId   the agent id
      */
-    public RetrieveByAgent(TasksPool tasksPool, UUID agentId) {
+    public RetrieveByAgent(TasksPool tasksPool, String agentId) {
         this.tasksPool = tasksPool;
         this.agentId = agentId;
     }
@@ -36,7 +35,7 @@ public class RetrieveByAgent implements TasksRetriever {
     public List<TaskDto> findTasks() {
         List<TaskDto> result = new ArrayList<>();
         for (Task task : tasksPool.findAll()) {
-            UUID assignedTo = task.getAssignedTo();
+            String assignedTo = task.getAssignedTo();
             if (assignedTo != null && assignedTo.equals(agentId)) {
                 result.add(AdapterUtility.createTaskDtoFrom(task));
             }

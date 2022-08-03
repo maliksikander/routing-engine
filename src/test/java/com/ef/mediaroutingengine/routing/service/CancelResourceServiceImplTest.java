@@ -166,7 +166,7 @@ class CancelResourceServiceImplTest {
             Task task = mock(Task.class);
             Enums.TaskStateReasonCode closeReasonCode = Enums.TaskStateReasonCode.CANCELLED;
             Agent agent = mock(Agent.class);
-            UUID agentId = UUID.randomUUID();
+            String agentId = UUID.randomUUID().toString();
 
             CancelResourceServiceImpl spy = Mockito.spy(cancelResourceService);
 
@@ -195,7 +195,7 @@ class CancelResourceServiceImplTest {
     @Test
     void test_removeAndPublish() {
         Task task = mock(Task.class);
-        UUID taskId = UUID.randomUUID();
+        String taskId = UUID.randomUUID().toString();
         Enums.TaskStateReasonCode closeReasonCode = Enums.TaskStateReasonCode.CANCELLED;
 
         when(task.getId()).thenReturn(taskId);
@@ -203,7 +203,7 @@ class CancelResourceServiceImplTest {
         cancelResourceService.removeAndPublish(task, closeReasonCode);
 
         verify(tasksPool, times(1)).remove(task);
-        verify(tasksRepository, times(1)).deleteById(taskId.toString());
+        verify(tasksRepository, times(1)).deleteById(taskId);
 
         ArgumentCaptor<TaskState> captor = ArgumentCaptor.forClass(TaskState.class);
         verify(task, times(1)).setTaskState(captor.capture());
@@ -216,11 +216,11 @@ class CancelResourceServiceImplTest {
     private CancelResourceRequest getCancelResourceRequestInstance() {
         CancelResourceRequest request = new CancelResourceRequest();
         request.setReasonCode(Enums.TaskStateReasonCode.CANCELLED);
-        request.setTopicId(UUID.randomUUID());
+        request.setTopicId(UUID.randomUUID().toString());
         return request;
     }
 
-    private Task getTaskInstance(UUID topicId, TaskState taskState) {
+    private Task getTaskInstance(String topicId, TaskState taskState) {
         ChannelSession channelSession = new ChannelSession();
         channelSession.setConversationId(topicId);
         return Task.getInstanceFrom(channelSession, null, UUID.randomUUID().toString(), taskState);

@@ -67,7 +67,7 @@ class AgentStateListenerTest {
 
     private Agent getAgent() {
         KeycloakUser keycloakUser = new KeycloakUser();
-        keycloakUser.setId(UUID.randomUUID());
+        keycloakUser.setId(UUID.randomUUID().toString());
         CCUser ccUser = new CCUser();
         ccUser.setKeycloakUser(keycloakUser);
         Agent agent = new Agent(ccUser);

@@ -51,7 +51,7 @@ class TaskStateCloseTest {
     @Test
     void testUpdateState_when_reasonCodeIsNullOrRonaAndRoutingModeIsPush() {
         Task task = mock(Task.class);
-        UUID topicId = UUID.randomUUID();
+        String topicId = UUID.randomUUID().toString();
         TaskState taskState = new TaskState(Enums.TaskStateName.CLOSED, null);
 
         when(task.getRoutingMode()).thenReturn(RoutingMode.PUSH);

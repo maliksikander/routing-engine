@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
@@ -222,7 +221,7 @@ public class Agent {
      *
      * @return the id
      */
-    public UUID getId() {
+    public String getId() {
         return this.keycloakUser.getId();
     }
 
@@ -396,7 +395,7 @@ public class Agent {
      * @param mrdId the mrd id
      * @return the boolean
      */
-    public boolean isAvailableForRouting(String mrdId, UUID conversationId) {
+    public boolean isAvailableForRouting(String mrdId, String conversationId) {
         Enums.AgentStateName agentStateName = this.agentState.getName();
         Enums.AgentMrdStateName mrdState = this.getAgentMrdState(mrdId).getState();
 
@@ -409,7 +408,7 @@ public class Agent {
                 && !this.isActiveOn(conversationId);
     }
 
-    boolean isActiveOn(UUID conversationId) {
+    boolean isActiveOn(String conversationId) {
         return this.getActiveTasksList().stream()
                 .anyMatch(task -> task.getTopicId().equals(conversationId));
     }

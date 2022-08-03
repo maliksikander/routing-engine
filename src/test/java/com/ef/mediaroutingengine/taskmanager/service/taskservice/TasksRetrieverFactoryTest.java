@@ -25,7 +25,7 @@ class TasksRetrieverFactoryTest {
 
     @Test
     void testGetRetriever_returnsRetrieveByAgentAndState_when_agentIdIsPresentAndTaskStateIsPresent() {
-        Optional<UUID> agentId = Optional.of(UUID.randomUUID());
+        Optional<String> agentId = Optional.of(UUID.randomUUID().toString());
         Optional<Enums.TaskStateName> stateName = Optional.of(Enums.TaskStateName.QUEUED);
 
         TasksRetriever tasksRetriever = factory.getRetriever(agentId, stateName);
@@ -34,7 +34,7 @@ class TasksRetrieverFactoryTest {
 
     @Test
     void testGetRetriever_returnsRetrieveByAgent_when_agentIdIsPresentAndTaskStateIsNotPresent() {
-        Optional<UUID> agentId = Optional.of(UUID.randomUUID());
+        Optional<String> agentId = Optional.of(UUID.randomUUID().toString());
         Optional<Enums.TaskStateName> stateName = Optional.empty();
 
         TasksRetriever tasksRetriever = factory.getRetriever(agentId, stateName);
@@ -43,7 +43,7 @@ class TasksRetrieverFactoryTest {
 
     @Test
     void testGetRetriever_returnsRetrieveByState_when_agentIdIsNotPresentAndTaskStateIsPresent() {
-        Optional<UUID> agentId = Optional.empty();
+        Optional<String> agentId = Optional.empty();
         Optional<Enums.TaskStateName> stateName = Optional.of(Enums.TaskStateName.QUEUED);
 
         TasksRetriever tasksRetriever = factory.getRetriever(agentId, stateName);
@@ -52,7 +52,7 @@ class TasksRetrieverFactoryTest {
 
     @Test
     void testGetRetriever_returnsRetrieveByState_when_agentIdIsNotPresentAndTaskStateIsNotPresent() {
-        Optional<UUID> agentId = Optional.empty();
+        Optional<String> agentId = Optional.empty();
         Optional<Enums.TaskStateName> stateName = Optional.empty();
 
         TasksRetriever tasksRetriever = factory.getRetriever(agentId, stateName);

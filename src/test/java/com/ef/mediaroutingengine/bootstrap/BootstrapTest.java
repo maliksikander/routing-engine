@@ -89,7 +89,7 @@ class BootstrapTest {
 
     private KeycloakUser getKeyCloakUser() {
         KeycloakUser keycloakUser = new KeycloakUser();
-        keycloakUser.setId(UUID.randomUUID());
+        keycloakUser.setId(UUID.randomUUID().toString());
         return keycloakUser;
     }
 

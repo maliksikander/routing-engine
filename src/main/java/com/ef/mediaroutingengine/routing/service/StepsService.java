@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.StepEntity;
-import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 
 /**
@@ -26,7 +25,7 @@ public interface StepsService {
      * @param stepEntity the step entity
      * @return the precision queue entity
      */
-    PrecisionQueueEntity update(UUID id, String queueId, StepEntity stepEntity);
+    PrecisionQueueEntity update(String id, String queueId, StepEntity stepEntity);
 
     /**
      * Delete response entity.
@@ -35,5 +34,5 @@ public interface StepsService {
      * @param id      the id
      * @return the response entity
      */
-    ResponseEntity<Object> delete(String queueId, UUID id);
+    ResponseEntity<Object> delete(String queueId, String id);
 }

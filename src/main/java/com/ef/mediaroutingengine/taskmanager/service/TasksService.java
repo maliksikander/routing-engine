@@ -17,7 +17,6 @@ import com.ef.mediaroutingengine.taskmanager.service.taskservice.TasksRetriever;
 import com.ef.mediaroutingengine.taskmanager.service.taskservice.TasksRetrieverFactory;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -61,7 +60,7 @@ public class TasksService {
      * @param taskId the task id
      * @return the task dto
      */
-    public TaskDto retrieveById(UUID taskId) {
+    public TaskDto retrieveById(String taskId) {
         Task task = this.tasksPool.findById(taskId);
         if (task != null) {
             return AdapterUtility.createTaskDtoFrom(task);
@@ -77,7 +76,7 @@ public class TasksService {
      * @param taskState the task state
      * @return the list
      */
-    public List<TaskDto> retrieve(Optional<UUID> agentId, Optional<Enums.TaskStateName> taskState) {
+    public List<TaskDto> retrieve(Optional<String> agentId, Optional<Enums.TaskStateName> taskState) {
         TasksRetriever tasksRetriever = this.tasksRetrieverFactory.getRetriever(agentId, taskState);
         return tasksRetriever.findTasks();
     }
@@ -89,7 +88,7 @@ public class TasksService {
      * @param reqBody the req body
      * @return the task dto
      */
-    public TaskDto updateTask(UUID taskId, UpdateTaskRequest reqBody) {
+    public TaskDto updateTask(String taskId, UpdateTaskRequest reqBody) {
         Task task = this.tasksPool.findById(taskId);
         if (task == null) {
             throw new NotFoundException("Task not found in Task pool");
@@ -112,7 +111,7 @@ public class TasksService {
      */
     public TaskDto assignTask(Agent agent, MediaRoutingDomain mrd, TaskState taskState,
                               ChannelSession channelSession) {
-        UUID conversationId = channelSession.getConversationId();
+        String conversationId = channelSession.getConversationId();
 
         List<Task> existingTasksOnTopic = tasksPool.findByConversationId(conversationId);
         for (Task task : existingTasksOnTopic) {
@@ -132,7 +131,7 @@ public class TasksService {
         Task task = Task.getInstanceFrom(agent.getId(), mrd, state, channelSession);
 
         this.tasksPool.add(task);
-        this.tasksRepository.save(task.getId().toString(), AdapterUtility.createTaskDtoFrom(task));
+        this.tasksRepository.save(task.getId(), AdapterUtility.createTaskDtoFrom(task));
         this.jmsCommunicator.publishTaskStateChangeForReporting(task);
 
         return task;

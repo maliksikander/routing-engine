@@ -2,14 +2,13 @@ package com.ef.mediaroutingengine.routing.repository;
 
 import com.ef.cim.objectmodel.CCUser;
 import java.util.List;
-import java.util.UUID;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
 /**
  * The interface Agents repository.
  */
-public interface AgentsRepository extends MongoRepository<CCUser, UUID> {
+public interface AgentsRepository extends MongoRepository<CCUser, String> {
 
     /**
      * Find by routing attribute id list.
