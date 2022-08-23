@@ -20,6 +20,7 @@ import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.RoutingAttributeType;
+import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.agentstatemanager.service.AgentStateService;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.routing.model.Agent;
@@ -66,13 +67,13 @@ class AgentsServiceImplTest {
     @Mock
     private AgentPresenceRepository agentPresenceRepository;
     @Mock
-    private AgentStateService agentStateService;
+    private AgentMrdStateListener agentMrdStateListener;
 
     @BeforeEach
     void setUp() {
         this.agentsService =
                 new AgentsServiceImpl(repository, routingAttributesPool, agentsPool, mrdPool, precisionQueuesPool,
-                        agentPresenceRepository, agentStateService);
+                        agentPresenceRepository, agentMrdStateListener);
     }
 
 
@@ -85,7 +86,7 @@ class AgentsServiceImplTest {
         doNothing().when(spy).validateAndSetRoutingAttributes(ccUser);
         when(this.mrdPool.findAll()).thenReturn(new ArrayList<>());
 
-        spy.create(ccUser);
+        spy.createOrUpdate(ccUser);
 
         ArgumentCaptor<String> agentIdCaptor = ArgumentCaptor.forClass(String.class);
 

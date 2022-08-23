@@ -7,13 +7,14 @@ import com.ef.cim.objectmodel.AssociatedMrd;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.dto.TaskDto;
-import com.ef.mediaroutingengine.agentstatemanager.dto.AgentMrdStateChangeRequest;
+import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
-import com.ef.mediaroutingengine.agentstatemanager.service.AgentStateService;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
+import com.ef.mediaroutingengine.global.exceptions.ConflictException;
 import com.ef.mediaroutingengine.global.exceptions.ForbiddenException;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
@@ -66,10 +67,8 @@ public class AgentsServiceImpl implements AgentsService {
      * The Agent presence repository.
      */
     private final AgentPresenceRepository agentPresenceRepository;
-    /**
-     * The Agent State service.
-     */
-    private final AgentStateService agentStateService;
+
+    private final AgentMrdStateListener agentMrdStateListener;
 
     /**
      * Constructor. Autowired, loads the beans.
@@ -80,57 +79,125 @@ public class AgentsServiceImpl implements AgentsService {
      * @param mrdPool                 the mrd pool
      * @param precisionQueuesPool     the precision queues pool
      * @param agentPresenceRepository the agent presence repository
-     * @param agentStateService       the agent state service
      */
     @Autowired
     public AgentsServiceImpl(AgentsRepository repository,
                              RoutingAttributesPool routingAttributesPool, AgentsPool agentsPool,
                              MrdPool mrdPool, PrecisionQueuesPool precisionQueuesPool,
                              AgentPresenceRepository agentPresenceRepository,
-                             AgentStateService agentStateService) {
+                             AgentMrdStateListener agentMrdStateListener) {
         this.repository = repository;
         this.routingAttributesPool = routingAttributesPool;
         this.agentsPool = agentsPool;
         this.mrdPool = mrdPool;
         this.precisionQueuesPool = precisionQueuesPool;
         this.agentPresenceRepository = agentPresenceRepository;
-        this.agentStateService = agentStateService;
+        this.agentMrdStateListener = agentMrdStateListener;
     }
 
     @Override
-    public CCUser create(CCUser ccUser) {
+    public CCUser createOrUpdate(CCUser ccUser) {
         logger.info("Request to add CCUser initiated | CCUser: {}", ccUser.getKeycloakUser().getId());
 
         ccUser.setId(ccUser.getKeycloakUser().getId());
-        this.validateAndSetRoutingAttributes(ccUser);
-        logger.debug("CCUser's RoutingAttributes validated | CCUser: {}", ccUser.getId());
 
         if (this.repository.existsById(ccUser.getId())) {
             logger.debug("CCUser: {} exists, Updating existing CCUser", ccUser.getId());
             return this.update(ccUser);
         }
 
-        Agent agent = new Agent(ccUser, mrdPool.findAll());
-        logger.debug("Agent object created with associated MRDs | Agent: {}", agent.getId());
+        // Unique usernames allowed. The latest user with same name is used, so the existing is deleted
+        this.deleteExistingUserWithSameUsername(ccUser.getKeycloakUser());
 
+        this.validateAndSetRoutingAttributes(ccUser);
+        logger.debug("CCUser's RoutingAttributes validated | CCUser: {}", ccUser.getId());
+
+        return this.insertCcUser(ccUser);
+    }
+
+    @Override
+    public void createOrUpdate(KeycloakUser keycloakUser) {
+        if (this.repository.existsById(keycloakUser.getId())) {
+            this.update(keycloakUser);
+            return;
+        }
+
+        // Unique usernames allowed. The latest user with same name is used, so the existing is deleted
+        this.deleteExistingUserWithSameUsername(keycloakUser);
+
+        CCUser ccUser = createCcUserInstance(keycloakUser);
+        this.insertCcUser(ccUser);
+    }
+
+    private void deleteExistingUserWithSameUsername(KeycloakUser keycloakUser) {
+        String username = keycloakUser.getUsername();
+        CCUser userWithSameUsername = this.repository.findByKeycloakUserUsername(username);
+
+        if (userWithSameUsername == null) {
+            logger.info("No user exists with username: {}", username);
+            return;
+        }
+
+        logger.info("A user exists with username: {}, Deleting the existing user..", username);
+
+        String id = userWithSameUsername.getId();
+        Agent agent = this.agentsPool.findById(id);
+
+        if (!agent.getAllTasks().isEmpty()) {
+            String errStr = "Couldn't create agent, an agent exists with username" + username + "with active tasks";
+            logger.error(errStr);
+            throw new ConflictException(errStr);
+        }
+
+        if (!agent.getAssociatedRoutingAttributes().isEmpty()) {
+            this.precisionQueuesPool.deleteFromAll(agent);
+            logger.debug("User's association removed from all precision queues");
+        }
+        this.agentsPool.deleteById(id);
+        logger.debug("User removed from in memory agent pool");
+        this.agentPresenceRepository.deleteById(id);
+        logger.debug("User removed from Agent Presence repository");
+        this.repository.deleteById(id);
+        logger.debug("User removed from configurations DB");
+
+        logger.info("Existing user with username: {}, deleted successfully", username);
+    }
+
+    private CCUser insertCcUser(CCUser ccUser) {
+        ccUser.setAssociatedMrds(getAssociatedMrdList());
+
+        Agent agent = new Agent(ccUser, mrdPool.findAll());
         AgentPresence agentPresence = new AgentPresence(ccUser, agent.getState(), agent.getAgentMrdStates());
+
+        this.repository.insert(ccUser);
+        logger.debug("Agent inserted in Agents config DB | Agent: {}", agent.getId());
+
         this.agentPresenceRepository.save(agent.getId(), agentPresence);
         logger.debug("Agent inserted in Agent Presence Repository | Agent: {}", agent.getId());
-
-        //update the Associated MRDs & their maxTask values here in the ccUserObject
-        this.setAssociatedMrdsAndMaxAgentTasks(ccUser, agent.getAgentMrdStates());
-
-        this.precisionQueuesPool.evaluateOnInsertForAll(agent);
-        logger.debug("Agent's association in Queues evaluated | Agent: {}", agent.getId());
 
         this.agentsPool.insert(agent);
         logger.debug("Agent inserted in in-memory Agents pool | Agent: {}", agent.getId());
 
-        CCUser insertedInDb = this.repository.insert(ccUser);
-        logger.debug("Agent inserted in Agents config DB | Agent: {}", agent.getId());
+        if (!agent.getAssociatedRoutingAttributes().isEmpty()) {
+            this.precisionQueuesPool.evaluateOnInsertForAll(agent);
+            logger.debug("Agent's association in Queues evaluated | Agent: {}", agent.getId());
+        }
 
         logger.info("CCUser added successfully | CCUser: {}", ccUser.getId());
-        return insertedInDb;
+        return ccUser;
+    }
+
+    private CCUser createCcUserInstance(KeycloakUser keycloakUser) {
+        CCUser ccUser = new CCUser();
+        ccUser.setId(keycloakUser.getId());
+        ccUser.setKeycloakUser(keycloakUser);
+        return ccUser;
+    }
+
+    private List<AssociatedMrd> getAssociatedMrdList() {
+        return this.mrdPool.findAll().stream()
+                .map(mrd -> new AssociatedMrd(mrd.getId(), mrd.getMaxRequests()))
+                .toList();
     }
 
     @Override
@@ -154,13 +221,13 @@ public class AgentsServiceImpl implements AgentsService {
             return new ResponseEntity<>(associatedMrdUpdateConflictResponse, HttpStatus.CONFLICT);
         }
 
-        this.validateAndSetRoutingAttributes(ccUser);
-        logger.debug("CCUser's RoutingAttributes validated | CCUser: {}", ccUser.getId());
-
         return new ResponseEntity<>(this.update(ccUser), HttpStatus.OK);
     }
 
     private CCUser update(CCUser ccUser) {
+        this.validateAndSetRoutingAttributes(ccUser);
+        logger.debug("CCUser's RoutingAttributes validated | CCUser: {}", ccUser.getId());
+
         Agent agent = this.agentsPool.findById(ccUser.getId());
 
         if (ccUser.getAssociatedMrds().isEmpty()) {
@@ -183,6 +250,22 @@ public class AgentsServiceImpl implements AgentsService {
 
         logger.info("CCUser updated successfully | CCUser: {}", ccUser.getId());
         return savedInDb;
+    }
+
+    @Override
+    public void update(KeycloakUser keycloakUser) {
+        Optional<CCUser> optionalCcUser = this.repository.findById(keycloakUser.getId());
+
+        if (optionalCcUser.isPresent()) {
+            CCUser ccUser = optionalCcUser.get();
+            Agent agent = this.agentsPool.findById(keycloakUser.getId());
+
+            agent.setKeycloakUser(keycloakUser);
+            ccUser.setKeycloakUser(keycloakUser);
+
+            this.repository.save(ccUser);
+            this.agentPresenceRepository.updateCcUser(ccUser);
+        }
     }
 
     @Override
@@ -275,19 +358,19 @@ public class AgentsServiceImpl implements AgentsService {
 
                     if (agentMrdState.getState().equals(Enums.AgentMrdStateName.ACTIVE)
                             && (agentActivePushTasks >= maxAgentTasks || maxAgentTasks == 0)) {
-                        putAgentMrdStateChangeRequest(agentId, mrdId, Enums.AgentMrdStateName.BUSY);
+                        putAgentMrdStateChangeRequest(agent, mrdId, Enums.AgentMrdStateName.BUSY);
                         logger.debug("MRD state has been changed from ACTIVE to BUSY. |");
                     }
 
                     if (agentMrdState.getState().equals(Enums.AgentMrdStateName.BUSY)
                             && agentActivePushTasks < maxAgentTasks && maxAgentTasks != 0) {
-                        putAgentMrdStateChangeRequest(agentId, mrdId, Enums.AgentMrdStateName.ACTIVE);
+                        putAgentMrdStateChangeRequest(agent, mrdId, Enums.AgentMrdStateName.ACTIVE);
                         logger.debug("MRD state has been changed from BUSY to ACTIVE. |");
                     }
 
                     if (maxAgentTasks == 0 && agentState.getName().equals(Enums.AgentStateName.READY)
                             && agentMrdState.getState().equals(Enums.AgentMrdStateName.READY)) {
-                        putAgentMrdStateChangeRequest(agentId, mrdId, Enums.AgentMrdStateName.NOT_READY);
+                        putAgentMrdStateChangeRequest(agent, mrdId, Enums.AgentMrdStateName.NOT_READY);
                         logger.debug("MRD state has been changed from READY to NOT_READY.|");
                     }
                 }
@@ -297,11 +380,9 @@ public class AgentsServiceImpl implements AgentsService {
     /**
      * This method will prepare the AgentMrdStateChange Request and update the state.
      */
-    private void putAgentMrdStateChangeRequest(String agentId, String mrdId,
+    private void putAgentMrdStateChangeRequest(Agent agent, String mrdId,
                                                Enums.AgentMrdStateName agentMrdStateName) {
-        AgentMrdStateChangeRequest request =
-                new AgentMrdStateChangeRequest(agentId, mrdId, agentMrdStateName);
-        agentStateService.agentMrdState(request);
+        this.agentMrdStateListener.propertyChange(agent, mrdId, agentMrdStateName, true);
     }
 
     /**

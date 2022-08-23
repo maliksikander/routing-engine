@@ -1,24 +1,16 @@
 package com.ef.mediaroutingengine.agentstatemanager.service;
 
-import com.ef.cim.objectmodel.AgentPresence;
 import com.ef.cim.objectmodel.AgentState;
-import com.ef.cim.objectmodel.AssociatedMrd;
-import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentMrdStateChangeRequest;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangeRequest;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate.AgentStateListener;
-import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
-import com.ef.mediaroutingengine.routing.pool.MrdPool;
-import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
-import java.util.ArrayList;
-import java.util.List;
+import com.ef.mediaroutingengine.routing.service.AgentsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +24,9 @@ import org.springframework.stereotype.Service;
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AgentStateService {
+    /**
+     * The Logger.
+     */
     private final Logger logger = LoggerFactory.getLogger(AgentStateService.class);
 
     /**
@@ -47,89 +42,39 @@ public class AgentStateService {
      */
     private final AgentsPool agentsPool;
     /**
-     * The Mrd pool.
+     * The Agents service.
      */
-    private final MrdPool mrdPool;
-    /**
-     * The Agent presence repository.
-     */
-    private final AgentPresenceRepository agentPresenceRepository;
-    /**
-     * The Agents repository.
-     */
-    private final AgentsRepository agentsRepository;
+    private final AgentsService agentsService;
 
     /**
      * Instantiates a new Agent state service.
      *
-     * @param agentStateListener      the agent state listener
-     * @param agentMrdStateListener   the agent mrd state listener
-     * @param agentsPool              the agents pool
-     * @param mrdPool                 the mrd pool
-     * @param agentPresenceRepository the agent presence repository
-     * @param agentsRepository        the agents repository
+     * @param agentStateListener    the agent state listener
+     * @param agentMrdStateListener the agent mrd state listener
+     * @param agentsPool            the agents pool
+     * @param agentsService         the agents service
      */
     @Autowired
     public AgentStateService(AgentStateListener agentStateListener, AgentMrdStateListener agentMrdStateListener,
-                             AgentsPool agentsPool, MrdPool mrdPool,
-                             AgentPresenceRepository agentPresenceRepository,
-                             AgentsRepository agentsRepository) {
+                             AgentsPool agentsPool, AgentsService agentsService) {
         this.agentStateListener = agentStateListener;
         this.agentMrdStateListener = agentMrdStateListener;
         this.agentsPool = agentsPool;
-        this.mrdPool = mrdPool;
-        this.agentPresenceRepository = agentPresenceRepository;
-        this.agentsRepository = agentsRepository;
+        this.agentsService = agentsService;
     }
 
     /**
      * Handles the agent login request.
      *
-     * @param request AgentLoginRequest DTO.
+     * @param keycloakUser AgentLoginRequest DTO.
      */
-    public void agentLogin(KeycloakUser request) {
-        logger.info("Request to Login Agent initiated for agent: {}", request.getId());
-        Agent agent = this.agentsPool.findById(request.getId());
-        if (agent == null) {
-            logger.info("Agent does not exist, creating new agent..");
+    public void agentLogin(KeycloakUser keycloakUser) {
+        logger.info("Request to Login Agent initiated for agent: {}", keycloakUser.getId());
 
-            CCUser ccUser = this.getCcUserInstance(request);
-            agent = new Agent(ccUser, mrdPool.findAll());
-            AgentPresence agentPresence = new AgentPresence(ccUser, agent.getState(), agent.getAgentMrdStates());
+        this.agentsService.createOrUpdate(keycloakUser);
 
-            this.agentsRepository.save(ccUser);
-            this.agentPresenceRepository.save(agent.getId(), agentPresence);
-            this.agentsPool.insert(agent);
-
-            logger.info("New Agent created successfully, Changing agent state to Login..");
-        }
-
+        Agent agent = this.agentsPool.findById(keycloakUser.getId());
         this.agentStateListener.propertyChange(agent, new AgentState(Enums.AgentStateName.LOGIN, null));
-    }
-
-    /**
-     * Gets cc user instance.
-     *
-     * @param keycloakUser the keycloak user
-     * @return the cc user instance
-     */
-    private CCUser getCcUserInstance(KeycloakUser keycloakUser) {
-        CCUser ccUser = new CCUser();
-        ccUser.setId(keycloakUser.getId());
-        ccUser.setKeycloakUser(keycloakUser);
-        ccUser.setAssociatedMrds(getAssociatedMrdList());
-        return ccUser;
-    }
-
-    /**
-     * Get associated MRDs including all MRDs in the pool.
-     */
-    private List<AssociatedMrd> getAssociatedMrdList() {
-        List<AssociatedMrd> associatedMrdList = new ArrayList<>();
-        List<MediaRoutingDomain> mrdList = this.mrdPool.findAll();
-
-        mrdList.forEach(mrd -> associatedMrdList.add(new AssociatedMrd(mrd.getId(), mrd.getMaxRequests())));
-        return associatedMrdList;
     }
 
     /**

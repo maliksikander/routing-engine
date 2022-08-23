@@ -68,6 +68,7 @@ public class Agent {
                         associatedRoutingAttribute);
             }
         }
+
         this.agentMrdStates = new ConcurrentHashMap<>();
         this.activeTasks = new ConcurrentHashMap<>();
     }
@@ -81,9 +82,13 @@ public class Agent {
     public Agent(@NotNull CCUser ccUser, @NotNull List<MediaRoutingDomain> allMrdList) {
         this(ccUser);
         this.agentState = new AgentState(Enums.AgentStateName.LOGOUT, null);
+
         List<AgentMrdState> agentMrdStateList = new ArrayList<>();
         allMrdList.forEach(mrd -> agentMrdStateList.add(new AgentMrdState(mrd, Enums.AgentMrdStateName.NOT_READY)));
         this.setAgentMrdStates(agentMrdStateList);
+
+        ccUser.getAssociatedMrds().forEach(associatedMrd -> this.agentMrdStates.get(associatedMrd.getMrdId())
+                .setMaxAgentTasks(associatedMrd.getMaxAgentTasks()));
     }
 
     /**
@@ -223,6 +228,10 @@ public class Agent {
      */
     public String getId() {
         return this.keycloakUser.getId();
+    }
+
+    public void setKeycloakUser(KeycloakUser keycloakUser) {
+        this.keycloakUser = keycloakUser;
     }
 
     /**

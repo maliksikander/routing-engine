@@ -170,12 +170,20 @@ public class AgentMrdStateListener {
      * @param agentMrdState the agent mrd state
      */
     void fireStateChangeToTaskSchedulers(AgentMrdState agentMrdState) {
-        String eventName = "AGENT_MRD_STATE_" + agentMrdState.getState().name();
-        for (PrecisionQueue precisionQueue : this.precisionQueuesPool.toList()) {
-            if (precisionQueue.getMrd().getId().equals(agentMrdState.getMrd().getId())) {
-                PropertyChangeEvent evt = new PropertyChangeEvent(this, eventName, null, agentMrdState);
-                precisionQueue.getTaskScheduler().propertyChange(evt);
+        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+
+        CompletableFuture.runAsync(() -> {
+            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+
+            String eventName = "AGENT_MRD_STATE_" + agentMrdState.getState().name();
+            for (PrecisionQueue precisionQueue : this.precisionQueuesPool.toList()) {
+                if (precisionQueue.getMrd().getId().equals(agentMrdState.getMrd().getId())) {
+                    PropertyChangeEvent evt = new PropertyChangeEvent(this, eventName, null, agentMrdState);
+                    precisionQueue.getTaskScheduler().propertyChange(evt);
+                }
             }
-        }
+
+            MDC.clear();
+        });
     }
 }

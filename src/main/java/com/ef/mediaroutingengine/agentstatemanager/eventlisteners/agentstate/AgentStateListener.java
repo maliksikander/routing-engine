@@ -94,6 +94,7 @@ public class AgentStateListener {
 
         if (isStateChanged) {
             logger.info("Agent state changed from {} to {} | Agent: {}", currentState, newState, agent.getId());
+            // Todo: Suggestion (awais bhai) there should be only one event and that too with name Agent-State
             this.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED, true);
         } else {
             logger.info("Agent-state change from: {} to: {} not allowed | Agent: {}",

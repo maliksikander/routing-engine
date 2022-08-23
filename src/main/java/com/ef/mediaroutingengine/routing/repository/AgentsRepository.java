@@ -18,4 +18,8 @@ public interface AgentsRepository extends MongoRepository<CCUser, String> {
      */
     @Query("{'associatedRoutingAttributes.routingAttribute.id': ?0}")
     List<CCUser> findByRoutingAttributeId(String id);
+
+    boolean existsByKeycloakUserUsername(String username);
+
+    CCUser findByKeycloakUserUsername(String username);
 }

@@ -25,9 +25,11 @@ import java.beans.PropertyChangeSupport;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
@@ -181,13 +183,22 @@ public class TaskManager {
         }
 
         if (noOfActiveTasks > 1) {
-            for (PrecisionQueue precisionQueue : this.precisionQueuesPool.toList()) {
-                if (precisionQueue.getMrd().getId().equals(mrdId)) {
-                    PropertyChangeEvent evt = new PropertyChangeEvent(this,
-                            Enums.EventName.TASK_ACCEPTED.name(), null, "");
-                    precisionQueue.getTaskScheduler().propertyChange(evt);
+            String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+
+            CompletableFuture.runAsync(() -> {
+                // putting same correlation id from the caller thread into this thread
+                MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+
+                for (PrecisionQueue precisionQueue : this.precisionQueuesPool.toList()) {
+                    if (precisionQueue.getMrd().getId().equals(mrdId)) {
+                        PropertyChangeEvent evt = new PropertyChangeEvent(this,
+                                Enums.EventName.TASK_ACCEPTED.name(), null, "");
+                        precisionQueue.getTaskScheduler().propertyChange(evt);
+                    }
                 }
-            }
+
+                MDC.clear();
+            });
         }
     }
 

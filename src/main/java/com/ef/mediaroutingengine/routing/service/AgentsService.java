@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.KeycloakUser;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 
@@ -15,7 +16,9 @@ public interface AgentsService {
      * @param agent the agent
      * @return the cc user
      */
-    CCUser create(CCUser agent);
+    CCUser createOrUpdate(CCUser agent);
+
+    void createOrUpdate(KeycloakUser keycloakUser);
 
     /**
      * Retrieve list.
@@ -32,6 +35,8 @@ public interface AgentsService {
      * @return the cc user
      */
     ResponseEntity<Object> update(CCUser agent, String id);
+
+    void update(KeycloakUser keycloakUser);
 
     /**
      * Delete.

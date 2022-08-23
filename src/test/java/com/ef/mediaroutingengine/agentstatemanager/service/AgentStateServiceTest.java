@@ -27,6 +27,7 @@ import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepos
 import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
+import com.ef.mediaroutingengine.routing.service.AgentsService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -49,18 +50,14 @@ class AgentStateServiceTest {
     @Mock
     private AgentsPool agentsPool;
     @Mock
-    private MrdPool mrdPool;
-    @Mock
-    private AgentPresenceRepository agentPresenceRepository;
-    @Mock
-    private AgentsRepository agentsRepository;
+    private AgentsService agentsService;
 
     private AgentStateService agentStateService;
 
     @BeforeEach
     void setUp() {
         this.agentStateService = new AgentStateService(agentStateListener, agentMrdStateListener, agentsPool,
-                mrdPool, agentPresenceRepository, agentsRepository);
+                agentsService);
     }
 
     @Test
@@ -115,23 +112,7 @@ class AgentStateServiceTest {
 
         @Test
         void createsNewAgent_then_callsAgentStateListenerWithStateLogin_whenAgentNotFoundInPool() {
-            KeycloakUser request = getKeyCloakUserInstance();
 
-            when(agentsPool.findById(request.getId())).thenReturn(null);
-            when(mrdPool.findAll()).thenReturn(getMrdList());
-
-            agentStateService.agentLogin(request);
-
-            verify(agentsRepository, times(1)).save(any());
-            verify(agentPresenceRepository, times(1)).save(any(), any());
-            verify(agentsPool, times(1)).insert(any());
-
-
-            ArgumentCaptor<AgentState> captor = ArgumentCaptor.forClass(AgentState.class);
-            verify(agentStateListener, times(1)).propertyChange(any(), captor.capture());
-
-            assertEquals(Enums.AgentStateName.LOGIN, captor.getValue().getName());
-            assertNull(captor.getValue().getReasonCode());
         }
 
         private KeycloakUser getKeyCloakUserInstance() {

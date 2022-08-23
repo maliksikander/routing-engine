@@ -98,10 +98,13 @@ public class CancelResourceServiceImpl implements CancelResourceService {
         logger.debug("Task {} step timer cancelled", task.getId());
 
         PrecisionQueue precisionQueue = precisionQueuesPool.findById(task.getQueue());
+
+        // Todo: use boolean to check if task is removed, else return immediately
+        // Todo: Review the synchronized block. it should work on task instead of queue
         synchronized (precisionQueue.getServiceQueue()) {
             precisionQueue.removeTask(task);
-            logger.debug("Task {} removed from queue", task.getId());
         }
+        logger.debug("Task {} removed from queue", task.getId());
 
         if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
             endQueuedTask(task, precisionQueue, request.getReasonCode());

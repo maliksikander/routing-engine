@@ -44,7 +44,7 @@ public class AgentsController {
     @CrossOrigin(origins = "*")
     @PostMapping(value = "/agents", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> createAgent(@Valid @RequestBody CCUser requestBody) {
-        return new ResponseEntity<>(this.service.create(requestBody), HttpStatus.OK);
+        return new ResponseEntity<>(this.service.createOrUpdate(requestBody), HttpStatus.OK);
     }
 
     /**
