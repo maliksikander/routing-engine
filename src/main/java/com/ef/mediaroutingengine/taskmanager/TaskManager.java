@@ -233,7 +233,12 @@ public class TaskManager {
         this.requestTtlTimers.put(topicId, newTimerTask);
     }
 
-    private void insertInPoolAndRepository(Task task) {
+    /**
+     * Insert in pool and repository.
+     *
+     * @param task the task
+     */
+    public void insertInPoolAndRepository(Task task) {
         this.tasksPool.add(task);
         logger.debug("Task: {} added in tasks pool", task.getId());
 

@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.routing.dto;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.TaskState;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,4 +34,8 @@ public class AssignTaskRequest {
      * The Task id.
      */
     private String taskId;
+    /**
+     * The Task state.
+     */
+    private TaskState taskState;
 }

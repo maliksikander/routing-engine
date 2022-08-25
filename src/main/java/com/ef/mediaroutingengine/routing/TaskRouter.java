@@ -218,12 +218,15 @@ public class TaskRouter implements PropertyChangeListener {
                 logger.debug("AgentRequestTtlTimeout method returning..");
                 return;
             }
+
             CCUser ccUser = agent.toCcUser();
+            TaskState taskState = new TaskState(Enums.TaskStateName.RESERVED, null);
+
             boolean isReserved = this.restRequest.postAssignTask(task.getChannelSession(),
-                    ccUser, task.getTopicId(), task.getId());
+                    ccUser, task.getTopicId(), task.getId(), taskState);
             if (isReserved) {
                 logger.debug("Task Assigned to agent in Agent-Manager");
-                this.changeStateOf(task, new TaskState(Enums.TaskStateName.RESERVED, null), agent.getId());
+                this.changeStateOf(task, taskState, agent.getId());
                 this.jmsCommunicator.publishTaskStateChangeForReporting(task);
                 precisionQueue.dequeue();
                 agent.reserveTask(task);

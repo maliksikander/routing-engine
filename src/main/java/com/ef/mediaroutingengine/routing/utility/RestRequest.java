@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.routing.utility;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.config.AssignResourceProperties;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.routing.dto.AgentReservedRequest;
@@ -86,13 +87,9 @@ public class RestRequest {
      * @param taskId         the id of the task
      * @return true if request successful, false otherwise.
      */
-    public boolean postAssignTask(ChannelSession channelSession, CCUser agent,
-                                  String topicId, String taskId) {
-        AssignTaskRequest request = new AssignTaskRequest();
-        request.setChannelSession(channelSession);
-        request.setCcUser(agent);
-        request.setConversationId(topicId);
-        request.setTaskId(taskId);
+    public boolean postAssignTask(ChannelSession channelSession, CCUser agent, String topicId, String taskId,
+                                  TaskState taskState) {
+        AssignTaskRequest request = new AssignTaskRequest(channelSession, agent, topicId, taskId, taskState);
 
         try {
             this.httpRequest(request, this.config.getAssignTaskUri(), HttpMethod.POST);
