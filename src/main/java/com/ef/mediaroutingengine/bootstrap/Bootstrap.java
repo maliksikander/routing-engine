@@ -10,7 +10,6 @@ import com.ef.cim.objectmodel.ExpressionEntity;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.RoutingAttribute;
-import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.StepEntity;
 import com.ef.cim.objectmodel.TermEntity;
 import com.ef.cim.objectmodel.dto.TaskDto;
@@ -26,6 +25,7 @@ import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
 import com.ef.mediaroutingengine.routing.repository.MediaRoutingDomainRepository;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.routing.repository.RoutingAttributeRepository;
+import com.ef.mediaroutingengine.routing.utility.RestRequest;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
@@ -105,6 +105,8 @@ public class Bootstrap {
      */
     private final JmsCommunicator jmsCommunicator;
 
+    private final RestRequest restRequest;
+
     /**
      * Default Constructor. Loads the dependency beans.
      *
@@ -135,7 +137,7 @@ public class Bootstrap {
                      RoutingAttributesPool routingAttributesPool,
                      TasksPool tasksPool,
                      TaskManager taskManager,
-                     JmsCommunicator jmsCommunicator) {
+                     JmsCommunicator jmsCommunicator, RestRequest restRequest) {
         this.agentsRepository = agentsRepository;
         this.mediaRoutingDomainRepository = mediaRoutingDomainRepository;
         this.precisionQueueRepository = precisionQueueRepository;
@@ -149,6 +151,7 @@ public class Bootstrap {
         this.tasksPool = tasksPool;
         this.taskManager = taskManager;
         this.jmsCommunicator = jmsCommunicator;
+        this.restRequest = restRequest;
     }
 
     /**
@@ -179,60 +182,23 @@ public class Bootstrap {
         this.routingAttributesPool.loadFrom(routingAttributeRepository.findAll());
         logger.debug("Routing-Attributes pool loaded from DB");
 
-        List<CCUser> ccUsers = agentsRepository.findAll();
-        /*
-        Replace the routing-Attribute in CC-Users from that in the in-memory routing-attribute pool
-        Advantage: Shared memory: we update routing-Attribute in pool, it is updated every-where it is
-                    being used. (CCUsers - in this case)
-         */
-        this.replaceRoutingAttributesInCcUsers(ccUsers);
-
-        this.agentsPool.loadPoolFrom(ccUsers);
-        logger.debug("Agents pool loaded DB");
-
-        List<MediaRoutingDomain> mrdList = mediaRoutingDomainRepository.findAll();
-
-        if (!voiceMrdExists(mrdList)) {
-            MediaRoutingDomain voiceMrd = createVoiceMrd();
-            this.mediaRoutingDomainRepository.save(voiceMrd);
-            mrdList.add(voiceMrd);
-        }
-
-        this.mrdPool.loadPoolFrom(mrdList);
+        this.mrdPool.loadFrom(this.getMrdFromConfigDb());
         logger.debug("MRDs pool loaded from DB");
+
+        this.agentsPool.loadFrom(this.getCcUsersFromConfigDb());
         // Set Agent and AgentMRD states after MRD pool is loaded as it is required for agent-mrd states.
         this.setAgentStates();
-        /*
-        Load Precision-Queue pool. Requires Agents pool to be loaded first to evaluate the Agents
-        associated to steps in the Precision-Queue.
-         */
-        List<PrecisionQueueEntity> precisionQueueEntities = precisionQueueRepository.findAll();
-        /*
-        Replace the routing-Attribute and MRD in Precision-Queues from that in the in-memory pool
-        Advantage: Shared memory: we update routing-Attribute / MRD in pools, it is updated every-where it is
-                    being used. (Precision-Queues -> Steps - in this case)
-         */
-        this.replaceRoutingAttributesAndMrdInQueues(precisionQueueEntities);
-        this.precisionQueuesPool.loadPoolFrom(precisionQueueEntities, this.agentsPool);
+        logger.debug("Agents pool loaded DB");
+
+        this.precisionQueuesPool.loadFrom(this.getQueuesFromConfigDb(), this.agentsPool);
         logger.debug("Precision-Queues pool loaded from DB");
 
-        /*
-        Load the in-memory Tasks pool from REDIS.
-        Associate tasks to the (in-memory) Agents, if a task has been previously assigned to an agent.
-        (Requires Agent pool to be loaded first ^)
-        Requires Precision-Queue pool to be loaded first as it enqueues the Tasks with QUEUED state
-         */
-        List<TaskDto> taskDtoList = this.tasksRepository.findAll();
-        for (TaskDto taskDto : taskDtoList) {
-            this.replaceMrdInTask(taskDto);
-            Task task = Task.getInstanceFrom(taskDto);
-            this.associateTaskWithAgent(task);
-            if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
-                this.taskManager.enqueueTaskOnFailover(task);
-            } else if (task.getRoutingMode().equals(RoutingMode.PULL)) {
-                this.tasksPool.add(task);
-            }
-        }
+        // Load tasks from Tasks Repository
+        List<TaskDto> taskDtoList = this.getTasksFromRepository();
+        this.removeQueuedTasksWithRequestTtlExpired(taskDtoList);
+        this.tasksPool.loadFrom(taskDtoList);
+        this.associateTaskWithAgents();
+        this.taskManager.enqueueQueuedTasksOnFailover();
 
         logger.info("Routing-Attributes pool size: {}", this.routingAttributesPool.size());
         logger.info("Agents pool size: {}", this.agentsPool.size());
@@ -241,6 +207,42 @@ public class Bootstrap {
         logger.info("Task pool size: {}", this.tasksPool.size());
 
         logger.debug(Constants.METHOD_ENDED);
+    }
+
+    private void removeQueuedTasksWithRequestTtlExpired(List<TaskDto> taskDtoList) {
+        List<TaskDto> queuedTasks = this.filterQueuedTasks(taskDtoList);
+
+        // Remove Queued Tasks whose agent Request ttl is expired
+        for (TaskDto task : queuedTasks) {
+            if (this.isAgentRequestTtlExpired(task)) {
+                logger.debug("Task: {} AgentRequestTtl is expired, removing it..", task.getId());
+                taskDtoList.removeIf(t -> t.getId().equals(task.getId()));
+                this.tasksRepository.deleteById(task.getId());
+                this.restRequest.postNoAgentAvailable(task.getChannelSession().getConversationId());
+                logger.debug("Task: {} removed", task.getId());
+            }
+        }
+    }
+
+    private boolean isAgentRequestTtlExpired(TaskDto task) {
+        int ttl = task.getChannelSession().getChannel().getChannelConfig().getRoutingPolicy().getAgentRequestTtl();
+        long delay = ttl * 1000L;
+        return System.currentTimeMillis() - task.getEnqueueTime() >= delay;
+    }
+
+    private List<TaskDto> filterQueuedTasks(List<TaskDto> taskDtoList) {
+        return taskDtoList.stream()
+                .filter(t -> t.getState().getName().equals(Enums.TaskStateName.QUEUED))
+                .toList();
+    }
+
+    private List<TaskDto> getTasksFromRepository() {
+        List<TaskDto> taskDtoList = this.tasksRepository.findAll();
+        for (TaskDto taskDto : taskDtoList) {
+            MediaRoutingDomain mediaRoutingDomain = this.mrdPool.findById(taskDto.getMrd().getId());
+            taskDto.setMrd(mediaRoutingDomain);
+        }
+        return taskDtoList;
     }
 
     private boolean voiceMrdExists(List<MediaRoutingDomain> mrdList) {
@@ -261,25 +263,15 @@ public class Bootstrap {
         return voiceMrd;
     }
 
-    /**
-     * Replace mrd in task.
-     *
-     * @param taskDto the task dto
-     */
-    private void replaceMrdInTask(TaskDto taskDto) {
-        MediaRoutingDomain mediaRoutingDomain = this.mrdPool.findById(taskDto.getMrd().getId());
-        taskDto.setMrd(mediaRoutingDomain);
-    }
+    private List<PrecisionQueueEntity> getQueuesFromConfigDb() {
+        List<PrecisionQueueEntity> precisionQueueEntities = precisionQueueRepository.findAll();
 
-    /**
-     * Replace routing attributes and mrd in queues.
-     *
-     * @param precisionQueueEntities the precision queue entities
-     */
-    private void replaceRoutingAttributesAndMrdInQueues(List<PrecisionQueueEntity> precisionQueueEntities) {
+        // Replace the routing-Attribute and MRD in Precision-Queues from that in the in-memory pool
         for (PrecisionQueueEntity entity : precisionQueueEntities) {
+            // Replace MRD from in-memory pool
             MediaRoutingDomain mediaRoutingDomain = this.mrdPool.findById(entity.getMrd().getId());
             entity.setMrd(mediaRoutingDomain);
+            // Replace Routing attribute from in-memory pool
             for (StepEntity step : entity.getSteps()) {
                 for (ExpressionEntity expressionEntity : step.getExpressions()) {
                     for (TermEntity termEntity : expressionEntity.getTerms()) {
@@ -290,14 +282,26 @@ public class Bootstrap {
                 }
             }
         }
+
+        return precisionQueueEntities;
     }
 
-    /**
-     * Replace routing attributes in cc users.
-     *
-     * @param ccUsers the cc users
-     */
-    private void replaceRoutingAttributesInCcUsers(List<CCUser> ccUsers) {
+    private List<MediaRoutingDomain> getMrdFromConfigDb() {
+        List<MediaRoutingDomain> mrdList = mediaRoutingDomainRepository.findAll();
+
+        if (!voiceMrdExists(mrdList)) {
+            MediaRoutingDomain voiceMrd = createVoiceMrd();
+            this.mediaRoutingDomainRepository.save(voiceMrd);
+            mrdList.add(voiceMrd);
+        }
+
+        return mrdList;
+    }
+
+    private List<CCUser> getCcUsersFromConfigDb() {
+        List<CCUser> ccUsers = agentsRepository.findAll();
+
+        // Replace Routing attributes in CcUsers with in-memory objects for object sharing
         for (CCUser ccUser : ccUsers) {
             for (AssociatedRoutingAttribute entry : ccUser.getAssociatedRoutingAttributes()) {
                 RoutingAttribute routingAttribute = this.routingAttributesPool
@@ -305,30 +309,24 @@ public class Bootstrap {
                 entry.setRoutingAttribute(routingAttribute);
             }
         }
+
+        return ccUsers;
     }
 
     /**
-     * Adds a task to the Agent's active tasks list or reserved task object (depending on the task state).
-     * This agent should be assigned to the task previously.
-     *
-     * @param task the task to be associated with the agent
+     * Associate task with agent.
      */
-    private void associateTaskWithAgent(Task task) {
-        logger.debug(Constants.METHOD_STARTED);
-        Agent agent = this.agentsPool.findById(task.getAssignedTo());
-        if (agent != null) {
-            logger.debug("Agent: {} assigned to the Task found", agent.getId());
-            if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
-                agent.reserveTask(task);
-                logger.debug("Task: {} reserved for Agent: {}", task.getId(), agent.getId());
-            } else if (task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
-                agent.addActiveTask(task);
-                logger.debug("Task: {} added to the Agent: {} active tasks list", task.getId(), agent.getId());
+    private void associateTaskWithAgents() {
+        for (Task task : this.tasksPool.findAll()) {
+            Agent agent = this.agentsPool.findById(task.getAssignedTo());
+            if (agent != null) {
+                if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
+                    agent.reserveTask(task);
+                } else if (task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
+                    agent.addActiveTask(task);
+                }
             }
-        } else {
-            logger.debug("No agent assigned to Task: {}", task.getId());
         }
-        logger.debug(Constants.METHOD_ENDED);
     }
 
     /**

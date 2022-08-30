@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,15 +15,7 @@ public class RoutingAttributesPool {
     /**
      * The Pool.
      */
-    private final Map<String, RoutingAttribute> pool;
-
-    /**
-     * Instantiates a new Routing attributes pool.
-     */
-    @Autowired
-    public RoutingAttributesPool() {
-        this.pool = new ConcurrentHashMap<>();
-    }
+    private final Map<String, RoutingAttribute> pool = new ConcurrentHashMap<>();
 
     /**
      * Load from.
@@ -32,6 +23,7 @@ public class RoutingAttributesPool {
      * @param routingAttributes the routing attributes
      */
     public void loadFrom(List<RoutingAttribute> routingAttributes) {
+        this.pool.clear();
         routingAttributes.forEach(routingAttribute -> pool.put(routingAttribute.getId(), routingAttribute));
     }
 
@@ -57,19 +49,6 @@ public class RoutingAttributesPool {
         List<RoutingAttribute> result = new ArrayList<>();
         this.pool.forEach((k, v) -> result.add(v));
         return result;
-    }
-
-    /**
-     * Contains boolean.
-     *
-     * @param id the id
-     * @return the boolean
-     */
-    public boolean contains(String id) {
-        if (id == null) {
-            return false;
-        }
-        return this.pool.containsKey(id);
     }
 
     /**

@@ -10,6 +10,7 @@ import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
 import com.ef.mediaroutingengine.routing.repository.MediaRoutingDomainRepository;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.routing.repository.RoutingAttributeRepository;
+import com.ef.mediaroutingengine.routing.utility.RestRequest;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
@@ -57,12 +58,14 @@ class BootstrapTest {
     private TasksPool tasksPool;
     @Mock
     private TaskManager taskManager;
+    @Mock
+    private RestRequest restRequest;
 
     @BeforeEach
     void setUp() {
         bootstrap = new Bootstrap(agentsRepository, mediaRoutingDomainRepository, precisionQueueRepository,
                 tasksRepository, agentPresenceRepository, routingAttributeRepository, agentsPool, mrdPool,
-                precisionQueuesPool, routingAttributesPool, tasksPool, taskManager, jmsCommunicator);
+                precisionQueuesPool, routingAttributesPool, tasksPool, taskManager, jmsCommunicator, restRequest);
     }
 
     @Test

@@ -2,11 +2,12 @@ package com.ef.mediaroutingengine.taskmanager.pool;
 
 
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.RoutingMode;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -18,15 +19,11 @@ public class TasksPool {
     /**
      * Contains all tasks in the pool.
      */
-    private final List<Task> allTasks;
+    private final List<Task> pool = new CopyOnWriteArrayList<>();
 
-
-    /**
-     * Default constructor.
-     */
-    @Autowired
-    public TasksPool() {
-        this.allTasks = new CopyOnWriteArrayList<>();
+    public void loadFrom(List<TaskDto> taskDtoList) {
+        this.pool.clear();
+        taskDtoList.forEach(t -> this.pool.add(Task.getInstanceFrom(t)));
     }
 
     /**
@@ -36,7 +33,7 @@ public class TasksPool {
      * @return the boolean
      */
     private boolean contains(Task task) {
-        for (Task element : this.allTasks) {
+        for (Task element : this.pool) {
             if (element.getId().equals(task.getId())) {
                 return true;
             }
@@ -51,7 +48,7 @@ public class TasksPool {
      */
     public void add(Task task) {
         if (!this.contains(task)) {
-            this.allTasks.add(task);
+            this.pool.add(task);
         }
     }
 
@@ -62,7 +59,7 @@ public class TasksPool {
      * @return the boolean
      */
     public boolean remove(Task task) {
-        return this.allTasks.remove(task);
+        return this.pool.remove(task);
     }
 
     /**
@@ -71,7 +68,7 @@ public class TasksPool {
      * @return the list
      */
     public List<Task> findAll() {
-        return this.allTasks;
+        return this.pool;
     }
 
     /**
@@ -81,7 +78,7 @@ public class TasksPool {
      * @return TaskService object if found, null otherwise
      */
     public Task findById(String taskId) {
-        for (Task task : this.allTasks) {
+        for (Task task : this.pool) {
             if (task.getId().equals(taskId)) {
                 return task;
             }
@@ -96,7 +93,7 @@ public class TasksPool {
      * @return the task
      */
     public Task findInProcessTaskFor(String conversationId) {
-        return this.allTasks.stream()
+        return this.pool.stream()
                 .filter(t -> {
                     Enums.TaskStateName stateName = t.getTaskState().getName();
                     return t.getTopicId().equals(conversationId)
@@ -115,7 +112,7 @@ public class TasksPool {
      */
     public List<Task> findByConversationId(String conversationId) {
         List<Task> result = new ArrayList<>();
-        for (Task task : this.allTasks) {
+        for (Task task : this.pool) {
             if (task.getTopicId().equals(conversationId)) {
                 result.add(task);
             }
@@ -131,7 +128,7 @@ public class TasksPool {
      */
     public List<Task> findByMrdId(String mrdId) {
         List<Task> taskList = new ArrayList<>();
-        this.allTasks.forEach(task -> {
+        this.pool.forEach(task -> {
             if (task.getMrd().getId().equals(mrdId)) {
                 taskList.add(task);
             }
@@ -147,7 +144,7 @@ public class TasksPool {
      */
     public List<Task> findByQueueId(String id) {
         List<Task> taskList = new ArrayList<>();
-        this.allTasks.forEach(task -> {
+        this.pool.forEach(task -> {
             if (task.getQueue() != null && task.getQueue().equals(id)) {
                 taskList.add(task);
             }
@@ -156,11 +153,23 @@ public class TasksPool {
     }
 
     /**
+     * Find all push tasks list.
+     *
+     * @return the list
+     */
+    public List<Task> findAllQueuedTasks() {
+        return this.pool.stream()
+                .filter(t -> (t.getRoutingMode() != null && t.getRoutingMode() == RoutingMode.PUSH)
+                        && t.getTaskState().getName().equals(Enums.TaskStateName.QUEUED))
+                .toList();
+    }
+
+    /**
      * Size int.
      *
      * @return the int
      */
     public int size() {
-        return this.allTasks.size();
+        return this.pool.size();
     }
 }

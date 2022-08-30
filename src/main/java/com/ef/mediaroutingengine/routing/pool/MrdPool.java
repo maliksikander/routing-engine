@@ -22,23 +22,9 @@ public class MrdPool {
      *
      * @param mediaRoutingDomains list of media-routing-domains from config db.
      */
-    public void loadPoolFrom(List<MediaRoutingDomain> mediaRoutingDomains) {
-        for (MediaRoutingDomain mediaRoutingDomain : mediaRoutingDomains) {
-            this.pool.put(mediaRoutingDomain.getId(), mediaRoutingDomain);
-        }
-    }
-
-    /**
-     * Contains boolean.
-     *
-     * @param id the id
-     * @return the boolean
-     */
-    public boolean contains(String id) {
-        if (id == null) {
-            return false;
-        }
-        return this.pool.containsKey(id);
+    public void loadFrom(List<MediaRoutingDomain> mediaRoutingDomains) {
+        this.pool.clear();
+        mediaRoutingDomains.forEach(mrd -> this.pool.put(mrd.getId(), mrd));
     }
 
     /**

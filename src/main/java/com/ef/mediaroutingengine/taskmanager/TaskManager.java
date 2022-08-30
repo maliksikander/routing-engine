@@ -22,6 +22,7 @@ import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -233,6 +234,26 @@ public class TaskManager {
         this.requestTtlTimers.put(topicId, newTimerTask);
     }
 
+    private void scheduleAgentRequestTimeoutTaskOnFailover(Task task) {
+        String conversation = task.getTopicId();
+
+        long ttlValue = getDelay(task.getChannelSession());
+        long timeAlreadySpent = System.currentTimeMillis() - task.getEnqueueTime();
+
+        long delay = ttlValue - timeAlreadySpent;
+
+        // If a previous Agent request Ttl timer task exist cancel and remove it.
+        this.cancelAgentRequestTtlTimerTask(conversation);
+        this.removeAgentRequestTtlTimerTask(conversation);
+
+        // Schedule a new timeout task
+        Timer timer = new Timer();
+        TaskManager.RequestTtlTimer newTimerTask = new TaskManager.RequestTtlTimer(conversation);
+        timer.schedule(newTimerTask, delay);
+        // Put the new task in the map.
+        this.requestTtlTimers.put(conversation, newTimerTask);
+    }
+
     /**
      * Insert in pool and repository.
      *
@@ -271,19 +292,26 @@ public class TaskManager {
 
     /**
      * Enqueues task all present in the redis DB at start of application.
-     *
-     * @param task task to be enqueued.
      */
-    public void enqueueTaskOnFailover(Task task) {
-        PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue());
-        if (queue != null) {
-            this.tasksPool.add(task);
-            if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
-                this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
+    public void enqueueQueuedTasksOnFailover() {
+        List<Task> queuedPushTasks = this.tasksPool.findAllQueuedTasks();
+
+        for (Task task : queuedPushTasks) {
+            this.scheduleAgentRequestTimeoutTaskOnFailover(task);
+
+            PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue());
+            if (queue == null) {
+                logger.warn("Queue id: {} not found while enqueuing task", task.getQueue());
+                continue;
             }
-        } else {
-            logger.warn("Queue id: {} not found while enqueuing task", task.getQueue());
+
+            queue.enqueue(task);
+            logger.debug("Task: {} enqueued in Precision-Queue: {}", task.getId(), queue.getId());
+            task.addPropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), queue.getTaskScheduler());
+            task.setUpStepFrom(queue, 0);
         }
+
+        this.changeSupport.firePropertyChange("FIRE_ON_FAILOVER", null, null);
     }
 
     /**

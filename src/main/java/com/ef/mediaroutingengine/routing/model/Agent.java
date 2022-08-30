@@ -165,7 +165,10 @@ public class Agent {
      */
     public void removeTask(Task task) {
         String mrdId = task.getMrd().getId();
-        this.activeTasks.get(mrdId).remove(task);
+        List<Task> tasks = this.activeTasks.get(mrdId);
+        if (tasks != null) {
+            tasks.remove(task);
+        }
     }
 
     /**

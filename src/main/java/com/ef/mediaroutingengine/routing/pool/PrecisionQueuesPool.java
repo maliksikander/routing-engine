@@ -20,19 +20,17 @@ public class PrecisionQueuesPool {
     /**
      * The Precision queues.
      */
-    private final Map<String, PrecisionQueue> precisionQueues = new ConcurrentHashMap<>();
+    private final Map<String, PrecisionQueue> pool = new ConcurrentHashMap<>();
 
     /**
      * Loads all the precision queues from DB.
      *
-     * @param precisionQueueEntities the precision queue entities
+     * @param entities the precision queue entities
      * @param agentsPool             the agents pool
      */
-    public void loadPoolFrom(List<PrecisionQueueEntity> precisionQueueEntities, AgentsPool agentsPool) {
-        for (PrecisionQueueEntity entity : precisionQueueEntities) {
-            PrecisionQueue precisionQueue = new PrecisionQueue(entity, agentsPool, getTaskSchedulerBean());
-            this.precisionQueues.put(precisionQueue.getId(), precisionQueue);
-        }
+    public void loadFrom(List<PrecisionQueueEntity> entities, AgentsPool agentsPool) {
+        this.pool.clear();
+        entities.forEach(e -> this.pool.put(e.getId(), new PrecisionQueue(e, agentsPool, getTaskSchedulerBean())));
     }
 
     /**
@@ -51,7 +49,7 @@ public class PrecisionQueuesPool {
      * @param precisionQueue the precision queue
      */
     public void insert(PrecisionQueue precisionQueue) {
-        this.precisionQueues.putIfAbsent(precisionQueue.getId(), precisionQueue);
+        this.pool.putIfAbsent(precisionQueue.getId(), precisionQueue);
     }
 
     /**
@@ -64,7 +62,7 @@ public class PrecisionQueuesPool {
         if (id == null) {
             return null;
         }
-        return this.precisionQueues.get(id);
+        return this.pool.get(id);
     }
 
     /**
@@ -74,7 +72,7 @@ public class PrecisionQueuesPool {
      * @return the precision queue
      */
     public PrecisionQueue findByName(String name) {
-        for (PrecisionQueue queue : this.precisionQueues.values()) {
+        for (PrecisionQueue queue : this.pool.values()) {
             if (queue.getName().equals(name)) {
                 return queue;
             }
@@ -89,7 +87,7 @@ public class PrecisionQueuesPool {
      * @return true if removed
      */
     public boolean deleteById(String id) {
-        PrecisionQueue removed = this.precisionQueues.remove(id);
+        PrecisionQueue removed = this.pool.remove(id);
         return removed != null;
     }
 
@@ -117,7 +115,7 @@ public class PrecisionQueuesPool {
         if (queueId == null) {
             return false;
         }
-        PrecisionQueue queue = this.precisionQueues.get(queueId);
+        PrecisionQueue queue = this.pool.get(queueId);
         if (queue != null) {
             if (queue.getAverageTalkTime() != null && queue.getAverageTalkTime() > 0) {
                 queue.setAverageTalkTime(calculateAvgTalkTimeOf(queue, task));
@@ -137,7 +135,7 @@ public class PrecisionQueuesPool {
      * @return the int
      */
     public int size() {
-        return this.precisionQueues.size();
+        return this.pool.size();
     }
 
     /**
@@ -147,7 +145,7 @@ public class PrecisionQueuesPool {
      */
     public List<PrecisionQueue> toList() {
         List<PrecisionQueue> precisionQueueList = new ArrayList<>();
-        for (Map.Entry<String, PrecisionQueue> entry : this.precisionQueues.entrySet()) {
+        for (Map.Entry<String, PrecisionQueue> entry : this.pool.entrySet()) {
             precisionQueueList.add(entry.getValue());
         }
         return precisionQueueList;
@@ -159,7 +157,7 @@ public class PrecisionQueuesPool {
      * @param agent the agent
      */
     public void evaluateOnInsertForAll(Agent agent) {
-        precisionQueues.forEach((k, v) -> v.evaluateAssociatedAgentOnInsert(agent));
+        pool.forEach((k, v) -> v.evaluateAssociatedAgentOnInsert(agent));
     }
 
     /**
@@ -168,7 +166,7 @@ public class PrecisionQueuesPool {
      * @param agent the agent
      */
     public void evaluateOnUpdateForAll(Agent agent) {
-        precisionQueues.forEach((k, v) -> v.evaluateAssociatedAgentOnUpdate(agent));
+        pool.forEach((k, v) -> v.evaluateAssociatedAgentOnUpdate(agent));
     }
 
     /**
@@ -177,6 +175,6 @@ public class PrecisionQueuesPool {
      * @param agent the agent
      */
     public void deleteFromAll(Agent agent) {
-        precisionQueues.forEach((k, v) -> v.deleteAssociatedAgentFromAll(agent));
+        pool.forEach((k, v) -> v.deleteAssociatedAgentFromAll(agent));
     }
 }

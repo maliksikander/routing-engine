@@ -2,13 +2,10 @@ package com.ef.mediaroutingengine.routing.pool;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.routing.model.Agent;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -17,24 +14,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class AgentsPool {
     /**
-     * The constant LOGGER.
-     */
-    private static final Logger logger = LoggerFactory.getLogger(AgentsPool.class);
-    /**
      * The Agents.
      */
-    private final Map<String, Agent> agents = new ConcurrentHashMap<>();
+    private final Map<String, Agent> pool = new ConcurrentHashMap<>();
 
     /**
      * Loads the pool at start of the application.
      *
      * @param ccUsers list of CCUsers from the config DB.
      */
-    public void loadPoolFrom(List<CCUser> ccUsers) {
-        this.agents.clear();
-        for (CCUser ccUser : ccUsers) {
-            this.agents.put(ccUser.getId(), new Agent(ccUser));
-        }
+    public void loadFrom(List<CCUser> ccUsers) {
+        this.pool.clear();
+        ccUsers.forEach(ccUser -> this.pool.put(ccUser.getId(), new Agent(ccUser)));
     }
 
     /**
@@ -44,7 +35,7 @@ public class AgentsPool {
      */
     public void insert(Agent agent) {
         if (agent != null) {
-            this.agents.putIfAbsent(agent.getId(), agent);
+            this.pool.putIfAbsent(agent.getId(), agent);
         }
     }
 
@@ -58,7 +49,7 @@ public class AgentsPool {
         if (id == null) {
             return null;
         }
-        return agents.get(id);
+        return pool.get(id);
     }
 
     /**
@@ -68,7 +59,7 @@ public class AgentsPool {
      */
     public List<Agent> findAll() {
         List<Agent> agentList = new ArrayList<>();
-        this.agents.forEach((k, v) -> agentList.add(v));
+        this.pool.forEach((k, v) -> agentList.add(v));
         return agentList;
     }
 
@@ -79,39 +70,8 @@ public class AgentsPool {
      */
     public void deleteById(String id) {
         if (id != null) {
-            this.agents.remove(id);
+            this.pool.remove(id);
         }
-    }
-
-    /**
-     * Ends the task assigned to a particular agent in the pool.
-     *
-     * @param task the task to end
-     * @return true if found and ended, false otherwise
-     */
-    public boolean endTask(Task task) {
-        Agent assignedTo = this.agents.get(task.getAssignedTo());
-        if (assignedTo != null) {
-            assignedTo.removeTask(task);
-            return true;
-        }
-        logger.warn("The agent: {} assigned to task: {} not found in Agents pool",
-                task.getAssignedTo(), task.getId());
-        return false;
-    }
-
-    /**
-     * Logs all the agents in the agents pool.
-     */
-    public void logAll() {
-        logger.info("LOGGING ALL AGENTS IN THE AGENT POOL");
-        logger.info("------------------------------------");
-        if (this.agents.isEmpty()) {
-            logger.info("Agents pool is empty");
-        } else {
-            this.agents.forEach((k, v) -> logger.info("Agent: {} | {}", k, v));
-        }
-        logger.info("------------------------------------");
     }
 
     /**
@@ -120,6 +80,6 @@ public class AgentsPool {
      * @return the int
      */
     public int size() {
-        return this.agents.size();
+        return this.pool.size();
     }
 }
