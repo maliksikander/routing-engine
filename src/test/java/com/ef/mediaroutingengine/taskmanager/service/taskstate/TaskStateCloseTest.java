@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -42,6 +43,7 @@ class TaskStateCloseTest {
 
         verify(precisionQueuesPool, times(1)).endTask(task);
         verify(taskManager, times(1)).removeFromPoolAndRepository(task);
+        verify(this.taskManager, times(1)).publishTaskForReporting(task);
         verify(taskManager, times(1)).endTaskFromAssignedAgent(task);
 
         verifyNoMoreInteractions(precisionQueuesPool);
@@ -60,6 +62,7 @@ class TaskStateCloseTest {
 
         verify(precisionQueuesPool, times(1)).endTask(task);
         verify(taskManager, times(1)).removeFromPoolAndRepository(task);
+        verify(this.taskManager, times(1)).publishTaskForReporting(task);
         verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(topicId);
         verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(topicId);
         verify(taskManager, times(1)).endTaskFromAssignedAgent(task);
@@ -78,6 +81,7 @@ class TaskStateCloseTest {
 
         verify(precisionQueuesPool, times(1)).endTask(task);
         verify(taskManager, times(1)).removeFromPoolAndRepository(task);
+        verify(this.taskManager, times(1)).publishTaskForReporting(task);
         verify(taskManager, times(1)).endTaskFromAgentOnRona(task);
         verify(taskManager, times(1)).rerouteReservedTask(task);
 
@@ -95,6 +99,7 @@ class TaskStateCloseTest {
 
         verify(precisionQueuesPool, times(1)).endTask(task);
         verify(taskManager, times(1)).removeFromPoolAndRepository(task);
+        verify(this.taskManager, times(1)).publishTaskForReporting(task);
 
         verifyNoMoreInteractions(precisionQueuesPool);
         verifyNoMoreInteractions(taskManager);

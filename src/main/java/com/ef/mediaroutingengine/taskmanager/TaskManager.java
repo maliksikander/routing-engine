@@ -358,7 +358,6 @@ public class TaskManager {
     public void removeFromPoolAndRepository(Task task) {
         this.tasksRepository.deleteById(task.getId());
         this.tasksPool.remove(task);
-        this.publishTaskForReporting(task);
     }
 
     /**
@@ -415,21 +414,21 @@ public class TaskManager {
         /**
          * The Topic id.
          */
-        private final String topicId;
+        private final String conversation;
 
         /**
          * Instantiates a new Request ttl timer.
          *
-         * @param topicId the topic id
+         * @param conversation the topic id
          */
-        public RequestTtlTimer(String topicId) {
-            this.topicId = topicId;
+        public RequestTtlTimer(String conversation) {
+            this.conversation = conversation;
         }
 
         public void run() {
-            logger.debug(Constants.METHOD_STARTED);
+            logger.info("Agent Request Ttl expired for request on conversation: {}", this.conversation);
 
-            Task task = TaskManager.this.tasksPool.findInProcessTaskFor(this.topicId);
+            Task task = TaskManager.this.tasksPool.findInProcessTaskFor(this.conversation);
 
             if (task == null) {
                 logger.error("No In-Process Task found for this conversation, method returning...");
@@ -438,6 +437,8 @@ public class TaskManager {
 
             task.markForDeletion(Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE);
             if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
+                logger.info("In process task: {} found in QUEUED state, removing task..", task.getId());
+
                 task.getTimer().cancel();
                 // Remove task from precision-queue
                 PrecisionQueue queue = TaskManager.this.precisionQueuesPool.findById(task.getQueue());
@@ -448,14 +449,15 @@ public class TaskManager {
                 TaskManager.this.tasksRepository.deleteById(task.getId());
                 // Remove task from task pool
                 TaskManager.this.tasksPool.remove(task);
-                TaskManager.this.requestTtlTimers.remove(this.topicId);
+                TaskManager.this.requestTtlTimers.remove(this.conversation);
                 // post no agent available
-                TaskManager.this.restRequest.postNoAgentAvailable(this.topicId);
+                TaskManager.this.restRequest.postNoAgentAvailable(this.conversation);
                 //publish task for reporting
                 TaskManager.this.publishTaskForReporting(task);
-                logger.debug("Agent request TTL expired. Queued task: {} removed", task.getId());
+                logger.debug("Queued task: {} removed successfully", task.getId());
+            } else if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
+                logger.info("In process task: {} found in Reserved state, task is marked for deletion", task.getId());
             }
-            logger.debug(Constants.METHOD_ENDED);
         }
     }
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

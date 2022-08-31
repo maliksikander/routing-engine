@@ -11,6 +11,7 @@ import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.StepEntity;
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TermEntity;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
@@ -194,9 +195,8 @@ public class Bootstrap {
         logger.debug("Precision-Queues pool loaded from DB");
 
         // Load tasks from Tasks Repository
-        List<TaskDto> taskDtoList = this.getTasksFromRepository();
-        this.removeQueuedTasksWithRequestTtlExpired(taskDtoList);
-        this.tasksPool.loadFrom(taskDtoList);
+        this.tasksPool.loadFrom(this.getTasksFromRepository());
+        this.handleTasksWithExpiredAgentRequestTtl();
         this.associateTaskWithAgents();
         this.taskManager.enqueueQueuedTasksOnFailover();
 
@@ -209,30 +209,44 @@ public class Bootstrap {
         logger.debug(Constants.METHOD_ENDED);
     }
 
-    private void removeQueuedTasksWithRequestTtlExpired(List<TaskDto> taskDtoList) {
-        List<TaskDto> queuedTasks = this.filterQueuedTasks(taskDtoList);
+    private void handleTasksWithExpiredAgentRequestTtl() {
+        List<Task> queuedAndReservedTasks = this.filterQueuedAndReservedTasks();
 
         // Remove Queued Tasks whose agent Request ttl is expired
-        for (TaskDto task : queuedTasks) {
-            if (this.isAgentRequestTtlExpired(task)) {
-                logger.debug("Task: {} AgentRequestTtl is expired, removing it..", task.getId());
-                taskDtoList.removeIf(t -> t.getId().equals(task.getId()));
-                this.tasksRepository.deleteById(task.getId());
+        for (Task task : queuedAndReservedTasks) {
+            if (!this.isAgentRequestTtlExpired(task)) {
+                continue;
+            }
+
+            Enums.TaskStateName taskState = task.getTaskState().getName();
+
+            if (taskState.equals(Enums.TaskStateName.QUEUED)) {
+                logger.debug("QUEUED Task: {} AgentRequestTtl is expired, removing it..", task.getId());
+
+                task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED,
+                        Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE));
+                this.taskManager.removeFromPoolAndRepository(task);
+                this.taskManager.publishTaskForReporting(task);
                 this.restRequest.postNoAgentAvailable(task.getChannelSession().getConversationId());
                 logger.debug("Task: {} removed", task.getId());
+
+            } else if (taskState.equals(Enums.TaskStateName.RESERVED)) {
+                logger.debug("RESERVED Task: {} AgentRequestTtl is expired, marking for deletion", task.getId());
+                task.markForDeletion(Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE);
             }
         }
     }
 
-    private boolean isAgentRequestTtlExpired(TaskDto task) {
+    private boolean isAgentRequestTtlExpired(Task task) {
         int ttl = task.getChannelSession().getChannel().getChannelConfig().getRoutingPolicy().getAgentRequestTtl();
         long delay = ttl * 1000L;
         return System.currentTimeMillis() - task.getEnqueueTime() >= delay;
     }
 
-    private List<TaskDto> filterQueuedTasks(List<TaskDto> taskDtoList) {
-        return taskDtoList.stream()
-                .filter(t -> t.getState().getName().equals(Enums.TaskStateName.QUEUED))
+    private List<Task> filterQueuedAndReservedTasks() {
+        return this.tasksPool.findAll().stream()
+                .filter(t -> t.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)
+                        || t.getTaskState().getName().equals(Enums.TaskStateName.RESERVED))
                 .toList();
     }
 

@@ -56,6 +56,7 @@ class AgentStateLogoutTest {
         this.agentStateLogout.handleActiveTasks(agent);
 
         verify(this.taskManager, times(activeTasks.size())).removeFromPoolAndRepository(any());
+        verify(this.taskManager, times(activeTasks.size())).publishTaskForReporting(any());
         verifyNoMoreInteractions(this.taskManager);
     }
 
@@ -69,8 +70,11 @@ class AgentStateLogoutTest {
         this.agentStateLogout.handleReservedTasks(agent);
 
         verify(this.taskManager, times(1)).removeFromPoolAndRepository(reservedTask);
+        verify(this.taskManager, times(1)).publishTaskForReporting(any());
         verify(this.taskManager, times(1)).rerouteReservedTask(reservedTask);
+
         verifyNoMoreInteractions(this.taskManager);
+
         verifyNoMoreInteractions(agent);
     }
 

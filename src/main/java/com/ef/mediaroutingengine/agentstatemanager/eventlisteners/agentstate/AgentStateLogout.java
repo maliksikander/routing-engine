@@ -71,7 +71,10 @@ public class AgentStateLogout implements AgentStateDelegate {
             reservedTask.setTaskState(taskState);
 
             this.taskManager.removeFromPoolAndRepository(reservedTask);
-            this.taskManager.rerouteReservedTask(reservedTask);
+            this.taskManager.publishTaskForReporting(reservedTask);
+            if (!reservedTask.isMarkedForDeletion()) {
+                this.taskManager.rerouteReservedTask(reservedTask);
+            }
         }
     }
 
@@ -79,6 +82,7 @@ public class AgentStateLogout implements AgentStateDelegate {
         for (Task task : agent.getActiveTasksList()) {
             task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.AGENT_LOGOUT));
             this.taskManager.removeFromPoolAndRepository(task);
+            this.taskManager.publishTaskForReporting(task);
         }
     }
 }

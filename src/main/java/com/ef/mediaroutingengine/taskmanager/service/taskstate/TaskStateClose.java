@@ -38,6 +38,7 @@ public class TaskStateClose implements TaskStateModifier {
 
         this.precisionQueuesPool.endTask(task);
         this.taskManager.removeFromPoolAndRepository(task);
+        this.taskManager.publishTaskForReporting(task);
 
         if (state.getReasonCode() == null || !state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA)) {
             if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
