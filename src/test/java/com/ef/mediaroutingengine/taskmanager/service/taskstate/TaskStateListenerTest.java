@@ -55,6 +55,5 @@ class TaskStateListenerTest {
         taskStateListener.propertyChange(UUID.randomUUID().toString(), new TaskState(Enums.TaskStateName.ACTIVE, null));
 
         verify(taskStateModifier, times(1)).updateState(eq(task), any());
-        verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
     }
 }

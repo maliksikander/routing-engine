@@ -49,6 +49,7 @@ public class TaskStateActive implements TaskStateModifier {
     @Override
     public void updateState(Task task, TaskState state) {
         Agent agent = this.agentsPool.findById(task.getAssignedTo());
+
         if (agent == null) {
             logger.error("Could not update task state to Active, Assigned Agent not found");
             return;
@@ -58,6 +59,7 @@ public class TaskStateActive implements TaskStateModifier {
         task.setStartTime(System.currentTimeMillis());
 
         this.tasksRepository.save(task.getId(), AdapterUtility.createTaskDtoFrom(task));
+        taskManager.publishTaskForReporting(task);
 
         if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
             this.taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
@@ -65,6 +67,8 @@ public class TaskStateActive implements TaskStateModifier {
             agent.assignPushTask(task);
 
             this.taskManager.updateAgentMrdState(agent, task.getMrd().getId());
+        } else {
+            agent.addActiveTask(task);
         }
     }
 }

@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.routing.service;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.CancelResourceRequest;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
@@ -40,14 +41,6 @@ public class CancelResourceServiceImpl implements CancelResourceService {
      */
     private final PrecisionQueuesPool precisionQueuesPool;
     /**
-     * The Jms communicator.
-     */
-    private final JmsCommunicator jmsCommunicator;
-    /**
-     * The Tasks repository.
-     */
-    private final TasksRepository tasksRepository;
-    /**
      * The Agents pool.
      */
     private final AgentsPool agentsPool;
@@ -62,69 +55,57 @@ public class CancelResourceServiceImpl implements CancelResourceService {
      * @param tasksPool           the tasks pool
      * @param taskManager         the task manager
      * @param precisionQueuesPool the precision queues pool
-     * @param jmsCommunicator     the jms communicator
-     * @param tasksRepository     the tasks repository
      * @param agentsPool          the agents pool
      * @param restRequest         the rest request
      */
     @Autowired
     public CancelResourceServiceImpl(TasksPool tasksPool, TaskManager taskManager,
-                                     PrecisionQueuesPool precisionQueuesPool, JmsCommunicator jmsCommunicator,
-                                     TasksRepository tasksRepository, AgentsPool agentsPool, RestRequest restRequest) {
+                                     PrecisionQueuesPool precisionQueuesPool,
+                                     AgentsPool agentsPool, RestRequest restRequest) {
         this.tasksPool = tasksPool;
         this.taskManager = taskManager;
         this.precisionQueuesPool = precisionQueuesPool;
-        this.jmsCommunicator = jmsCommunicator;
-        this.tasksRepository = tasksRepository;
         this.agentsPool = agentsPool;
         this.restRequest = restRequest;
     }
 
     @Override
     public void cancelResource(CancelResourceRequest request) {
-        logger.info("Cancel resource request initiated | topic: {}", request.getTopicId());
+        logger.info("Cancel resource request initiated for conversation: {}", request.getTopicId());
 
-        Task task = tasksPool.findInProcessTaskFor(request.getTopicId());
-        if (!isProcessable(task)) {
-            return;
-        }
-        logger.debug("Task {} is processable", task.getId());
+        synchronized (this.tasksPool) {
 
-        taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
-        taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
-        logger.debug("Agent-Request-Ttl-timer-task cancelled and removed | Task: {}", task.getId());
+            Task task = tasksPool.findInProcessTaskFor(request.getTopicId());
 
-        task.getTimer().cancel();
-        logger.debug("Task {} step timer cancelled", task.getId());
+            if (task == null) {
+                logger.info("No In-Process task found on this conversation, ignoring request...");
+                return;
+            }
 
-        PrecisionQueue precisionQueue = precisionQueuesPool.findById(task.getQueue());
+            task.getTimer().cancel();
+            taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
+            taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
+            logger.debug("Agent-Request-Ttl-timer and Task step timers cancelled | Task: {}", task.getId());
 
-        // Todo: use boolean to check if task is removed, else return immediately
-        // Todo: Review the synchronized block. it should work on task instead of queue
-        synchronized (precisionQueue.getServiceQueue()) {
-            precisionQueue.removeTask(task);
-        }
-        logger.debug("Task {} removed from queue", task.getId());
+            PrecisionQueue queue = precisionQueuesPool.findById(task.getQueue());
 
-        if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
-            endQueuedTask(task, precisionQueue, request.getReasonCode());
-            logger.info("Queued task {} cancelled successfully on topic: {}", task.getId(), request.getTopicId());
-        } else if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
-            endReservedTask(task, request.getReasonCode());
-            logger.info("Reserved task {} cancelled successfully on topic: {}", task.getId(), request.getTopicId());
+            synchronized (queue.getServiceQueue()) {
+                task.markForDeletion();
+            }
+
+            if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
+                this.endQueuedTask(task, queue, request.getReasonCode());
+                logger.info("Queued task {} cancelled successfully on topic: {}", task.getId(), request.getTopicId());
+            } else if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
+                endReservedTask(task, request.getReasonCode());
+                logger.info("Reserved task {} cancelled successfully on topic: {}", task.getId(), request.getTopicId());
+            }
         }
     }
 
-    boolean isProcessable(Task task) {
-        if (task == null) {
-            logger.info("No Task found on this topic, ignoring request");
-            return false;
-        }
-        return !task.isMarkedForDeletion();
-    }
-
-    void endQueuedTask(Task task, PrecisionQueue precisionQueue, Enums.TaskStateReasonCode closeReasonCode) {
-        task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), precisionQueue.getTaskScheduler());
+    void endQueuedTask(Task task, PrecisionQueue queue, Enums.TaskStateReasonCode closeReasonCode) {
+        queue.removeTask(task);
+        task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), queue.getTaskScheduler());
         removeAndPublish(task, closeReasonCode);
     }
 
@@ -135,16 +116,17 @@ public class CancelResourceServiceImpl implements CancelResourceService {
      */
     void endReservedTask(Task task, Enums.TaskStateReasonCode closeReasonCode) {
         boolean taskRevoked = this.restRequest.postRevokeTask(task);
+
         if (taskRevoked) {
             removeAndPublish(task, closeReasonCode);
             Agent agent = this.agentsPool.findById(task.getAssignedTo());
             if (agent != null) {
                 agent.removeReservedTask();
             }
-        } else {
-            task.markForDeletion(closeReasonCode);
-            logger.info("Revoke-task API did not return 200 response, marked task: {} for deletion", task.getId());
+            return;
         }
+
+        logger.error("Revoke-task API did not return 200 response, task:{} not removed", task.getId());
     }
 
     /**
@@ -153,11 +135,10 @@ public class CancelResourceServiceImpl implements CancelResourceService {
      * @param task the task
      */
     void removeAndPublish(Task task, Enums.TaskStateReasonCode closeReasonCode) {
-        tasksPool.remove(task);
-        tasksRepository.deleteById(task.getId());
-        logger.debug("Task {}, removed from in-memory pool and repository", task.getId());
-
         task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, closeReasonCode));
-        jmsCommunicator.publishTaskStateChangeForReporting(task);
+
+        this.taskManager.removeFromPoolAndRepository(task);
+        logger.debug("Task {}, removed from in-memory pool and repository", task.getId());
+        this.taskManager.publishTaskForReporting(task);
     }
 }

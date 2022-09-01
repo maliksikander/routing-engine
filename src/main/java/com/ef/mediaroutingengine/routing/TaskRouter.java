@@ -115,6 +115,12 @@ public class TaskRouter implements PropertyChangeListener {
         try {
             synchronized (precisionQueue.getServiceQueue()) {
                 Task task = precisionQueue.peek();
+
+                if (task.isMarkedForDeletion()) {
+                    precisionQueue.dequeue();
+                    return;
+                }
+
                 reserve(task);
             }
         } catch (Exception ex) {

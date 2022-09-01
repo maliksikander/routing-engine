@@ -74,6 +74,7 @@ class TaskStateActiveTest {
         verify(task, times(1)).setTaskState(taskState);
         verify(task, times(1)).setStartTime(anyLong());
         verify(tasksRepository, times(1)).save(any(), any());
+        verify(taskManager, times(1)).publishTaskForReporting(task);
         verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(topicId);
         verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(topicId);
         verify(agent, times(1)).assignPushTask(task);

@@ -57,7 +57,7 @@ public class TaskStateListener {
      * @return the task
      */
     public Task propertyChange(String taskId, TaskState requestedState) {
-        logger.info("Task state change listener called");
+        logger.info("Request to Change task:{} state to {} initiated", taskId, requestedState);
 
         Task task = tasksPool.findById(taskId);
         if (task == null) {
@@ -67,12 +67,12 @@ public class TaskStateListener {
 
         TaskState currentState = task.getTaskState();
 
+        logger.info("Task:{} | Current State: {}, Requested state: {}", taskId, currentState, requestedState);
+
         TaskStateModifier stateModifier = this.factory.getModifier(requestedState.getName());
         stateModifier.updateState(task, requestedState);
 
-        logger.info("Task state changed from {} to {} | Task: {}", currentState, requestedState, task.getId());
-
-        jmsCommunicator.publishTaskStateChangeForReporting(task);
+        logger.info("Task:{} state changed from {} to {}", task.getId(), currentState, requestedState);
 
         return task;
     }

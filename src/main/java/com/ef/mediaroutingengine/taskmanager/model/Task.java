@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,7 @@ public class Task {
     /**
      * The Mark for deletion.
      */
-    private final MarkForDeletion markForDeletion = new MarkForDeletion();
+    private AtomicBoolean markForDeletion = new AtomicBoolean(false);
     /**
      * The Channel session.
      */
@@ -428,14 +429,9 @@ public class Task {
 
     /**
      * Mark for deletion.
-     *
-     * @param reasonCode the reason code
      */
-    public void markForDeletion(Enums.TaskStateReasonCode reasonCode) {
-        if (!markForDeletion.isMarked()) {
-            this.markForDeletion.setMarked(true);
-            this.markForDeletion.setReasonCode(reasonCode);
-        }
+    public void markForDeletion() {
+        this.markForDeletion.compareAndSet(false, true);
     }
 
     /**
@@ -444,15 +440,7 @@ public class Task {
      * @return the boolean
      */
     public boolean isMarkedForDeletion() {
-        return this.markForDeletion.isMarked();
-    }
-
-    /**
-     * Sets task state from marked for deletion.
-     */
-    public void setTaskStateFromMarkedForDeletion() {
-        this.state.setName(Enums.TaskStateName.CLOSED);
-        this.state.setReasonCode(this.markForDeletion.getReasonCode());
+        return this.markForDeletion.get();
     }
 
     @Override

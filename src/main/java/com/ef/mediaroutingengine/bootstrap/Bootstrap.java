@@ -232,7 +232,7 @@ public class Bootstrap {
 
             } else if (taskState.equals(Enums.TaskStateName.RESERVED)) {
                 logger.debug("RESERVED Task: {} AgentRequestTtl is expired, marking for deletion", task.getId());
-                task.markForDeletion(Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE);
+                task.markForDeletion();
             }
         }
     }

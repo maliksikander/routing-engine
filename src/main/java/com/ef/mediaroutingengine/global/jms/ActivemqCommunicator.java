@@ -134,10 +134,6 @@ public class ActivemqCommunicator implements JmsCommunicator {
     @Override
     public void publishTaskStateChangeForReporting(Task task) {
         try {
-            if (task.isMarkedForDeletion()) {
-                task.setTaskStateFromMarkedForDeletion();
-            }
-
             String messageStr = this.getSerializedCimEvent(AdapterUtility.createTaskDtoFrom(task), task.getTopicId());
             TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
             messageToSend.setText(messageStr);

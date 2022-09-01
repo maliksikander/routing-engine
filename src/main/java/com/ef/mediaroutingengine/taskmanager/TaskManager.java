@@ -116,6 +116,12 @@ public class TaskManager {
         }
 
         if (routingMode.equals(RoutingMode.PUSH)) {
+            // If a reserved task is closed remove the reserve task from agent.
+            if (agent.getReservedTask() != null && agent.getReservedTask().getId().equals(task.getId())) {
+                agent.removeReservedTask();
+                return;
+            }
+            // If an active task is closed, remove the active task
             this.endPushTaskFromAssignedAgent(task, agent);
             return;
         }
@@ -428,35 +434,39 @@ public class TaskManager {
         public void run() {
             logger.info("Agent Request Ttl expired for request on conversation: {}", this.conversation);
 
-            Task task = TaskManager.this.tasksPool.findInProcessTaskFor(this.conversation);
+            synchronized (TaskManager.this.tasksPool) {
 
-            if (task == null) {
-                logger.error("No In-Process Task found for this conversation, method returning...");
-                return;
-            }
+                Task task = TaskManager.this.tasksPool.findInProcessTaskFor(this.conversation);
 
-            task.markForDeletion(Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE);
-            if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
-                logger.info("In process task: {} found in QUEUED state, removing task..", task.getId());
-
-                task.getTimer().cancel();
-                // Remove task from precision-queue
-                PrecisionQueue queue = TaskManager.this.precisionQueuesPool.findById(task.getQueue());
-                if (queue != null) {
-                    queue.removeTask(task);
+                if (task == null) {
+                    logger.error("No In-Process Task found for this conversation, method returning...");
+                    return;
                 }
-                // Remove task from redis.
-                TaskManager.this.tasksRepository.deleteById(task.getId());
-                // Remove task from task pool
-                TaskManager.this.tasksPool.remove(task);
-                TaskManager.this.requestTtlTimers.remove(this.conversation);
-                // post no agent available
-                TaskManager.this.restRequest.postNoAgentAvailable(this.conversation);
-                //publish task for reporting
-                TaskManager.this.publishTaskForReporting(task);
-                logger.debug("Queued task: {} removed successfully", task.getId());
-            } else if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
-                logger.info("In process task: {} found in Reserved state, task is marked for deletion", task.getId());
+
+                PrecisionQueue queue = TaskManager.this.precisionQueuesPool.findById(task.getQueue());
+                synchronized (queue.getServiceQueue()) {
+                    task.markForDeletion();
+                }
+
+                if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
+                    logger.info("In process task: {} found in QUEUED state, removing task..", task.getId());
+
+                    task.getTimer().cancel();
+                    TaskManager.this.requestTtlTimers.remove(this.conversation);
+
+                    // Remove task from precision-queue
+                    queue.removeTask(task);
+
+                    TaskManager.this.removeFromPoolAndRepository(task);
+                    TaskManager.this.publishTaskForReporting(task);
+
+                    TaskManager.this.restRequest.postNoAgentAvailable(this.conversation);
+
+                    logger.info("Queued task: {} removed successfully", task.getId());
+                } else if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
+                    logger.info("In process task: {} found in Reserved state, task is marked for deletion",
+                            task.getId());
+                }
             }
         }
     }
