@@ -72,9 +72,7 @@ public class AgentStateLogout implements AgentStateDelegate {
 
             this.taskManager.removeFromPoolAndRepository(reservedTask);
             this.taskManager.publishTaskForReporting(reservedTask);
-            if (!reservedTask.isMarkedForDeletion()) {
-                this.taskManager.rerouteReservedTask(reservedTask);
-            }
+            this.taskManager.rerouteReservedTask(reservedTask);
         }
     }
 
