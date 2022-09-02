@@ -457,6 +457,9 @@ public class TaskManager {
                     // Remove task from precision-queue
                     queue.removeTask(task);
 
+                    task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED,
+                            Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE));
+
                     TaskManager.this.removeFromPoolAndRepository(task);
                     TaskManager.this.publishTaskForReporting(task);
 
