@@ -143,13 +143,11 @@ class CancelResourceServiceImplTest {
 
             CancelResourceServiceImpl spy = Mockito.spy(cancelResourceService);
 
-            when(restRequest.postRevokeTask(task)).thenReturn(true);
             doNothing().when(spy).removeAndPublish(task, closeReasonCode);
             when(task.getAssignedTo()).thenReturn(agentId);
             doReturn(agent).when(agentsPool).findById(agentId);
 
             spy.endReservedTask(task, closeReasonCode);
-
             verify(agent, times(1)).removeReservedTask();
         }
     }
