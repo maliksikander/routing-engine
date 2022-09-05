@@ -336,7 +336,13 @@ public class TaskManager {
         Task newTask = Task.getInstanceFrom(currentTask);
         this.insertInPoolAndRepository(newTask);
         this.publishTaskForReporting(newTask);
-        this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, newTask);
+
+        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+        CompletableFuture.runAsync(() -> {
+            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+            this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, newTask);
+            MDC.clear();
+        });
     }
 
     /**
