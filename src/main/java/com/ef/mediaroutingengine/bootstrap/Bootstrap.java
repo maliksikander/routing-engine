@@ -268,13 +268,33 @@ public class Bootstrap {
         return false;
     }
 
+
+    private boolean chatMrdExists(List<MediaRoutingDomain> mrdList) {
+        for (MediaRoutingDomain mrd : mrdList) {
+            if (mrd.getId().equals(Constants.CHAT_MRD_ID)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private MediaRoutingDomain createVoiceMrd() {
         MediaRoutingDomain voiceMrd = new MediaRoutingDomain();
         voiceMrd.setId(Constants.VOICE_MRD_ID);
         voiceMrd.setName("VOICE");
+        voiceMrd.setInterruptible(true);
         voiceMrd.setDescription("Standard voice MRD");
         voiceMrd.setMaxRequests(1);
         return voiceMrd;
+    }
+
+    private MediaRoutingDomain createChatMrd() {
+        MediaRoutingDomain chatMrd = new MediaRoutingDomain();
+        chatMrd.setId(Constants.CHAT_MRD_ID);
+        chatMrd.setName("CHAT");
+        chatMrd.setDescription("Standard chat MRD");
+        chatMrd.setMaxRequests(5);
+        return chatMrd;
     }
 
     private List<PrecisionQueueEntity> getQueuesFromConfigDb() {
@@ -308,7 +328,11 @@ public class Bootstrap {
             this.mediaRoutingDomainRepository.save(voiceMrd);
             mrdList.add(voiceMrd);
         }
-
+        if (!chatMrdExists(mrdList)) {
+            MediaRoutingDomain chatMrd = createChatMrd();
+            this.mediaRoutingDomainRepository.save(chatMrd);
+            mrdList.add(chatMrd);
+        }
         return mrdList;
     }
 
