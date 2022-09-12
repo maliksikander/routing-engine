@@ -171,6 +171,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         }
 
         if (id.equals(Constants.VOICE_MRD_ID)) {
+
             String errorMessage = "Update operation is forbidden for the VOICE MRD";
             logger.error(errorMessage);
             throw new ForbiddenException(errorMessage);
@@ -257,8 +258,10 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             throw new NotFoundException(errorMessage);
         }
 
-        if (id.equals(Constants.VOICE_MRD_ID)) {
-            String errorMessage = "Delete operation is forbidden for the VOICE MRD";
+        if (id.equals(Constants.VOICE_MRD_ID) || id.equals(Constants.CHAT_MRD_ID)) {
+
+            String errorMessage = String.format("Delete operation is forbidden for the %1$s MRD",
+                    id.equals(Constants.VOICE_MRD_ID) ? "VOICE" : "CHAT");
             logger.error(errorMessage);
             throw new ForbiddenException(errorMessage);
         }

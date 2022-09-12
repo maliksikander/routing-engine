@@ -24,6 +24,10 @@ public final class Constants {
      * The constant VOICE_MRD_ID.
      */
     public static final String VOICE_MRD_ID = "6298b744b777de61844f616b";
+    /**
+     * The constant CHAT_MRD_ID.
+     */
+    public static final String CHAT_MRD_ID = "6305de07166ba1099d11d8e6";
 
     /**
      * Instantiates a new Constants.
