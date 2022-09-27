@@ -197,7 +197,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      *
      * @param requestBody the request body
      */
-    private void validateAndSetMrd(PrecisionQueueRequestBody requestBody) {
+    void validateAndSetMrd(PrecisionQueueRequestBody requestBody) {
         if (requestBody.getMrd().getId() == null) {
             throw new IllegalArgumentException("MRD-id is null");
         }
