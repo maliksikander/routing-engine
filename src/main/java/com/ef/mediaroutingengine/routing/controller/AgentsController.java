@@ -59,6 +59,18 @@ public class AgentsController {
     }
 
     /**
+     * Retrieve-AgentsWithStates API handler. Returns the list of all agents with their stats
+     * in the Agent Presence Repository.
+     *
+     * @return list of all Agents with their state as response-body with status-code 200.
+     */
+    @CrossOrigin(origins = "*")
+    @GetMapping(value = "/agents/states", produces = "application/json")
+    public ResponseEntity<Object> retrieveAgentsWithStates() {
+        return new ResponseEntity<>(this.service.retrieveAgentsWithStates(), HttpStatus.OK);
+    }
+
+    /**
      * Updates-Agent API handler. Updates an Existing agent. Returns 404 Not-Found if the requested agent
      * is not found.
      *

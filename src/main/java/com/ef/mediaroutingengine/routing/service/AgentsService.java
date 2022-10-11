@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.routing.service;
 
+import com.ef.cim.objectmodel.AgentPresence;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
 import java.util.List;
@@ -26,6 +27,13 @@ public interface AgentsService {
      * @return the list
      */
     List<CCUser> retrieve();
+
+    /**
+     * This retrieves all the agents with their states.
+     *
+     * @return agents list with their state
+     */
+    List<AgentPresence> retrieveAgentsWithStates();
 
     /**
      * Update cc user.
