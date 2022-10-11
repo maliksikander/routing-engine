@@ -20,10 +20,9 @@ import com.ef.cim.objectmodel.RoutingPolicy;
 import com.ef.mediaroutingengine.routing.dto.AssignResourceRequest;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.model.Step;
-import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
-import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
+import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -44,14 +43,12 @@ class AssignResourceServiceImplTest {
     private TasksPool tasksPool;
     @Mock
     private PrecisionQueuesPool precisionQueuesPool;
-    @Mock
-    private MrdPool mrdPool;
 
     private AssignResourceServiceImpl assignResourceService;
 
     @BeforeEach
     void setUp() {
-        this.assignResourceService = new AssignResourceServiceImpl(taskManager, tasksPool, precisionQueuesPool, mrdPool);
+        this.assignResourceService = new AssignResourceServiceImpl(taskManager, tasksPool, precisionQueuesPool);
     }
 
     @Test
@@ -60,16 +57,14 @@ class AssignResourceServiceImplTest {
         String requestedQueue = UUID.randomUUID().toString();
         AssignResourceRequest request = new AssignResourceRequest(channelSession, requestedQueue);
 
-        String mrdId = channelSession.getChannel().getChannelType().getMediaRoutingDomain();
         MediaRoutingDomain mrd = mock(MediaRoutingDomain.class);
         PrecisionQueue queue = mock(PrecisionQueue.class);
 
         AssignResourceServiceImpl spy = Mockito.spy(assignResourceService);
 
         doNothing().when(spy).validateChannelSession(channelSession);
-        doReturn(mrd).when(spy).validateAndGetMrd(channelSession);
-        when(mrd.getId()).thenReturn(mrdId);
-        doReturn(queue).when(spy).validateAndGetQueue(channelSession, requestedQueue, mrdId, false);
+        doReturn(mrd).when(queue).getMrd();
+        doReturn(queue).when(spy).validateAndGetQueue(channelSession, requestedQueue, false);
 
         String response = spy.assign(request, false);
         assertEquals("The request is received Successfully", response);
@@ -133,110 +128,58 @@ class AssignResourceServiceImplTest {
     }
 
     @Nested
-    @DisplayName("validateAndGetMrd method tests")
-    class ValidateAndGetMrdTest {
-        @Test
-        void throwsIllegalArgumentException_when_mrdNotFound() {
-            ChannelSession channelSession = getChannelSessionInstance();
-            when(mrdPool.findById(any())).thenReturn(null);
-            assertThrows(IllegalArgumentException.class, () -> assignResourceService.validateAndGetMrd(channelSession));
-        }
-
-        @Test
-        void returnsMrd_when_validationSuccessful() {
-            ChannelSession channelSession = getChannelSessionInstance();
-            MediaRoutingDomain mrd = mock(MediaRoutingDomain.class);
-
-            when(mrdPool.findById(any())).thenReturn(mrd);
-
-            MediaRoutingDomain result = assignResourceService.validateAndGetMrd(channelSession);
-            assertEquals(mrd, result);
-        }
-    }
-
-    @Nested
     @DisplayName("validateAndGetQueue method tests")
     class ValidateAndGetQueueTest {
         @Test
         void throwsIllegalArgumentsException_when_defaultQueueIsNullAndRequestedQueueIdNull() {
             ChannelSession channelSession = getChannelSessionInstance();
             channelSession.getChannel().getChannelConfig().getRoutingPolicy().setRoutingObjectId(null);
-            String mrdId = UUID.randomUUID().toString();
 
             assertThrows(IllegalArgumentException.class,
-                    () -> assignResourceService.validateAndGetQueue(channelSession, null, mrdId, false));
+                    () -> assignResourceService.validateAndGetQueue(channelSession, null, false));
         }
 
         @Test
         void throwsIllegalArgumentException_when_noQueueFoundFromPool() {
             ChannelSession channelSession = getChannelSessionInstance();
-            String mrdId = UUID.randomUUID().toString();
 
             AssignResourceServiceImpl spy = Mockito.spy(assignResourceService);
             doReturn(null).when(spy).getPrecisionQueueFrom(any(), any(), eq(Boolean.FALSE));
 
             assertThrows(IllegalArgumentException.class,
-                    () -> spy.validateAndGetQueue(channelSession, null, mrdId, false));
-        }
-
-        @Test
-        void throwsIllegalArgumentException_when_requestMrdId_notEqualTo_mrdIdInQueueFoundFromPool() {
-            ChannelSession channelSession = getChannelSessionInstance();
-            String mrdId = UUID.randomUUID().toString();
-            String requestedQueue = UUID.randomUUID().toString();
-            AssignResourceServiceImpl spy = Mockito.spy(assignResourceService);
-
-            PrecisionQueue queueFound = mock(PrecisionQueue.class);
-            doReturn(queueFound).when(spy).getPrecisionQueueFrom(any(), any(), eq(Boolean.FALSE));
-
-            MediaRoutingDomain mrdFoundInQueue = new MediaRoutingDomain();
-            mrdFoundInQueue.setId(UUID.randomUUID().toString());
-
-            when(queueFound.getMrd()).thenReturn(mrdFoundInQueue);
-
-            assertThrows(IllegalArgumentException.class,
-                    () -> spy.validateAndGetQueue(channelSession, requestedQueue, mrdId, false));
+                    () -> spy.validateAndGetQueue(channelSession, null, false));
         }
 
         @Test
         void throwsIllegalStateException_when_noStepsInQueueFoundFromPool() {
             ChannelSession channelSession = getChannelSessionInstance();
-            String mrdId = UUID.randomUUID().toString();
             String requestedQueue = UUID.randomUUID().toString();
+
             AssignResourceServiceImpl spy = Mockito.spy(assignResourceService);
-
             PrecisionQueue queueFound = mock(PrecisionQueue.class);
+
             doReturn(queueFound).when(spy).getPrecisionQueueFrom(any(), any(), eq(Boolean.FALSE));
-
-            MediaRoutingDomain mrdFoundInQueue = new MediaRoutingDomain();
-            mrdFoundInQueue.setId(mrdId);
-
-            when(queueFound.getMrd()).thenReturn(mrdFoundInQueue);
             when(queueFound.getSteps()).thenReturn(new ArrayList<>());
 
             assertThrows(IllegalStateException.class,
-                    () -> spy.validateAndGetQueue(channelSession, requestedQueue, mrdId, false));
+                    () -> spy.validateAndGetQueue(channelSession, requestedQueue, false));
         }
 
         @Test
         void returnsQueue_when_validationSuccessful() {
             ChannelSession channelSession = getChannelSessionInstance();
-            String mrdId = UUID.randomUUID().toString();
             String requestedQueue = UUID.randomUUID().toString();
             AssignResourceServiceImpl spy = Mockito.spy(assignResourceService);
 
             PrecisionQueue queueFound = mock(PrecisionQueue.class);
             doReturn(queueFound).when(spy).getPrecisionQueueFrom(any(), any(), eq(Boolean.FALSE));
 
-            MediaRoutingDomain mrdFoundInQueue = new MediaRoutingDomain();
-            mrdFoundInQueue.setId(mrdId);
             List<Step> stepList = new ArrayList<>();
             stepList.add(mock(Step.class));
 
-            when(queueFound.getMrd()).thenReturn(mrdFoundInQueue);
             when(queueFound.getSteps()).thenReturn(stepList);
 
-            PrecisionQueue result = spy.validateAndGetQueue(channelSession, requestedQueue, mrdId, false);
+            PrecisionQueue result = spy.validateAndGetQueue(channelSession, requestedQueue, false);
             assertEquals(queueFound, result);
         }
     }

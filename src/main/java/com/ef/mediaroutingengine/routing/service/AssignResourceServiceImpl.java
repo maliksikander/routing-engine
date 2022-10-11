@@ -7,7 +7,6 @@ import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.routing.dto.AssignResourceRequest;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
-import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
@@ -44,26 +43,19 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * The Precision queues pool.
      */
     private final PrecisionQueuesPool precisionQueuesPool;
-    /**
-     * The Mrd pool.
-     */
-    private final MrdPool mrdPool;
 
     /**
      * Default constructor. Loads the dependencies.
      *
      * @param taskManager         the task manager
      * @param precisionQueuesPool the precision queues pool
-     * @param mrdPool             the mrd pool
      */
     @Autowired
     public AssignResourceServiceImpl(TaskManager taskManager, TasksPool tasksPool,
-                                     PrecisionQueuesPool precisionQueuesPool,
-                                     MrdPool mrdPool) {
+                                     PrecisionQueuesPool precisionQueuesPool) {
         this.taskManager = taskManager;
         this.tasksPool = tasksPool;
         this.precisionQueuesPool = precisionQueuesPool;
-        this.mrdPool = mrdPool;
     }
 
     @Override
@@ -78,11 +70,10 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         validateChannelSession(channelSession);
         logger.debug("ChannelSession validated in Assign-Resource API request");
 
-        MediaRoutingDomain mrd = validateAndGetMrd(channelSession);
-        logger.debug("MRD validated in Assign-Resource API request");
-
-        PrecisionQueue queue = this.validateAndGetQueue(channelSession, request.getQueue(), mrd.getId(), useQueueName);
+        PrecisionQueue queue = this.validateAndGetQueue(channelSession, request.getQueue(), useQueueName);
         logger.debug("PrecisionQueue validated in Assign-Resource API request");
+
+        MediaRoutingDomain mrd = queue.getMrd();
 
         // TODO: Executor service .. don't use completableFuture!
         String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
@@ -144,29 +135,13 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     }
 
     /**
-     * Validate and get mrd media routing domain.
-     *
-     * @param channelSession the channel session
-     * @return the media routing domain
-     */
-    MediaRoutingDomain validateAndGetMrd(ChannelSession channelSession) {
-        String mrdId = channelSession.getChannel().getChannelType().getMediaRoutingDomain();
-        MediaRoutingDomain mrd = this.mrdPool.findById(mrdId);
-        if (mrd == null) {
-            throw new IllegalArgumentException("MRD with id: " + mrdId + " not found in MRD-pool");
-        }
-        return mrd;
-    }
-
-    /**
      * Validate and get queue precision queue.
      *
      * @param channelSession the channel session
      * @param requestQueue   the request queue
-     * @param mrdId          the mrd id
      * @return the precision queue
      */
-    PrecisionQueue validateAndGetQueue(ChannelSession channelSession, String requestQueue, String mrdId,
+    PrecisionQueue validateAndGetQueue(ChannelSession channelSession, String requestQueue,
                                        boolean useQueueName) {
         String defaultQueue = channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingObjectId();
         if (defaultQueue == null && requestQueue == null) {
@@ -175,10 +150,6 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         PrecisionQueue queue = getPrecisionQueueFrom(requestQueue, defaultQueue, useQueueName);
         if (queue == null) {
             throw new IllegalArgumentException("Could not find PrecisionQueue for this request");
-        }
-        if (!queue.getMrd().getId().equals(mrdId)) {
-            throw new IllegalArgumentException("The requested MRD is not associated with the "
-                    + "requested PrecisionQueue");
         }
         if (queue.getSteps().isEmpty()) {
             throw new IllegalStateException("Cannot process request, Queue: " + queue.getId()
