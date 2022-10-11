@@ -149,7 +149,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
      * @param routingAttribute the routing attribute
      * @param id               the id
      */
-    private void updatePrecisionQueues(RoutingAttribute routingAttribute, String id) {
+    void updatePrecisionQueues(RoutingAttribute routingAttribute, String id) {
         List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository
                 .findByRoutingAttributeId(id);
         if (precisionQueueEntities != null && !precisionQueueEntities.isEmpty()) {
@@ -190,10 +190,10 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
      * @param routingAttribute the routing attribute
      * @param id               the id
      */
-    private void updateAgents(RoutingAttribute routingAttribute, String id) {
+    boolean updateAgents(RoutingAttribute routingAttribute, String id) {
         List<CCUser> agents = this.agentsRepository.findByRoutingAttributeId(id);
         if (agents == null || agents.isEmpty()) {
-            return;
+            return false;
         }
 
         for (CCUser agent : agents) {
@@ -215,5 +215,6 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
         }
 
         this.agentsRepository.saveAll(agents);
+        return true;
     }
 }
