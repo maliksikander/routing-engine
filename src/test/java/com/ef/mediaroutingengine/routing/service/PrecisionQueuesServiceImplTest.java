@@ -12,8 +12,10 @@ import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Nested;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -61,7 +63,7 @@ class PrecisionQueuesServiceImplTest {
     }
 
     @Test
-    void test_onCreate() {
+    void testCreate_when_precisionQueueIsCreated() {
         PrecisionQueueRequestBody requestBody = getPrecisionQueueRequest();
         PrecisionQueueEntity precisionQueueEntity = mock(PrecisionQueueEntity.class);
 
@@ -81,43 +83,7 @@ class PrecisionQueuesServiceImplTest {
     }
 
     @Test
-    void testNotFoundException_whenQueueNotExistInRepository() {
-        PrecisionQueueRequestBody requestBody = getPrecisionQueueRequest();
-        PrecisionQueueEntity entity = new PrecisionQueueEntity();
-        entity.setId(requestBody.getId());
-        entity.setName(requestBody.getName());
-        entity.setMrd(requestBody.getMrd());
-        entity.setServiceLevelType(requestBody.getServiceLevelType());
-        entity.setServiceLevelThreshold(requestBody.getServiceLevelThreshold());
-        String queueId = entity.getId();
-
-        assertThrows(NotFoundException.class, () -> precisionQueuesService.retrieve(queueId));
-    }
-
-    @Test
-    void test_successfulRetrieve() {
-        String queueId = UUID.randomUUID().toString();
-        PrecisionQueueRequestBody requestBody = getPrecisionQueueRequest();
-        PrecisionQueueEntity entity = new PrecisionQueueEntity();
-        entity.setId(queueId);
-        entity.setName(requestBody.getName());
-        entity.setMrd(requestBody.getMrd());
-        entity.setServiceLevelType(requestBody.getServiceLevelType());
-        entity.setServiceLevelThreshold(requestBody.getServiceLevelThreshold());
-
-        doReturn(false).when(this.repository).existsById(queueId);
-        doReturn(true).when(this.repository).existsById(queueId);
-        doReturn(Optional.of(entity)).when(this.repository).findById(queueId);
-
-        PrecisionQueuesServiceImpl spy = Mockito.spy(precisionQueuesService);
-
-        ResponseEntity<Object> result = spy.retrieve(queueId);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-
-    }
-
-    @Test
-    void test_onUpdate() {
+    void testUpdate_onSuccessfulUpdate() {
         String queueId = UUID.randomUUID().toString();
         PrecisionQueueRequestBody requestBody = getPrecisionQueueRequest();
 
@@ -146,7 +112,7 @@ class PrecisionQueuesServiceImplTest {
     }
 
     @Test
-    void test_onDelete() {
+    void testDelete_when_precisionQueueIsDeleted() {
         String queueId = UUID.randomUUID().toString();
         doReturn(true).when(this.repository).existsById(queueId);
         doReturn(new ArrayList<>()).when(this.tasksPool).findByQueueId(queueId);
@@ -159,6 +125,45 @@ class PrecisionQueuesServiceImplTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
+    @Nested
+    @DisplayName("test retrieve method")
+    class TestRetrieve {
+        @Test
+        void when_queueNotExistInRepository() {
+            PrecisionQueueRequestBody requestBody = getPrecisionQueueRequest();
+            PrecisionQueueEntity entity = new PrecisionQueueEntity();
+            entity.setId(requestBody.getId());
+            entity.setName(requestBody.getName());
+            entity.setMrd(requestBody.getMrd());
+            entity.setServiceLevelType(requestBody.getServiceLevelType());
+            entity.setServiceLevelThreshold(requestBody.getServiceLevelThreshold());
+            String queueId = entity.getId();
+
+            assertThrows(NotFoundException.class, () -> precisionQueuesService.retrieve(queueId));
+        }
+
+        @Test
+        void when_precisionQueueExistInRepository() {
+            String queueId = UUID.randomUUID().toString();
+            PrecisionQueueRequestBody requestBody = getPrecisionQueueRequest();
+            PrecisionQueueEntity entity = new PrecisionQueueEntity();
+            entity.setId(queueId);
+            entity.setName(requestBody.getName());
+            entity.setMrd(requestBody.getMrd());
+            entity.setServiceLevelType(requestBody.getServiceLevelType());
+            entity.setServiceLevelThreshold(requestBody.getServiceLevelThreshold());
+
+            doReturn(false).when(repository).existsById(queueId);
+            doReturn(true).when(repository).existsById(queueId);
+            doReturn(Optional.of(entity)).when(repository).findById(queueId);
+
+            PrecisionQueuesServiceImpl spy = Mockito.spy(precisionQueuesService);
+
+            ResponseEntity<Object> result = spy.retrieve(queueId);
+            assertEquals(HttpStatus.OK, result.getStatusCode());
+
+        }
+    }
 
     private PrecisionQueueRequestBody getPrecisionQueueRequest() {
         PrecisionQueueRequestBody precisionQueueRequestBody = new PrecisionQueueRequestBody();
