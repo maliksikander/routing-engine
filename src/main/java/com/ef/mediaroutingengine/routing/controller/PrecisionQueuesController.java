@@ -3,9 +3,13 @@ package com.ef.mediaroutingengine.routing.controller;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.service.PrecisionQueuesService;
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,8 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Rest-Controller for the Precision-Queues CRUD APIs.
  */
+@Validated
 @RestController
 public class PrecisionQueuesController {
+
+    private static final Logger logger = LoggerFactory.getLogger(PrecisionQueuesController.class);
+
     /**
      * The API calls are passed to this service for processing.
      */
@@ -57,6 +65,21 @@ public class PrecisionQueuesController {
     @GetMapping(value = "/precision-queues", produces = "application/json")
     public ResponseEntity<Object> retrieve(@RequestParam(required = false, value = "queueId") String queueId) {
         return this.service.retrieve(queueId);
+    }
+
+    /**
+     * Retrieves-Precision-Queues API handler. Returns the list of all PrecisionQueues with
+     * the associated available agents.
+     *
+     * @param conversationId id of the conversation
+     * @return returns the object for the queue with available agents
+     */
+    @CrossOrigin(origins = "*")
+    @GetMapping(value = "precision-queues/available-agents", produces = "application/json")
+    public ResponseEntity<Object> retrieveQueuesWithAvailableAgents(@RequestParam @NotBlank String conversationId) {
+        logger.info("request received on retrieveQueuesWithAvailableAgents for fetching precision queues "
+                + "with available agents");
+        return this.service.retrieveQueuesWithAssociatedAvailableAgents(conversationId);
     }
 
     /**

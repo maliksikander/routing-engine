@@ -9,7 +9,10 @@ import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
+import com.ef.mediaroutingengine.routing.dto.QueuesWithAvailableAgentsResponse;
+import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
+import com.ef.mediaroutingengine.routing.model.Step;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
@@ -20,6 +23,7 @@ import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +31,7 @@ import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
 
 /**
  * The type Precision queue entity service.
@@ -180,6 +185,39 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         List<TaskDto> taskDtoList = new ArrayList<>();
         tasks.forEach(task -> taskDtoList.add(AdapterUtility.createTaskDtoFrom(task)));
         return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
+    }
+
+    /**
+     * Gets PrecisionQueue with available agents.
+     *
+     * @return the list of QueuesWithAvailableAgentsResponse
+     */
+    @Override
+    public ResponseEntity<Object> retrieveQueuesWithAssociatedAvailableAgents(String conversationId) {
+        List<QueuesWithAvailableAgentsResponse> responseList = new ArrayList<>();
+        AtomicInteger totalAvailableAgents = new AtomicInteger();
+
+        this.precisionQueuesPool.toList().forEach(precisionQueue -> {
+                    totalAvailableAgents.set(0);
+                    QueuesWithAvailableAgentsResponse response = new QueuesWithAvailableAgentsResponse();
+                    response.setQueueId(precisionQueue.getId());
+                    response.setQueueName(precisionQueue.getName());
+                    String mrdId = precisionQueue.getMrd().getId();
+                    List<Step> steps = precisionQueue.getSteps();
+                    steps.forEach(step -> {
+                        List<Agent> agents = step.getAssociatedAgents();
+                        agents.forEach(agent -> {
+                            if (agent != null && agent.isAvailableForRouting(mrdId, conversationId)) {
+                                totalAvailableAgents.getAndIncrement();
+                            }
+                        });
+                    });
+                    response.setTotalAvailableAgents(totalAvailableAgents.intValue());
+                    responseList.add(response);
+                }
+        );
+        logger.info("returning the list of the precision queues with the available agents");
+        return new ResponseEntity<>(responseList, HttpStatus.OK);
     }
 
     void throwExceptionIfQueueNameIsNotUnique(PrecisionQueueRequestBody requestBody, String queueId) {
