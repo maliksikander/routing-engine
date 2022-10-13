@@ -40,4 +40,12 @@ public interface PrecisionQueuesService {
      * @return the response entity
      */
     ResponseEntity<Object> delete(String id);
+
+    /**
+     * Retrieve precision queue with available agents.
+     *
+     * @param conversationId id for the conversation
+     * @return the precision queue with available agents
+     */
+    ResponseEntity<Object> retrieveQueuesWithAssociatedAvailableAgents(String conversationId);
 }
