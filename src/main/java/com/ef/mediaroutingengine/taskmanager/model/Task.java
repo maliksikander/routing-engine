@@ -5,6 +5,7 @@ import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.TaskType;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import java.beans.PropertyChangeListener;
@@ -63,6 +64,10 @@ public class Task {
      */
     private TaskState state;
     /**
+     * The task type.
+     */
+    private TaskType type;
+    /**
      * The Assigned to.
      */
     private String assignedTo;
@@ -91,7 +96,7 @@ public class Task {
      * @param mrd            the mrd
      * @param queue          the queue
      */
-    private Task(String id, ChannelSession channelSession, MediaRoutingDomain mrd, String queue) {
+    private Task(String id, ChannelSession channelSession, MediaRoutingDomain mrd, String queue, TaskType type) {
         this.id = id;
         this.channelSession = channelSession;
         this.mrd = mrd;
@@ -102,6 +107,7 @@ public class Task {
         this.timer = new Timer();
         this.handlingTime = 0L;
         this.changeSupport = new PropertyChangeSupport(this);
+        this.type = type;
     }
 
     /**
@@ -114,8 +120,8 @@ public class Task {
      * @return the instance
      */
     public static Task getInstanceFrom(ChannelSession channelSession, MediaRoutingDomain mrd,
-                                       String queue, TaskState state) {
-        Task task = new Task(UUID.randomUUID().toString(), channelSession, mrd, queue);
+                                       String queue, TaskState state, TaskType type) {
+        Task task = new Task(UUID.randomUUID().toString(), channelSession, mrd, queue, type);
         task.setTaskState(state);
 
         if (state.getName().equals(Enums.TaskStateName.ACTIVE)) {
@@ -132,7 +138,8 @@ public class Task {
      * @return the instance
      */
     public static Task getInstanceFrom(TaskDto taskDto) {
-        Task task = new Task(taskDto.getId(), taskDto.getChannelSession(), taskDto.getMrd(), taskDto.getQueue());
+        Task task = new Task(taskDto.getId(), taskDto.getChannelSession(), taskDto.getMrd(),
+                             taskDto.getQueue(), taskDto.getType());
         task.state = taskDto.getState();
         task.priority = taskDto.getPriority();
         task.assignedTo = taskDto.getAssignedTo();
@@ -148,7 +155,8 @@ public class Task {
      */
     public static Task getInstanceFrom(Task oldTask) {
         TaskState newTaskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = getInstanceFrom(oldTask.channelSession, oldTask.mrd, oldTask.queue, newTaskState);
+        Task task = getInstanceFrom(oldTask.channelSession, oldTask.mrd, oldTask.queue, newTaskState,
+                    oldTask.getType());
         task.priority = 11;
         return task;
     }
@@ -162,8 +170,8 @@ public class Task {
      * @return the instance
      */
     public static Task getInstanceFrom(String agentId, MediaRoutingDomain mrd,
-                                       TaskState taskState, ChannelSession channelSession) {
-        Task task = getInstanceFrom(channelSession, mrd, null, taskState);
+                                       TaskState taskState, ChannelSession channelSession, TaskType type) {
+        Task task = getInstanceFrom(channelSession, mrd, null, taskState, type);
         task.setAssignedTo(agentId);
         return task;
     }
@@ -244,6 +252,24 @@ public class Task {
      */
     public void setTaskState(TaskState state) {
         this.state = state;
+    }
+
+    /**
+     * Sets task state.
+     *
+     * @return the task type
+     */
+    public TaskType getType() {
+        return type;
+    }
+
+    /**
+     * Sets task state.
+     *
+     * @param type the type of task
+     */
+    public void setType(TaskType type) {
+        this.type = type;
     }
 
     /**

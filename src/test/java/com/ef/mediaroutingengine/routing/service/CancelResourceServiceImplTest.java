@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.CancelResourceRequest;
 import com.ef.mediaroutingengine.routing.model.Agent;
@@ -176,6 +177,7 @@ class CancelResourceServiceImplTest {
     private Task getTaskInstance(String topicId, TaskState taskState) {
         ChannelSession channelSession = new ChannelSession();
         channelSession.setConversationId(topicId);
-        return Task.getInstanceFrom(channelSession, null, UUID.randomUUID().toString(), taskState);
+        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE,null);
+        return Task.getInstanceFrom(channelSession, null, UUID.randomUUID().toString(), taskState,type);
     }
 }
