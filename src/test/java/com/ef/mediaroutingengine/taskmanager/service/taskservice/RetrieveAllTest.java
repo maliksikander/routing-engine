@@ -3,10 +3,7 @@ package com.ef.mediaroutingengine.taskmanager.service.taskservice;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.*;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
@@ -34,7 +31,8 @@ class RetrieveAllTest {
     void testFindTasks_returnsAllTasksInTasksPool() {
         List<Task> taskList = new ArrayList<>();
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        taskList.add(Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), "queue", taskState));
+        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE,null);
+        taskList.add(Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), "queue", taskState,type));
 
         when(tasksPool.findAll()).thenReturn(taskList);
 

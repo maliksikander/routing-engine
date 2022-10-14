@@ -6,6 +6,7 @@ import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate.AgentStateListener;
 import com.ef.mediaroutingengine.global.commons.Constants;
@@ -282,9 +283,9 @@ public class TaskManager {
      */
     public void enqueueTask(ChannelSession channelSession, PrecisionQueue queue, MediaRoutingDomain mrd) {
         logger.debug(Constants.METHOD_STARTED);
-
+        TaskType taskType = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = Task.getInstanceFrom(channelSession, mrd, queue.getId(), taskState);
+        Task task = Task.getInstanceFrom(channelSession, mrd, queue.getId(), taskState, taskType);
 
         this.insertInPoolAndRepository(task);
         this.publishTaskForReporting(task);

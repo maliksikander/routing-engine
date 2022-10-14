@@ -3,10 +3,7 @@ package com.ef.mediaroutingengine.taskmanager.service.taskservice;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.*;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
@@ -52,7 +49,8 @@ class RetrieveByAgentTest {
 
     private Task getNewTask(String assignedTo) {
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), "queue", taskState);
+        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.AGENT,null);
+        Task task = Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), "queue", taskState,type);
         task.setAssignedTo(assignedTo);
         return task;
     }

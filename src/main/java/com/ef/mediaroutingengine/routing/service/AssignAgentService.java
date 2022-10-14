@@ -4,6 +4,7 @@ import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.utility.RestRequest;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
@@ -46,8 +47,8 @@ public class AssignAgentService {
      */
     public void assign(String conversation, Agent agent, MediaRoutingDomain mrd, ChannelSession channelSession) {
         TaskState taskState = new TaskState(Enums.TaskStateName.STARTED, null);
-
-        Task task = Task.getInstanceFrom(agent.getId(), mrd, taskState, channelSession);
+        TaskType type = new TaskType(Enums.TaskTypeDirection.OUTBOUND, Enums.TaskTypeMode.AGENT, null);
+        Task task = Task.getInstanceFrom(agent.getId(), mrd, taskState, channelSession, type);
 
         this.taskManager.insertInPoolAndRepository(task);
         this.taskManager.publishTaskForReporting(task);

@@ -37,6 +37,7 @@ public final class AdapterUtility {
         taskDto.setEnqueueTime(task.getEnqueueTime());
         taskDto.setAnswerTime(task.getStartTime());
         taskDto.setHandleTime(task.getHandlingTime());
+        taskDto.setType(task.getType());
         return taskDto;
     }
 

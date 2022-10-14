@@ -4,6 +4,7 @@ import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.TaskType;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
@@ -37,6 +38,9 @@ public class TasksService {
      * The Task retriever factory.
      */
     private final TasksRetrieverFactory tasksRetrieverFactory;
+    /**
+     * JMS Communicator.
+     */
     private final JmsCommunicator jmsCommunicator;
 
     /**
@@ -76,7 +80,8 @@ public class TasksService {
      * @param taskState the task state
      * @return the list
      */
-    public List<TaskDto> retrieve(Optional<String> agentId, Optional<Enums.TaskStateName> taskState) {
+    public List<TaskDto> retrieve(Optional<String> agentId,
+                                  Optional<Enums.TaskStateName> taskState) {
         TasksRetriever tasksRetriever = this.tasksRetrieverFactory.getRetriever(agentId, taskState);
         return tasksRetriever.findTasks();
     }
@@ -128,7 +133,8 @@ public class TasksService {
     }
 
     private Task createTask(Agent agent, MediaRoutingDomain mrd, TaskState state, ChannelSession channelSession) {
-        Task task = Task.getInstanceFrom(agent.getId(), mrd, state, channelSession);
+        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.AGENT, null);
+        Task task = Task.getInstanceFrom(agent.getId(), mrd, state, channelSession, type);
 
         this.tasksPool.add(task);
         this.tasksRepository.save(task.getId(), AdapterUtility.createTaskDtoFrom(task));
