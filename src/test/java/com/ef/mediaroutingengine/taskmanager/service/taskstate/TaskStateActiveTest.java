@@ -13,6 +13,7 @@ import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
@@ -34,10 +35,12 @@ class TaskStateActiveTest {
     private AgentsPool agentsPool;
     @Mock
     private TasksRepository tasksRepository;
+    @Mock
+    private JmsCommunicator jmsCommunicator;
 
     @BeforeEach
     void setUp() {
-        this.taskStateActive = new TaskStateActive(taskManager, agentsPool, tasksRepository);
+        this.taskStateActive = new TaskStateActive(taskManager, agentsPool, tasksRepository,jmsCommunicator);
     }
 
     @Test
@@ -74,7 +77,7 @@ class TaskStateActiveTest {
         verify(task, times(1)).setTaskState(taskState);
         verify(task, times(1)).setStartTime(anyLong());
         verify(tasksRepository, times(1)).save(any(), any());
-        verify(taskManager, times(1)).publishTaskForReporting(task);
+        verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
         verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(topicId);
         verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(topicId);
         verify(agent, times(1)).assignPushTask(task);

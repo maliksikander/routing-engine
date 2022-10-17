@@ -36,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
+
 /**
  * The type Task manager.
  */
@@ -77,6 +78,10 @@ public class TaskManager {
      * The Change support.
      */
     private final PropertyChangeSupport changeSupport;
+    /**
+     * The JMS Communicator.
+     */
+    private final JmsCommunicator jmsCommunicator;
 
     /**
      * Default Constructor. Loads the dependencies.
@@ -91,7 +96,8 @@ public class TaskManager {
     @Autowired
     public TaskManager(AgentsPool agentsPool, ApplicationContext applicationContext,
                        TasksPool tasksPool, TasksRepository tasksRepository,
-                       PrecisionQueuesPool precisionQueuesPool, RestRequest restRequest) {
+                       PrecisionQueuesPool precisionQueuesPool, RestRequest restRequest,
+                       JmsCommunicator jmsCommunicator) {
         this.applicationContext = applicationContext;
         this.agentsPool = agentsPool;
         this.tasksPool = tasksPool;
@@ -100,6 +106,7 @@ public class TaskManager {
         this.restRequest = restRequest;
         this.requestTtlTimers = new ConcurrentHashMap<>();
         this.changeSupport = new PropertyChangeSupport(this);
+        this.jmsCommunicator = jmsCommunicator;
     }
 
     /**
@@ -288,8 +295,7 @@ public class TaskManager {
         Task task = Task.getInstanceFrom(channelSession, mrd, queue.getId(), taskState, taskType);
 
         this.insertInPoolAndRepository(task);
-        this.publishTaskForReporting(task);
-
+        this.jmsCommunicator.publishTaskStateChangeForReporting(task);
         this.scheduleAgentRequestTimeoutTask(task.getChannelSession());
         logger.debug("Agent-Request-Ttl timer task scheduled");
 
@@ -330,13 +336,13 @@ public class TaskManager {
         // If Agent request Ttl has ended.
         if (currentTask.isMarkedForDeletion()) {
             this.requestTtlTimers.remove(currentTask.getTopicId());
-            this.restRequest.postNoAgentAvailable(currentTask.getTopicId());
+            this.jmsCommunicator.publishNoAgentAvailable(currentTask);
             return;
         }
 
         Task newTask = Task.getInstanceFrom(currentTask);
         this.insertInPoolAndRepository(newTask);
-        this.publishTaskForReporting(newTask);
+        this.jmsCommunicator.publishTaskStateChangeForReporting(newTask);
 
         String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
         CompletableFuture.runAsync(() -> {
@@ -402,14 +408,6 @@ public class TaskManager {
         this.changeSupport.removePropertyChangeListener(property, listener);
     }
 
-    public void publishTaskForReporting(Task task) {
-        this.jmsCommunicator().publishTaskStateChangeForReporting(task);
-    }
-
-    private JmsCommunicator jmsCommunicator() {
-        return this.applicationContext.getBean(JmsCommunicator.class);
-    }
-
     private AgentStateListener agentStateListener() {
         return this.applicationContext.getBean(AgentStateListener.class);
     }
@@ -468,9 +466,8 @@ public class TaskManager {
                             Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE));
 
                     TaskManager.this.removeFromPoolAndRepository(task);
-                    TaskManager.this.publishTaskForReporting(task);
-
-                    TaskManager.this.restRequest.postNoAgentAvailable(this.conversation);
+                    TaskManager.this.jmsCommunicator.publishTaskStateChangeForReporting(task);
+                    TaskManager.this.jmsCommunicator.publishNoAgentAvailable(task);
 
                     logger.info("Queued task: {} removed successfully", task.getId());
                 } else if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {

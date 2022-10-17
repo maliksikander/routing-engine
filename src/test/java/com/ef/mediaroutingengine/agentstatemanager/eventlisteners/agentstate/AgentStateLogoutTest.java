@@ -16,6 +16,7 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
@@ -37,10 +38,12 @@ class AgentStateLogoutTest {
     private AgentPresenceRepository agentPresenceRepository;
     @Mock
     private TaskManager taskManager;
+    @Mock
+    private JmsCommunicator jmsCommunicator;
 
     @BeforeEach
     void setUp() {
-        this.agentStateLogout = new AgentStateLogout(agentPresenceRepository, taskManager);
+        this.agentStateLogout = new AgentStateLogout(agentPresenceRepository, taskManager, jmsCommunicator);
     }
 
     @Test
@@ -56,7 +59,7 @@ class AgentStateLogoutTest {
         this.agentStateLogout.handleActiveTasks(agent);
 
         verify(this.taskManager, times(activeTasks.size())).removeFromPoolAndRepository(any());
-        verify(this.taskManager, times(activeTasks.size())).publishTaskForReporting(any());
+        verify(this.jmsCommunicator, times(activeTasks.size())).publishTaskStateChangeForReporting(any());
         verifyNoMoreInteractions(this.taskManager);
     }
 
@@ -70,7 +73,7 @@ class AgentStateLogoutTest {
         this.agentStateLogout.handleReservedTasks(agent);
 
         verify(this.taskManager, times(1)).removeFromPoolAndRepository(reservedTask);
-        verify(this.taskManager, times(1)).publishTaskForReporting(any());
+        verify(this.jmsCommunicator, times(1)).publishTaskStateChangeForReporting(any());
         verify(this.taskManager, times(1)).rerouteReservedTask(reservedTask);
 
         verifyNoMoreInteractions(this.taskManager);

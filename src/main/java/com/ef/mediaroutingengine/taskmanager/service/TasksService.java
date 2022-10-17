@@ -135,7 +135,6 @@ public class TasksService {
     private Task createTask(Agent agent, MediaRoutingDomain mrd, TaskState state, ChannelSession channelSession) {
         TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.AGENT, null);
         Task task = Task.getInstanceFrom(agent.getId(), mrd, state, channelSession, type);
-
         this.tasksPool.add(task);
         this.tasksRepository.save(task.getId(), AdapterUtility.createTaskDtoFrom(task));
         this.jmsCommunicator.publishTaskStateChangeForReporting(task);

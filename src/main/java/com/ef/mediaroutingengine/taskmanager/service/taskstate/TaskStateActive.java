@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 
 import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
@@ -30,7 +31,14 @@ public class TaskStateActive implements TaskStateModifier {
      * The Agents pool.
      */
     private final AgentsPool agentsPool;
+    /**
+     * The Tasks Repository.
+     */
     private final TasksRepository tasksRepository;
+    /**
+     * The JMS Communicator.
+     */
+    private final JmsCommunicator jmsCommunicator;
 
     /**
      * Default Constructor. Loads the dependencies.
@@ -40,10 +48,11 @@ public class TaskStateActive implements TaskStateModifier {
      */
     @Autowired
     public TaskStateActive(TaskManager taskManager, AgentsPool agentsPool,
-                           TasksRepository tasksRepository) {
+                           TasksRepository tasksRepository, JmsCommunicator jmsCommunicator) {
         this.taskManager = taskManager;
         this.agentsPool = agentsPool;
         this.tasksRepository = tasksRepository;
+        this.jmsCommunicator = jmsCommunicator;
     }
 
     @Override
@@ -59,7 +68,7 @@ public class TaskStateActive implements TaskStateModifier {
         task.setStartTime(System.currentTimeMillis());
 
         this.tasksRepository.save(task.getId(), AdapterUtility.createTaskDtoFrom(task));
-        taskManager.publishTaskForReporting(task);
+        this.jmsCommunicator.publishTaskStateChangeForReporting(task);
 
         if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
             this.taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());

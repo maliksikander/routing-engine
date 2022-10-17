@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
@@ -19,6 +20,10 @@ public class TaskStateClose implements TaskStateModifier {
      * The Task manager.
      */
     private final TaskManager taskManager;
+    /**
+     * The JMS Communicator.
+     */
+    private final JmsCommunicator jmsCommunicator;
 
     /**
      * Default constructor. Loads the dependencies.
@@ -26,9 +31,11 @@ public class TaskStateClose implements TaskStateModifier {
      * @param precisionQueuesPool Pool of all precision queues
      * @param taskManager         handles tasks closing.
      */
-    public TaskStateClose(PrecisionQueuesPool precisionQueuesPool, TaskManager taskManager) {
+    public TaskStateClose(PrecisionQueuesPool precisionQueuesPool, TaskManager taskManager,
+                          JmsCommunicator jmsCommunicator) {
         this.precisionQueuesPool = precisionQueuesPool;
         this.taskManager = taskManager;
+        this.jmsCommunicator = jmsCommunicator;
     }
 
 
@@ -38,7 +45,7 @@ public class TaskStateClose implements TaskStateModifier {
 
         this.precisionQueuesPool.endTask(task);
         this.taskManager.removeFromPoolAndRepository(task);
-        this.taskManager.publishTaskForReporting(task);
+        this.jmsCommunicator.publishTaskStateChangeForReporting(task);
 
         if (state.getReasonCode() == null || !state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA)) {
             if (task.getRoutingMode().equals(RoutingMode.PUSH)) {

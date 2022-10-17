@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 
 import com.ef.cim.objectmodel.Enums;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
@@ -29,6 +30,10 @@ public class TaskStateModifierFactory {
      * The Task manager.
      */
     private final TaskManager taskManager;
+    /**
+     * The JMS Communicator.
+     */
+    private final JmsCommunicator jmsCommunicator;
 
     /**
      * Default constructor. Loads the dependencies.
@@ -40,11 +45,12 @@ public class TaskStateModifierFactory {
      */
     @Autowired
     public TaskStateModifierFactory(TasksRepository tasksRepository, PrecisionQueuesPool precisionQueuesPool,
-                                    AgentsPool agentsPool, TaskManager taskManager) {
+                                    AgentsPool agentsPool, TaskManager taskManager, JmsCommunicator jmsCommunicator) {
         this.tasksRepository = tasksRepository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.agentsPool = agentsPool;
         this.taskManager = taskManager;
+        this.jmsCommunicator = jmsCommunicator;
     }
 
     /**
@@ -55,9 +61,9 @@ public class TaskStateModifierFactory {
      */
     public TaskStateModifier getModifier(Enums.TaskStateName state) {
         if (state.equals(Enums.TaskStateName.CLOSED)) {
-            return new TaskStateClose(precisionQueuesPool, taskManager);
+            return new TaskStateClose(precisionQueuesPool, taskManager, jmsCommunicator);
         } else if (state.equals(Enums.TaskStateName.ACTIVE)) {
-            return new TaskStateActive(taskManager, agentsPool, tasksRepository);
+            return new TaskStateActive(taskManager, agentsPool, tasksRepository, jmsCommunicator);
         } else {
             return new TaskStateOther();
         }

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
@@ -26,10 +27,12 @@ class TaskStateCloseTest {
     private PrecisionQueuesPool precisionQueuesPool;
     @Mock
     private TaskManager taskManager;
+    @Mock
+    private JmsCommunicator jmsCommunicator;
 
     @BeforeEach
     void setUp() {
-        this.taskStateClose = new TaskStateClose(precisionQueuesPool, taskManager);
+        this.taskStateClose = new TaskStateClose(precisionQueuesPool, taskManager, jmsCommunicator);
     }
 
     @Test
@@ -42,7 +45,7 @@ class TaskStateCloseTest {
 
         verify(precisionQueuesPool, times(1)).endTask(task);
         verify(taskManager, times(1)).removeFromPoolAndRepository(task);
-        verify(this.taskManager, times(1)).publishTaskForReporting(task);
+        verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
         verify(taskManager, times(1)).endTaskFromAssignedAgent(task);
 
         verifyNoMoreInteractions(precisionQueuesPool);
@@ -61,7 +64,7 @@ class TaskStateCloseTest {
 
         verify(precisionQueuesPool, times(1)).endTask(task);
         verify(taskManager, times(1)).removeFromPoolAndRepository(task);
-        verify(this.taskManager, times(1)).publishTaskForReporting(task);
+        verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
         verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(topicId);
         verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(topicId);
         verify(taskManager, times(1)).endTaskFromAssignedAgent(task);
@@ -80,7 +83,7 @@ class TaskStateCloseTest {
 
         verify(precisionQueuesPool, times(1)).endTask(task);
         verify(taskManager, times(1)).removeFromPoolAndRepository(task);
-        verify(this.taskManager, times(1)).publishTaskForReporting(task);
+        verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
         verify(taskManager, times(1)).endTaskFromAgentOnRona(task);
         verify(taskManager, times(1)).rerouteReservedTask(task);
 
@@ -98,7 +101,7 @@ class TaskStateCloseTest {
 
         verify(precisionQueuesPool, times(1)).endTask(task);
         verify(taskManager, times(1)).removeFromPoolAndRepository(task);
-        verify(this.taskManager, times(1)).publishTaskForReporting(task);
+        verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
 
         verifyNoMoreInteractions(precisionQueuesPool);
         verifyNoMoreInteractions(taskManager);

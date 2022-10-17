@@ -67,18 +67,6 @@ public class RestRequest {
     }
 
     /**
-     * Calls the bot-framework's No-Agent-Available API.
-     *
-     * @param topic id of the topic.
-     * @return The HTTP response from the API call.
-     */
-    public ResponseEntity<String> postNoAgentAvailable(String topic) {
-        NoAgentAvailableRequest requestBody = new NoAgentAvailableRequest();
-        requestBody.setTopicId(topic);
-        return this.httpRequest(requestBody, config.getNoAgentAvailableUri(), HttpMethod.POST);
-    }
-
-    /**
      * Calls the Agent-manager's Assign-Task API.
      *
      * @param channelSession the channel-Session

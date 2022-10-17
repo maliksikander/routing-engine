@@ -5,6 +5,7 @@ import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
@@ -28,6 +29,10 @@ public class AgentStateLogout implements AgentStateDelegate {
      * The Task manager.
      */
     private final TaskManager taskManager;
+    /**
+     * The JMS Communicator.
+     */
+    private final JmsCommunicator jmsCommunicator;
 
     /**
      * Instantiates a new Agent state logout.
@@ -36,9 +41,11 @@ public class AgentStateLogout implements AgentStateDelegate {
      * @param taskManager             the task manager
      */
     @Autowired
-    public AgentStateLogout(AgentPresenceRepository agentPresenceRepository, TaskManager taskManager) {
+    public AgentStateLogout(AgentPresenceRepository agentPresenceRepository, TaskManager taskManager,
+                            JmsCommunicator jmsCommunicator) {
         this.agentPresenceRepository = agentPresenceRepository;
         this.taskManager = taskManager;
+        this.jmsCommunicator = jmsCommunicator;
     }
 
     @Override
@@ -71,7 +78,7 @@ public class AgentStateLogout implements AgentStateDelegate {
             reservedTask.setTaskState(taskState);
 
             this.taskManager.removeFromPoolAndRepository(reservedTask);
-            this.taskManager.publishTaskForReporting(reservedTask);
+            this.jmsCommunicator.publishTaskStateChangeForReporting(reservedTask);
             this.taskManager.rerouteReservedTask(reservedTask);
         }
     }
@@ -80,7 +87,7 @@ public class AgentStateLogout implements AgentStateDelegate {
         for (Task task : agent.getActiveTasksList()) {
             task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.AGENT_LOGOUT));
             this.taskManager.removeFromPoolAndRepository(task);
-            this.taskManager.publishTaskForReporting(task);
+            this.jmsCommunicator.publishTaskStateChangeForReporting(task);
         }
     }
 }

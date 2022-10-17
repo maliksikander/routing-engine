@@ -226,8 +226,8 @@ public class Bootstrap {
                 task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED,
                         Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE));
                 this.taskManager.removeFromPoolAndRepository(task);
-                this.taskManager.publishTaskForReporting(task);
-                this.restRequest.postNoAgentAvailable(task.getChannelSession().getConversationId());
+                this.jmsCommunicator.publishTaskStateChangeForReporting(task);
+                this.jmsCommunicator.publishNoAgentAvailable(task);
                 logger.debug("Task: {} removed", task.getId());
 
             } else if (taskState.equals(Enums.TaskStateName.RESERVED)) {
