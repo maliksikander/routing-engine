@@ -54,4 +54,11 @@ public interface JmsCommunicator extends ExceptionListener {
      * @param task the task
      */
     void publishTaskStateChangeForReporting(Task task);
+
+    /**
+     * Publish NoAgentAvailable event.
+     *
+     * @param task the task
+     */
+    void publishNoAgentAvailable(Task task);
 }

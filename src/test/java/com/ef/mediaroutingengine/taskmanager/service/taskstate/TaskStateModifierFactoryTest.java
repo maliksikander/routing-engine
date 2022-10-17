@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.ef.cim.objectmodel.Enums;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
@@ -24,10 +25,12 @@ class TaskStateModifierFactoryTest {
     private AgentsPool agentsPool;
     @Mock
     private TaskManager taskManager;
+    @Mock
+    private JmsCommunicator jmsCommunicator;
 
     @BeforeEach
     void setUp() {
-        this.factory = new TaskStateModifierFactory(tasksRepository, precisionQueuesPool, agentsPool, taskManager);
+        this.factory = new TaskStateModifierFactory(tasksRepository, precisionQueuesPool, agentsPool, taskManager, jmsCommunicator);
     }
 
     @Test

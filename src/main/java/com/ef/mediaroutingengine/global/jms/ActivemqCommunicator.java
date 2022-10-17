@@ -4,6 +4,7 @@ import com.ef.cim.objectmodel.CimEvent;
 import com.ef.cim.objectmodel.CimEventName;
 import com.ef.cim.objectmodel.CimEventType;
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.dto.NoAgentAvailableDto;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.dto.StateChangeEvent;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
@@ -134,7 +135,8 @@ public class ActivemqCommunicator implements JmsCommunicator {
     @Override
     public void publishTaskStateChangeForReporting(Task task) {
         try {
-            String messageStr = this.getSerializedCimEvent(AdapterUtility.createTaskDtoFrom(task), task.getTopicId());
+            String messageStr = this.getSerializedCimEvent(AdapterUtility.createTaskDtoFrom(task),
+                                                           CimEventName.TASK_STATE_CHANGED, task.getTopicId());
             TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
             messageToSend.setText(messageStr);
 
@@ -152,14 +154,40 @@ public class ActivemqCommunicator implements JmsCommunicator {
     }
 
     /**
+     * To publish NoAgentAvailable event.
+     *
+     * @param task the Task
+     */
+    @Override
+    public void publishNoAgentAvailable(Task task) {
+        try {
+            String messageStr = this.getSerializedCimEvent(new NoAgentAvailableDto(task.getType()),
+                                                           CimEventName.NO_AGENT_AVAILABLE, task.getTopicId());
+            TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
+            messageToSend.setText(messageStr);
+
+            messageToSend.setJMSType(CimEventName.NO_AGENT_AVAILABLE.name());
+            messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
+
+            conversationEventPublisher.send(messageToSend);
+
+            logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
+                    CimEventName.NO_AGENT_AVAILABLE, messageStr, topics.get(1));
+        } catch (JMSException | JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * Gets serialized cim event.
      *
      * @param message the message
      * @return the serialized cim event
      * @throws JsonProcessingException the json processing exception
      */
-    private String getSerializedCimEvent(Serializable message, String conversationId) throws JsonProcessingException {
-        CimEvent cimEvent = new CimEvent(message, CimEventName.TASK_STATE_CHANGED, CimEventType.NOTIFICATION,
+    private String getSerializedCimEvent(Object message, CimEventName eventName, String conversationId)
+            throws JsonProcessingException {
+        CimEvent cimEvent = new CimEvent(message, eventName, CimEventType.NOTIFICATION,
                 conversationId);
         return this.objectMapper.writeValueAsString(cimEvent);
     }

@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.global.utilities;
 
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.dto.NoAgentAvailableDto;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.taskmanager.model.Task;

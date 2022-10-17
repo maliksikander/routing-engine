@@ -14,6 +14,7 @@ import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.CancelResourceRequest;
 import com.ef.mediaroutingengine.routing.model.Agent;
@@ -48,13 +49,14 @@ class CancelResourceServiceImplTest {
     private AgentsPool agentsPool;
     @Mock
     private RestRequest restRequest;
-
+    @Mock
+    private JmsCommunicator jmsCommunicator;
     private CancelResourceServiceImpl cancelResourceService;
 
     @BeforeEach
     void setUp() {
         this.cancelResourceService = new CancelResourceServiceImpl(tasksPool, taskManager, precisionQueuesPool,
-                agentsPool, restRequest);
+                agentsPool, restRequest, jmsCommunicator);
     }
 
     @Nested
@@ -164,7 +166,7 @@ class CancelResourceServiceImplTest {
         cancelResourceService.removeAndPublish(task, closeReasonCode);
 
         verify(taskManager, times(1)).removeFromPoolAndRepository(task);
-        verify(taskManager, times(1)).publishTaskForReporting(task);
+        verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
     }
 
     private CancelResourceRequest getCancelResourceRequestInstance() {

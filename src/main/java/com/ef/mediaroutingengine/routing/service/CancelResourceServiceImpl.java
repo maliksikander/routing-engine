@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.routing.service;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.commons.Constants;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.dto.CancelResourceRequest;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
@@ -48,6 +49,10 @@ public class CancelResourceServiceImpl implements CancelResourceService {
      * The Rest request.
      */
     private final RestRequest restRequest;
+    /**
+     * The JMS Communicator.
+     */
+    private final JmsCommunicator jmsCommunicator;
 
     /**
      * Instantiates a new End task service.
@@ -61,12 +66,13 @@ public class CancelResourceServiceImpl implements CancelResourceService {
     @Autowired
     public CancelResourceServiceImpl(TasksPool tasksPool, TaskManager taskManager,
                                      PrecisionQueuesPool precisionQueuesPool,
-                                     AgentsPool agentsPool, RestRequest restRequest) {
+                                     AgentsPool agentsPool, RestRequest restRequest, JmsCommunicator jmsCommunicator) {
         this.tasksPool = tasksPool;
         this.taskManager = taskManager;
         this.precisionQueuesPool = precisionQueuesPool;
         this.agentsPool = agentsPool;
         this.restRequest = restRequest;
+        this.jmsCommunicator = jmsCommunicator;
     }
 
     @Override
@@ -144,6 +150,6 @@ public class CancelResourceServiceImpl implements CancelResourceService {
 
         this.taskManager.removeFromPoolAndRepository(task);
         logger.debug("Task {}, removed from in-memory pool and repository", task.getId());
-        this.taskManager.publishTaskForReporting(task);
+        this.jmsCommunicator.publishTaskStateChangeForReporting(task);
     }
 }

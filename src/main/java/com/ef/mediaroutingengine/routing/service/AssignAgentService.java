@@ -5,6 +5,7 @@ import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.utility.RestRequest;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
@@ -24,6 +25,10 @@ public class AssignAgentService {
      * The Rest request.
      */
     private final RestRequest restRequest;
+    /**
+     * The JMS Communicator.
+     */
+    private final JmsCommunicator jmsCommunicator;
 
     /**
      * Instantiates a new Assign agent service.
@@ -31,9 +36,10 @@ public class AssignAgentService {
      * @param taskManager the task manager
      * @param restRequest the rest request
      */
-    public AssignAgentService(TaskManager taskManager, RestRequest restRequest) {
+    public AssignAgentService(TaskManager taskManager, RestRequest restRequest, JmsCommunicator jmsCommunicator) {
         this.taskManager = taskManager;
         this.restRequest = restRequest;
+        this.jmsCommunicator = jmsCommunicator;
     }
 
 
@@ -51,7 +57,7 @@ public class AssignAgentService {
         Task task = Task.getInstanceFrom(agent.getId(), mrd, taskState, channelSession, type);
 
         this.taskManager.insertInPoolAndRepository(task);
-        this.taskManager.publishTaskForReporting(task);
+        this.jmsCommunicator.publishTaskStateChangeForReporting(task);
 
         this.restRequest.postAssignTask(channelSession, agent.toCcUser(), conversation, task.getId(), taskState);
     }
