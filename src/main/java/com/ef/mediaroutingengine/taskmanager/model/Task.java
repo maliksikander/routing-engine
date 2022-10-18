@@ -123,7 +123,10 @@ public class Task {
                                        String queue, TaskState state, TaskType type) {
         Task task = new Task(UUID.randomUUID().toString(), channelSession, mrd, queue, type);
         task.setTaskState(state);
-
+        if (Enums.TaskTypeDirection.DIRECT_TRANSFER.equals(task.getType().getDirection())
+                || Enums.TaskTypeDirection.DIRECT_CONFERENCE.equals(task.getType().getDirection())) {
+            task.setPriority(11);
+        }
         if (state.getName().equals(Enums.TaskStateName.ACTIVE)) {
             task.setStartTime(System.currentTimeMillis());
         }

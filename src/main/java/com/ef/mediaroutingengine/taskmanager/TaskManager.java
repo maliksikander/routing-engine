@@ -288,18 +288,17 @@ public class TaskManager {
      * @param queue          queue in request.
      * @param mrd            mrd in request.
      */
-    public void enqueueTask(ChannelSession channelSession, PrecisionQueue queue, MediaRoutingDomain mrd) {
+    public void enqueueTask(ChannelSession channelSession, PrecisionQueue queue, MediaRoutingDomain mrd,
+                            TaskType requestType) {
         logger.debug(Constants.METHOD_STARTED);
-        TaskType taskType = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = Task.getInstanceFrom(channelSession, mrd, queue.getId(), taskState, taskType);
-
+        Task task = Task.getInstanceFrom(channelSession, mrd, queue.getId(), taskState, requestType);
         this.insertInPoolAndRepository(task);
         this.jmsCommunicator.publishTaskStateChangeForReporting(task);
         this.scheduleAgentRequestTimeoutTask(task.getChannelSession());
         logger.debug("Agent-Request-Ttl timer task scheduled");
-
         this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
+
         logger.debug(Constants.METHOD_ENDED);
     }
 

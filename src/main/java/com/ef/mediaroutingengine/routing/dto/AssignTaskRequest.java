@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.routing.dto;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,23 +20,12 @@ import lombok.ToString;
 @ToString
 public class AssignTaskRequest {
     /**
-     * The Channel session.
+     * The task dto.
      */
-    private ChannelSession channelSession;
+    private TaskDto task;
     /**
      * The Cc user.
      */
     private CCUser ccUser;
-    /**
-     * The Topic id.
-     */
-    private String conversationId;
-    /**
-     * The Task id.
-     */
-    private String taskId;
-    /**
-     * The Task state.
-     */
-    private TaskState taskState;
+
 }

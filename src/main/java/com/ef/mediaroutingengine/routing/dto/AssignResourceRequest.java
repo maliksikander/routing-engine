@@ -1,6 +1,8 @@
 package com.ef.mediaroutingengine.routing.dto;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.TaskType;
+import com.ef.cim.objectmodel.dto.NoAgentAvailableDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,12 +19,16 @@ import lombok.ToString;
 @ToString
 public class AssignResourceRequest {
     /**
-     * Contains the channel configurations, routing-policy, default-queue, MRD e.t.c
-     */
-    private ChannelSession channelSession;
-    /**
      * Requested queue to direct the request to. If this queue is null or not found, then the default queue
      * in the channel-session will be used.
      */
     private String queue;
+    /**
+     * Contains the channel configurations, routing-policy, default-queue, MRD e.t.c
+     */
+    private ChannelSession channelSession;
+    /**
+     * Information regarding the type of the Task.
+     */
+    private TaskType requestType;
 }

@@ -138,6 +138,7 @@ public class TaskRouter implements PropertyChangeListener {
         Task task = (Task) evt.getNewValue();
         if (task.getQueue().equals(this.precisionQueue.getId())) {
             this.precisionQueue.enqueue(task);
+            jmsCommunicator.publishTaskEnqueued(task, this.precisionQueue);
             logger.debug("Task: {} enqueued in Precision-Queue: {}", task.getId(), precisionQueue.getId());
             task.addPropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), this);
             task.setUpStepFrom(this.precisionQueue, 0);
@@ -228,8 +229,7 @@ public class TaskRouter implements PropertyChangeListener {
             CCUser ccUser = agent.toCcUser();
             TaskState taskState = new TaskState(Enums.TaskStateName.RESERVED, null);
 
-            boolean isReserved = this.restRequest.postAssignTask(task.getChannelSession(),
-                    ccUser, task.getTopicId(), task.getId(), taskState);
+            boolean isReserved = this.restRequest.postAssignTask(task, ccUser);
             if (isReserved) {
                 logger.debug("Task Assigned to agent in Agent-Manager");
                 this.changeStateOf(task, taskState, agent.getId());

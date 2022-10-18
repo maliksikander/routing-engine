@@ -10,13 +10,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.ef.cim.objectmodel.Channel;
-import com.ef.cim.objectmodel.ChannelConfig;
-import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.cim.objectmodel.ChannelType;
-import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.cim.objectmodel.RoutingMode;
-import com.ef.cim.objectmodel.RoutingPolicy;
+import com.ef.cim.objectmodel.*;
 import com.ef.mediaroutingengine.routing.dto.AssignResourceRequest;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.model.Step;
@@ -55,7 +49,8 @@ class AssignResourceServiceImplTest {
     void test_assign() {
         ChannelSession channelSession = getChannelSessionInstance();
         String requestedQueue = UUID.randomUUID().toString();
-        AssignResourceRequest request = new AssignResourceRequest(channelSession, requestedQueue);
+        TaskType taskType = new TaskType(Enums.TaskTypeDirection.INBOUND,Enums.TaskTypeMode.QUEUE,null);
+        AssignResourceRequest request = new AssignResourceRequest(requestedQueue, channelSession, taskType);
 
         MediaRoutingDomain mrd = mock(MediaRoutingDomain.class);
         PrecisionQueue queue = mock(PrecisionQueue.class);
