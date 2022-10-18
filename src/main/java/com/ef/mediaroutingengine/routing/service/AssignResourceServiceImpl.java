@@ -4,6 +4,7 @@ import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
+import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.routing.dto.AssignResourceRequest;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
@@ -61,10 +62,15 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     @Override
     public String assign(AssignResourceRequest request, boolean useQueueName) {
         String conversationId = request.getChannelSession().getConversationId();
-
         logger.info("Assign resource request initiated | Conversation: {}", conversationId);
 
         this.throwExceptionIfRequestExistsFor(conversationId);
+
+        if (request.getRequestType() == null) {
+            TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
+            request.setRequestType(type);
+        }
+        validateRequestTypeMode(request.getRequestType());
 
         ChannelSession channelSession = request.getChannelSession();
         validateChannelSession(channelSession);
@@ -81,7 +87,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             // putting same correlation id and topic id from the caller thread into this thread
             MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
             MDC.put(Constants.MDC_TOPIC_ID, channelSession.getConversationId());
-            this.taskManager.enqueueTask(channelSession, queue, mrd);
+            this.taskManager.enqueueTask(channelSession, queue, mrd, request.getRequestType());
             MDC.clear();
         });
 
@@ -101,6 +107,17 @@ public class AssignResourceServiceImpl implements AssignResourceService {
                 logger.error(error);
                 throw new IllegalStateException(error);
             }
+        }
+    }
+
+    /**
+     * Validates Mode of request.
+     *
+     * @param type Type of the Task
+     */
+    public void validateRequestTypeMode(TaskType type) {
+        if (type.getMode() == null || type.getMode() != Enums.TaskTypeMode.QUEUE) {
+            throw new IllegalArgumentException("Invalid request mode, it should be QUEUE");
         }
     }
 

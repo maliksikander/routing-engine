@@ -5,9 +5,12 @@ import com.ef.cim.objectmodel.CimEventName;
 import com.ef.cim.objectmodel.CimEventType;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.dto.NoAgentAvailableDto;
+import com.ef.cim.objectmodel.dto.TaskEnqueuedDto;
+import com.ef.cim.objectmodel.dto.TaskEnqueuedQueue;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.dto.StateChangeEvent;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
+import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -136,7 +139,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
     public void publishTaskStateChangeForReporting(Task task) {
         try {
             String messageStr = this.getSerializedCimEvent(AdapterUtility.createTaskDtoFrom(task),
-                                                           CimEventName.TASK_STATE_CHANGED, task.getTopicId());
+                    CimEventName.TASK_STATE_CHANGED, task.getTopicId());
             TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
             messageToSend.setText(messageStr);
 
@@ -162,7 +165,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
     public void publishNoAgentAvailable(Task task) {
         try {
             String messageStr = this.getSerializedCimEvent(new NoAgentAvailableDto(task.getType()),
-                                                           CimEventName.NO_AGENT_AVAILABLE, task.getTopicId());
+                    CimEventName.NO_AGENT_AVAILABLE, task.getTopicId());
             TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
             messageToSend.setText(messageStr);
 
@@ -173,6 +176,34 @@ public class ActivemqCommunicator implements JmsCommunicator {
 
             logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
                     CimEventName.NO_AGENT_AVAILABLE, messageStr, topics.get(1));
+        } catch (JMSException | JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Publish Task Enqueued Event.
+     *
+     * @param task  the Task
+     * @param queue the queue info
+     */
+    @Override
+    public void publishTaskEnqueued(Task task, PrecisionQueue queue) {
+        try {
+            TaskEnqueuedDto taskEnqueuedDto = new TaskEnqueuedDto(AdapterUtility.createTaskDtoFrom(task),
+                    new TaskEnqueuedQueue(queue.getId(), queue.getName()));
+            String messageStr = this.getSerializedCimEvent(taskEnqueuedDto,
+                    CimEventName.TASK_ENQUEUED, task.getTopicId());
+            TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
+            messageToSend.setText(messageStr);
+
+            messageToSend.setJMSType(CimEventName.TASK_ENQUEUED.name());
+            messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
+
+            conversationEventPublisher.send(messageToSend);
+
+            logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
+                    CimEventName.TASK_ENQUEUED, messageStr, topics.get(1));
         } catch (JMSException | JsonProcessingException e) {
             e.printStackTrace();
         }

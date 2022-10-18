@@ -1,13 +1,12 @@
 package com.ef.mediaroutingengine.routing.utility;
 
 import com.ef.cim.objectmodel.CCUser;
-import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.config.AssignResourceProperties;
 import com.ef.mediaroutingengine.global.commons.Constants;
+import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.dto.AgentReservedRequest;
 import com.ef.mediaroutingengine.routing.dto.AssignTaskRequest;
-import com.ef.mediaroutingengine.routing.dto.NoAgentAvailableRequest;
 import com.ef.mediaroutingengine.routing.dto.RevokeTaskRequest;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.time.Duration;
@@ -69,15 +68,13 @@ public class RestRequest {
     /**
      * Calls the Agent-manager's Assign-Task API.
      *
-     * @param channelSession the channel-Session
-     * @param agent          the agent to assign task to
-     * @param topicId        the id of the JMS topic
-     * @param taskId         the id of the task
+     * @param task the task dto
+     * @param agent the agent to assign task to
      * @return true if request successful, false otherwise.
      */
-    public boolean postAssignTask(ChannelSession channelSession, CCUser agent, String topicId, String taskId,
-                                  TaskState taskState) {
-        AssignTaskRequest request = new AssignTaskRequest(channelSession, agent, topicId, taskId, taskState);
+    public boolean postAssignTask(Task task, CCUser agent) {
+        TaskDto taskDto = AdapterUtility.createTaskDtoFrom(task);
+        AssignTaskRequest request = new AssignTaskRequest(taskDto, agent);
 
         try {
             this.httpRequest(request, this.config.getAssignTaskUri(), HttpMethod.POST);

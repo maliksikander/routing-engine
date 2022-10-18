@@ -1,6 +1,10 @@
 package com.ef.mediaroutingengine.global.jms;
 
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.dto.TaskEnqueuedDto;
+import com.ef.cim.objectmodel.dto.TaskEnqueuedQueue;
+import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
+import com.ef.mediaroutingengine.routing.model.Queue;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.Serializable;
@@ -61,4 +65,12 @@ public interface JmsCommunicator extends ExceptionListener {
      * @param task the task
      */
     void publishNoAgentAvailable(Task task);
+
+    /**
+     * Publish Task enqueued event.
+     *
+     * @param task the Task
+     * @param queue precision queue
+     */
+    void publishTaskEnqueued(Task task, PrecisionQueue queue);
 }
