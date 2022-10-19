@@ -69,7 +69,7 @@ public interface JmsCommunicator extends ExceptionListener {
     /**
      * Publish Task enqueue event.
      *
-     * @param task the Task
+     * @param task the task
      * @param queue precision queue
      */
     void publishTaskEnqueued(Task task, PrecisionQueue queue);
