@@ -67,7 +67,7 @@ public interface JmsCommunicator extends ExceptionListener {
     void publishNoAgentAvailable(Task task);
 
     /**
-     * Publish Task enqueued event.
+     * Publish Task enqueue event.
      *
      * @param task the Task
      * @param queue precision queue
