@@ -59,6 +59,6 @@ public class AssignAgentService {
         this.taskManager.insertInPoolAndRepository(task);
         this.jmsCommunicator.publishTaskStateChangeForReporting(task);
 
-        this.restRequest.postAssignTask(task, agent.toCcUser());
+        this.restRequest.postAssignTask(task, agent.toCcUser(), taskState);
     }
 }

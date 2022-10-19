@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.routing.utility;
 
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.config.AssignResourceProperties;
 import com.ef.mediaroutingengine.global.commons.Constants;
@@ -72,8 +73,9 @@ public class RestRequest {
      * @param agent the agent to assign task to
      * @return true if request successful, false otherwise.
      */
-    public boolean postAssignTask(Task task, CCUser agent) {
+    public boolean postAssignTask(Task task, CCUser agent, TaskState taskState) {
         TaskDto taskDto = AdapterUtility.createTaskDtoFrom(task);
+        taskDto.setState(taskState);
         AssignTaskRequest request = new AssignTaskRequest(taskDto, agent);
 
         try {

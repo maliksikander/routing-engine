@@ -229,7 +229,7 @@ public class TaskRouter implements PropertyChangeListener {
             CCUser ccUser = agent.toCcUser();
             TaskState taskState = new TaskState(Enums.TaskStateName.RESERVED, null);
 
-            boolean isReserved = this.restRequest.postAssignTask(task, ccUser);
+            boolean isReserved = this.restRequest.postAssignTask(task, ccUser, taskState);
             if (isReserved) {
                 logger.debug("Task Assigned to agent in Agent-Manager");
                 this.changeStateOf(task, taskState, agent.getId());
