@@ -7,12 +7,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
+import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,21 +26,26 @@ class TaskStateCloseTest {
     @Mock
     private PrecisionQueuesPool precisionQueuesPool;
     @Mock
+    private TasksPool tasksPool;
+    @Mock
     private TaskManager taskManager;
     @Mock
     private JmsCommunicator jmsCommunicator;
 
     @BeforeEach
     void setUp() {
-        this.taskStateClose = new TaskStateClose(precisionQueuesPool, taskManager, jmsCommunicator);
+        this.taskStateClose = new TaskStateClose(precisionQueuesPool, tasksPool, taskManager, jmsCommunicator);
     }
 
     @Test
-    void testUpdateState_when_reasonCodeIsNullOrRonaAndRoutingModeIsNotPush() {
+    void testUpdateState_when_reasonCodeIsNullOrNotRonaAndInProcessTaskExists() {
         Task task = mock(Task.class);
         TaskState taskState = new TaskState(Enums.TaskStateName.CLOSED, null);
+        String conversationId = UUID.randomUUID().toString();
 
-        when(task.getRoutingMode()).thenReturn(RoutingMode.PULL);
+        when(task.getTopicId()).thenReturn(conversationId);
+        when(tasksPool.findInProcessTaskFor(conversationId)).thenReturn(mock(Task.class));
+
         this.taskStateClose.updateState(task, taskState);
 
         verify(precisionQueuesPool, times(1)).endTask(task);
@@ -53,20 +58,23 @@ class TaskStateCloseTest {
     }
 
     @Test
-    void testUpdateState_when_reasonCodeIsNullOrRonaAndRoutingModeIsPush() {
+    void testUpdateState_when_reasonCodeIsNullOrRonaAndInProcessTaskDoesNotExist() {
         Task task = mock(Task.class);
-        String topicId = UUID.randomUUID().toString();
+        String conversationId = UUID.randomUUID().toString();
         TaskState taskState = new TaskState(Enums.TaskStateName.CLOSED, null);
 
-        when(task.getRoutingMode()).thenReturn(RoutingMode.PUSH);
-        when(task.getTopicId()).thenReturn(topicId);
+        when(task.getTopicId()).thenReturn(conversationId);
+        when(tasksPool.findInProcessTaskFor(conversationId)).thenReturn(null);
+
         this.taskStateClose.updateState(task, taskState);
 
         verify(precisionQueuesPool, times(1)).endTask(task);
         verify(taskManager, times(1)).removeFromPoolAndRepository(task);
         verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
-        verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(topicId);
-        verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(topicId);
+
+        verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(conversationId);
+        verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(conversationId);
+
         verify(taskManager, times(1)).endTaskFromAssignedAgent(task);
 
         verifyNoMoreInteractions(precisionQueuesPool);
@@ -74,11 +82,10 @@ class TaskStateCloseTest {
     }
 
     @Test
-    void testUpdateState_when_reasonCodeIsRonaAndRoutingModeIsPush() {
+    void testUpdateState_when_reasonCodeIsRona() {
         Task task = mock(Task.class);
         TaskState taskState = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.RONA);
 
-        when(task.getRoutingMode()).thenReturn(RoutingMode.PUSH);
         taskStateClose.updateState(task, taskState);
 
         verify(precisionQueuesPool, times(1)).endTask(task);
@@ -86,22 +93,6 @@ class TaskStateCloseTest {
         verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
         verify(taskManager, times(1)).endTaskFromAgentOnRona(task);
         verify(taskManager, times(1)).rerouteReservedTask(task);
-
-        verifyNoMoreInteractions(precisionQueuesPool);
-        verifyNoMoreInteractions(taskManager);
-    }
-
-    @Test
-    void testUpdateState_when_reasonCodeIsRonaAndRoutingModeIsNotPush() {
-        Task task = mock(Task.class);
-        TaskState taskState = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.RONA);
-
-        when(task.getRoutingMode()).thenReturn(RoutingMode.EXTERNAL);
-        taskStateClose.updateState(task, taskState);
-
-        verify(precisionQueuesPool, times(1)).endTask(task);
-        verify(taskManager, times(1)).removeFromPoolAndRepository(task);
-        verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
 
         verifyNoMoreInteractions(precisionQueuesPool);
         verifyNoMoreInteractions(taskManager);

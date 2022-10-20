@@ -16,7 +16,6 @@ import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
-import com.ef.mediaroutingengine.routing.utility.RestRequest;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
@@ -67,10 +66,6 @@ public class TaskManager {
      */
     private final PrecisionQueuesPool precisionQueuesPool;
     /**
-     * The Rest request.
-     */
-    private final RestRequest restRequest;
-    /**
      * The Request ttl timers.
      */
     private final Map<String, TaskManager.RequestTtlTimer> requestTtlTimers;
@@ -91,19 +86,17 @@ public class TaskManager {
      * @param tasksPool           the tasks pool
      * @param tasksRepository     the tasks repository
      * @param precisionQueuesPool the precision queues pool
-     * @param restRequest         the rest request
      */
     @Autowired
     public TaskManager(AgentsPool agentsPool, ApplicationContext applicationContext,
                        TasksPool tasksPool, TasksRepository tasksRepository,
-                       PrecisionQueuesPool precisionQueuesPool, RestRequest restRequest,
+                       PrecisionQueuesPool precisionQueuesPool,
                        JmsCommunicator jmsCommunicator) {
         this.applicationContext = applicationContext;
         this.agentsPool = agentsPool;
         this.tasksPool = tasksPool;
         this.tasksRepository = tasksRepository;
         this.precisionQueuesPool = precisionQueuesPool;
-        this.restRequest = restRequest;
         this.requestTtlTimers = new ConcurrentHashMap<>();
         this.changeSupport = new PropertyChangeSupport(this);
         this.jmsCommunicator = jmsCommunicator;

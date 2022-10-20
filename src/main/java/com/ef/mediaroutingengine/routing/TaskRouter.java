@@ -106,15 +106,16 @@ public class TaskRouter implements PropertyChangeListener {
             this.onStepTimeout(evt);
         }
 
-        if (precisionQueue.isEmpty()) {
-            logger.debug("Queue [{}] is empty", this.precisionQueue.getName());
-            return;
-        }
-        logger.debug("Queue [{}] is not empty", this.precisionQueue.getName());
-
         try {
             synchronized (precisionQueue.getServiceQueue()) {
                 Task task = precisionQueue.peek();
+
+                if (task == null) {
+                    logger.debug("Queue [{}] is empty", this.precisionQueue.getName());
+                    return;
+                }
+
+                logger.debug("Queue [{}] is not empty", this.precisionQueue.getName());
 
                 if (task.isMarkedForDeletion()) {
                     precisionQueue.dequeue();

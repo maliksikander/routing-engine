@@ -5,6 +5,7 @@ import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
+import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,10 @@ public class TaskStateModifierFactory {
      */
     private final AgentsPool agentsPool;
     /**
+     * The Tasks pool.
+     */
+    private final TasksPool tasksPool;
+    /**
      * The Task manager.
      */
     private final TaskManager taskManager;
@@ -45,10 +50,12 @@ public class TaskStateModifierFactory {
      */
     @Autowired
     public TaskStateModifierFactory(TasksRepository tasksRepository, PrecisionQueuesPool precisionQueuesPool,
-                                    AgentsPool agentsPool, TaskManager taskManager, JmsCommunicator jmsCommunicator) {
+                                    AgentsPool agentsPool, TasksPool tasksPool,
+                                    TaskManager taskManager, JmsCommunicator jmsCommunicator) {
         this.tasksRepository = tasksRepository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.agentsPool = agentsPool;
+        this.tasksPool = tasksPool;
         this.taskManager = taskManager;
         this.jmsCommunicator = jmsCommunicator;
     }
@@ -61,7 +68,7 @@ public class TaskStateModifierFactory {
      */
     public TaskStateModifier getModifier(Enums.TaskStateName state) {
         if (state.equals(Enums.TaskStateName.CLOSED)) {
-            return new TaskStateClose(precisionQueuesPool, taskManager, jmsCommunicator);
+            return new TaskStateClose(precisionQueuesPool, tasksPool, taskManager, jmsCommunicator);
         } else if (state.equals(Enums.TaskStateName.ACTIVE)) {
             return new TaskStateActive(taskManager, agentsPool, tasksRepository, jmsCommunicator);
         } else {
