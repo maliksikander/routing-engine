@@ -1,6 +1,8 @@
 package com.ef.mediaroutingengine.routing.dto;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.TaskType;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -19,9 +21,11 @@ import lombok.ToString;
 @ToString
 public class AssignAgentRequest {
     @NotBlank
-    private String conversation;
-    @NotBlank
     private String agent;
     @NotNull
     private ChannelSession channelSession;
+    @NotNull
+    private TaskState taskState;
+    @NotNull
+    private TaskType taskType;
 }
