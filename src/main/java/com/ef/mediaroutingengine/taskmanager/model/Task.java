@@ -34,7 +34,7 @@ public class Task {
     /**
      * The Mrd.
      */
-    private final MediaRoutingDomain mrd;
+    private MediaRoutingDomain mrd;
     /**
      * The Queue.
      */
@@ -372,6 +372,16 @@ public class Task {
      */
     public void setCurrentStep(TaskStep currentStep) {
         this.currentStep = currentStep;
+    }
+
+
+    /**
+     * Sets the MRD.
+     *
+     * @param mrd The MRD
+     */
+    public void setMrd(MediaRoutingDomain mrd) {
+        this.mrd = mrd;
     }
 
     /**
