@@ -44,7 +44,7 @@ class AgentStateListenerTest {
         Agent agent = getAgent();
 
         when(factory.getDelegate(newState.getName())).thenReturn(null);
-        this.agentStateListener.run(agent, newState);
+        this.agentStateListener.run(agent, newState,false);
 
         verify(factory, times(1)).getDelegate(any());
         verifyNoInteractions(jmsCommunicator);
@@ -58,10 +58,10 @@ class AgentStateListenerTest {
         AgentStateDelegate delegate = mock(AgentStateDelegate.class);
 
         when(factory.getDelegate(newState.getName())).thenReturn(delegate);
-        this.agentStateListener.run(agent, newState);
+        this.agentStateListener.run(agent, newState, false);
 
         verify(factory, times(1)).getDelegate(any());
-        verify(delegate, times(1)).updateState(agent, newState);
+        verify(delegate, times(1)).updateState(agent, newState,false);
         verify(jmsCommunicator, times(1)).publish(any(), any());
     }
 

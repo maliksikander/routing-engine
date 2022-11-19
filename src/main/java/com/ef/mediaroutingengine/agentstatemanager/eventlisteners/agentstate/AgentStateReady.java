@@ -31,7 +31,7 @@ public class AgentStateReady implements AgentStateDelegate {
     }
 
     @Override
-    public boolean updateState(Agent agent, AgentState newState) {
+    public boolean updateState(Agent agent, AgentState newState, boolean isChangedInternally) {
         Enums.AgentStateName currentState = agent.getState().getName();
         if (currentState.equals(Enums.AgentStateName.NOT_READY)) {
             agent.setState(newState);

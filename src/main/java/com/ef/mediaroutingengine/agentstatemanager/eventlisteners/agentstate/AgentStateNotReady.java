@@ -31,7 +31,7 @@ public class AgentStateNotReady implements AgentStateDelegate {
     }
 
     @Override
-    public boolean updateState(Agent agent, AgentState newState) {
+    public boolean updateState(Agent agent, AgentState newState, boolean isChangedInternally) {
         Enums.AgentStateName currentState = agent.getState().getName();
 
         if (currentState.equals(Enums.AgentStateName.NOT_READY)) {
@@ -43,37 +43,52 @@ public class AgentStateNotReady implements AgentStateDelegate {
         if (currentState.equals(Enums.AgentStateName.READY)) {
             if (agent.getReservedTask() != null) {
                 String exceptThisMrd = agent.getReservedTask().getMrd().getId();
-                this.updateAgentMrdStates(agent, exceptThisMrd);
+                this.updateAgentMrdStates(agent, exceptThisMrd, isChangedInternally);
                 this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
                 return false;
             }
 
+            this.updateAgentMrdStates(agent, null, isChangedInternally);
+
+            if (isAnyMrdInAvailableState(agent)) {
+                return false;
+            }
+
             agent.setState(newState);
-            this.updateAgentMrdStates(agent, null);
-
             this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());
-            this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
-
             return true;
         }
 
         return false;
     }
 
-    void updateAgentMrdStates(Agent agent, String except) {
+    boolean isAnyMrdInAvailableState(Agent agent) {
+        List<AgentMrdState> agentMrdStates = agent.getAgentMrdStates();
+        for (AgentMrdState agentMrdState : agentMrdStates) {
+            if (!(agentMrdState.getState().equals(Enums.AgentMrdStateName.NOT_READY)
+                    || agentMrdState.getState().equals(Enums.AgentMrdStateName.PENDING_NOT_READY))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void updateAgentMrdStates(Agent agent, String except, boolean isChangedInternally) {
         List<AgentMrdState> agentMrdStates = agent.getAgentMrdStates();
         for (AgentMrdState agentMrdState : agentMrdStates) {
             String mrdId = agentMrdState.getMrd().getId();
 
-            if (mrdId.equals(except)) {
+            if (mrdId.equals(except) || (isChangedInternally && !agentMrdState.getMrd().isManagedByRe())) {
                 continue;
             }
-
             if (agent.getNoOfActivePushTasks(mrdId) > 0) {
                 agentMrdState.setState(Enums.AgentMrdStateName.PENDING_NOT_READY);
             } else {
                 agentMrdState.setState(Enums.AgentMrdStateName.NOT_READY);
             }
+
         }
+        this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
     }
+
 }

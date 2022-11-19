@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -53,7 +54,7 @@ class AgentStateNotReadyTest {
         when(agent.getNoOfActivePushTasks(agentMrdStateList.get(1).getMrd().getId())).thenReturn(0);
         when(agent.getNoOfActivePushTasks(agentMrdStateList.get(2).getMrd().getId())).thenReturn(2);
 
-        this.agentStateNotReady.updateAgentMrdStates(agent, null);
+        this.agentStateNotReady.updateAgentMrdStates(agent, null,false);
 
         assertEquals(Enums.AgentMrdStateName.NOT_READY, agentMrdStateList.get(0).getState());
         assertEquals(Enums.AgentMrdStateName.NOT_READY, agentMrdStateList.get(1).getState());
@@ -69,14 +70,12 @@ class AgentStateNotReadyTest {
 
         AgentStateNotReady spy = Mockito.spy(agentStateNotReady);
 
-        doNothing().when(spy).updateAgentMrdStates(agent, null);
+        doNothing().when(spy).updateAgentMrdStates(agent, null,false);
+        doReturn(false).when(spy).isAnyMrdInAvailableState(agent);
 
-        boolean isUpdated = spy.updateState(agent, newState);
+        boolean isUpdated = spy.updateState(agent, newState,false);
 
         verify(agentPresenceRepository, times(1)).updateAgentState(agent.getId(), newState);
-        verify(agentPresenceRepository, times(1)).updateAgentMrdStateList(agent.getId(),
-                agent.getAgentMrdStates());
-
         assertTrue(isUpdated);
     }
 
@@ -88,7 +87,7 @@ class AgentStateNotReadyTest {
         ReasonCode reasonCode = new ReasonCode("Lunch break", Enums.ReasonCodeType.NOT_READY);
         AgentState newState = new AgentState(Enums.AgentStateName.NOT_READY, reasonCode);
 
-        boolean isStateUpdated = this.agentStateNotReady.updateState(agent, newState);
+        boolean isStateUpdated = this.agentStateNotReady.updateState(agent, newState,false);
         // Assert that agent's state is updated to new state
         assertEquals(newState, agent.getState());
         // Verify that correct repository calls are made.
@@ -105,10 +104,10 @@ class AgentStateNotReadyTest {
 
         AgentState newState = new AgentState(Enums.AgentStateName.NOT_READY, null);
 
-        assertFalse(this.agentStateNotReady.updateState(agent, newState));
+        assertFalse(this.agentStateNotReady.updateState(agent, newState,false));
 
         agent.setState(new AgentState(Enums.AgentStateName.LOGOUT, null));
-        assertFalse(this.agentStateNotReady.updateState(agent, newState));
+        assertFalse(this.agentStateNotReady.updateState(agent, newState,false));
     }
 
     private MediaRoutingDomain getNewMrd(String name) {

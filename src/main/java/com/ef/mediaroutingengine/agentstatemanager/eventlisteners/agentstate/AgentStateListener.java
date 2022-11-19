@@ -62,13 +62,13 @@ public class AgentStateListener {
      * @param agent    the agent
      * @param newState the new state
      */
-    public void propertyChange(Agent agent, AgentState newState) {
+    public void propertyChange(Agent agent, AgentState newState, boolean isChangedInternally) {
         logger.debug("Agent state listener called asynchronously");
         String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
         CompletableFuture.runAsync(() -> {
             // putting same correlation id from the caller thread into this thread
             MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
-            this.run(agent, newState);
+            this.run(agent, newState, isChangedInternally);
             MDC.clear();
         });
     }
@@ -80,7 +80,7 @@ public class AgentStateListener {
      * @param agent    the agent
      * @param newState the new state
      */
-    public void run(Agent agent, AgentState newState) {
+    public void run(Agent agent, AgentState newState, boolean isChangedInternally) {
         logger.info("Agent state change requested | Agent: {}", agent.getId());
 
         AgentStateDelegate delegate = factory.getDelegate(newState.getName());
@@ -90,7 +90,7 @@ public class AgentStateListener {
         }
 
         AgentState currentState = agent.getState();
-        boolean isStateChanged = delegate.updateState(agent, newState);
+        boolean isStateChanged = delegate.updateState(agent, newState, isChangedInternally);
 
         if (isStateChanged) {
             logger.info("Agent state changed from {} to {} | Agent: {}", currentState, newState, agent.getId());

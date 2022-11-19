@@ -49,11 +49,12 @@ public class AgentStateLogout implements AgentStateDelegate {
     }
 
     @Override
-    public boolean updateState(Agent agent, AgentState newState) {
+    public boolean updateState(Agent agent, AgentState newState, boolean isChangedInternally) {
         agent.setState(newState);
         this.handleAgentTasks(agent);
         for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
             agentMrdState.setState(Enums.AgentMrdStateName.LOGOUT);
+
         }
         this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());

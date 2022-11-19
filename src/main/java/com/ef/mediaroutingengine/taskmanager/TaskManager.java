@@ -132,16 +132,18 @@ public class TaskManager {
 
     private void endPushTaskFromAssignedAgent(Task task, Agent agent) {
         agent.removeTask(task);
-
+        MediaRoutingDomain mediaRoutingDomain = task.getMrd();
+        if (!mediaRoutingDomain.isManagedByRe()) {
+            return;
+        }
         String mrdId = task.getMrd().getId();
         Enums.AgentMrdStateName currentMrdState = agent.getAgentMrdState(mrdId).getState();
         int noOfTasks = agent.getNoOfActivePushTasks(mrdId);
         int maxAgentTasks = agent.getAgentMrdState(mrdId).getMaxAgentTasks();
-
         if (currentMrdState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY) && noOfTasks < 1) {
             this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.NOT_READY, true);
         } else if (currentMrdState.equals(Enums.AgentMrdStateName.BUSY)) {
-            if (noOfTasks == 0) {
+            if (noOfTasks == 0 && mediaRoutingDomain.isManagedByRe()) {
                 this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.READY, true);
             } else if (noOfTasks < maxAgentTasks) {
                 this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, true);
@@ -171,7 +173,7 @@ public class TaskManager {
         if (agent != null) {
             agent.removeReservedTask();
             AgentState agentState = new AgentState(Enums.AgentStateName.NOT_READY, null);
-            this.agentStateListener().propertyChange(agent, agentState);
+            this.agentStateListener().propertyChange(agent, agentState, true);
         }
     }
 
@@ -182,6 +184,10 @@ public class TaskManager {
      * @param mrdId the mrd id
      */
     public void updateAgentMrdState(Agent agent, String mrdId) {
+        MediaRoutingDomain mediaRoutingDomain = agent.getAgentMrdState(mrdId).getMrd();
+        if (!mediaRoutingDomain.isManagedByRe()) {
+            return;
+        }
         int noOfActiveTasks = agent.getNoOfActivePushTasks(mrdId);
         int maxRequestAllowed = agent.getAgentMrdState(mrdId).getMaxAgentTasks();
         if (noOfActiveTasks >= maxRequestAllowed) {
@@ -189,7 +195,6 @@ public class TaskManager {
         } else if (noOfActiveTasks == 1) {
             this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, false);
         }
-
         if (noOfActiveTasks > 1) {
             String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
 
