@@ -74,7 +74,7 @@ public class AgentStateService {
         this.agentsService.createOrUpdate(keycloakUser);
 
         Agent agent = this.agentsPool.findById(keycloakUser.getId());
-        this.agentStateListener.propertyChange(agent, new AgentState(Enums.AgentStateName.LOGIN, null));
+        this.agentStateListener.propertyChange(agent, new AgentState(Enums.AgentStateName.LOGIN, null), false);
     }
 
     /**
@@ -84,7 +84,7 @@ public class AgentStateService {
      */
     public void agentState(AgentStateChangeRequest request) {
         Agent agent = this.validateAndGetAgent(request.getAgentId());
-        this.agentStateListener.propertyChange(agent, request.getState());
+        this.agentStateListener.propertyChange(agent, request.getState(), false);
     }
 
     /**

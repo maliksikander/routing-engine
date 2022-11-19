@@ -387,7 +387,10 @@ public class AgentsServiceImpl implements AgentsService {
      */
     private void putAgentMrdStateChangeRequest(Agent agent, String mrdId,
                                                Enums.AgentMrdStateName agentMrdStateName) {
-        this.agentMrdStateListener.propertyChange(agent, mrdId, agentMrdStateName, true);
+        AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
+        if (agentMrdState.getMrd().isManagedByRe()) {
+            this.agentMrdStateListener.propertyChange(agent, mrdId, agentMrdStateName, true);
+        }
     }
 
     /**

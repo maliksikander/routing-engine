@@ -14,5 +14,5 @@ public interface AgentStateDelegate {
      * @param newState the new state
      * @return the boolean
      */
-    boolean updateState(Agent agent, AgentState newState);
+    boolean updateState(Agent agent, AgentState newState, boolean isChangedInternally);
 }

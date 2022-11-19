@@ -39,13 +39,13 @@ class AgentStateReadyTest {
         Agent agent = getNewAgent();
 
         agent.setState(new AgentState(Enums.AgentStateName.READY, null));
-        assertFalse(this.agentStateReady.updateState(agent, newState));
+        assertFalse(this.agentStateReady.updateState(agent, newState,false));
 
         agent.setState(new AgentState(Enums.AgentStateName.LOGOUT, null));
-        assertFalse(this.agentStateReady.updateState(agent, newState));
+        assertFalse(this.agentStateReady.updateState(agent, newState,false));
 
         agent.setState(new AgentState(Enums.AgentStateName.LOGIN, null));
-        assertFalse(this.agentStateReady.updateState(agent, newState));
+        assertFalse(this.agentStateReady.updateState(agent, newState,false));
     }
 
     @Test
@@ -55,7 +55,7 @@ class AgentStateReadyTest {
 
         AgentState newState = new AgentState(Enums.AgentStateName.READY, null);
 
-        boolean isStateUpdated = this.agentStateReady.updateState(agent, newState);
+        boolean isStateUpdated = this.agentStateReady.updateState(agent, newState,false);
         // Assert agent state is updated to new state
         assertEquals(newState, agent.getState());
         // verify the correct repository calls are made

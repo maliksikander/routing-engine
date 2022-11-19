@@ -106,7 +106,7 @@ class AgentStateLogoutTest {
         AgentStateLogout spy = Mockito.spy(agentStateLogout);
 
         doNothing().when(spy).handleAgentTasks(agent);
-        boolean isStateChanged = spy.updateState(agent, newState);
+        boolean isStateChanged = spy.updateState(agent, newState,false);
 
         // Assert agent-state has been updated to the new state i.e. LOGOUT
         assertEquals(newState.getName(), agent.getState().getName());
