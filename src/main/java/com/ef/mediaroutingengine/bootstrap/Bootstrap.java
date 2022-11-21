@@ -285,6 +285,7 @@ public class Bootstrap {
         voiceMrd.setInterruptible(true);
         voiceMrd.setDescription("Standard voice MRD");
         voiceMrd.setMaxRequests(1);
+        voiceMrd.setManagedByRe(false);
         return voiceMrd;
     }
 
@@ -294,6 +295,7 @@ public class Bootstrap {
         chatMrd.setName("CHAT");
         chatMrd.setDescription("Standard chat MRD");
         chatMrd.setMaxRequests(5);
+        chatMrd.setManagedByRe(true);
         return chatMrd;
     }
 
