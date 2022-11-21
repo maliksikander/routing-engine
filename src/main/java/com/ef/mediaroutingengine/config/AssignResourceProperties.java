@@ -21,7 +21,7 @@ public class AssignResourceProperties {
     /**
      * Base url of Bot-Framework component to call its Apis.
      */
-    private String botFrameworkBaseUri;
+    private String conversationManagerBaseUri;
     /**
      * The Assign task uri.
      */
@@ -82,19 +82,19 @@ public class AssignResourceProperties {
      *
      * @return the bot framework base uri
      */
-    public String getBotFrameworkBaseUri() {
-        return botFrameworkBaseUri;
+    public String getConversationManagerBaseUri() {
+        return conversationManagerBaseUri;
     }
 
     /**
      * Sets bot framework base uri.
      *
-     * @param botFrameworkBaseUri the bot framework base uri
+     * @param conversationManagerBaseUri the bot framework base uri
      */
-    public void setBotFrameworkBaseUri(String botFrameworkBaseUri) {
-        this.botFrameworkBaseUri = botFrameworkBaseUri;
-        this.agentReservedUri = botFrameworkBaseUri + "/agent-reserved";
-        this.noAgentAvailableUri = botFrameworkBaseUri + "/no-agent-available";
+    public void setConversationManagerBaseUri(String conversationManagerBaseUri) {
+        this.conversationManagerBaseUri = conversationManagerBaseUri;
+        this.agentReservedUri = conversationManagerBaseUri + "/agent-reserved";
+        this.noAgentAvailableUri = conversationManagerBaseUri + "/no-agent-available";
     }
 
     /**
