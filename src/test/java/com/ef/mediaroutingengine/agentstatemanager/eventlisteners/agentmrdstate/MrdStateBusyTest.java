@@ -35,13 +35,6 @@ class MrdStateBusyTest {
         }
 
         @Test
-        void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIsNotReady() {
-            AgentMrdState agentMrdState = new AgentMrdState(getNewMrd("Chat"),
-                    Enums.AgentMrdStateName.NOT_READY);
-            assertEquals(agentMrdState.getState(), mrdStateBusy.getNewState(getNewAgent(), agentMrdState));
-        }
-
-        @Test
         void testGetNewState_returnsCurrentMrdState_when_currentMrdStateIsInterrupted() {
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd("Chat"),
                     Enums.AgentMrdStateName.INTERRUPTED);
