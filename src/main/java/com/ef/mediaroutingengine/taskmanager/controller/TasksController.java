@@ -20,6 +20,7 @@ import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -65,6 +66,7 @@ public class TasksController {
      * @param id the id
      * @return the response entity
      */
+    @CrossOrigin(origins = "*")
     @GetMapping("/{id}")
     public ResponseEntity<Object> retrieveById(@PathVariable String id) {
         return new ResponseEntity<>(this.service.retrieveById(id), HttpStatus.OK);
@@ -77,6 +79,7 @@ public class TasksController {
      * @param taskState the task state
      * @return the response entity
      */
+    @CrossOrigin(origins = "*")
     @GetMapping("")
     public ResponseEntity<Object> retrieve(@RequestParam Optional<String> agentId,
                                            @RequestParam Optional<Enums.TaskStateName> taskState) {
@@ -90,6 +93,7 @@ public class TasksController {
      * @param request the request
      * @return the response entity
      */
+    @CrossOrigin(origins = "*")
     @PostMapping("/{taskId}/change-state")
     public ResponseEntity<Object> changeTaskState(@PathVariable String taskId,
                                                   @Valid @RequestBody TaskState request) {
@@ -100,6 +104,7 @@ public class TasksController {
         return ResponseEntity.ok().body(AdapterUtility.createTaskDtoFrom(updatedTask));
     }
 
+    @CrossOrigin(origins = "*")
     @PostMapping("/{taskId}/update")
     public ResponseEntity<Object> updateTask(@PathVariable String taskId,
                                              @RequestBody UpdateTaskRequest reqBody) {
@@ -112,6 +117,7 @@ public class TasksController {
      * @param reqBody the request body
      * @return the response entity
      */
+    @CrossOrigin(origins = "*")
     @PostMapping("/assign")
     public ResponseEntity<Object> assignTask(@Valid @RequestBody PullAssignTaskRequest reqBody) {
         Agent agent = this.validateAndGetAgent(reqBody.getAgentId());

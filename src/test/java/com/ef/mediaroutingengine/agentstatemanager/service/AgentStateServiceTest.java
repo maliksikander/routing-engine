@@ -89,7 +89,7 @@ class AgentStateServiceTest {
         doReturn(agent).when(spy).validateAndGetAgent(agentId);
 
         spy.agentState(request);
-        verify(agentStateListener, times(1)).propertyChange(agent, agentState);
+        verify(agentStateListener, times(1)).propertyChange(agent, agentState,false);
     }
 
     @Nested
@@ -104,7 +104,7 @@ class AgentStateServiceTest {
             agentStateService.agentLogin(request);
 
             ArgumentCaptor<AgentState> captor = ArgumentCaptor.forClass(AgentState.class);
-            verify(agentStateListener, times(1)).propertyChange(eq(agent), captor.capture());
+            verify(agentStateListener, times(1)).propertyChange(eq(agent), captor.capture(),eq(false));
 
             assertEquals(Enums.AgentStateName.LOGIN, captor.getValue().getName());
             assertNull(captor.getValue().getReasonCode());

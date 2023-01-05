@@ -48,7 +48,7 @@ public class AgentStateLogin implements AgentStateDelegate {
     }
 
     @Override
-    public boolean updateState(Agent agent, AgentState newState) {
+    public boolean updateState(Agent agent, AgentState newState, boolean isChangedInternally) {
         Enums.AgentStateName currentState = agent.getState().getName();
         if (currentState.equals(Enums.AgentStateName.LOGOUT)) {
             this.logoutToLogin(agent, newState);
@@ -86,6 +86,7 @@ public class AgentStateLogin implements AgentStateDelegate {
         agent.setState(state);
         for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
             agentMrdState.setState(Enums.AgentMrdStateName.NOT_READY);
+
         }
         this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());

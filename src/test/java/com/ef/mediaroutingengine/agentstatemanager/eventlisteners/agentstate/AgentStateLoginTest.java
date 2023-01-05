@@ -128,7 +128,7 @@ class AgentStateLoginTest {
 
         AgentState newState = new AgentState(Enums.AgentStateName.LOGIN, null);
 
-        assertFalse(this.agentStateLogin.updateState(agent, newState));
+        assertFalse(this.agentStateLogin.updateState(agent, newState,false));
     }
 
     @Test
@@ -143,7 +143,7 @@ class AgentStateLoginTest {
         doNothing().when(spy).logoutToLogin(agent, newState);
         doNothing().when(spy).loginToNotReady(eq(agent), any());
 
-        assertTrue(spy.updateState(agent, newState));
+        assertTrue(spy.updateState(agent, newState, false));
     }
 
     private Agent getNewAgent() {

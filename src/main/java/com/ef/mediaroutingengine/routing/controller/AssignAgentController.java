@@ -9,7 +9,6 @@ import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.service.AssignAgentService;
-import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
 import org.slf4j.Logger;
@@ -20,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -59,7 +59,10 @@ public class AssignAgentController {
      */
     @CrossOrigin("*")
     @PostMapping("/assign-agent")
-    public ResponseEntity<Object> assignAgent(@Valid @RequestBody AssignAgentRequest req) {
+    public ResponseEntity<Object> assignAgent(@Valid @RequestBody AssignAgentRequest req,
+                                              @RequestParam(required = false) boolean updateTask,
+                                              @RequestParam(required = false) boolean offerToAgent) {
+
         Agent agent = this.validateAndGetAgent(req.getAgent());
 
         String mrdId = req.getChannelSession().getChannel().getChannelType().getMediaRoutingDomain();
@@ -70,7 +73,7 @@ public class AssignAgentController {
         CompletableFuture.runAsync(() -> {
             MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
 
-            this.service.assign(req.getConversation(), agent, mrd, req.getChannelSession());
+            this.service.assign(req, agent, mrd, updateTask, offerToAgent);
 
             MDC.clear();
         });

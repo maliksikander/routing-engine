@@ -11,6 +11,10 @@ public class MrdStateNotReady implements MrdStateDelegate {
 
     @Override
     public Enums.AgentMrdStateName getNewState(Agent agent, AgentMrdState agentMrdState) {
+        if (!agentMrdState.getMrd().isManagedByRe()) {
+            return Enums.AgentMrdStateName.NOT_READY;
+        }
+
         Enums.AgentMrdStateName currentState = agentMrdState.getState();
         String mrdId = agentMrdState.getMrd().getId();
 
