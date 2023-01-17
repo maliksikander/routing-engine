@@ -338,22 +338,22 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
 
         tasks.stream().filter(task -> (System.currentTimeMillis()
                 - task.getEnqueueTime()) >= (enqueueTime * 1000L)).forEach(task -> {
-            task.getTimer().cancel();
-            taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
-            taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
+                    task.getTimer().cancel();
+                    taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
+                    taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
 
-            synchronized (precisionQueue.getServiceQueue()) {
-                precisionQueue.getServiceQueue().remove(task);
-            }
+                    synchronized (precisionQueue.getServiceQueue()) {
+                        precisionQueue.getServiceQueue().remove(task);
+                    }
 
-            task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(),
-                    precisionQueue.getTaskScheduler());
-            task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED,
-                    Enums.TaskStateReasonCode.FORCE_CLOSED));
-            this.taskManager.removeFromPoolAndRepository(task);
-            this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-            logger.info("task {} removed while queue flushing ", task.getId());
-        });
+                    task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(),
+                            precisionQueue.getTaskScheduler());
+                    task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED,
+                            Enums.TaskStateReasonCode.FORCE_CLOSED));
+                    this.taskManager.removeFromPoolAndRepository(task);
+                    this.jmsCommunicator.publishTaskStateChangeForReporting(task);
+                    logger.info("task {} removed while queue flushing ", task.getId());
+                });
 
     }
 
