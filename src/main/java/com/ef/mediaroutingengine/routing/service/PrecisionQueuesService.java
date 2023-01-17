@@ -1,7 +1,9 @@
 package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
+import com.ef.mediaroutingengine.routing.dto.AssociatedAgentsOfQueueResponse;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 
 /**
@@ -48,4 +50,28 @@ public interface PrecisionQueuesService {
      * @return the precision queue with available agents
      */
     ResponseEntity<Object> retrieveQueuesWithAssociatedAvailableAgents(String conversationId);
+
+    /**
+     * Flush the task(s) in queue(s).
+     *
+     * @param queueName name of the queue o be flushed.
+     * @param enqueueTime enqueue time of task
+     * @return the execution status.
+     */
+    String flush(String queueName, int enqueueTime);
+
+    /**
+     * Returns the associated agents to a queue.
+     *
+     * @param queueId the queue id.
+     * @return the response object
+     */
+    AssociatedAgentsOfQueueResponse getAssociatedAgents(String queueId);
+
+    /**
+     * Returns the associated agents of all queues.
+     *
+     * @return the response.
+     */
+    List<AssociatedAgentsOfQueueResponse> getAssociatedAgentsOfAllQueues();
 }

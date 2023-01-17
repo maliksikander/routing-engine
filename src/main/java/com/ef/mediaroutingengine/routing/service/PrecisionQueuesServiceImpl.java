@@ -3,11 +3,15 @@ package com.ef.mediaroutingengine.routing.service;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.TaskRouter;
+import com.ef.mediaroutingengine.routing.dto.AgentAssociated;
+import com.ef.mediaroutingengine.routing.dto.AssociatedAgentsOfQueueResponse;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.dto.QueuesWithAvailableAgentsResponse;
 import com.ef.mediaroutingengine.routing.model.Agent;
@@ -16,6 +20,7 @@ import com.ef.mediaroutingengine.routing.model.Step;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
+import com.ef.mediaroutingengine.routing.utility.AgentUtil;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
@@ -24,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +68,8 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      */
     private final TaskManager taskManager;
 
+    private final JmsCommunicator jmsCommunicator;
+
     /**
      * Default constructor.
      *
@@ -72,12 +80,14 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     @Autowired
     public PrecisionQueuesServiceImpl(PrecisionQueueRepository repository,
                                       PrecisionQueuesPool precisionQueuesPool,
-                                      MrdPool mrdPool, TasksPool tasksPool, TaskManager taskManager) {
+                                      MrdPool mrdPool, TasksPool tasksPool, TaskManager taskManager,
+                                      JmsCommunicator jmsCommunicator) {
         this.repository = repository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.mrdPool = mrdPool;
         this.tasksPool = tasksPool;
         this.taskManager = taskManager;
+        this.jmsCommunicator = jmsCommunicator;
     }
 
     @Override
@@ -218,6 +228,133 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         );
         logger.info("returning the list of the precision queues with the available agents");
         return new ResponseEntity<>(responseList, HttpStatus.OK);
+    }
+
+    /**
+     * Method to execute the queue flushing API.
+     *
+     * @param queueName     the queue id.
+     * @param enqueueTime the enqueue time of task.
+     * @return the response.
+     */
+    @Override
+    public String flush(String queueName, int enqueueTime) {
+        logger.info("Queue Flush method execution started...");
+        if (enqueueTime < 0) {
+            throw new IllegalArgumentException("queuedTime must be equal or greater than 0");
+        }
+
+        if (queueName != null && !repository.findByName(queueName).isPresent()) {
+            String errorMessage = "Could not find the PrecisionQueue resource with name: " + queueName;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
+        }
+
+        if (queueName != null && repository.findByName(queueName).isPresent()) {
+            flushQueue(queueName, enqueueTime);
+            return "Queue Flush request executed successfully.";
+        }
+
+        this.precisionQueuesPool.toList().forEach(precisionQueue -> {
+            flushQueue(precisionQueue.getName(), enqueueTime);
+        });
+
+        return "Queue Flush request executed successfully.";
+    }
+
+    /**
+     * Method to get associated agents with the provided queue.
+     *
+     * @param queueId the queue id.
+     * @return the response.
+     */
+    @Override
+    public AssociatedAgentsOfQueueResponse getAssociatedAgents(String queueId) {
+        logger.info("request received to get associated agents of queue {} ", queueId);
+
+        if (queueId != null && !this.repository.existsById(queueId)) {
+            String errorMessage = "Could not find the PrecisionQueue resource with id: " + queueId;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
+        }
+
+        PrecisionQueue queue = this.precisionQueuesPool.findById(queueId);
+        AssociatedAgentsOfQueueResponse response = new AssociatedAgentsOfQueueResponse();
+        response.setQueueId(queueId);
+        response.setQueueName(queue.getName());
+        response.setAgents(addAssociatedAgents(queue));
+        return response;
+
+    }
+
+    /**
+     * Method to get associated agents of all queues.
+     *
+     * @return the response.
+     */
+    @Override
+    public List<AssociatedAgentsOfQueueResponse> getAssociatedAgentsOfAllQueues() {
+        logger.info("request received to get associated agents of all queues.");
+
+        return precisionQueuesPool.toList().stream().map(queue -> {
+            addAssociatedAgents(queue);
+            AssociatedAgentsOfQueueResponse response = new AssociatedAgentsOfQueueResponse();
+            response.setQueueId(queue.getId());
+            response.setQueueName(queue.getName());
+            response.setAgents(addAssociatedAgents(queue));
+            return response;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * Method to add all the agents in the provided list.
+     *
+     * @param queue  the queue.
+     */
+    public List<AgentAssociated> addAssociatedAgents(PrecisionQueue queue) {
+        List<AgentAssociated> associatedUniqueAgents = new ArrayList<>();
+        List<Agent> agentsInAllSteps = new ArrayList<>();
+        queue.getSteps().stream().forEach(step -> agentsInAllSteps.addAll(step.getAssociatedAgents())
+        );
+        agentsInAllSteps.stream().distinct().forEach(agent -> associatedUniqueAgents
+                .add(AgentUtil.getAgentDetailFromAgent(agent, queue.getId())));
+        return associatedUniqueAgents;
+    }
+
+    /**
+     * Method to flush a queue with provided queueId.
+     *
+     * @param queueName   name of the queue to be flushed.
+     * @param enqueueTime enqueue time.
+     */
+    public void flushQueue(String queueName, int enqueueTime) {
+        PrecisionQueue precisionQueue = this.precisionQueuesPool.findByName(queueName);
+        List<Task> tasks = tasksPool.findByQueueId(queueName);
+
+        if (tasks == null) {
+            logger.info("No tasks found in the queue {}, returning...", queueName);
+            return;
+        }
+
+        tasks.stream().filter(task -> (System.currentTimeMillis()
+                - task.getEnqueueTime()) >= (enqueueTime * 1000L)).forEach(task -> {
+            task.getTimer().cancel();
+            taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
+            taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
+
+            synchronized (precisionQueue.getServiceQueue()) {
+                precisionQueue.getServiceQueue().remove(task);
+            }
+
+            task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(),
+                    precisionQueue.getTaskScheduler());
+            task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED,
+                    Enums.TaskStateReasonCode.FORCE_CLOSED));
+            this.taskManager.removeFromPoolAndRepository(task);
+            this.jmsCommunicator.publishTaskStateChangeForReporting(task);
+            logger.info("task {} removed while queue flushing ", task.getId());
+        });
+
     }
 
     void throwExceptionIfQueueNameIsNotUnique(PrecisionQueueRequestBody requestBody, String queueId) {
