@@ -10,8 +10,8 @@ import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.TaskRouter;
-import com.ef.mediaroutingengine.routing.dto.AgentAssociated;
-import com.ef.mediaroutingengine.routing.dto.AssociatedAgentsOfQueueResponse;
+import com.ef.mediaroutingengine.routing.dto.AssociatedAgentEntity;
+import com.ef.mediaroutingengine.routing.dto.AssociatedAgentsResponse;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.dto.QueuesWithAvailableAgentsResponse;
 import com.ef.mediaroutingengine.routing.model.Agent;
@@ -20,7 +20,6 @@ import com.ef.mediaroutingengine.routing.model.Step;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
-import com.ef.mediaroutingengine.routing.utility.AgentUtil;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
@@ -29,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -317,22 +315,19 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * @return the response.
      */
     @Override
-    public AssociatedAgentsOfQueueResponse getAssociatedAgents(String queueId) {
+    public AssociatedAgentsResponse getAssociatedAgentsOf(String queueId) {
         logger.info("request received to get associated agents of queue {} ", queueId);
 
-        if (queueId != null && !this.repository.existsById(queueId)) {
+        PrecisionQueue queue = this.precisionQueuesPool.findById(queueId);
+
+        if (queue == null) {
             String errorMessage = "Could not find the PrecisionQueue resource with id: " + queueId;
             logger.error(errorMessage);
             throw new NotFoundException(errorMessage);
         }
 
-        PrecisionQueue queue = this.precisionQueuesPool.findById(queueId);
-        AssociatedAgentsOfQueueResponse response = new AssociatedAgentsOfQueueResponse();
-        response.setQueueId(queueId);
-        response.setQueueName(queue.getName());
-        response.setAgents(addAssociatedAgents(queue));
-        return response;
-
+        List<AssociatedAgentEntity> agents = createAssociatedAgents(queue);
+        return new AssociatedAgentsResponse(queueId, queue.getName(), agents);
     }
 
     /**
@@ -341,17 +336,15 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * @return the response.
      */
     @Override
-    public List<AssociatedAgentsOfQueueResponse> getAssociatedAgentsOfAllQueues() {
+    public List<AssociatedAgentsResponse> getAllAssociatedAgents() {
         logger.info("request received to get associated agents of all queues.");
 
-        return precisionQueuesPool.toList().stream().map(queue -> {
-            addAssociatedAgents(queue);
-            AssociatedAgentsOfQueueResponse response = new AssociatedAgentsOfQueueResponse();
-            response.setQueueId(queue.getId());
-            response.setQueueName(queue.getName());
-            response.setAgents(addAssociatedAgents(queue));
-            return response;
-        }).collect(Collectors.toList());
+        return precisionQueuesPool.toList().stream()
+                .map(queue -> {
+                    List<AssociatedAgentEntity> agents = createAssociatedAgents(queue);
+                    return new AssociatedAgentsResponse(queue.getId(), queue.getName(), agents);
+                })
+                .toList();
     }
 
     /**
@@ -359,14 +352,10 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      *
      * @param queue the queue.
      */
-    public List<AgentAssociated> addAssociatedAgents(PrecisionQueue queue) {
-        List<AgentAssociated> associatedUniqueAgents = new ArrayList<>();
-        List<Agent> agentsInAllSteps = new ArrayList<>();
-        queue.getSteps().stream().forEach(step -> agentsInAllSteps.addAll(step.getAssociatedAgents())
-        );
-        agentsInAllSteps.stream().distinct().forEach(agent -> associatedUniqueAgents
-                .add(AgentUtil.getAgentDetailFromAgent(agent, queue.getId())));
-        return associatedUniqueAgents;
+    public List<AssociatedAgentEntity> createAssociatedAgents(PrecisionQueue queue) {
+        return queue.getAssociatedAgents().stream()
+                .map(agent -> new AssociatedAgentEntity(agent, queue.getId()))
+                .toList();
     }
 
     void throwExceptionIfQueueNameIsNotUnique(PrecisionQueueRequestBody requestBody, String queueId) {

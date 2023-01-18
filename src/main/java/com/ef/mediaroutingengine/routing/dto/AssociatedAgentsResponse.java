@@ -15,11 +15,17 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class AssociatedAgentsOfQueueResponse {
+public class AssociatedAgentsResponse {
     /**
      * the queue id.
      */
     private String queueId;
+    /**
+     * The Queue name.
+     */
     private String queueName;
-    private List<AgentAssociated> agents;
+    /**
+     * The Agents.
+     */
+    private List<AssociatedAgentEntity> agents;
 }

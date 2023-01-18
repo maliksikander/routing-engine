@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
-import com.ef.mediaroutingengine.routing.dto.AssociatedAgentsOfQueueResponse;
+import com.ef.mediaroutingengine.routing.dto.AssociatedAgentsResponse;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -75,12 +75,12 @@ public interface PrecisionQueuesService {
      * @param queueId the queue id.
      * @return the response object
      */
-    AssociatedAgentsOfQueueResponse getAssociatedAgents(String queueId);
+    AssociatedAgentsResponse getAssociatedAgentsOf(String queueId);
 
     /**
      * Returns the associated agents of all queues.
      *
      * @return the response.
      */
-    List<AssociatedAgentsOfQueueResponse> getAssociatedAgentsOfAllQueues();
+    List<AssociatedAgentsResponse> getAllAssociatedAgents();
 }

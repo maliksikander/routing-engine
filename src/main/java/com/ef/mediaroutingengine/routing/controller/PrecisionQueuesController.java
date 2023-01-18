@@ -114,7 +114,7 @@ public class PrecisionQueuesController {
     }
 
     /**
-     * To flush all tasks in a sinle queue.
+     * To flush all tasks in a single queue.
      *
      * @param queueName     the queue name
      * @param enqueuedSince the time in seconds since the task is enqueued.
@@ -151,7 +151,8 @@ public class PrecisionQueuesController {
     @CrossOrigin(origins = "*")
     @GetMapping(value = "precision-queues/associated-agents")
     public ResponseEntity<Object> getAssociatedAgents(@RequestParam(value = "queueId") Optional<String> queueId) {
-        return queueId.<ResponseEntity<Object>>map(id -> ResponseEntity.ok().body(this.service.getAssociatedAgents(id)))
-                .orElseGet(() -> ResponseEntity.ok().body(this.service.getAssociatedAgentsOfAllQueues()));
+        return queueId.<ResponseEntity<Object>>map(id ->
+                ResponseEntity.ok().body(this.service.getAssociatedAgentsOf(id)))
+                .orElseGet(() -> ResponseEntity.ok().body(this.service.getAllAssociatedAgents()));
     }
 }
