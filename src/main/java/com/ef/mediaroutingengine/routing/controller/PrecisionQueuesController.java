@@ -138,7 +138,7 @@ public class PrecisionQueuesController {
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = {"precision-queues/tasks"}, produces = "application/json")
     public ResponseEntity<Object> flush(@RequestParam(required = false) int enqueuedSince) {
-        return ResponseEntity.ok().body(new SuccessResponseBody(this.service.flushBy(null, enqueuedSince)));
+        return ResponseEntity.ok().body(new SuccessResponseBody(this.service.flushAll(enqueuedSince)));
     }
 
 

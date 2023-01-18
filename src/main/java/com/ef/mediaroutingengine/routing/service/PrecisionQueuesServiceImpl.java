@@ -270,7 +270,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         }
 
         this.precisionQueuesPool.toList().forEach(q -> flushQueue(q, enqueuedSince));
-        return "Queue Flush request executed successfully.";
+        return "Request to flush all queues executed successfully.";
     }
 
     /**
