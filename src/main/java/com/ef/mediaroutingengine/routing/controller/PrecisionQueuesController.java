@@ -114,29 +114,33 @@ public class PrecisionQueuesController {
     }
 
     /**
-     * To flush all tasks in queue.
+     * To flush all tasks in a sinle queue.
      *
-     * @param queueName the queue name
-     * @param enqueueTime the enqueue time
+     * @param queueName     the queue name
+     * @param enqueuedSince the time in seconds since the task is enqueued.
      * @return response object
      */
     @RolesAllowed("client-admin")
     @CrossOrigin(origins = "*")
-    @PostMapping(value = {"precision-queues/{queueName}/flush-all", "precision-queues/flush-all"},
-            produces = "application/json")
-    public ResponseEntity<Object> flush(@PathVariable(required = false) String queueName,
-                                        @RequestParam(required = false, value = "enqueueTime") Integer enqueueTime) {
-        if (enqueueTime == null) {
-            enqueueTime = 0;
-        }
-        if (queueName == null) {
-            return new ResponseEntity<>(new SuccessResponseBody(this.service.flush(null, enqueueTime)),
-                    HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(new SuccessResponseBody(this.service.flush(queueName, enqueueTime)),
-                    HttpStatus.OK);
-        }
+    @DeleteMapping(value = {"precision-queues/{queueName}/tasks"}, produces = "application/json")
+    public ResponseEntity<Object> flush(@PathVariable String queueName,
+                                        @RequestParam(required = false) int enqueuedSince) {
+        return ResponseEntity.ok().body(new SuccessResponseBody(this.service.flushBy(queueName, enqueuedSince)));
     }
+
+    /**
+     * To flush all tasks in all queues.
+     *
+     * @param enqueuedSince the time in seconds since the task is enqueued.
+     * @return response object
+     */
+    @RolesAllowed("client-admin")
+    @CrossOrigin(origins = "*")
+    @DeleteMapping(value = {"precision-queues/tasks"}, produces = "application/json")
+    public ResponseEntity<Object> flush(@RequestParam(required = false) int enqueuedSince) {
+        return ResponseEntity.ok().body(new SuccessResponseBody(this.service.flushBy(null, enqueuedSince)));
+    }
+
 
     /**
      * Request to get all the associated agents to queue.

@@ -22,6 +22,7 @@ public interface PrecisionQueuesService {
     /**
      * Retrieve list.
      *
+     * @param queueId the queue id
      * @return the list
      */
     ResponseEntity<Object> retrieve(String queueId);
@@ -54,11 +55,19 @@ public interface PrecisionQueuesService {
     /**
      * Flush the task(s) in queue(s).
      *
-     * @param queueName name of the queue o be flushed.
-     * @param enqueueTime enqueue time of task
+     * @param queueName     name of the queue o be flushed.
+     * @param enqueuedSince time in seconds since the task is enqueued
      * @return the execution status.
      */
-    String flush(String queueName, int enqueueTime);
+    String flushBy(String queueName, int enqueuedSince);
+
+    /**
+     * Flush all string.
+     *
+     * @param enqueuedSince time in seconds since the task is enqueued
+     * @return the string
+     */
+    String flushAll(int enqueuedSince);
 
     /**
      * Returns the associated agents to a queue.

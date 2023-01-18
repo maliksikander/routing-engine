@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -234,32 +235,79 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * Method to execute the queue flushing API.
      *
      * @param queueName     the queue id.
-     * @param enqueueTime the enqueue time of task.
+     * @param enqueuedSince the enqueue time of task.
      * @return the response.
      */
     @Override
-    public String flush(String queueName, int enqueueTime) {
-        logger.info("Queue Flush method execution started...");
-        if (enqueueTime < 0) {
-            throw new IllegalArgumentException("queuedTime must be equal or greater than 0");
+    public String flushBy(@NotNull String queueName, int enqueuedSince) {
+        logger.info("Request to flush tasks enqueued since: {} in Queue : {} initiated", enqueuedSince, queueName);
+
+        if (enqueuedSince < 0) {
+            String errorMessage = "The value of enqueueSince must be equal or greater than 0";
+            logger.error(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
         }
 
-        if (queueName != null && !repository.findByName(queueName).isPresent()) {
-            String errorMessage = "Could not find the PrecisionQueue resource with name: " + queueName;
+        PrecisionQueue queue = this.precisionQueuesPool.findByName(queueName);
+
+        if (queue == null) {
+            String errorMessage = "Could not find a Queue resource with name: " + queueName;
             logger.error(errorMessage);
             throw new NotFoundException(errorMessage);
         }
 
-        if (queueName != null && repository.findByName(queueName).isPresent()) {
-            flushQueue(queueName, enqueueTime);
-            return "Queue Flush request executed successfully.";
+        this.flushQueue(queue, enqueuedSince);
+
+        String successMsg = "Queue Flush request executed successfully.";
+        logger.info(successMsg);
+        return successMsg;
+    }
+
+    @Override
+    public String flushAll(int enqueuedSince) {
+        if (enqueuedSince < 0) {
+            throw new IllegalArgumentException("queuedTime must be equal or greater than 0");
         }
 
-        this.precisionQueuesPool.toList().forEach(precisionQueue -> {
-            flushQueue(precisionQueue.getName(), enqueueTime);
+        this.precisionQueuesPool.toList().forEach(q -> flushQueue(q, enqueuedSince));
+        return "Queue Flush request executed successfully.";
+    }
+
+    /**
+     * Method to flush a queue with provided queueId.
+     *
+     * @param queue         the queue to be flushed.
+     * @param enqueuedSince enqueue time.
+     */
+    void flushQueue(@NotNull PrecisionQueue queue, int enqueuedSince) {
+        List<Task> removedTasks = new ArrayList<>();
+
+        synchronized (queue.getServiceQueue()) {
+            queue.getTasks().stream()
+                    .filter(task -> this.isTaskEnqueuedSince(enqueuedSince, task))
+                    .forEach(task -> {
+                        task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(),
+                                queue.getTaskScheduler());
+                        queue.getServiceQueue().remove(task);
+                        removedTasks.add(task);
+                    });
+        }
+
+        removedTasks.forEach(task -> {
+            task.getTimer().cancel();
+            taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
+            taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
+
+
+            task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.FORCE_CLOSED));
+            this.taskManager.removeFromPoolAndRepository(task);
+            this.jmsCommunicator.publishTaskStateChangeForReporting(task);
         });
 
-        return "Queue Flush request executed successfully.";
+    }
+
+    boolean isTaskEnqueuedSince(int value, Task task) {
+        return (System.currentTimeMillis() - task.getEnqueueTime()) >= (value * 1000L);
     }
 
     /**
@@ -309,7 +357,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     /**
      * Method to add all the agents in the provided list.
      *
-     * @param queue  the queue.
+     * @param queue the queue.
      */
     public List<AgentAssociated> addAssociatedAgents(PrecisionQueue queue) {
         List<AgentAssociated> associatedUniqueAgents = new ArrayList<>();
@@ -319,42 +367,6 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         agentsInAllSteps.stream().distinct().forEach(agent -> associatedUniqueAgents
                 .add(AgentUtil.getAgentDetailFromAgent(agent, queue.getId())));
         return associatedUniqueAgents;
-    }
-
-    /**
-     * Method to flush a queue with provided queueId.
-     *
-     * @param queueName   name of the queue to be flushed.
-     * @param enqueueTime enqueue time.
-     */
-    public void flushQueue(String queueName, int enqueueTime) {
-        PrecisionQueue precisionQueue = this.precisionQueuesPool.findByName(queueName);
-        List<Task> tasks = tasksPool.findByQueueId(queueName);
-
-        if (tasks == null) {
-            logger.info("No tasks found in the queue {}, returning...", queueName);
-            return;
-        }
-
-        tasks.stream().filter(task -> (System.currentTimeMillis()
-                - task.getEnqueueTime()) >= (enqueueTime * 1000L)).forEach(task -> {
-                    task.getTimer().cancel();
-                    taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
-                    taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
-
-                    synchronized (precisionQueue.getServiceQueue()) {
-                        precisionQueue.getServiceQueue().remove(task);
-                    }
-
-                    task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(),
-                            precisionQueue.getTaskScheduler());
-                    task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED,
-                            Enums.TaskStateReasonCode.FORCE_CLOSED));
-                    this.taskManager.removeFromPoolAndRepository(task);
-                    this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-                    logger.info("task {} removed while queue flushing ", task.getId());
-                });
-
     }
 
     void throwExceptionIfQueueNameIsNotUnique(PrecisionQueueRequestBody requestBody, String queueId) {
