@@ -124,7 +124,7 @@ public class PrecisionQueuesController {
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = {"precision-queues/{queueName}/tasks"}, produces = "application/json")
     public ResponseEntity<Object> flush(@PathVariable String queueName,
-                                        @RequestParam(required = false) int enqueuedSince) {
+                                        @RequestParam(defaultValue = "0") int enqueuedSince) {
         return ResponseEntity.ok().body(new SuccessResponseBody(this.service.flushBy(queueName, enqueuedSince)));
     }
 
@@ -137,7 +137,7 @@ public class PrecisionQueuesController {
     @RolesAllowed("client-admin")
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = {"precision-queues/tasks"}, produces = "application/json")
-    public ResponseEntity<Object> flush(@RequestParam(required = false) int enqueuedSince) {
+    public ResponseEntity<Object> flush(@RequestParam(defaultValue = "0") int enqueuedSince) {
         return ResponseEntity.ok().body(new SuccessResponseBody(this.service.flushAll(enqueuedSince)));
     }
 
