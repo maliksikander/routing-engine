@@ -4,6 +4,7 @@ import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.service.PrecisionQueuesService;
 import java.util.Optional;
+import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
@@ -120,7 +121,7 @@ public class PrecisionQueuesController {
      * @param enqueuedSince the time in seconds since the task is enqueued.
      * @return response object
      */
-    @RolesAllowed("client-admin")
+    @PermitAll
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = {"precision-queues/{queueName}/tasks"}, produces = "application/json")
     public ResponseEntity<Object> flush(@PathVariable String queueName,
@@ -134,7 +135,7 @@ public class PrecisionQueuesController {
      * @param enqueuedSince the time in seconds since the task is enqueued.
      * @return response object
      */
-    @RolesAllowed("client-admin")
+    @PermitAll
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = {"precision-queues/tasks"}, produces = "application/json")
     public ResponseEntity<Object> flush(@RequestParam(defaultValue = "0") int enqueuedSince) {
