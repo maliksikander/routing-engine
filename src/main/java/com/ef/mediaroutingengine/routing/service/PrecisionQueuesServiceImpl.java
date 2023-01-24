@@ -263,12 +263,16 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
 
     @Override
     public String flushAll(int enqueuedSince) {
+        logger.info("Request to flush tasks enqueued since: {} for all queues initiated", enqueuedSince);
+
         if (enqueuedSince < 0) {
             throw new IllegalArgumentException("queuedTime must be equal or greater than 0");
         }
 
         this.precisionQueuesPool.toList().forEach(q -> flushQueue(q, enqueuedSince));
-        return "Request to flush all queues executed successfully.";
+        String successMsg = "Request to flush all queues executed successfully.";
+        logger.info(successMsg);
+        return successMsg;
     }
 
     /**
