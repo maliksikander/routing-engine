@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.routing.service;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
+import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
@@ -54,12 +55,15 @@ class PrecisionQueuesServiceImplTest {
     @Mock
     private TaskManager taskManager;
 
+    @Mock
+    private JmsCommunicator jmsCommunicator;
+
     private PrecisionQueuesServiceImpl precisionQueuesService;
 
     @BeforeEach
     void setUp() {
         this.precisionQueuesService = new PrecisionQueuesServiceImpl(repository, precisionQueuesPool, mrdPool, tasksPool
-                , taskManager);
+                , taskManager, jmsCommunicator);
     }
 
     @Test

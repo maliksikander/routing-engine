@@ -159,6 +159,15 @@ public class Agent {
     }
 
     /**
+     * Gets Keycloak state.
+     *
+     * @return the keycloak object
+     */
+    public KeycloakUser getKeycloakUser() {
+        return keycloakUser;
+    }
+
+    /**
      * Ends task assigned to the current Agent's object.
      *
      * @param task the task to end.
@@ -190,6 +199,19 @@ public class Agent {
             }
         }
         return counter;
+    }
+
+    /**
+     * returns the count of tasks specific to provided queue.
+     *
+     * @param queueId the queue id.
+     * @return tasks count
+     */
+    public long getActiveTasksCountByQueueId(String queueId) {
+        return activeTasks.entrySet().stream()
+                .flatMap(entry -> entry.getValue().stream())
+                .filter(task -> task.getQueue() != null && task.getQueue().equals(queueId))
+                .count();
     }
 
     /**

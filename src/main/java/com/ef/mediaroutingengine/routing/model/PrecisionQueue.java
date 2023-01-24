@@ -532,7 +532,7 @@ public class PrecisionQueue implements Queue {
      *
      * @return the all associated agents
      */
-    public List<Agent> getAllAssociatedAgents() {
+    public List<Agent> getAssociatedAgents() {
         if (this.steps == null || this.steps.isEmpty()) {
             return new ArrayList<>();
         }

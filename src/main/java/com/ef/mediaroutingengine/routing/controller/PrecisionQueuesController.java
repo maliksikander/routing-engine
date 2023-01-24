@@ -1,7 +1,11 @@
 package com.ef.mediaroutingengine.routing.controller;
 
+import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.service.PrecisionQueuesService;
+import java.util.Optional;
+import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import org.slf4j.Logger;
@@ -108,5 +112,48 @@ public class PrecisionQueuesController {
     @DeleteMapping(value = "/precision-queues/{id}", produces = "application/json")
     public ResponseEntity<Object> delete(@PathVariable String id) {
         return this.service.delete(id);
+    }
+
+    /**
+     * To flush all tasks in a single queue.
+     *
+     * @param queueName     the queue name
+     * @param enqueuedSince the time in seconds since the task is enqueued.
+     * @return response object
+     */
+    @PermitAll
+    @CrossOrigin(origins = "*")
+    @DeleteMapping(value = {"precision-queues/{queueName}/tasks"}, produces = "application/json")
+    public ResponseEntity<Object> flush(@PathVariable String queueName,
+                                        @RequestParam(defaultValue = "0") int enqueuedSince) {
+        return ResponseEntity.ok().body(new SuccessResponseBody(this.service.flushBy(queueName, enqueuedSince)));
+    }
+
+    /**
+     * To flush all tasks in all queues.
+     *
+     * @param enqueuedSince the time in seconds since the task is enqueued.
+     * @return response object
+     */
+    @PermitAll
+    @CrossOrigin(origins = "*")
+    @DeleteMapping(value = {"precision-queues/tasks"}, produces = "application/json")
+    public ResponseEntity<Object> flush(@RequestParam(defaultValue = "0") int enqueuedSince) {
+        return ResponseEntity.ok().body(new SuccessResponseBody(this.service.flushAll(enqueuedSince)));
+    }
+
+
+    /**
+     * Request to get all the associated agents to queue.
+     *
+     * @param queueId the queue id.
+     * @return the response object
+     */
+    @CrossOrigin(origins = "*")
+    @GetMapping(value = "precision-queues/associated-agents")
+    public ResponseEntity<Object> getAssociatedAgents(@RequestParam(value = "queueId") Optional<String> queueId) {
+        return queueId.<ResponseEntity<Object>>map(id ->
+                ResponseEntity.ok().body(this.service.getAssociatedAgentsOf(id)))
+                .orElseGet(() -> ResponseEntity.ok().body(this.service.getAllAssociatedAgents()));
     }
 }
