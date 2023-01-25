@@ -121,7 +121,7 @@ public class PrecisionQueuesController {
      * @param enqueuedSince the time in seconds since the task is enqueued.
      * @return response object
      */
-    @RolesAllowed("client-admin")
+    @RolesAllowed({"client-admin", "client-agent", "client-supervisor"})
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = {"precision-queues/{queueName}/tasks"}, produces = "application/json")
     public ResponseEntity<Object> flush(@PathVariable String queueName,
@@ -135,7 +135,7 @@ public class PrecisionQueuesController {
      * @param enqueuedSince the time in seconds since the task is enqueued.
      * @return response object
      */
-    @RolesAllowed("client-admin")
+    @RolesAllowed({"client-admin", "client-agent", "client-supervisor"})
     @CrossOrigin(origins = "*")
     @DeleteMapping(value = {"precision-queues/tasks"}, produces = "application/json")
     public ResponseEntity<Object> flush(@RequestParam(defaultValue = "0") int enqueuedSince) {
