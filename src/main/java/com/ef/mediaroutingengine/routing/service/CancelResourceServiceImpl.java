@@ -5,6 +5,7 @@ import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.dto.CancelResourceRequest;
+import com.ef.mediaroutingengine.routing.dto.RevokeResourceDto;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
@@ -124,20 +125,13 @@ public class CancelResourceServiceImpl implements CancelResourceService {
         removeAndPublish(task, closeReasonCode);
 
         Agent agent = this.agentsPool.findById(task.getAssignedTo());
+
         if (agent != null) {
             agent.removeReservedTask();
         }
 
-        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
-        CompletableFuture.runAsync(() -> {
-            // putting same correlation id from the caller thread into this thread
-            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
-            MDC.put(Constants.MDC_TOPIC_ID, task.getTopicId());
-
-            this.restRequest.postRevokeTask(task);
-
-            MDC.clear();
-        });
+        this.jmsCommunicator.publishRevokeTask(task, RevokeResourceDto.createForReservedTask(task.getId(),
+                agent.getId(), task.getTopicId()));
     }
 
     /**

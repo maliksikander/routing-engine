@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.routing.dto;
 
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -8,20 +9,20 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * An AgentReservedRequest object is used to call the Bot-Frameworks's Agent-Reserved API as Request Body.
+ * An AgentReserved object used to publish AGENT_RESERVED event on the conversation topic.
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class AgentReservedRequest {
+public class AgentReservedDto {
     /**
-     * ID of the JMS-topic on which an Agent is reserved.
+     * The task dto.
      */
-    String topicId;
+    private TaskDto task;
     /**
-     * Agent that has been reserved for this topic.
+     * The Cc user.
      */
-    CCUser agent;
+    private CCUser ccUser;
 }

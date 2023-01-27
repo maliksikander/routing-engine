@@ -6,9 +6,9 @@ import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.config.AssignResourceProperties;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
-import com.ef.mediaroutingengine.routing.dto.AgentReservedRequest;
+import com.ef.mediaroutingengine.routing.dto.AgentReservedDto;
 import com.ef.mediaroutingengine.routing.dto.AssignTaskRequest;
-import com.ef.mediaroutingengine.routing.dto.RevokeTaskRequest;
+import com.ef.mediaroutingengine.routing.dto.RevokeResourceDto;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.time.Duration;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -59,51 +59,11 @@ public class RestRequest {
      * @return The HTTP response from the API call.
      */
     public ResponseEntity<String> postAgentReserved(String topicId, CCUser agent) {
-        AgentReservedRequest requestBody = new AgentReservedRequest();
-        requestBody.setAgent(agent);
-        requestBody.setTopicId(topicId);
+        AgentReservedDto requestBody = new AgentReservedDto();
+        //requestBody.setAgentId(agent);
+       // requestBody.setTopicId(topicId);
 
         return httpRequest(requestBody, this.config.getAgentReservedUri(), HttpMethod.POST);
-    }
-
-    /**
-     * Calls the Agent-manager's Assign-Task API.
-     *
-     * @param task the task dto
-     * @param agent the agent to assign task to
-     * @return true if request successful, false otherwise.
-     */
-    public boolean postAssignTask(Task task, CCUser agent, TaskState taskState) {
-        TaskDto taskDto = AdapterUtility.createTaskDtoFrom(task);
-        taskDto.setState(taskState);
-        AssignTaskRequest request = new AssignTaskRequest(taskDto, agent);
-
-        try {
-            this.httpRequest(request, this.config.getAssignTaskUri(), HttpMethod.POST);
-            return true;
-        } catch (Exception e) {
-            logger.error(ExceptionUtils.getMessage(e));
-            logger.error(ExceptionUtils.getStackTrace(e));
-            return false;
-        }
-    }
-
-    /**
-     * Post revoke task boolean.
-     *
-     * @param task the task
-     * @return the boolean
-     */
-    public boolean postRevokeTask(Task task) {
-        RevokeTaskRequest requestBody = new RevokeTaskRequest(task.getId(), task.getAssignedTo(), task.getTopicId());
-        try {
-            this.httpRequest(requestBody, this.config.getRevokeTaskUri(), HttpMethod.POST);
-            return true;
-        } catch (Exception e) {
-            logger.error(ExceptionUtils.getMessage(e));
-            logger.error(ExceptionUtils.getStackTrace(e));
-            return false;
-        }
     }
 
     /**

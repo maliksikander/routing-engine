@@ -75,7 +75,7 @@ public class AssignAgentService {
             this.jmsCommunicator.publishTaskStateChangeForReporting(task);
 
             if (offerToAgent) {
-                this.restRequest.postAssignTask(task, agent.toCcUser(), req.getTaskState());
+                this.jmsCommunicator.publishAgentReserved(task, agent.toCcUser());
             }
         } else if (updateTask) {
             this.update(existingTask, req.getChannelSession(), mrd);
