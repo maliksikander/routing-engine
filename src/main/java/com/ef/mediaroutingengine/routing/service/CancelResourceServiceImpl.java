@@ -132,6 +132,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
 
         this.jmsCommunicator.publishRevokeTask(task, RevokeResourceDto.createForReservedTask(task.getId(),
                 agent.getId(), task.getTopicId()));
+        logger.info("REVOKE_RESOURCE published");
     }
 
     /**
