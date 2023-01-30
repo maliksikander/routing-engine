@@ -229,6 +229,7 @@ public class TaskRouter implements PropertyChangeListener {
 
             CCUser ccUser = agent.toCcUser();
             TaskState taskState = new TaskState(Enums.TaskStateName.RESERVED, null);
+            task.setTaskState(taskState);
 
             this.jmsCommunicator.publishAgentReserved(task, ccUser);
             logger.debug("agent reserved event published");
