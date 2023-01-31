@@ -1,16 +1,11 @@
 package com.ef.mediaroutingengine.taskmanager.controller;
 
-import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
-import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
-import com.ef.mediaroutingengine.taskmanager.dto.PullAssignTaskRequest;
 import com.ef.mediaroutingengine.taskmanager.dto.UpdateTaskRequest;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.service.TasksService;
@@ -109,56 +104,5 @@ public class TasksController {
     public ResponseEntity<Object> updateTask(@PathVariable String taskId,
                                              @RequestBody UpdateTaskRequest reqBody) {
         return ResponseEntity.ok().body(this.service.updateTask(taskId, reqBody));
-    }
-
-    /**
-     * Assign task response entity.
-     *
-     * @param reqBody the request body
-     * @return the response entity
-     */
-    @CrossOrigin(origins = "*")
-    @PostMapping("/assign")
-    public ResponseEntity<Object> assignTask(@Valid @RequestBody PullAssignTaskRequest reqBody) {
-        Agent agent = this.validateAndGetAgent(reqBody.getAgentId());
-        MediaRoutingDomain mrd = this.validateAndGetMrd(reqBody.getMrdId());
-        validateAgentHasMrdState(agent, mrd);
-        validateChannelSession(reqBody.getChannelSession());
-
-        return ResponseEntity.ok().body(this.service.assignTask(agent, mrd, reqBody.getTaskState(),
-                reqBody.getChannelSession()));
-    }
-
-    private void validateChannelSession(ChannelSession channelSession) {
-        RoutingMode routingMode = channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingMode();
-        if (routingMode == null || routingMode.equals(RoutingMode.PUSH)) {
-            throw new IllegalArgumentException("Invalid Routing mode in channelSession, It should be Pull or External");
-        }
-    }
-
-    private Agent validateAndGetAgent(String agentId) {
-        Agent agent = this.agentsPool.findById(agentId);
-        if (agent == null) {
-            throw new NotFoundException("Agent: " + agentId + " not found");
-        }
-        if (agent.getState().getName().equals(Enums.AgentStateName.LOGOUT)) {
-            throw new IllegalStateException("Cannot Assign task when agent is in LOGOUT state");
-        }
-        return agent;
-    }
-
-    private MediaRoutingDomain validateAndGetMrd(String mrdId) {
-        MediaRoutingDomain mrd = this.mrdPool.findById(mrdId);
-        if (mrd == null) {
-            throw new NotFoundException("MRD: " + mrdId + " in requested channel session not found");
-        }
-        return mrd;
-    }
-
-    private void validateAgentHasMrdState(Agent agent, MediaRoutingDomain mrd) {
-        if (agent.getAgentMrdState(mrd.getId()) == null) {
-            throw new NotFoundException("Agent: " + agent.getId() + " does not have AgentMrdState for MRD: "
-                    + mrd.getId());
-        }
     }
 }

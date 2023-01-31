@@ -105,40 +105,4 @@ public class TasksService {
         return AdapterUtility.createTaskDtoFrom(task);
     }
 
-    /**
-     * Assign task task dto.
-     *
-     * @param agent          the agent
-     * @param mrd            the mrd
-     * @param taskState      the task state
-     * @param channelSession the channel session
-     * @return the task dto
-     */
-    public TaskDto assignTask(Agent agent, MediaRoutingDomain mrd, TaskState taskState,
-                              ChannelSession channelSession) {
-        String conversationId = channelSession.getConversationId();
-
-        List<Task> existingTasksOnTopic = tasksPool.findByConversationId(conversationId);
-        for (Task task : existingTasksOnTopic) {
-            if (task.getAssignedTo().equals(agent.getId())) {
-                return AdapterUtility.createTaskDtoFrom(task);
-            }
-        }
-
-        Task task = createTask(agent, mrd, taskState, channelSession);
-        agent.addActiveTask(task);
-
-
-        return AdapterUtility.createTaskDtoFrom(task);
-    }
-
-    private Task createTask(Agent agent, MediaRoutingDomain mrd, TaskState state, ChannelSession channelSession) {
-        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.AGENT, null);
-        Task task = Task.getInstanceFrom(agent.getId(), mrd, state, channelSession, type);
-        this.tasksPool.add(task);
-        this.tasksRepository.save(task.getId(), AdapterUtility.createTaskDtoFrom(task));
-        this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-
-        return task;
-    }
 }

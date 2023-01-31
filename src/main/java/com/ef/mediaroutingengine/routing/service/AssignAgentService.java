@@ -2,6 +2,8 @@ package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.dto.TaskDto;
+import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.dto.AssignAgentRequest;
@@ -11,7 +13,8 @@ import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 /**
@@ -61,25 +64,31 @@ public class AssignAgentService {
      * @param updateTask   the updateTask flag
      * @param offerToAgent the offerToAgent flag
      */
-    public void assign(AssignAgentRequest req, Agent agent, MediaRoutingDomain mrd, boolean updateTask,
-                       boolean offerToAgent) {
-
+    public TaskDto assign(AssignAgentRequest req, Agent agent, MediaRoutingDomain mrd, boolean updateTask,
+                          boolean offerToAgent) {
+        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
         Task existingTask = this.getExistingTask(agent.getId(), req.getChannelSession());
+        Task task = null;
 
         // No Existing Task, Create a new Task for this request
         if (existingTask == null) {
-            Task task = Task.getInstanceFrom(agent.getId(), mrd, req.getTaskState(), req.getChannelSession(),
+            task = Task.getInstanceFrom(agent.getId(), mrd, req.getTaskState(), req.getChannelSession(),
                     req.getTaskType());
 
             this.taskManager.insertInPoolAndRepository(task);
             this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-
             if (offerToAgent) {
-                this.restRequest.postAssignTask(task, agent.toCcUser(), req.getTaskState());
+                Task finalTask = task;
+                CompletableFuture.runAsync(() -> {
+                    MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+                    this.restRequest.postAssignTask(finalTask, agent.toCcUser(), req.getTaskState()); }
+                );
             }
+
         } else if (updateTask) {
-            this.update(existingTask, req.getChannelSession(), mrd);
+            task = this.update(existingTask, req.getChannelSession(), mrd);
         }
+        return AdapterUtility.createTaskDtoFrom(task);
     }
 
     Task getExistingTask(String agentId, ChannelSession channelSession) {
@@ -89,10 +98,11 @@ public class AssignAgentService {
                 .orElse(null);
     }
 
-    void update(Task existingTask, ChannelSession channelSession, MediaRoutingDomain mrd) {
+    Task update(Task existingTask, ChannelSession channelSession, MediaRoutingDomain mrd) {
         existingTask.setChannelSession(channelSession);
         existingTask.setMrd(mrd);
         this.tasksRepository.save(existingTask.getId(), AdapterUtility.createTaskDtoFrom(existingTask));
+        return existingTask;
     }
 
 }

@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.routing.controller;
 
 import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
@@ -55,7 +56,7 @@ public class AssignAgentController {
      * Assign agent response entity.
      *
      * @param req the request body
-     * @return the response entity
+     * @return the response entity.
      */
     @CrossOrigin("*")
     @PostMapping("/assign-agent")
@@ -68,18 +69,7 @@ public class AssignAgentController {
         String mrdId = req.getChannelSession().getChannel().getChannelType().getMediaRoutingDomain();
         MediaRoutingDomain mrd = this.validateAndGetMrd(mrdId);
 
-        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
-
-        CompletableFuture.runAsync(() -> {
-            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
-
-            this.service.assign(req, agent, mrd, updateTask, offerToAgent);
-
-            MDC.clear();
-        });
-
-
-        return ResponseEntity.accepted().body(new SuccessResponseBody("Assign Agent request received"));
+        return ResponseEntity.ok().body(this.service.assign(req, agent, mrd, updateTask, offerToAgent));
     }
 
     private Agent validateAndGetAgent(String agentId) {
