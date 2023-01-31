@@ -2,11 +2,8 @@ package com.ef.mediaroutingengine.global.jms;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.dto.TaskEnqueuedDto;
-import com.ef.cim.objectmodel.dto.TaskEnqueuedQueue;
-import com.ef.mediaroutingengine.routing.dto.RevokeResourceDto;
+import com.ef.cim.objectmodel.dto.RevokeResourceDto;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
-import com.ef.mediaroutingengine.routing.model.Queue;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.Serializable;

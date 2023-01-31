@@ -195,7 +195,7 @@ public class TaskRouter implements PropertyChangeListener {
      * @param step the step
      * @return the available agent with the least number of active tasks
      */
-    private Agent getAvailableAgentWithLeastActiveTasks(Step step, String conversationId) {
+    Agent getAvailableAgentWithLeastActiveTasks(Step step, String conversationId) {
         List<Agent> sortedAgentList = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE,
                 this.precisionQueue.getMrd().getId());
         int lowestNumberOfTasks = Integer.MAX_VALUE;
