@@ -1,10 +1,9 @@
 package com.ef.mediaroutingengine.global.jms;
 
+import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.dto.TaskEnqueuedDto;
-import com.ef.cim.objectmodel.dto.TaskEnqueuedQueue;
+import com.ef.cim.objectmodel.dto.RevokeResourceDto;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
-import com.ef.mediaroutingengine.routing.model.Queue;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.Serializable;
@@ -73,4 +72,18 @@ public interface JmsCommunicator extends ExceptionListener {
      * @param queue precision queue
      */
     void publishTaskEnqueued(Task task, PrecisionQueue queue);
+
+    /**
+     * Publish Agent Reserved event.
+     *
+     * @param task the task object
+     */
+    void publishAgentReserved(Task task, CCUser agent);
+
+    /**
+     * Revoke task event.
+     *
+     * @param task the task object.
+     */
+    void publishRevokeTask(Task task, RevokeResourceDto revokeResourceDto);
 }

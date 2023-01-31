@@ -195,7 +195,7 @@ public class TaskRouter implements PropertyChangeListener {
      * @param step the step
      * @return the available agent with the least number of active tasks
      */
-    private Agent getAvailableAgentWithLeastActiveTasks(Step step, String conversationId) {
+    Agent getAvailableAgentWithLeastActiveTasks(Step step, String conversationId) {
         List<Agent> sortedAgentList = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE,
                 this.precisionQueue.getMrd().getId());
         int lowestNumberOfTasks = Integer.MAX_VALUE;
@@ -229,19 +229,19 @@ public class TaskRouter implements PropertyChangeListener {
 
             CCUser ccUser = agent.toCcUser();
             TaskState taskState = new TaskState(Enums.TaskStateName.RESERVED, null);
+            task.setTaskState(taskState);
 
-            boolean isReserved = this.restRequest.postAssignTask(task, ccUser, taskState);
-            if (isReserved) {
-                logger.debug("Task Assigned to agent in Agent-Manager");
-                this.changeStateOf(task, taskState, agent.getId());
-                this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-                precisionQueue.dequeue();
-                agent.reserveTask(task);
-                this.restRequest.postAgentReserved(task.getTopicId(), ccUser);
+            this.jmsCommunicator.publishAgentReserved(task, ccUser);
+            logger.debug("agent reserved event published");
 
-                task.getTimer().cancel();
-                task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), this);
-            }
+            this.changeStateOf(task, taskState, agent.getId());
+            this.jmsCommunicator.publishTaskStateChangeForReporting(task);
+            precisionQueue.dequeue();
+            agent.reserveTask(task);
+
+            task.getTimer().cancel();
+            task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), this);
+
         } catch (Exception e) {
             logger.error(ExceptionUtils.getMessage(e));
             logger.error(ExceptionUtils.getStackTrace(e));
