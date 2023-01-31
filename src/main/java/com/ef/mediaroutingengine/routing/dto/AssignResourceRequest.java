@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.routing.dto;
 
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.TaskType;
-import com.ef.cim.objectmodel.dto.NoAgentAvailableDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

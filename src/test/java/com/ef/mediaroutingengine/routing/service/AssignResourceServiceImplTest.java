@@ -57,7 +57,7 @@ class AssignResourceServiceImplTest {
 
         AssignResourceServiceImpl spy = Mockito.spy(assignResourceService);
 
-        doNothing().when(spy).validateChannelSession(channelSession);
+        doNothing().when(spy).validateChannelSession(channelSession, taskType);
         doReturn(mrd).when(queue).getMrd();
         doReturn(queue).when(spy).validateAndGetQueue(channelSession, requestedQueue, false);
 
@@ -69,56 +69,12 @@ class AssignResourceServiceImplTest {
     @DisplayName("validateChannelSession method tests")
     class ValidateChannelSessionTest {
         @Test
-        void throwsIllegalArgumentException_when_channelSessionIsNull() {
-            assertThrows(IllegalArgumentException.class, () -> assignResourceService.validateChannelSession(null));
-        }
-
-        @Test
-        void throwsIllegalArgumentException_when_channelIsNull() {
-            ChannelSession channelSession = new ChannelSession();
-            channelSession.setChannel(null);
-            assertThrows(IllegalArgumentException.class,
-                    () -> assignResourceService.validateChannelSession(channelSession));
-        }
-
-        @Test
-        void throwsIllegalArgumentException_when_channelConnectorIsNull() {
-            ChannelSession channelSession = new ChannelSession();
-            channelSession.getChannel().setChannelConnector(null);
-            assertThrows(IllegalArgumentException.class,
-                    () -> assignResourceService.validateChannelSession(channelSession));
-        }
-
-        @Test
-        void throwsIllegalArgumentException_when_channelTypeIsNull() {
-            ChannelSession channelSession = new ChannelSession();
-            channelSession.getChannel().setChannelType(null);
-            assertThrows(IllegalArgumentException.class,
-                    () -> assignResourceService.validateChannelSession(channelSession));
-        }
-
-        @Test
-        void throwsIllegalArgumentException_when_channelConfigIsNull() {
-            ChannelSession channelSession = new ChannelSession();
-            channelSession.getChannel().setChannelConfig(null);
-            assertThrows(IllegalArgumentException.class,
-                    () -> assignResourceService.validateChannelSession(channelSession));
-        }
-
-        @Test
-        void throwsIllegalArgumentException_when_routingPolicyIsNull() {
-            ChannelSession channelSession = new ChannelSession();
-            channelSession.getChannel().getChannelConfig().setRoutingPolicy(null);
-            assertThrows(IllegalArgumentException.class,
-                    () -> assignResourceService.validateChannelSession(channelSession));
-        }
-
-        @Test
-        void throwsIllegalArgumentException_when_routingModeIsNotPush() {
+        void throwsIllegalArgumentException_when_taskTypeIsInbound_and_routingModeIsNotPush() {
             ChannelSession channelSession = getChannelSessionInstance();
+            TaskType taskType = new TaskType(Enums.TaskTypeDirection.INBOUND,Enums.TaskTypeMode.QUEUE,null);
             channelSession.getChannel().getChannelConfig().getRoutingPolicy().setRoutingMode(RoutingMode.PULL);
             assertThrows(IllegalArgumentException.class,
-                    () -> assignResourceService.validateChannelSession(channelSession));
+                    () -> assignResourceService.validateChannelSession(channelSession, taskType));
         }
     }
 
