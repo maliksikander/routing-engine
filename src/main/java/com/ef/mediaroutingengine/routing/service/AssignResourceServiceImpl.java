@@ -73,7 +73,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         validateRequestTypeMode(request.getRequestType());
 
         ChannelSession channelSession = request.getChannelSession();
-        validateChannelSession(channelSession);
+        validateChannelSession(channelSession, request.getRequestType());
         logger.debug("ChannelSession validated in Assign-Resource API request");
 
         PrecisionQueue queue = this.validateAndGetQueue(channelSession, request.getQueue(), useQueueName);
@@ -126,28 +126,11 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      *
      * @param channelSession the channel session
      */
-    void validateChannelSession(ChannelSession channelSession) {
-        if (channelSession == null) {
-            throw new IllegalArgumentException("Channel Session is null");
-        }
-        if (channelSession.getChannel() == null) {
-            throw new IllegalArgumentException("ChannelSession.Channel is null");
-        }
-        if (channelSession.getChannel().getChannelConnector() == null) {
-            throw new IllegalArgumentException("ChannelSession.Channel.ChannelConnector is null");
-        }
-        if (channelSession.getChannel().getChannelType() == null) {
-            throw new IllegalArgumentException("ChannelSession.Channel.ChannelConnector.ChannelType is null");
-        }
-        if (channelSession.getChannel().getChannelConfig() == null) {
-            throw new IllegalArgumentException("ChannelSession.Channel.ChannelConfig is null");
-        }
-        if (channelSession.getChannel().getChannelConfig().getRoutingPolicy() == null) {
-            throw new IllegalArgumentException("ChannelSession.Channel.ChannelConfig.RoutingPolicy is null");
-        }
-        if (!channelSession.getChannel().getChannelConfig().getRoutingPolicy()
-                .getRoutingMode().equals(RoutingMode.PUSH)) {
-            throw new IllegalArgumentException("Routing mode must be PUSH for this request");
+    void validateChannelSession(ChannelSession channelSession, TaskType type) {
+        RoutingMode mode = channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingMode();
+
+        if (type.getDirection().equals(Enums.TaskTypeDirection.INBOUND) && !mode.equals(RoutingMode.PUSH)) {
+            throw new IllegalArgumentException("Routing mode must be PUSH for an INBOUND request");
         }
     }
 

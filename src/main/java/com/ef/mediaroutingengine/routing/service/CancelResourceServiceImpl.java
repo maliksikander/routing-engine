@@ -2,7 +2,7 @@ package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
-import com.ef.mediaroutingengine.global.commons.Constants;
+import com.ef.cim.objectmodel.dto.RevokeResourceDto;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.dto.CancelResourceRequest;
 import com.ef.mediaroutingengine.routing.model.Agent;
@@ -13,10 +13,8 @@ import com.ef.mediaroutingengine.routing.utility.RestRequest;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
-import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -124,20 +122,14 @@ public class CancelResourceServiceImpl implements CancelResourceService {
         removeAndPublish(task, closeReasonCode);
 
         Agent agent = this.agentsPool.findById(task.getAssignedTo());
+
         if (agent != null) {
             agent.removeReservedTask();
         }
 
-        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
-        CompletableFuture.runAsync(() -> {
-            // putting same correlation id from the caller thread into this thread
-            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
-            MDC.put(Constants.MDC_TOPIC_ID, task.getTopicId());
-
-            this.restRequest.postRevokeTask(task);
-
-            MDC.clear();
-        });
+        this.jmsCommunicator.publishRevokeTask(task, RevokeResourceDto.createForReservedTask(task.getId(),
+                agent.getId(), task.getTopicId()));
+        logger.info("REVOKE_RESOURCE published");
     }
 
     /**

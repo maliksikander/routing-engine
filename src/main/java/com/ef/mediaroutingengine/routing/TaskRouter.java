@@ -10,7 +10,6 @@ import com.ef.mediaroutingengine.routing.model.AgentSelectionCriteria;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.model.Step;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
-import com.ef.mediaroutingengine.routing.utility.RestRequest;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
@@ -40,10 +39,6 @@ public class TaskRouter implements PropertyChangeListener {
      */
     private final AgentsPool agentsPool;
     /**
-     * The Rest request.
-     */
-    private final RestRequest restRequest;
-    /**
      * The Tasks repository.
      */
     private final TasksRepository tasksRepository;
@@ -68,15 +63,13 @@ public class TaskRouter implements PropertyChangeListener {
      * Constructor.
      *
      * @param agentsPool      the pool of all agents
-     * @param restRequest     to make rest calls to other components.
      * @param tasksRepository to communicate with the Redis Tasks collection.
      * @param jmsCommunicator the jms communicator
      */
     @Autowired
-    public TaskRouter(AgentsPool agentsPool, RestRequest restRequest, TasksRepository tasksRepository,
+    public TaskRouter(AgentsPool agentsPool, TasksRepository tasksRepository,
                       JmsCommunicator jmsCommunicator, TaskManager taskManager) {
         this.agentsPool = agentsPool;
-        this.restRequest = restRequest;
         this.tasksRepository = tasksRepository;
         this.jmsCommunicator = jmsCommunicator;
         this.taskManager = taskManager;
@@ -195,7 +188,7 @@ public class TaskRouter implements PropertyChangeListener {
      * @param step the step
      * @return the available agent with the least number of active tasks
      */
-    private Agent getAvailableAgentWithLeastActiveTasks(Step step, String conversationId) {
+    Agent getAvailableAgentWithLeastActiveTasks(Step step, String conversationId) {
         List<Agent> sortedAgentList = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE,
                 this.precisionQueue.getMrd().getId());
         int lowestNumberOfTasks = Integer.MAX_VALUE;
@@ -227,21 +220,16 @@ public class TaskRouter implements PropertyChangeListener {
                 return;
             }
 
+            this.changeStateOf(task, new TaskState(Enums.TaskStateName.RESERVED, null), agent.getId());
+            agent.reserveTask(task);
+            this.jmsCommunicator.publishTaskStateChangeForReporting(task);
+
             CCUser ccUser = agent.toCcUser();
-            TaskState taskState = new TaskState(Enums.TaskStateName.RESERVED, null);
+            this.jmsCommunicator.publishAgentReserved(task, ccUser);
 
-            boolean isReserved = this.restRequest.postAssignTask(task, ccUser, taskState);
-            if (isReserved) {
-                logger.debug("Task Assigned to agent in Agent-Manager");
-                this.changeStateOf(task, taskState, agent.getId());
-                this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-                precisionQueue.dequeue();
-                agent.reserveTask(task);
-                this.restRequest.postAgentReserved(task.getTopicId(), ccUser);
-
-                task.getTimer().cancel();
-                task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), this);
-            }
+            task.getTimer().cancel();
+            task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), this);
+            precisionQueue.dequeue();
         } catch (Exception e) {
             logger.error(ExceptionUtils.getMessage(e));
             logger.error(ExceptionUtils.getStackTrace(e));
@@ -258,8 +246,8 @@ public class TaskRouter implements PropertyChangeListener {
      */
     private void changeStateOf(Task task, TaskState state, String agentId) {
         task.setTaskState(state);
-        this.tasksRepository.changeState(task.getId(), state);
         task.setAssignedTo(agentId);
+        this.tasksRepository.changeState(task.getId(), state);
         this.tasksRepository.updateAssignedTo(task.getId(), agentId);
     }
 }

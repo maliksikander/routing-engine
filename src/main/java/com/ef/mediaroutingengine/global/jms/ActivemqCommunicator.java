@@ -1,10 +1,13 @@
 package com.ef.mediaroutingengine.global.jms;
 
+import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.CimEvent;
 import com.ef.cim.objectmodel.CimEventName;
 import com.ef.cim.objectmodel.CimEventType;
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.dto.AgentReservedDto;
 import com.ef.cim.objectmodel.dto.NoAgentAvailableDto;
+import com.ef.cim.objectmodel.dto.RevokeResourceDto;
 import com.ef.cim.objectmodel.dto.TaskEnqueuedDto;
 import com.ef.cim.objectmodel.dto.TaskEnqueuedQueue;
 import com.ef.mediaroutingengine.global.commons.Constants;
@@ -204,6 +207,56 @@ public class ActivemqCommunicator implements JmsCommunicator {
 
             logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
                     CimEventName.TASK_ENQUEUED, messageStr, topics.get(1));
+        } catch (JMSException | JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * to publish Agent Reserved event on topic.
+     *
+     * @param task the task object
+     */
+    @Override
+    public void publishAgentReserved(Task task, CCUser agent) {
+        try {
+            String messageStr = this.getSerializedCimEvent(new AgentReservedDto(AdapterUtility
+                    .createTaskDtoFrom(task), agent), CimEventName.AGENT_RESERVED, task.getTopicId());
+            TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
+            messageToSend.setText(messageStr);
+
+            messageToSend.setJMSType(CimEventName.AGENT_RESERVED.name());
+            messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
+
+            conversationEventPublisher.send(messageToSend);
+
+            logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
+                    CimEventName.AGENT_RESERVED, messageStr, topics.get(1));
+        } catch (JMSException | JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * to publish revoke resource on topic.
+     *
+     * @param task the task object.
+     */
+    @Override
+    public void publishRevokeTask(Task task, RevokeResourceDto revokeResourceDto) {
+        try {
+            String messageStr = this.getSerializedCimEvent(revokeResourceDto, CimEventName.REVOKE_RESOURCE,
+                    task.getTopicId());
+            TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
+            messageToSend.setText(messageStr);
+
+            messageToSend.setJMSType(CimEventName.REVOKE_RESOURCE.name());
+            messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
+
+            conversationEventPublisher.send(messageToSend);
+
+            logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
+                    CimEventName.REVOKE_RESOURCE, messageStr, topics.get(1));
         } catch (JMSException | JsonProcessingException e) {
             e.printStackTrace();
         }
