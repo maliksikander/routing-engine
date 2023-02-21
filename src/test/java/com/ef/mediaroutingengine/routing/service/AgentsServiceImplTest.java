@@ -21,7 +21,6 @@ import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.RoutingAttributeType;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
-import com.ef.mediaroutingengine.agentstatemanager.service.AgentStateService;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
@@ -246,7 +245,7 @@ class AgentsServiceImplTest {
         Agent agent = mock(Agent.class);
 
         when(agentsPool.findById(ccUser.getId())).thenReturn(agent);
-        when(agent.getNoOfActivePushTasks(mrdId)).thenReturn(12);
+        when(agent.getNoOfActiveQueueTasks(mrdId)).thenReturn(12);
         when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.ACTIVE));
 
         agentsService.updateAgentMrdState(ccUser);
@@ -260,7 +259,7 @@ class AgentsServiceImplTest {
         Agent agent = mock(Agent.class);
 
         when(agentsPool.findById(ccUser.getId())).thenReturn(agent);
-        when(agent.getNoOfActivePushTasks(mrdId)).thenReturn(3);
+        when(agent.getNoOfActiveQueueTasks(mrdId)).thenReturn(3);
         when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.BUSY));
 
         agentsService.updateAgentMrdState(ccUser);

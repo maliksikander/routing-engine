@@ -7,6 +7,7 @@ import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.dto.AssignAgentRequest;
 import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.utility.RestRequest;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
@@ -31,17 +32,20 @@ public class AssignAgentService {
 
     private final TasksRepository tasksRepository;
 
+    private final RestRequest restRequest;
+
     /**
      * Instantiates a new Assign agent service.
      *
      * @param taskManager the task manager
      */
     public AssignAgentService(TaskManager taskManager, JmsCommunicator jmsCommunicator,
-                              TasksPool tasksPool, TasksRepository tasksRepository) {
+                              TasksPool tasksPool, TasksRepository tasksRepository, RestRequest restRequest) {
         this.taskManager = taskManager;
         this.jmsCommunicator = jmsCommunicator;
         this.tasksPool = tasksPool;
         this.tasksRepository = tasksRepository;
+        this.restRequest = restRequest;
     }
 
 
@@ -65,12 +69,12 @@ public class AssignAgentService {
 
             this.taskManager.insertInPoolAndRepository(task);
             this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-
-            if (offerToAgent) {
-                this.jmsCommunicator.publishAgentReserved(task, agent.toCcUser());
-            }
         } else if (updateTask) {
             this.update(task, req.getChannelSession(), mrd);
+        }
+
+        if (offerToAgent) {
+            this.restRequest.postAssignTask(task, agent.toCcUser(), task.getTaskState(), true);
         }
 
         return AdapterUtility.createTaskDtoFrom(task);

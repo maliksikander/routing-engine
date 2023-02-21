@@ -1,7 +1,22 @@
 package com.ef.mediaroutingengine.routing.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.TaskQueue;
+import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.TaskRouter;
@@ -9,14 +24,20 @@ import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
+import com.ef.mediaroutingengine.routing.queue.PriorityQueue;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
+import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.Nested;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -25,16 +46,6 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -80,7 +91,8 @@ class PrecisionQueuesServiceImplTest {
 
         spy.create(requestBody);
 
-        ArgumentCaptor<PrecisionQueue> precisionQueueRequestBodyArgumentCaptor = ArgumentCaptor.forClass(PrecisionQueue.class);
+        ArgumentCaptor<PrecisionQueue> precisionQueueRequestBodyArgumentCaptor =
+                ArgumentCaptor.forClass(PrecisionQueue.class);
         verify(repository).insert((PrecisionQueueEntity) any());
         verify(precisionQueuesPool).insert(precisionQueueRequestBodyArgumentCaptor.capture());
 
@@ -127,6 +139,36 @@ class PrecisionQueuesServiceImplTest {
         verify(precisionQueuesPool).deleteById(queueId);
         verify(repository).deleteById(queueId);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Nested
+    @DisplayName(" Flush Queue Tests")
+    class FlushQueueTest {
+        @Test
+        void when_flushQueue_then_removesEnqueuedTasks() {
+            String topicId = UUID.randomUUID().toString();
+            PrecisionQueue precisionQueue = mock(PrecisionQueue.class);
+            PriorityQueue serviceQueue = mock(PriorityQueue.class);
+
+            TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
+            Task task = getTaskInstance(topicId, taskState);
+
+            when(precisionQueue.getServiceQueue()).thenReturn(serviceQueue);
+            when(precisionQueue.getTasks()).thenReturn(Arrays.asList(task));
+            when(precisionQueue.getServiceQueue()).thenReturn(serviceQueue);
+
+            precisionQueuesService.flushQueue(precisionQueue, 0);
+
+            verify(serviceQueue, times(1)).remove(task);
+            verify(taskManager).cancelAgentRequestTtlTimerTask(task.getTopicId());
+            verify(taskManager).removeAgentRequestTtlTimerTask(task.getTopicId());
+
+            assertEquals(task.getTaskState().getName(), Enums.TaskStateName.CLOSED);
+            assertEquals(task.getTaskState().getReasonCode(), Enums.TaskStateReasonCode.FORCE_CLOSED);
+
+            verify(taskManager).removeFromPoolAndRepository(task);
+            verify(jmsCommunicator).publishTaskStateChangeForReporting(task);
+        }
     }
 
     @Nested
@@ -184,6 +226,14 @@ class PrecisionQueuesServiceImplTest {
         mediaRoutingDomain.setName("chat");
         mediaRoutingDomain.setInterruptible(false);
         return mediaRoutingDomain;
+    }
+
+    private Task getTaskInstance(String topicId, TaskState taskState) {
+        ChannelSession channelSession = new ChannelSession();
+        channelSession.setConversationId(topicId);
+        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
+        TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "queue1");
+        return Task.getInstanceFrom(channelSession, null, taskQueue, taskState, type);
     }
 }
 

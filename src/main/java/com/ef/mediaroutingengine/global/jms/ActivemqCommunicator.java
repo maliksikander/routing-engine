@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.global.jms;
 
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.CimEvent;
 import com.ef.cim.objectmodel.CimEventName;
 import com.ef.cim.objectmodel.CimEventType;
@@ -142,7 +143,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
     public void publishTaskStateChangeForReporting(Task task) {
         try {
             String messageStr = this.getSerializedCimEvent(AdapterUtility.createTaskDtoFrom(task),
-                    CimEventName.TASK_STATE_CHANGED, task.getTopicId());
+                    CimEventName.TASK_STATE_CHANGED, task.getTopicId(), task.getChannelSession());
             TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
             messageToSend.setText(messageStr);
 
@@ -168,7 +169,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
     public void publishNoAgentAvailable(Task task) {
         try {
             String messageStr = this.getSerializedCimEvent(new NoAgentAvailableDto(task.getType()),
-                    CimEventName.NO_AGENT_AVAILABLE, task.getTopicId());
+                    CimEventName.NO_AGENT_AVAILABLE, task.getTopicId(), task.getChannelSession());
             TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
             messageToSend.setText(messageStr);
 
@@ -196,7 +197,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
             TaskEnqueuedDto taskEnqueuedDto = new TaskEnqueuedDto(AdapterUtility.createTaskDtoFrom(task),
                     new TaskEnqueuedQueue(queue.getId(), queue.getName()));
             String messageStr = this.getSerializedCimEvent(taskEnqueuedDto,
-                    CimEventName.TASK_ENQUEUED, task.getTopicId());
+                    CimEventName.TASK_ENQUEUED, task.getTopicId(), task.getChannelSession());
             TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
             messageToSend.setText(messageStr);
 
@@ -221,7 +222,8 @@ public class ActivemqCommunicator implements JmsCommunicator {
     public void publishAgentReserved(Task task, CCUser agent) {
         try {
             String messageStr = this.getSerializedCimEvent(new AgentReservedDto(AdapterUtility
-                    .createTaskDtoFrom(task), agent), CimEventName.AGENT_RESERVED, task.getTopicId());
+                    .createTaskDtoFrom(task), agent), CimEventName.AGENT_RESERVED, task.getTopicId(),
+                    task.getChannelSession());
             TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
             messageToSend.setText(messageStr);
 
@@ -246,7 +248,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
     public void publishRevokeTask(Task task, RevokeResourceDto revokeResourceDto) {
         try {
             String messageStr = this.getSerializedCimEvent(revokeResourceDto, CimEventName.REVOKE_RESOURCE,
-                    task.getTopicId());
+                    task.getTopicId(), task.getChannelSession());
             TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
             messageToSend.setText(messageStr);
 
@@ -269,10 +271,11 @@ public class ActivemqCommunicator implements JmsCommunicator {
      * @return the serialized cim event
      * @throws JsonProcessingException the json processing exception
      */
-    private String getSerializedCimEvent(Object message, CimEventName eventName, String conversationId)
+    private String getSerializedCimEvent(Object message, CimEventName eventName, String conversationId,
+                                         ChannelSession channelSession)
             throws JsonProcessingException {
         CimEvent cimEvent = new CimEvent(message, eventName, CimEventType.NOTIFICATION,
-                conversationId);
+                conversationId, AdapterUtility.getSender(), channelSession);
         return this.objectMapper.writeValueAsString(cimEvent);
     }
 

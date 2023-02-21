@@ -12,6 +12,7 @@ import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
@@ -60,7 +61,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     }
 
     @Override
-    public String assign(AssignResourceRequest request, boolean useQueueName) {
+    public String assign(AssignResourceRequest request, boolean useQueueName, boolean offerToAgent) {
         String conversationId = request.getChannelSession().getConversationId();
         logger.info("Assign resource request initiated | Conversation: {}", conversationId);
 
@@ -71,6 +72,12 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             request.setRequestType(type);
         }
         validateRequestTypeMode(request.getRequestType());
+
+
+        if (request.getRequestType().getMetadata() == null) {
+            request.getRequestType().setMetadata(new HashMap<>());
+        }
+        request.getRequestType().putMetadata("offerToAgent", offerToAgent);
 
         ChannelSession channelSession = request.getChannelSession();
         validateChannelSession(channelSession, request.getRequestType());

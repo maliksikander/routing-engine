@@ -79,7 +79,7 @@ class MrdStateReadyTest {
             Agent agent = getNewAgent(new AgentState(Enums.AgentStateName.READY, null));
             Agent agentSpy = spy(agent);
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd(), Enums.AgentMrdStateName.ACTIVE);
-            when(agentSpy.getNoOfActivePushTasks(agentMrdState.getMrd().getId())).thenReturn(1);
+            when(agentSpy.getNoOfActiveQueueTasks(agentMrdState.getMrd().getId())).thenReturn(1);
             assertEquals(agentMrdState.getState(), mrdStateReady.getNewState(agentSpy, agentMrdState));
         }
     }
@@ -99,7 +99,7 @@ class MrdStateReadyTest {
             Agent agent = getNewAgent(new AgentState(Enums.AgentStateName.READY, null));
             Agent agentSpy = spy(agent);
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd(), Enums.AgentMrdStateName.ACTIVE);
-            when(agentSpy.getNoOfActivePushTasks(agentMrdState.getMrd().getId())).thenReturn(0);
+            when(agentSpy.getNoOfActiveQueueTasks(agentMrdState.getMrd().getId())).thenReturn(0);
             assertEquals(Enums.AgentMrdStateName.READY, mrdStateReady.getNewState(agentSpy, agentMrdState));
         }
 
@@ -108,7 +108,7 @@ class MrdStateReadyTest {
             Agent agent = getNewAgent(new AgentState(Enums.AgentStateName.READY, null));
             Agent agentSpy = spy(agent);
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd(), Enums.AgentMrdStateName.PENDING_NOT_READY);
-            when(agentSpy.getNoOfActivePushTasks(agentMrdState.getMrd().getId())).thenReturn(0);
+            when(agentSpy.getNoOfActiveQueueTasks(agentMrdState.getMrd().getId())).thenReturn(0);
             assertEquals(Enums.AgentMrdStateName.READY, mrdStateReady.getNewState(agentSpy, agentMrdState));
         }
 
@@ -117,7 +117,7 @@ class MrdStateReadyTest {
             Agent agent = getNewAgent(new AgentState(Enums.AgentStateName.READY, null));
             Agent agentSpy = spy(agent);
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd(), Enums.AgentMrdStateName.PENDING_NOT_READY);
-            when(agentSpy.getNoOfActivePushTasks(agentMrdState.getMrd().getId())).thenReturn(2);
+            when(agentSpy.getNoOfActiveQueueTasks(agentMrdState.getMrd().getId())).thenReturn(2);
             assertEquals(Enums.AgentMrdStateName.ACTIVE, mrdStateReady.getNewState(agentSpy, agentMrdState));
         }
 
@@ -126,7 +126,7 @@ class MrdStateReadyTest {
             Agent agent = getNewAgent(new AgentState(Enums.AgentStateName.READY, null));
             Agent agentSpy = spy(agent);
             AgentMrdState agentMrdState = new AgentMrdState(getNewMrd(), Enums.AgentMrdStateName.PENDING_NOT_READY);
-            when(agentSpy.getNoOfActivePushTasks(agentMrdState.getMrd().getId()))
+            when(agentSpy.getNoOfActiveQueueTasks(agentMrdState.getMrd().getId()))
                     .thenReturn(agentMrdState.getMrd().getMaxRequests());
             assertEquals(Enums.AgentMrdStateName.BUSY, mrdStateReady.getNewState(agentSpy, agentMrdState));
         }

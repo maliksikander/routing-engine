@@ -111,7 +111,7 @@ public class PrecisionQueuesPool {
      * @return true if task found and ended, false otherwise
      */
     public boolean endTask(Task task) {
-        String queueId = task.getQueue();
+        String queueId = task.getQueue().getId();
         if (queueId == null) {
             return false;
         }

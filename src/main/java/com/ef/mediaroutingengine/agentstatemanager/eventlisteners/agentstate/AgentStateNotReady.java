@@ -81,7 +81,7 @@ public class AgentStateNotReady implements AgentStateDelegate {
             if (mrdId.equals(except) || (isChangedInternally && !agentMrdState.getMrd().isManagedByRe())) {
                 continue;
             }
-            if (agent.getNoOfActivePushTasks(mrdId) > 0) {
+            if (agent.getNoOfActiveQueueTasks(mrdId) > 0) {
                 agentMrdState.setState(Enums.AgentMrdStateName.PENDING_NOT_READY);
             } else {
                 agentMrdState.setState(Enums.AgentMrdStateName.NOT_READY);

@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 
-import com.ef.cim.objectmodel.RoutingMode;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
@@ -70,10 +70,12 @@ public class TaskStateActive implements TaskStateModifier {
         this.tasksRepository.save(task.getId(), AdapterUtility.createTaskDtoFrom(task));
         this.jmsCommunicator.publishTaskStateChangeForReporting(task);
 
-        if (task.getRoutingMode().equals(RoutingMode.PUSH)) {
+        if (task.getType().getMode().equals(Enums.TaskTypeMode.QUEUE)) {
             this.taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
             this.taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
-            agent.assignPushTask(task);
+
+            agent.removeReservedTask();
+            agent.addActiveTask(task);
 
             this.taskManager.updateAgentMrdState(agent, task.getMrd().getId());
         } else {

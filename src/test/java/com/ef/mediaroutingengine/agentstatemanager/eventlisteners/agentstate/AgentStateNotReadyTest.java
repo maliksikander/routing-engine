@@ -50,9 +50,9 @@ class AgentStateNotReadyTest {
         agentMrdStateList.add(new AgentMrdState(getNewMrd("Email"), Enums.AgentMrdStateName.ACTIVE));
 
         when(agent.getAgentMrdStates()).thenReturn(agentMrdStateList);
-        when(agent.getNoOfActivePushTasks(agentMrdStateList.get(0).getMrd().getId())).thenReturn(0);
-        when(agent.getNoOfActivePushTasks(agentMrdStateList.get(1).getMrd().getId())).thenReturn(0);
-        when(agent.getNoOfActivePushTasks(agentMrdStateList.get(2).getMrd().getId())).thenReturn(2);
+        when(agent.getNoOfActiveQueueTasks(agentMrdStateList.get(0).getMrd().getId())).thenReturn(0);
+        when(agent.getNoOfActiveQueueTasks(agentMrdStateList.get(1).getMrd().getId())).thenReturn(0);
+        when(agent.getNoOfActiveQueueTasks(agentMrdStateList.get(2).getMrd().getId())).thenReturn(2);
 
         this.agentStateNotReady.updateAgentMrdStates(agent, null,false);
 

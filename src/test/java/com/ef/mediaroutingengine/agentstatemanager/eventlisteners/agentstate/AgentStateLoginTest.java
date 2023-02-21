@@ -92,7 +92,8 @@ class AgentStateLoginTest {
         // verify agentPresence object is updated correctly
         verify(agentPresence, times(1)).setState(agent.getState());
         verify(agentPresence, times(1)).setAgentMrdStates(agent.getAgentMrdStates());
-        verifyNoMoreInteractions(agentPresence);
+        verify(agentPresence, times(1)).setAgentLoginTime(any());
+        verify(agentPresenceRepository, times(1)).updateAgentLoginTime(any(), any());
     }
 
     @Test

@@ -1,16 +1,14 @@
 package com.ef.mediaroutingengine.routing.service;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.AgentPresence;
 import com.ef.cim.objectmodel.AssociatedMrd;
@@ -19,10 +17,18 @@ import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.TaskType;
+import com.ef.mediaroutingengine.global.commons.Constants;
+import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
+import com.ef.mediaroutingengine.global.exceptions.ForbiddenException;
+import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
+import com.ef.mediaroutingengine.routing.dto.MrdDeleteConflictResponse;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.routing.repository.MediaRoutingDomainRepository;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
+import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
@@ -32,6 +38,7 @@ import java.util.List;
 import java.util.UUID;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,6 +48,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(OutputCaptureExtension.class)
@@ -74,7 +83,116 @@ class MediaRoutingDomainsServiceImplTest {
     @Nested
     @DisplayName("delete method tests")
     class DeleteTest {
+       @Test
+        void when_mrdDoesNotExist(){
+            String id = UUID.randomUUID().toString();
+            String errorMessage = "Could not find the MRD resource to delete | MRD: " + id;
+            given(repository.existsById(id)).willReturn(false);
 
+            assertThatThrownBy(() -> mediaRoutingDomainsService.delete(id)).isInstanceOf(NotFoundException.class)
+                    .hasMessage(errorMessage);
+
+            verify(repository, never()).deleteById(id);
+
+        }
+
+        @Test
+        void when_mrdIdEqualsToVoiceMrdId(){
+            String id = "6298b744b777de61844f616b";
+            String errorMessage = String.format("Delete operation is forbidden for the %1$s MRD",
+                    id.equals(Constants.VOICE_MRD_ID) ? "VOICE" : "CHAT");
+            given(repository.existsById(id)).willReturn(true);
+
+            assertThatThrownBy(() -> mediaRoutingDomainsService.delete(id)).isInstanceOf(ForbiddenException.class)
+                    .hasMessage(errorMessage);
+
+            verify(repository, never()).deleteById(id);
+        }
+
+        @Test
+        void when_mrdIdEqualsToChatMrdId(){
+            String id = "6305de07166ba1099d11d8e6";
+            String errorMessage = String.format("Delete operation is forbidden for the %1$s MRD",
+                    id.equals(Constants.VOICE_MRD_ID) ? "VOICE" : "CHAT");
+            given(repository.existsById(id)).willReturn(true);
+
+            assertThatThrownBy(() -> mediaRoutingDomainsService.delete(id)).isInstanceOf(ForbiddenException.class)
+                    .hasMessage(errorMessage);
+
+            verify(repository, never()).deleteById(id);
+        }
+
+        @Test
+        void when_mrdIsAssociatedToPrecisionQueueEntity(){
+            String mrdId = UUID.randomUUID().toString();
+            List<PrecisionQueueEntity> precisionQueueEntityList = new ArrayList<>();
+            PrecisionQueueEntity precisionQueueEntity = getPrecisionQueueEntityInstance();
+            precisionQueueEntityList.add(precisionQueueEntity);
+            List<Task> tasks = new ArrayList<>();
+
+            when(repository.existsById(mrdId)).thenReturn(true);
+            when(precisionQueueRepository.findByMrdId(mrdId)).thenReturn(precisionQueueEntityList);
+            when(tasksPool.findByMrdId(mrdId)).thenReturn(tasks);
+
+            ResponseEntity<Object> result = mediaRoutingDomainsService.delete(mrdId);
+
+            assertEquals(HttpStatus.CONFLICT, result.getStatusCode());
+            assertTrue(result.getBody() instanceof MrdDeleteConflictResponse);
+            MrdDeleteConflictResponse responseBody = (MrdDeleteConflictResponse) result.getBody();
+            assertEquals(precisionQueueEntityList, responseBody.getPrecisionQueues());
+            assertEquals(tasks.size(), responseBody.getTasks().size());
+            verify(repository, times(0)).deleteById(mrdId);
+        }
+
+        @Test
+        void when_mrdIsAssociatedToTasks(){
+            String mrdId = UUID.randomUUID().toString();
+            List<PrecisionQueueEntity> precisionQueueEntityList = new ArrayList<>();
+            MediaRoutingDomain mrd = getMrdInstance(mrdId);
+            List<Task> tasks = new ArrayList<>();
+            Task task = Task.getInstanceFrom(null, mrd, null, getTaskState(), getTaskType());
+            tasks.add(task);
+
+            when(repository.existsById(mrdId)).thenReturn(true);
+            when(precisionQueueRepository.findByMrdId(mrdId)).thenReturn(precisionQueueEntityList);
+            when(tasksPool.findByMrdId(mrdId)).thenReturn(tasks);
+
+            ResponseEntity<Object> result = mediaRoutingDomainsService.delete(mrdId);
+
+            assertEquals(HttpStatus.CONFLICT, result.getStatusCode());
+            assertTrue(result.getBody() instanceof MrdDeleteConflictResponse);
+            MrdDeleteConflictResponse responseBody = (MrdDeleteConflictResponse) result.getBody();
+            assertEquals(precisionQueueEntityList, responseBody.getPrecisionQueues());
+            assertEquals(tasks.size(), responseBody.getTasks().size());
+            verify(repository, times(0)).deleteById(mrdId);
+        }
+
+        @Test
+        void when_mrdIsDeletedSuccessfully(){
+            MediaRoutingDomainsServiceImpl spy = Mockito.spy(mediaRoutingDomainsService);
+            String mrdId = UUID.randomUUID().toString();
+            List<PrecisionQueueEntity> precisionQueueEntityList = new ArrayList<>();
+            List<Task> tasks = new ArrayList<>();
+            Agent agent= mock(Agent.class);
+            List<Agent> agents = new ArrayList<>();
+            agents.add(agent);
+
+            when(agentsPool.findAll()).thenReturn(agents);
+            when(repository.existsById(mrdId)).thenReturn(true);
+            when(precisionQueueRepository.findByMrdId(mrdId)).thenReturn(precisionQueueEntityList);
+            when(tasksPool.findByMrdId(mrdId)).thenReturn(tasks);
+
+            ResponseEntity<Object> result = spy.delete(mrdId);
+
+            verify(agent).deleteAgentMrdState(mrdId);
+            verify(spy, times(1)).deleteAgentMrdStateFromAllAgentPresence(mrdId);
+            verify(spy, times(1)).updateAllAgentsInDb();
+            verify(mrdPool, times(1)).deleteById(mrdId);
+            verify(repository, times(1)).deleteById(mrdId);
+
+            assertEquals(HttpStatus.OK, result.getStatusCode());
+            assertTrue(result.getBody() instanceof SuccessResponseBody);
+        }
     }
 
     @Test
@@ -85,12 +203,12 @@ class MediaRoutingDomainsServiceImplTest {
 
         MediaRoutingDomainsServiceImpl spy = Mockito.spy(mediaRoutingDomainsService);
 
-        when(agentPresenceRepository.findAll()).thenReturn(agentPresenceList);
+        when(agentPresenceRepository.findAll(2500)).thenReturn(agentPresenceList);
         doNothing().when(spy).deleteAgentMrdStateFromAgentPresence(any(), any());
 
         spy.deleteAgentMrdStateFromAllAgentPresence("mrd1");
 
-        verify(agentPresenceRepository, times(1)).saveAllByKeyValueMap(anyMap());
+        verify(agentPresenceRepository, times(1)).saveAllByKeyValueMap(anyMap(), eq(2500));
     }
 
     @Nested
@@ -248,5 +366,15 @@ class MediaRoutingDomainsServiceImplTest {
         entity.setId(UUID.randomUUID().toString());
         entity.setName("PQ");
         return entity;
+    }
+
+    private TaskType getTaskType() {
+        TaskType taskType = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
+        return taskType;
+    }
+
+    private TaskState getTaskState(){
+        TaskState taskState = new TaskState(Enums.TaskStateName.ACTIVE, null);
+        return taskState;
     }
 }

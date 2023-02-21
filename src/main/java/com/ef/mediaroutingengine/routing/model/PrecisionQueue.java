@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.routing.model;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.StepEntity;
+import com.ef.cim.objectmodel.TaskQueue;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
@@ -548,5 +549,9 @@ public class PrecisionQueue implements Queue {
         List<Agent> agents = new ArrayList<>();
         agentMap.forEach((k, v) -> agents.add(v));
         return agents;
+    }
+
+    public TaskQueue toTaskQueue() {
+        return new TaskQueue(this.id, this.name);
     }
 }

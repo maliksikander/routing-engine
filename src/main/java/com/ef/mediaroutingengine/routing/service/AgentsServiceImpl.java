@@ -207,7 +207,7 @@ public class AgentsServiceImpl implements AgentsService {
 
     @Override
     public List<AgentPresence> retrieveAgentsWithStates() {
-        return this.agentPresenceRepository.findAll();
+        return this.agentPresenceRepository.findAll(2500);
     }
 
     @Override
@@ -351,7 +351,7 @@ public class AgentsServiceImpl implements AgentsService {
                     String mrdId = associatedMrd.getMrdId();
                     int maxAgentTasks = associatedMrd.getMaxAgentTasks();
 
-                    int agentActivePushTasks = agent.getNoOfActivePushTasks(mrdId);
+                    int agentActivePushTasks = agent.getNoOfActiveQueueTasks(mrdId);
                     AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
 
                     logger.debug(

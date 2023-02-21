@@ -8,7 +8,6 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AssignResourceController {
+
     /**
      * The API calls are passed to this service for processing.
      */
@@ -45,13 +45,10 @@ public class AssignResourceController {
     @PostMapping(value = "/assign-resource", consumes = "application/json",
             produces = "application/json")
     public ResponseEntity<String> assignResource(@RequestBody AssignResourceRequest request,
-                                                 @RequestParam Optional<Boolean> queueName) {
+                                                 @RequestParam Optional<Boolean> queueName,
+                                                 @RequestParam Optional<Boolean> offerToAgent) {
         MDC.put(Constants.MDC_TOPIC_ID, request.getChannelSession().getConversationId());
-
-        if (queueName.isEmpty() || queueName.get().equals(Boolean.FALSE)) {
-            return new ResponseEntity<>(this.assignResourceService.assign(request, false), HttpStatus.OK);
-        }
-
-        return new ResponseEntity<>(this.assignResourceService.assign(request, true), HttpStatus.OK);
+        return ResponseEntity.ok().body(this.assignResourceService.assign(request, queueName.orElse(false),
+                offerToAgent.orElse(true)));
     }
 }

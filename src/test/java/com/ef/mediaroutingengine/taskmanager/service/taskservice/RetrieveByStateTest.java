@@ -46,7 +46,8 @@ class RetrieveByStateTest {
     private Task getNewTask(Enums.TaskStateName stateName) {
         TaskState taskState = new TaskState(stateName, null);
         TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE,null);
-        return Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), "queue", taskState,type);
+        TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "queue1");
+        return Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), taskQueue, taskState,type);
     }
 
     private ChannelSession getNewChannelSession() {

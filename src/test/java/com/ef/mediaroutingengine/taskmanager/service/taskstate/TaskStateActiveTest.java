@@ -13,6 +13,7 @@ import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
@@ -67,10 +68,12 @@ class TaskStateActiveTest {
 
         when(task.getAssignedTo()).thenReturn(UUID.randomUUID().toString());
         when(agentsPool.findById(any())).thenReturn(agent);
+
+        when(task.getType()).thenReturn(new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null));
         when(task.getId()).thenReturn(UUID.randomUUID().toString());
         when(task.getTopicId()).thenReturn(topicId).thenReturn(topicId);
         when(task.getMrd()).thenReturn(mrd);
-        when(task.getRoutingMode()).thenReturn(RoutingMode.PUSH);
+
 
         taskStateActive.updateState(task, taskState);
 
@@ -80,7 +83,8 @@ class TaskStateActiveTest {
         verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
         verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(topicId);
         verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(topicId);
-        verify(agent, times(1)).assignPushTask(task);
+        verify(agent, times(1)).removeReservedTask();
+        verify(agent, times(1)).addActiveTask(task);
         verify(taskManager, times(1)).updateAgentMrdState(agent, mrd.getId());
 
         verifyNoMoreInteractions(taskManager);

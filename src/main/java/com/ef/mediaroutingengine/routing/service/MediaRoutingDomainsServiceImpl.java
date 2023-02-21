@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -127,11 +128,11 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         logger.debug("MRD associated to all Agents in in-memory Agents pool | MRD: {}", inserted.getId());
 
         Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
-        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
+        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll(2500)) {
             agentPresence.getAgentMrdStates().add(agentMrdState);
             agentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
         }
-        this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
+        this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap, 2500);
         logger.debug("MRD associated to all Agents in Agent presence Repository | MRD: {}", inserted.getId());
 
         this.updateAllAgentsInDb();
@@ -144,19 +145,19 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
 
     @Override
     public ResponseEntity<Object> retrieve(String mrdId) {
-        if (mrdId != null && !repository.existsById(mrdId)) {
+        if (mrdId == null) {
+            return ResponseEntity.ok().body(this.repository.findAll());
+        }
+
+        Optional<MediaRoutingDomain> optionalMrd = this.repository.findById(mrdId);
+
+        if (optionalMrd.isEmpty()) {
             String errorMessage = "Could not find the MRD resource with id: " + mrdId;
             logger.error(errorMessage);
             throw new NotFoundException(errorMessage);
         }
 
-        if (mrdId != null && repository.existsById(mrdId)) {
-            MediaRoutingDomain mediaRoutingDomain = this.repository.findById(mrdId).get();
-            logger.debug("MRD existed in DB. | MRD: {}", mediaRoutingDomain);
-            return new ResponseEntity<>(mediaRoutingDomain, HttpStatus.OK);
-        }
-
-        return new ResponseEntity<>(repository.findAll(), HttpStatus.OK);
+        return ResponseEntity.ok().body(optionalMrd.get());
     }
 
     @Override
@@ -170,9 +171,9 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             throw new NotFoundException(errorMessage);
         }
 
-        if (id.equals(Constants.VOICE_MRD_ID)) {
-
-            String errorMessage = "Update operation is forbidden for the VOICE MRD";
+        if (id.equals(Constants.VOICE_MRD_ID)
+                && (!mediaRoutingDomain.getName().equals("VOICE") || mediaRoutingDomain.getMaxRequests() != 1)) {
+            String errorMessage = "Update operation is forbidden for name and max-requests fields for VOICE MRD";
             logger.error(errorMessage);
             throw new ForbiddenException(errorMessage);
         }
@@ -184,10 +185,10 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         if (!agentsWithConflictedMaxTask.isEmpty()) {
             logger.debug("agentsWithConflictedMaxTask = {} against MRD ID : {}", agentsWithConflictedMaxTask.size(),
                     id);
-            String reason = new StringBuilder("Failed to update the MRD : ").append(mediaRoutingDomain.getName())
-                    .append(".Because the following agents have MaxTask against this MRD which are greater than ")
-                    .append("the new MRD maxRequest value i.e. ").append(mediaRoutingDomain.getMaxRequests())
-                    .append(".Please update the agentMaxTask before updating the MRD MaxRequest.").toString();
+            String reason = "Failed to update the MRD : " + mediaRoutingDomain.getName()
+                    + ".Because the following agents have MaxTask against this MRD which are greater than "
+                    + "the new MRD maxRequest value i.e. " + mediaRoutingDomain.getMaxRequests()
+                    + ".Please update the agentMaxTask before updating the MRD MaxRequest.";
 
             return new ResponseEntity<>(new MrdUpdateConflictResponse(mediaRoutingDomain.getName(), reason,
                     agentsWithConflictedMaxTask), HttpStatus.CONFLICT);
@@ -219,13 +220,13 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      */
     void updateMrdInTasks(MediaRoutingDomain mediaRoutingDomain) {
         Map<String, TaskDto> taskMap = new HashMap<>();
-        for (TaskDto taskDto : this.tasksRepository.findAll()) {
+        for (TaskDto taskDto : this.tasksRepository.findAll(2500)) {
             if (taskDto.getMrd().getId().equals(mediaRoutingDomain.getId())) {
                 taskDto.setMrd(mediaRoutingDomain);
                 taskMap.put(taskDto.getId(), taskDto);
             }
         }
-        this.tasksRepository.saveAllByKeyValueMap(taskMap);
+        this.tasksRepository.saveAllByKeyValueMap(taskMap, 2500);
     }
 
     /**
@@ -235,7 +236,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      */
     void updateMrdInAgentMrdStateInAllAgentPresence(MediaRoutingDomain mediaRoutingDomain) {
         Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
-        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
+        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll(2500)) {
             for (AgentMrdState agentMrdState : agentPresence.getAgentMrdStates()) {
                 if (agentMrdState.getMrd().getId().equals(mediaRoutingDomain.getId())) {
                     agentMrdState.setMrd(mediaRoutingDomain);
@@ -244,7 +245,7 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
                 }
             }
         }
-        this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
+        this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap, 2500);
     }
 
     @Override
@@ -259,7 +260,6 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         }
 
         if (id.equals(Constants.VOICE_MRD_ID) || id.equals(Constants.CHAT_MRD_ID)) {
-
             String errorMessage = String.format("Delete operation is forbidden for the %1$s MRD",
                     id.equals(Constants.VOICE_MRD_ID) ? "VOICE" : "CHAT");
             logger.error(errorMessage);
@@ -306,11 +306,11 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
      */
     void deleteAgentMrdStateFromAllAgentPresence(String mrdId) {
         Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
-        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll()) {
+        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll(2500)) {
             deleteAgentMrdStateFromAgentPresence(mrdId, agentPresence);
             agentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
         }
-        this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap);
+        this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap, 2500);
     }
 
     /**

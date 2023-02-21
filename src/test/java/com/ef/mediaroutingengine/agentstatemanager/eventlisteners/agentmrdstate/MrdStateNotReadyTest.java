@@ -53,7 +53,7 @@ class MrdStateNotReadyTest {
             Agent agentSpy = spy(getNewAgent());
             AgentMrdState currentState = new AgentMrdState(getNewMrd(), Enums.AgentMrdStateName.PENDING_NOT_READY);
 
-            when(agentSpy.getNoOfActivePushTasks(currentState.getMrd().getId())).thenReturn(1);
+            when(agentSpy.getNoOfActiveQueueTasks(currentState.getMrd().getId())).thenReturn(1);
             assertEquals(currentState.getState(), mrdStateNotReady.getNewState(agentSpy, currentState));
         }
     }
@@ -72,7 +72,7 @@ class MrdStateNotReadyTest {
             Agent agentSpy = spy(getNewAgent());
             AgentMrdState currentState = new AgentMrdState(getNewMrd(), Enums.AgentMrdStateName.PENDING_NOT_READY);
 
-            when(agentSpy.getNoOfActivePushTasks(currentState.getMrd().getId())).thenReturn(0);
+            when(agentSpy.getNoOfActiveQueueTasks(currentState.getMrd().getId())).thenReturn(0);
             assertEquals(Enums.AgentMrdStateName.NOT_READY, mrdStateNotReady.getNewState(agentSpy, currentState));
         }
 

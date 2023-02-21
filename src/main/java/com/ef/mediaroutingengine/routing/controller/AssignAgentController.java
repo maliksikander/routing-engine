@@ -1,20 +1,17 @@
 package com.ef.mediaroutingengine.routing.controller;
 
+import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.cim.objectmodel.dto.TaskDto;
-import com.ef.mediaroutingengine.global.commons.Constants;
-import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.routing.dto.AssignAgentRequest;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.service.AssignAgentService;
-import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -63,11 +60,14 @@ public class AssignAgentController {
     public ResponseEntity<Object> assignAgent(@Valid @RequestBody AssignAgentRequest req,
                                               @RequestParam(required = false) boolean updateTask,
                                               @RequestParam(required = false) boolean offerToAgent) {
+        if (!req.getTaskType().getMode().equals(Enums.TaskTypeMode.AGENT)) {
+            String errorMsg = "taskType.mode should be AGENT";
+            logger.error(errorMsg);
+            throw new IllegalArgumentException(errorMsg);
+        }
 
         Agent agent = this.validateAndGetAgent(req.getAgent());
-
-        String mrdId = req.getChannelSession().getChannel().getChannelType().getMediaRoutingDomain();
-        MediaRoutingDomain mrd = this.validateAndGetMrd(mrdId);
+        MediaRoutingDomain mrd = this.validateAndGetMrd(req.getChannelSession());
 
         return ResponseEntity.ok().body(this.service.assign(req, agent, mrd, updateTask, offerToAgent));
     }
@@ -84,7 +84,8 @@ public class AssignAgentController {
         return agent;
     }
 
-    private MediaRoutingDomain validateAndGetMrd(String mrdId) {
+    private MediaRoutingDomain validateAndGetMrd(ChannelSession channelSession) {
+        String mrdId = channelSession.getChannel().getChannelType().getMediaRoutingDomain();
         MediaRoutingDomain mrd = this.mrdPool.findById(mrdId);
 
         if (mrd == null) {

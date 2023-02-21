@@ -251,7 +251,7 @@ public class Bootstrap {
     }
 
     private List<TaskDto> getTasksFromRepository() {
-        List<TaskDto> taskDtoList = this.tasksRepository.findAll();
+        List<TaskDto> taskDtoList = this.tasksRepository.findAll(2500);
         for (TaskDto taskDto : taskDtoList) {
             MediaRoutingDomain mediaRoutingDomain = this.mrdPool.findById(taskDto.getMrd().getId());
             taskDto.setMrd(mediaRoutingDomain);
@@ -391,7 +391,7 @@ public class Bootstrap {
      * @return Map of AgentPresence Objects with agentId as the key.
      */
     private Map<String, AgentPresence> getCurrentAgentPresenceMap() {
-        List<AgentPresence> currentAgentPresenceList = this.agentPresenceRepository.findAll();
+        List<AgentPresence> currentAgentPresenceList = this.agentPresenceRepository.findAll(2500);
         logger.debug("Fetched List of all AgentPresence objects from Redis Collection successfully");
         Map<String, AgentPresence> currentAgentPresenceMap = new HashMap<>();
         for (AgentPresence agentPresence : currentAgentPresenceList) {
@@ -454,7 +454,7 @@ public class Bootstrap {
             updatedAgentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
         }
         logger.debug("Agent states for agents in in-memory pool set successfully");
-        this.agentPresenceRepository.saveAllByKeyValueMap(updatedAgentPresenceMap);
+        this.agentPresenceRepository.saveAllByKeyValueMap(updatedAgentPresenceMap, 2500);
         logger.debug("AgentPresence Repository loaded successfully");
     }
 }

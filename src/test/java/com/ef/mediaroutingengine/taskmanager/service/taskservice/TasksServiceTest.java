@@ -5,7 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.ef.cim.objectmodel.*;
+import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.TaskQueue;
+import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.TaskType;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
@@ -53,15 +58,16 @@ class TasksServiceTest {
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         ChannelSession channelSession = mock(ChannelSession.class);
         MediaRoutingDomain mrd = mock(MediaRoutingDomain.class);
-        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE,null);
-        Task task = Task.getInstanceFrom(channelSession, mrd, "queueId", taskState,type);
+        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
+        TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "queue1");
+        Task task = Task.getInstanceFrom(channelSession, mrd, taskQueue, taskState, type);
 
         when(tasksPool.findById(task.getId())).thenReturn(task);
         TaskDto taskDto = tasksService.retrieveById(task.getId());
 
         assertEquals(channelSession, taskDto.getChannelSession());
         assertEquals(mrd, taskDto.getMrd());
-        assertEquals("queueId", taskDto.getQueue());
+        assertEquals("queue1", taskDto.getQueue().getName());
         assertEquals(taskState, taskDto.getState());
     }
 

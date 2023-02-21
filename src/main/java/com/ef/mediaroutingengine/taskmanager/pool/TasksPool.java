@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.taskmanager.pool;
 
 
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.util.ArrayList;
@@ -145,7 +144,7 @@ public class TasksPool {
     public List<Task> findByQueueId(String id) {
         List<Task> taskList = new ArrayList<>();
         this.pool.forEach(task -> {
-            if (task.getQueue() != null && task.getQueue().equals(id)) {
+            if (task.getQueue() != null && task.getQueue().getId().equals(id)) {
                 taskList.add(task);
             }
         });
@@ -159,7 +158,7 @@ public class TasksPool {
      */
     public List<Task> findAllQueuedTasks() {
         return this.pool.stream()
-                .filter(t -> (t.getRoutingMode() != null && t.getRoutingMode() == RoutingMode.PUSH)
+                .filter(t -> t.getType().getMode().equals(Enums.TaskTypeMode.QUEUE)
                         && t.getTaskState().getName().equals(Enums.TaskStateName.QUEUED))
                 .toList();
     }

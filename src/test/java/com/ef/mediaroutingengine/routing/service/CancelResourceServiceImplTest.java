@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.TaskQueue;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
@@ -86,7 +87,7 @@ class CancelResourceServiceImplTest {
             CancelResourceServiceImpl spy = Mockito.spy(cancelResourceService);
 
             when(tasksPool.findInProcessTaskFor(request.getTopicId())).thenReturn(task);
-            when(precisionQueuesPool.findById(task.getQueue())).thenReturn(precisionQueue);
+            when(precisionQueuesPool.findById(task.getQueue().getId())).thenReturn(precisionQueue);
             when(precisionQueue.getServiceQueue()).thenReturn(serviceQueue);
             doNothing().when(spy).endQueuedTask(task, precisionQueue, request.getReasonCode());
 
@@ -106,7 +107,7 @@ class CancelResourceServiceImplTest {
             CancelResourceServiceImpl spy = Mockito.spy(cancelResourceService);
 
             when(tasksPool.findInProcessTaskFor(request.getTopicId())).thenReturn(task);
-            when(precisionQueuesPool.findById(task.getQueue())).thenReturn(precisionQueue);
+            when(precisionQueuesPool.findById(task.getQueue().getId())).thenReturn(precisionQueue);
             when(precisionQueue.getServiceQueue()).thenReturn(serviceQueue);
             doNothing().when(spy).endReservedTask(task, request.getReasonCode());
 
@@ -180,6 +181,7 @@ class CancelResourceServiceImplTest {
         ChannelSession channelSession = new ChannelSession();
         channelSession.setConversationId(topicId);
         TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE,null);
-        return Task.getInstanceFrom(channelSession, null, UUID.randomUUID().toString(), taskState,type);
+        TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "Queue1");
+        return Task.getInstanceFrom(channelSession, null, taskQueue, taskState,type);
     }
 }

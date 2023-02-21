@@ -3,6 +3,8 @@ package com.ef.mediaroutingengine.global.redis;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Set;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
 
 /**
  * The interface Redis client.
@@ -166,4 +168,13 @@ public interface RedisClient {
      * @return the boolean
      */
     boolean exists(String key);
+
+    /**
+     * To keep the pagination track.
+     *
+     * @param cursor the cursor
+     * @param params the read params.
+     * @return the scan result.
+     */
+    ScanResult<String> scan(String cursor, ScanParams params);
 }
