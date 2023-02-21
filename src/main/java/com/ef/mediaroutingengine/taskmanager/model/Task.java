@@ -4,6 +4,7 @@ import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
+import com.ef.cim.objectmodel.TaskQueue;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
 import com.ef.cim.objectmodel.dto.TaskDto;
@@ -38,7 +39,7 @@ public class Task {
     /**
      * The Queue.
      */
-    private final String queue;
+    private final TaskQueue queue;
     /**
      * The Change support.
      */
@@ -96,7 +97,7 @@ public class Task {
      * @param mrd            the mrd
      * @param queue          the queue
      */
-    private Task(String id, ChannelSession channelSession, MediaRoutingDomain mrd, String queue, TaskType type) {
+    private Task(String id, ChannelSession channelSession, MediaRoutingDomain mrd, TaskQueue queue, TaskType type) {
         this.id = id;
         this.channelSession = channelSession;
         this.mrd = mrd;
@@ -120,7 +121,7 @@ public class Task {
      * @return the instance
      */
     public static Task getInstanceFrom(ChannelSession channelSession, MediaRoutingDomain mrd,
-                                       String queue, TaskState state, TaskType type) {
+                                       TaskQueue queue, TaskState state, TaskType type) {
         Task task = new Task(UUID.randomUUID().toString(), channelSession, mrd, queue, type);
         task.setTaskState(state);
         if (Enums.TaskTypeDirection.DIRECT_TRANSFER.equals(task.getType().getDirection())
@@ -142,7 +143,7 @@ public class Task {
      */
     public static Task getInstanceFrom(TaskDto taskDto) {
         Task task = new Task(taskDto.getId(), taskDto.getChannelSession(), taskDto.getMrd(),
-                             taskDto.getQueue(), taskDto.getType());
+                taskDto.getQueue(), taskDto.getType());
         task.state = taskDto.getState();
         task.priority = taskDto.getPriority();
         task.assignedTo = taskDto.getAssignedTo();
@@ -159,7 +160,7 @@ public class Task {
     public static Task getInstanceFrom(Task oldTask) {
         TaskState newTaskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         Task task = getInstanceFrom(oldTask.channelSession, oldTask.mrd, oldTask.queue, newTaskState,
-                    oldTask.getType());
+                oldTask.getType());
         task.priority = 11;
         return task;
     }
@@ -217,7 +218,7 @@ public class Task {
      *
      * @return the queue
      */
-    public String getQueue() {
+    public TaskQueue getQueue() {
         return this.queue;
     }
 

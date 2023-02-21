@@ -4,7 +4,8 @@ import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
 
 /**
  * The type Redis json dao.
@@ -55,14 +56,27 @@ public class RedisJsonDao<T> {
      * @param keyValueMap map of keys and values to be stored
      * @return true if operation successful, false otherwise.
      */
-    public boolean saveAllByKeyValueMap(Map<String, T> keyValueMap) {
-        List<String> idList = new ArrayList<>();
-        List<Object> objectList = new ArrayList<>();
-        for (Map.Entry<String, T> entry : keyValueMap.entrySet()) {
-            idList.add(entry.getKey());
-            objectList.add(entry.getValue());
+    public boolean saveAllByKeyValueMap(Map<String, T> keyValueMap, int pageSize) {
+        List<Map.Entry<String, T>> entries = new ArrayList<>(keyValueMap.entrySet());
+        int totalEntries = entries.size();
+
+        for (int i = 0; i < totalEntries; i += pageSize) {
+            int end = Math.min(totalEntries, i + pageSize);
+            List<Map.Entry<String, T>> page = entries.subList(i, end);
+
+            List<String> idList = new ArrayList<>();
+            List<Object> objectList = new ArrayList<>();
+            for (Map.Entry<String, T> entry : page) {
+                idList.add(entry.getKey());
+                objectList.add(entry.getValue());
+            }
+
+            if (!this.redisClient.setAllJsonForType(this.type, idList, objectList)) {
+                return false;
+            }
         }
-        return this.redisClient.setAllJsonForType(this.type, idList, objectList);
+
+        return true;
     }
 
     /**
@@ -80,16 +94,23 @@ public class RedisJsonDao<T> {
      *
      * @return List of all objects in the collection.
      */
-    public List<T> findAll() {
-        Set<String> idSet = this.redisClient.setMembers(this.type);
-        String[] idArray = new String[idSet.size()];
+    public List<T> findAll(int pageSize) {
+        List<T> resultList = new ArrayList<>();
+        String cursor = "0";
+        String pattern = this.type + ":*";
 
-        int i = 0;
-        for (String id : idSet) {
-            idArray[i] = this.getKey(id);
-            i++;
-        }
-        return this.redisClient.multiGetJson(this.clazz, idArray);
+        do {
+            ScanResult<String> scanResult = this.redisClient.scan(cursor, new ScanParams().match(pattern)
+                    .count(pageSize));
+            cursor = scanResult.getCursor();
+            List<String> keys = scanResult.getResult();
+
+            if (!keys.isEmpty()) {
+                resultList.addAll(this.redisClient.multiGetJson(this.clazz, keys.toArray(new String[0])));
+            }
+        } while (!cursor.equals("0"));
+
+        return resultList;
     }
 
     /**

@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.util.SafeEncoder;
@@ -315,6 +317,15 @@ public class RedisClientImpl implements RedisClient {
     public boolean exists(String key) {
         try (Jedis conn = getConnection()) {
             return conn.exists(key);
+        }
+    }
+
+    @Override
+    public ScanResult<String> scan(String cursor, ScanParams params) {
+        try (Jedis conn = getConnection()) {
+            ScanResult<String> result = conn.scan(cursor, params);
+            conn.close();
+            return result;
         }
     }
 

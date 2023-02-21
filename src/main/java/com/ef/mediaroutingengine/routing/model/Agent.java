@@ -8,7 +8,6 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -18,17 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.validation.constraints.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The type Agent.
  */
 public class Agent {
-    /**
-     * The constant LOGGER.
-     */
-    private static final Logger logger = LoggerFactory.getLogger(Agent.class);
     /**
      * The Associated routing attributes.
      */
@@ -129,22 +122,6 @@ public class Agent {
     }
 
     /**
-     * Assigns a task to the current Agent's object.
-     *
-     * @param task the task to be added.
-     */
-    public void assignPushTask(Task task) {
-        if (task == null) {
-            logger.debug("Cannot assign task, taskService is null");
-            return;
-        }
-        this.removeReservedTask();
-        this.addActiveTask(task);
-        logger.debug("Agent Id: {}. Task: {} assigned. Total tasks handling: {}.",
-                this.keycloakUser.getId(), task.getId(), this.activeTasks.size());
-    }
-
-    /**
      * Add a task to the Active tasks list.
      *
      * @param task task to be added
@@ -186,15 +163,15 @@ public class Agent {
      * @param mrdId id of the mrd.
      * @return total number of active tasks on an agent's mrd
      */
-    public int getNoOfActivePushTasks(String mrdId) {
-        List<Task> taskList = this.activeTasks.get(mrdId);
-        if (taskList == null) {
+    public int getNoOfActiveQueueTasks(String mrdId) {
+        List<Task> tasks = this.activeTasks.get(mrdId);
+        if (tasks == null) {
             return 0;
         }
+
         int counter = 0;
-        for (Task task : taskList) {
-            RoutingMode routingMode = task.getRoutingMode();
-            if (routingMode.equals(RoutingMode.PUSH)) {
+        for (Task task : tasks) {
+            if (task.getType().getMode().equals(Enums.TaskTypeMode.QUEUE)) {
                 counter++;
             }
         }
@@ -210,7 +187,7 @@ public class Agent {
     public long getActiveTasksCountByQueueId(String queueId) {
         return activeTasks.entrySet().stream()
                 .flatMap(entry -> entry.getValue().stream())
-                .filter(task -> task.getQueue() != null && task.getQueue().equals(queueId))
+                .filter(task -> task.getQueue() != null && task.getQueue().getId().equals(queueId))
                 .count();
     }
 

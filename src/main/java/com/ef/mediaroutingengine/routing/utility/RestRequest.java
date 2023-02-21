@@ -1,8 +1,16 @@
 package com.ef.mediaroutingengine.routing.utility;
 
+import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.config.AssignResourceProperties;
 import com.ef.mediaroutingengine.global.commons.Constants;
+import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
+import com.ef.mediaroutingengine.routing.dto.AssignTaskRequest;
+import com.ef.mediaroutingengine.routing.dto.RevokeTaskRequest;
+import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +51,60 @@ public class RestRequest {
         this.config = config;
     }
 
+    /**
+     * Calls the Agent-manager's Assign-Task API.
+     *
+     * @param task  the task dto
+     * @param agent the agent to assign task to
+     * @return true if request successful, false otherwise.
+     */
+    public boolean postAssignTask(Task task, CCUser agent, TaskState taskState, boolean async) {
+        if (async) {
+            String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+            CompletableFuture.runAsync(() -> {
+                MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+                MDC.put(Constants.MDC_TOPIC_ID, task.getTopicId());
+                this.postAssignTask(task, agent, taskState);
+                MDC.clear();
+            });
+            return true;
+        }
+
+        return postAssignTask(task, agent, taskState);
+    }
+
+    private boolean postAssignTask(Task task, CCUser agent, TaskState taskState) {
+        TaskDto taskDto = AdapterUtility.createTaskDtoFrom(task);
+        taskDto.setState(taskState);
+        AssignTaskRequest request = new AssignTaskRequest(taskDto, agent);
+
+        try {
+            this.httpRequest(request, this.config.getAssignTaskUri(), HttpMethod.POST);
+            return true;
+        } catch (Exception e) {
+            logger.error(ExceptionUtils.getMessage(e));
+            logger.error(ExceptionUtils.getStackTrace(e));
+            return false;
+        }
+    }
+
+    /**
+     * Calls the agent manager's Revoke task API.
+     *
+     * @param task the task.
+     * @return true if request is successful
+     */
+    public boolean postRevokeTask(Task task) {
+        RevokeTaskRequest requestBody = new RevokeTaskRequest(task.getId(), task.getAssignedTo(), task.getTopicId());
+        try {
+            this.httpRequest(requestBody, this.config.getRevokeTaskUri(), HttpMethod.POST);
+            return true;
+        } catch (Exception e) {
+            logger.error(ExceptionUtils.getMessage(e));
+            logger.error(ExceptionUtils.getStackTrace(e));
+            return false;
+        }
+    }
 
     /**
      * Makes an httpRequest.

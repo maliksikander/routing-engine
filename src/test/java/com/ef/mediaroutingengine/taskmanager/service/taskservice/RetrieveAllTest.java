@@ -32,7 +32,8 @@ class RetrieveAllTest {
         List<Task> taskList = new ArrayList<>();
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE,null);
-        taskList.add(Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), "queue", taskState,type));
+        TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "queue1");
+        taskList.add(Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), taskQueue, taskState,type));
 
         when(tasksPool.findAll()).thenReturn(taskList);
 

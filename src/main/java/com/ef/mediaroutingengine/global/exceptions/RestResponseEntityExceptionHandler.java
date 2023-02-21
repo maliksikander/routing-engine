@@ -240,4 +240,19 @@ public class RestResponseEntityExceptionHandler extends BaseExceptionHandler {
                 null);
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
+
+    /**
+     * Illegal state exception response entity.
+     *
+     * @param ex      the ex
+     * @param request the request
+     * @return the response entity
+     */
+    @ExceptionHandler({IllegalStateException.class})
+    public ResponseEntity<Object> illegalStateException(Exception ex, WebRequest request) {
+        logger.error(ex.getMessage());
+        ErrorResponseBody error = new ErrorResponseBody(getTranslatedMessage(ex.getMessage(), null),
+                null);
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

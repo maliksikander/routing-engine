@@ -1,7 +1,8 @@
 package com.ef.mediaroutingengine.global.utilities;
 
+import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
-import com.ef.cim.objectmodel.dto.NoAgentAvailableDto;
+import com.ef.cim.objectmodel.Sender;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
@@ -68,5 +69,10 @@ public final class AdapterUtility {
         entity.setMrd(requestBody.getMrd());
         entity.setServiceLevelType(requestBody.getServiceLevelType());
         entity.setServiceLevelThreshold(requestBody.getServiceLevelThreshold());
+    }
+
+    public static Sender getSender() {
+        return new Sender("86e3d082-a904-11ed-afa1-0242ac120002", Enums.SenderType.SYSTEM,
+                "ROUTING_ENGINE", null);
     }
 }

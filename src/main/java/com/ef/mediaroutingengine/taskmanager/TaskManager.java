@@ -4,7 +4,6 @@ import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
@@ -109,14 +108,13 @@ public class TaskManager {
      * @param task task to remove.
      */
     public void endTaskFromAssignedAgent(Task task) {
-        RoutingMode routingMode = task.getRoutingMode();
         Agent agent = this.agentsPool.findById(task.getAssignedTo());
 
-        if (agent == null || routingMode == null) {
+        if (agent == null) {
             return;
         }
 
-        if (routingMode.equals(RoutingMode.PUSH)) {
+        if (task.getType().getMode().equals(Enums.TaskTypeMode.QUEUE)) {
             // If a reserved task is closed remove the reserve task from agent.
             if (agent.getReservedTask() != null && agent.getReservedTask().getId().equals(task.getId())) {
                 agent.removeReservedTask();
@@ -138,7 +136,7 @@ public class TaskManager {
         }
         String mrdId = task.getMrd().getId();
         Enums.AgentMrdStateName currentMrdState = agent.getAgentMrdState(mrdId).getState();
-        int noOfTasks = agent.getNoOfActivePushTasks(mrdId);
+        int noOfTasks = agent.getNoOfActiveQueueTasks(mrdId);
         int maxAgentTasks = agent.getAgentMrdState(mrdId).getMaxAgentTasks();
         if (currentMrdState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY) && noOfTasks < 1) {
             this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.NOT_READY, true);
@@ -188,7 +186,7 @@ public class TaskManager {
         if (!mediaRoutingDomain.isManagedByRe()) {
             return;
         }
-        int noOfActiveTasks = agent.getNoOfActivePushTasks(mrdId);
+        int noOfActiveTasks = agent.getNoOfActiveQueueTasks(mrdId);
         int maxRequestAllowed = agent.getAgentMrdState(mrdId).getMaxAgentTasks();
         if (noOfActiveTasks >= maxRequestAllowed) {
             this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.BUSY, false);
@@ -290,7 +288,7 @@ public class TaskManager {
                             TaskType requestType) {
         logger.debug(Constants.METHOD_STARTED);
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = Task.getInstanceFrom(channelSession, mrd, queue.getId(), taskState, requestType);
+        Task task = Task.getInstanceFrom(channelSession, mrd, queue.toTaskQueue(), taskState, requestType);
         this.insertInPoolAndRepository(task);
         this.jmsCommunicator.publishTaskStateChangeForReporting(task);
         this.scheduleAgentRequestTimeoutTask(task.getChannelSession());
@@ -304,14 +302,14 @@ public class TaskManager {
      * Enqueues task all present in the redis DB at start of application.
      */
     public void enqueueQueuedTasksOnFailover() {
-        List<Task> queuedPushTasks = this.tasksPool.findAllQueuedTasks();
+        List<Task> queuedTasks = this.tasksPool.findAllQueuedTasks();
 
-        for (Task task : queuedPushTasks) {
+        for (Task task : queuedTasks) {
             this.scheduleAgentRequestTimeoutTaskOnFailover(task);
 
-            PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue());
+            PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue().getId());
             if (queue == null) {
-                logger.warn("Queue id: {} not found while enqueuing task", task.getQueue());
+                logger.warn("Queue id: {} not found while enqueuing task", task.getQueue().getId());
                 continue;
             }
 
@@ -445,7 +443,7 @@ public class TaskManager {
                     return;
                 }
 
-                PrecisionQueue queue = TaskManager.this.precisionQueuesPool.findById(task.getQueue());
+                PrecisionQueue queue = TaskManager.this.precisionQueuesPool.findById(task.getQueue().getId());
                 synchronized (queue.getServiceQueue()) {
                     task.markForDeletion();
                 }

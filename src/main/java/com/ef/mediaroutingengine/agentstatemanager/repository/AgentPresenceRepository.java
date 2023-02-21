@@ -59,4 +59,15 @@ public class AgentPresenceRepository extends RedisJsonDao<AgentPresence> {
     public boolean updateCcUser(CCUser ccUser) {
         return this.updateField(ccUser.getId(), ".agent", ccUser);
     }
+
+    /**
+     * Update agent login time.
+     *
+     * @param agentId the agent id
+     * @param agentLoginTime the agent login time.
+     * @return the boolean
+     */
+    public boolean updateAgentLoginTime(String agentId, Timestamp agentLoginTime) {
+        return this.updateField(agentId, ".agentLoginTime", agentLoginTime);
+    }
 }

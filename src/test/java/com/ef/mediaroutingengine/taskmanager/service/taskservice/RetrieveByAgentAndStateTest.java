@@ -49,7 +49,8 @@ class RetrieveByAgentAndStateTest {
     private Task getNewTask(String assignedTo, Enums.TaskStateName stateName) {
         TaskState taskState = new TaskState(stateName, null);
         TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE,null);
-        Task task = Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), "queue", taskState,type);
+        TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "queue1");
+        Task task = Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), taskQueue, taskState,type);
         task.setAssignedTo(assignedTo);
         return task;
     }

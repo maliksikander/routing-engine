@@ -8,6 +8,7 @@ import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
+import java.sql.Timestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,7 +74,11 @@ public class AgentStateLogin implements AgentStateDelegate {
         AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId());
         agentPresence.setState(agent.getState());
         agentPresence.setAgentMrdStates(agent.getAgentMrdStates());
+        agentPresence.setAgentLoginTime(new Timestamp(System.currentTimeMillis()));
+
+        this.agentPresenceRepository.updateAgentLoginTime(agent.getId(), agentPresence.getAgentLoginTime());
         this.publish(agentPresence);
+
     }
 
     /**

@@ -1,6 +1,5 @@
 package com.ef.mediaroutingengine.routing;
 
-import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.commons.Constants;
@@ -10,6 +9,8 @@ import com.ef.mediaroutingengine.routing.model.AgentSelectionCriteria;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.model.Step;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
+import com.ef.mediaroutingengine.routing.utility.RestRequest;
+import com.ef.mediaroutingengine.routing.utility.TaskUtility;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
@@ -58,6 +59,10 @@ public class TaskRouter implements PropertyChangeListener {
      * The Is init.
      */
     private boolean isInit;
+    /**
+     * The Rest Request Class Object.
+     */
+    private final RestRequest restRequest;
 
     /**
      * Constructor.
@@ -68,11 +73,12 @@ public class TaskRouter implements PropertyChangeListener {
      */
     @Autowired
     public TaskRouter(AgentsPool agentsPool, TasksRepository tasksRepository,
-                      JmsCommunicator jmsCommunicator, TaskManager taskManager) {
+                      JmsCommunicator jmsCommunicator, TaskManager taskManager, RestRequest restRequest) {
         this.agentsPool = agentsPool;
         this.tasksRepository = tasksRepository;
         this.jmsCommunicator = jmsCommunicator;
         this.taskManager = taskManager;
+        this.restRequest = restRequest;
     }
 
     /**
@@ -130,7 +136,7 @@ public class TaskRouter implements PropertyChangeListener {
      */
     private void onNewTask(PropertyChangeEvent evt) {
         Task task = (Task) evt.getNewValue();
-        if (task.getQueue().equals(this.precisionQueue.getId())) {
+        if (task.getQueue().getId().equals(this.precisionQueue.getId())) {
             this.precisionQueue.enqueue(task);
             jmsCommunicator.publishTaskEnqueued(task, this.precisionQueue);
             logger.debug("Task: {} enqueued in Precision-Queue: {}", task.getId(), precisionQueue.getId());
@@ -196,7 +202,7 @@ public class TaskRouter implements PropertyChangeListener {
         for (Agent agent : sortedAgentList) {
 
             String mrdId = this.precisionQueue.getMrd().getId();
-            int noOfTasksOnMrd = agent.getNoOfActivePushTasks(mrdId);
+            int noOfTasksOnMrd = agent.getNoOfActiveQueueTasks(mrdId);
 
             if (agent.isAvailableForRouting(mrdId, conversationId) && noOfTasksOnMrd < lowestNumberOfTasks) {
                 lowestNumberOfTasks = noOfTasksOnMrd;
@@ -220,21 +226,32 @@ public class TaskRouter implements PropertyChangeListener {
                 return;
             }
 
-            this.changeStateOf(task, new TaskState(Enums.TaskStateName.RESERVED, null), agent.getId());
-            agent.reserveTask(task);
-            this.jmsCommunicator.publishTaskStateChangeForReporting(task);
+            TaskState taskState = new TaskState(Enums.TaskStateName.RESERVED, null);
+            boolean isPresented = this.presentTask(task, taskState, agent);
 
-            CCUser ccUser = agent.toCcUser();
-            this.jmsCommunicator.publishAgentReserved(task, ccUser);
+            if (isPresented) {
+                agent.reserveTask(task);
+                this.changeStateOf(task, taskState, agent.getId());
+                this.jmsCommunicator.publishTaskStateChangeForReporting(task);
 
-            task.getTimer().cancel();
-            task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), this);
-            precisionQueue.dequeue();
+                this.jmsCommunicator.publishAgentReserved(task, agent.toCcUser());
+
+                task.getTimer().cancel();
+                task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), this);
+                precisionQueue.dequeue();
+            }
         } catch (Exception e) {
             logger.error(ExceptionUtils.getMessage(e));
             logger.error(ExceptionUtils.getStackTrace(e));
         }
         logger.debug("method ended");
+    }
+
+    private boolean presentTask(Task task, TaskState taskState, Agent agent) {
+        if (TaskUtility.getOfferToAgent(task)) {
+            return this.restRequest.postAssignTask(task, agent.toCcUser(), taskState, false);
+        }
+        return true;
     }
 
     /**

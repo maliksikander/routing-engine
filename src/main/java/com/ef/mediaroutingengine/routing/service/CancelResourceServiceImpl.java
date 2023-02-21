@@ -2,7 +2,7 @@ package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
-import com.ef.cim.objectmodel.dto.RevokeResourceDto;
+import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.dto.CancelResourceRequest;
 import com.ef.mediaroutingengine.routing.model.Agent;
@@ -10,11 +10,14 @@ import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.utility.RestRequest;
+import com.ef.mediaroutingengine.routing.utility.TaskUtility;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
+import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -91,7 +94,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
             taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
             logger.debug("Agent-Request-Ttl-timer and Task step timers cancelled | Task: {}", task.getId());
 
-            PrecisionQueue queue = precisionQueuesPool.findById(task.getQueue());
+            PrecisionQueue queue = precisionQueuesPool.findById(task.getQueue().getId());
 
             synchronized (queue.getServiceQueue()) {
                 task.markForDeletion();
@@ -127,9 +130,15 @@ public class CancelResourceServiceImpl implements CancelResourceService {
             agent.removeReservedTask();
         }
 
-        this.jmsCommunicator.publishRevokeTask(task, RevokeResourceDto.createForReservedTask(task.getId(),
-                agent.getId(), task.getTopicId()));
-        logger.info("REVOKE_RESOURCE published");
+        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+        CompletableFuture.runAsync(() -> {
+            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+            MDC.put(Constants.MDC_TOPIC_ID, task.getTopicId());
+            if (TaskUtility.getOfferToAgent(task)) {
+                this.restRequest.postRevokeTask(task);
+            }
+            MDC.clear();
+        });
     }
 
     /**
