@@ -85,12 +85,14 @@ public class AgentStateNotReady implements AgentStateDelegate {
                 continue;
             }
 
-            if (agent.getNoOfActiveQueueTasks(mrdId) > 0) {
+            if (agent.getNoOfActiveQueueTasks(mrdId) > 0
+                    && !agentMrdState.getState().equals(Enums.AgentMrdStateName.PENDING_NOT_READY)) {
                 agentMrdState.setState(Enums.AgentMrdStateName.PENDING_NOT_READY);
-            } else {
+                mrdStateChanges.add(mrdId);
+            } else if (!agentMrdState.getState().equals(Enums.AgentMrdStateName.NOT_READY)) {
                 agentMrdState.setState(Enums.AgentMrdStateName.NOT_READY);
+                mrdStateChanges.add(mrdId);
             }
-            mrdStateChanges.add(mrdId);
         }
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
         return mrdStateChanges;

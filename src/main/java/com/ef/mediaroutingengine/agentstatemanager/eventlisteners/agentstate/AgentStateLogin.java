@@ -74,8 +74,10 @@ public class AgentStateLogin implements AgentStateDelegate {
         List<String> mrdStateChanges = new ArrayList<>();
 
         for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
-            agentMrdState.setState(Enums.AgentMrdStateName.LOGIN);
-            mrdStateChanges.add(agentMrdState.getMrd().getId());
+            if (!agentMrdState.getState().equals(Enums.AgentMrdStateName.LOGIN)) {
+                agentMrdState.setState(Enums.AgentMrdStateName.LOGIN);
+                mrdStateChanges.add(agentMrdState.getMrd().getId());
+            }
         }
         AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId());
         agentPresence.setState(agent.getState());
@@ -98,8 +100,10 @@ public class AgentStateLogin implements AgentStateDelegate {
         List<String> mrdStateChanges = new ArrayList<>();
 
         for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
-            agentMrdState.setState(Enums.AgentMrdStateName.NOT_READY);
-            mrdStateChanges.add(agentMrdState.getMrd().getId());
+            if (!agentMrdState.getState().equals(Enums.AgentMrdStateName.NOT_READY)) {
+                agentMrdState.setState(Enums.AgentMrdStateName.NOT_READY);
+                mrdStateChanges.add(agentMrdState.getMrd().getId());
+            }
         }
         this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());

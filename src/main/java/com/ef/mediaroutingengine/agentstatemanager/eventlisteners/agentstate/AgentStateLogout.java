@@ -59,8 +59,10 @@ public class AgentStateLogout implements AgentStateDelegate {
         List<String> mrdStateChanges = new ArrayList<>();
 
         for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
-            agentMrdState.setState(Enums.AgentMrdStateName.LOGOUT);
-            mrdStateChanges.add(agentMrdState.getMrd().getId());
+            if (!agentMrdState.getState().equals(Enums.AgentMrdStateName.LOGOUT)) {
+                agentMrdState.setState(Enums.AgentMrdStateName.LOGOUT);
+                mrdStateChanges.add(agentMrdState.getMrd().getId());
+            }
         }
         this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
