@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.routing.pool;
 
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.TaskQueue;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
@@ -111,11 +112,10 @@ public class PrecisionQueuesPool {
      * @return true if task found and ended, false otherwise
      */
     public boolean endTask(Task task) {
-        String queueId = task.getQueue().getId();
-        if (queueId == null) {
+        if (task.getQueue() == null) {
             return false;
         }
-        PrecisionQueue queue = this.pool.get(queueId);
+        PrecisionQueue queue = this.pool.get(task.getQueue().getId());
         if (queue != null) {
             if (queue.getAverageTalkTime() != null && queue.getAverageTalkTime() > 0) {
                 queue.setAverageTalkTime(calculateAvgTalkTimeOf(queue, task));
