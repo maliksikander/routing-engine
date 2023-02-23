@@ -2,7 +2,6 @@ package com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -23,14 +22,11 @@ import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
-import com.ef.mediaroutingengine.routing.model.Agent;
-import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
-import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -61,44 +57,13 @@ class AgentMrdStateListenerTest {
     }
 
     @Test
-    void test_fireStateChangeToTaskSchedulers() {
-//        MediaRoutingDomain mrd = getNewMrd();
-//        AgentMrdState agentMrdState = new AgentMrdState(mrd, Enums.AgentMrdStateName.READY);
-//
-//        List<PrecisionQueue> precisionQueueList = new ArrayList<>();
-//        precisionQueueList.add(mock(PrecisionQueue.class));
-//        precisionQueueList.add(mock(PrecisionQueue.class));
-//
-//        when(precisionQueuesPool.toList()).thenReturn(precisionQueueList);
-//
-//        when(precisionQueueList.get(0).getMrd()).thenReturn(mrd);
-//        TaskRouter taskRouterForQueue1 = mock(TaskRouter.class);
-//        when(precisionQueueList.get(0).getTaskScheduler()).thenReturn(taskRouterForQueue1);
-//
-//        when(precisionQueueList.get(1).getMrd()).thenReturn(getNewMrd());
-//
-//        listener.fireStateChangeToTaskSchedulers(agentMrdState);
-//
-//        verifyNoMoreInteractions(precisionQueueList.get(1));
-//
-//        ArgumentCaptor<PropertyChangeEvent> arg = ArgumentCaptor.forClass(PropertyChangeEvent.class);
-//        verify(taskRouterForQueue1, times(1)).propertyChange(arg.capture());
-//        verifyNoMoreInteractions(taskRouterForQueue1);
-//
-//        PropertyChangeEvent evt = arg.getValue();
-//        assertEquals("AGENT_MRD_STATE_" + agentMrdState.getState().name(), evt.getPropertyName());
-//        assertEquals(agentMrdState, evt.getNewValue());
-//        assertNull(evt.getOldValue());
-    }
-
-    @Test
     void test_publish() throws JMSException, JsonProcessingException {
         Agent agent = getNewAgent();
 
         AgentPresence agentPresence = mock(AgentPresence.class);
         when(agentPresenceRepository.find(agent.getId())).thenReturn(agentPresence);
 
-        listener.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED);
+        listener.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED, new ArrayList<>());
 
         verifyNoMoreInteractions(agentPresenceRepository);
 
@@ -143,7 +108,7 @@ class AgentMrdStateListenerTest {
         Agent agent = getNewAgent();
         AgentMrdStateListener listenerSpy = spy(listener);
         // No need to test publish, it is already tested
-        doNothing().when(listenerSpy).publish(eq(agent), any());
+        doNothing().when(listenerSpy).publish(eq(agent), any(), eq(new ArrayList<>()));
         listenerSpy.run(agent, "", Enums.AgentMrdStateName.READY);
 
         verifyNoInteractions(factory);
@@ -160,7 +125,7 @@ class AgentMrdStateListenerTest {
         when(factory.getDelegate(requestedState)).thenReturn(delegate);
         when(delegate.getNewState(agent, agentMrdState)).thenReturn(Enums.AgentMrdStateName.READY);
 
-        doNothing().when(listenerSpy).publish(eq(agent), any());
+        doNothing().when(listenerSpy).publish(eq(agent), any(), eq(new ArrayList<>()));
         listenerSpy.run(agent, agentMrdState.getMrd().getId(), requestedState);
 
         verify(listenerSpy, times(0)).updateState(any(), any(), any());
@@ -179,7 +144,10 @@ class AgentMrdStateListenerTest {
         when(factory.getDelegate(requestedState)).thenReturn(delegate);
         when(delegate.getNewState(agent, agentMrdState)).thenReturn(Enums.AgentMrdStateName.READY);
 
-        doNothing().when(listenerSpy).publish(eq(agent), any());
+        List<String> mrdStateChanges = new ArrayList<>();
+        mrdStateChanges.add(agentMrdState.getMrd().getId());
+
+        doNothing().when(listenerSpy).publish(eq(agent), any(), eq(mrdStateChanges));
         listenerSpy.run(agent, agentMrdState.getMrd().getId(), requestedState);
 
         verify(listenerSpy, times(1)).updateState(any(), any(), any());
@@ -198,7 +166,10 @@ class AgentMrdStateListenerTest {
         when(factory.getDelegate(requestedState)).thenReturn(delegate);
         when(delegate.getNewState(agent, agentMrdState)).thenReturn(Enums.AgentMrdStateName.ACTIVE);
 
-        doNothing().when(listenerSpy).publish(eq(agent), any());
+        List<String> mrdStateChanges = new ArrayList<>();
+        mrdStateChanges.add(agentMrdState.getMrd().getId());
+
+        doNothing().when(listenerSpy).publish(eq(agent), any(), eq(mrdStateChanges));
         listenerSpy.run(agent, agentMrdState.getMrd().getId(), requestedState);
 
         verify(listenerSpy, times(1)).updateState(any(), any(), any());
@@ -217,7 +188,10 @@ class AgentMrdStateListenerTest {
         when(factory.getDelegate(requestedState)).thenReturn(delegate);
         when(delegate.getNewState(agent, agentMrdState)).thenReturn(Enums.AgentMrdStateName.PENDING_NOT_READY);
 
-        doNothing().when(listenerSpy).publish(eq(agent), any());
+        List<String> mrdStateChanges = new ArrayList<>();
+        mrdStateChanges.add(agentMrdState.getMrd().getId());
+
+        doNothing().when(listenerSpy).publish(eq(agent), any(), eq(mrdStateChanges));
         listenerSpy.run(agent, agentMrdState.getMrd().getId(), requestedState);
 
         verify(listenerSpy, times(1)).updateState(any(), any(), any());

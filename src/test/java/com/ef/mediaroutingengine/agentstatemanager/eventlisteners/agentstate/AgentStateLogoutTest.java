@@ -16,6 +16,7 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
@@ -106,7 +107,7 @@ class AgentStateLogoutTest {
         AgentStateLogout spy = Mockito.spy(agentStateLogout);
 
         doNothing().when(spy).handleAgentTasks(agent);
-        boolean isStateChanged = spy.updateState(agent, newState,false);
+        AgentStateChangedResponse res = spy.updateState(agent, newState,false);
 
         // Assert agent-state has been updated to the new state i.e. LOGOUT
         assertEquals(newState.getName(), agent.getState().getName());
@@ -121,7 +122,7 @@ class AgentStateLogoutTest {
                 .updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
         verifyNoMoreInteractions(this.agentPresenceRepository);
 
-        assertTrue(isStateChanged);
+        assertTrue(res.isAgentStateChanged());
     }
 
     private MediaRoutingDomain getNewMrd(String name) {

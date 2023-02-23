@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -54,7 +55,7 @@ class AgentStateLoginTest {
         AgentPresence agentPresence = mock(AgentPresence.class);
         ArgumentCaptor<AgentStateChangedResponse> captor = ArgumentCaptor.forClass(AgentStateChangedResponse.class);
 
-        this.agentStateLogin.publish(agentPresence);
+        this.agentStateLogin.publish(agentPresence, new ArrayList<>());
         //verify the jms publish call
         verify(this.jmsCommunicator, times(1))
                 .publish(captor.capture(), eq(Enums.JmsEventName.AGENT_STATE_CHANGED));
@@ -80,7 +81,7 @@ class AgentStateLoginTest {
         AgentPresence agentPresence = mock(AgentPresence.class);
         when(agentPresenceRepository.find(agent.getId())).thenReturn(agentPresence);
         // No need to test publish again, it is already tested.
-        doNothing().when(spy).publish(agentPresence);
+        doNothing().when(spy).publish(eq(agentPresence), any());
         // calling the testing method
         spy.logoutToLogin(agent, newState);
         // Assert that agent-state is updated to new state i.e. login
@@ -129,7 +130,7 @@ class AgentStateLoginTest {
 
         AgentState newState = new AgentState(Enums.AgentStateName.LOGIN, null);
 
-        assertFalse(this.agentStateLogin.updateState(agent, newState,false));
+        assertFalse(this.agentStateLogin.updateState(agent, newState,false).isAgentStateChanged());
     }
 
     @Test
@@ -142,9 +143,9 @@ class AgentStateLoginTest {
 
         // No need to test the following methods, they are already tested
         doNothing().when(spy).logoutToLogin(agent, newState);
-        doNothing().when(spy).loginToNotReady(eq(agent), any());
+        doReturn(new ArrayList<>()).when(spy).loginToNotReady(eq(agent), any());
 
-        assertTrue(spy.updateState(agent, newState, false));
+        assertTrue(spy.updateState(agent, newState, false).isAgentStateChanged());
     }
 
     private Agent getNewAgent() {

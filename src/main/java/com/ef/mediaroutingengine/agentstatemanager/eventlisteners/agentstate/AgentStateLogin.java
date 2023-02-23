@@ -9,6 +9,8 @@ import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepos
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,15 +51,16 @@ public class AgentStateLogin implements AgentStateDelegate {
     }
 
     @Override
-    public boolean updateState(Agent agent, AgentState newState, boolean isChangedInternally) {
+    public AgentStateChangedResponse updateState(Agent agent, AgentState newState, boolean isChangedInternally) {
         Enums.AgentStateName currentState = agent.getState().getName();
         if (currentState.equals(Enums.AgentStateName.LOGOUT)) {
             this.logoutToLogin(agent, newState);
             logger.info("Agent-state changed from LOGOUT to LOGIN | Agent: {}", agent.getId());
-            loginToNotReady(agent, new AgentState(Enums.AgentStateName.NOT_READY, newState.getReasonCode()));
-            return true;
+            List<String> mrdStateChanges = loginToNotReady(agent,
+                    new AgentState(Enums.AgentStateName.NOT_READY, newState.getReasonCode()));
+            return new AgentStateChangedResponse(null, true, mrdStateChanges);
         }
-        return false;
+        return new AgentStateChangedResponse(null, false, new ArrayList<>());
     }
 
     /**
@@ -68,8 +71,11 @@ public class AgentStateLogin implements AgentStateDelegate {
      */
     void logoutToLogin(Agent agent, AgentState state) {
         agent.setState(state);
+        List<String> mrdStateChanges = new ArrayList<>();
+
         for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
             agentMrdState.setState(Enums.AgentMrdStateName.LOGIN);
+            mrdStateChanges.add(agentMrdState.getMrd().getId());
         }
         AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId());
         agentPresence.setState(agent.getState());
@@ -77,7 +83,7 @@ public class AgentStateLogin implements AgentStateDelegate {
         agentPresence.setAgentLoginTime(new Timestamp(System.currentTimeMillis()));
 
         this.agentPresenceRepository.updateAgentLoginTime(agent.getId(), agentPresence.getAgentLoginTime());
-        this.publish(agentPresence);
+        this.publish(agentPresence, mrdStateChanges);
 
     }
 
@@ -87,14 +93,17 @@ public class AgentStateLogin implements AgentStateDelegate {
      * @param agent the agent
      * @param state the state
      */
-    void loginToNotReady(Agent agent, AgentState state) {
+    List<String> loginToNotReady(Agent agent, AgentState state) {
         agent.setState(state);
+        List<String> mrdStateChanges = new ArrayList<>();
+
         for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
             agentMrdState.setState(Enums.AgentMrdStateName.NOT_READY);
-
+            mrdStateChanges.add(agentMrdState.getMrd().getId());
         }
         this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
+        return mrdStateChanges;
     }
 
     /**
@@ -102,8 +111,8 @@ public class AgentStateLogin implements AgentStateDelegate {
      *
      * @param agentPresence the agent presence
      */
-    void publish(AgentPresence agentPresence) {
-        AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, true);
+    void publish(AgentPresence agentPresence, List<String> mrdStateChanges) {
+        AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, true, mrdStateChanges);
         try {
             jmsCommunicator.publish(res, Enums.JmsEventName.AGENT_STATE_CHANGED);
         } catch (Exception e) {

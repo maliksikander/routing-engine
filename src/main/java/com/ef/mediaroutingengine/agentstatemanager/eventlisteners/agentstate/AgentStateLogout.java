@@ -4,11 +4,14 @@ import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -49,16 +52,19 @@ public class AgentStateLogout implements AgentStateDelegate {
     }
 
     @Override
-    public boolean updateState(Agent agent, AgentState newState, boolean isChangedInternally) {
+    public AgentStateChangedResponse updateState(Agent agent, AgentState newState, boolean isChangedInternally) {
         agent.setState(newState);
         this.handleAgentTasks(agent);
+
+        List<String> mrdStateChanges = new ArrayList<>();
+
         for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
             agentMrdState.setState(Enums.AgentMrdStateName.LOGOUT);
-
+            mrdStateChanges.add(agentMrdState.getMrd().getId());
         }
         this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
-        return true;
+        return new AgentStateChangedResponse(null, true, mrdStateChanges);
     }
 
     /**

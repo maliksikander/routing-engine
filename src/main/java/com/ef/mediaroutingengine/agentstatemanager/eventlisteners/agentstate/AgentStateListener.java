@@ -90,30 +90,30 @@ public class AgentStateListener {
         }
 
         AgentState currentState = agent.getState();
-        boolean isStateChanged = delegate.updateState(agent, newState, isChangedInternally);
+        AgentStateChangedResponse response = delegate.updateState(agent, newState, isChangedInternally);
 
-        if (isStateChanged) {
+        if (response.isAgentStateChanged()) {
             logger.info("Agent state changed from {} to {} | Agent: {}", currentState, newState, agent.getId());
-            // Todo: Suggestion (awais bhai) there should be only one event and that too with name Agent-State
-            this.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED, true);
+            this.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED, response);
         } else {
             logger.info("Agent-state change from: {} to: {} not allowed | Agent: {}",
                     currentState, newState, agent.getId());
-            this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED, false);
+            this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED, response);
         }
     }
 
     /**
      * Publish.
      *
-     * @param agent             the agent presence
-     * @param agentStateChanged the agent state changed
+     * @param agent     the agent
+     * @param eventName the event name
+     * @param response  the Agent state changed response
      */
-    private void publish(Agent agent, Enums.JmsEventName eventName, boolean agentStateChanged) {
-        AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId().toString());
-        AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, agentStateChanged);
+    private void publish(Agent agent, Enums.JmsEventName eventName, AgentStateChangedResponse response) {
+        AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId());
+        response.setAgentPresence(agentPresence);
         try {
-            jmsCommunicator.publish(res, eventName);
+            jmsCommunicator.publish(response, eventName);
         } catch (Exception e) {
             e.printStackTrace();
         }

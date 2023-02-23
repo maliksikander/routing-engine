@@ -18,6 +18,7 @@ import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.ReasonCode;
+import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import java.util.ArrayList;
@@ -70,13 +71,13 @@ class AgentStateNotReadyTest {
 
         AgentStateNotReady spy = Mockito.spy(agentStateNotReady);
 
-        doNothing().when(spy).updateAgentMrdStates(agent, null,false);
+        doReturn(new ArrayList<>()).when(spy).updateAgentMrdStates(agent, null,false);
         doReturn(false).when(spy).isAnyMrdInAvailableState(agent);
 
-        boolean isUpdated = spy.updateState(agent, newState,false);
+        AgentStateChangedResponse res = spy.updateState(agent, newState,false);
 
         verify(agentPresenceRepository, times(1)).updateAgentState(agent.getId(), newState);
-        assertTrue(isUpdated);
+        assertTrue(res.isAgentStateChanged());
     }
 
     @Test
@@ -87,14 +88,14 @@ class AgentStateNotReadyTest {
         ReasonCode reasonCode = new ReasonCode("Lunch break", Enums.ReasonCodeType.NOT_READY);
         AgentState newState = new AgentState(Enums.AgentStateName.NOT_READY, reasonCode);
 
-        boolean isStateUpdated = this.agentStateNotReady.updateState(agent, newState,false);
+        AgentStateChangedResponse res = this.agentStateNotReady.updateState(agent, newState,false);
         // Assert that agent's state is updated to new state
         assertEquals(newState, agent.getState());
         // Verify that correct repository calls are made.
         verify(this.agentPresenceRepository, times(1)).updateAgentState(agent.getId(), newState);
         verifyNoMoreInteractions(this.agentPresenceRepository);
         // Assert return value is true.
-        assertTrue(isStateUpdated);
+        assertTrue(res.isAgentStateChanged());
     }
 
     @Test
@@ -104,10 +105,10 @@ class AgentStateNotReadyTest {
 
         AgentState newState = new AgentState(Enums.AgentStateName.NOT_READY, null);
 
-        assertFalse(this.agentStateNotReady.updateState(agent, newState,false));
+        assertFalse(this.agentStateNotReady.updateState(agent, newState,false).isAgentStateChanged());
 
         agent.setState(new AgentState(Enums.AgentStateName.LOGOUT, null));
-        assertFalse(this.agentStateNotReady.updateState(agent, newState,false));
+        assertFalse(this.agentStateNotReady.updateState(agent, newState,false).isAgentStateChanged());
     }
 
     private MediaRoutingDomain getNewMrd(String name) {

@@ -3,8 +3,10 @@ package com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate;
 import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.Enums;
+import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.routing.model.Agent;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -31,35 +33,34 @@ public class AgentStateNotReady implements AgentStateDelegate {
     }
 
     @Override
-    public boolean updateState(Agent agent, AgentState newState, boolean isChangedInternally) {
+    public AgentStateChangedResponse updateState(Agent agent, AgentState newState, boolean isChangedInternally) {
         Enums.AgentStateName currentState = agent.getState().getName();
 
         if (currentState.equals(Enums.AgentStateName.NOT_READY)) {
             agent.setState(newState);
             this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());
-            return true;
+            return new AgentStateChangedResponse(null, true, new ArrayList<>());
         }
 
         if (currentState.equals(Enums.AgentStateName.READY)) {
             if (agent.getReservedTask() != null) {
                 String exceptThisMrd = agent.getReservedTask().getMrd().getId();
-                this.updateAgentMrdStates(agent, exceptThisMrd, isChangedInternally);
-                this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
-                return false;
+                List<String> mrdStateChanges = this.updateAgentMrdStates(agent, exceptThisMrd, isChangedInternally);
+                return new AgentStateChangedResponse(null, false, mrdStateChanges);
             }
 
-            this.updateAgentMrdStates(agent, null, isChangedInternally);
+            List<String> mrdStateChanges = this.updateAgentMrdStates(agent, null, isChangedInternally);
 
             if (isAnyMrdInAvailableState(agent)) {
-                return false;
+                return new AgentStateChangedResponse(null, false, mrdStateChanges);
             }
 
             agent.setState(newState);
             this.agentPresenceRepository.updateAgentState(agent.getId(), agent.getState());
-            return true;
+            return new AgentStateChangedResponse(null, true, mrdStateChanges);
         }
 
-        return false;
+        return new AgentStateChangedResponse(null, false, new ArrayList<>());
     }
 
     boolean isAnyMrdInAvailableState(Agent agent) {
@@ -73,22 +74,25 @@ public class AgentStateNotReady implements AgentStateDelegate {
         return false;
     }
 
-    void updateAgentMrdStates(Agent agent, String except, boolean isChangedInternally) {
+    List<String> updateAgentMrdStates(Agent agent, String except, boolean isChangedInternally) {
         List<AgentMrdState> agentMrdStates = agent.getAgentMrdStates();
+        List<String> mrdStateChanges = new ArrayList<>();
+
         for (AgentMrdState agentMrdState : agentMrdStates) {
             String mrdId = agentMrdState.getMrd().getId();
 
             if (mrdId.equals(except) || (isChangedInternally && !agentMrdState.getMrd().isManagedByRe())) {
                 continue;
             }
+
             if (agent.getNoOfActiveQueueTasks(mrdId) > 0) {
                 agentMrdState.setState(Enums.AgentMrdStateName.PENDING_NOT_READY);
             } else {
                 agentMrdState.setState(Enums.AgentMrdStateName.NOT_READY);
             }
-
+            mrdStateChanges.add(mrdId);
         }
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
+        return mrdStateChanges;
     }
-
 }

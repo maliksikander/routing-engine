@@ -11,6 +11,8 @@ import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import java.beans.PropertyChangeEvent;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,7 +104,7 @@ public class AgentMrdStateListener {
         AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
         if (agentMrdState == null) {
             logger.error("Could not find MRD with id: {} associated with agent: {}", mrdId, agent.getId());
-            this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED);
+            this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED, new ArrayList<>());
             return;
         }
 
@@ -120,7 +122,10 @@ public class AgentMrdStateListener {
             logger.info("MRD state changed from: {} to: {} | MRD: {} | Agent: {}", currentState, newState,
                     mrdId, agent.getId());
 
-            this.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED);
+            List<String> mrdStateChanges = new ArrayList<>();
+            mrdStateChanges.add(mrdId);
+
+            this.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED, mrdStateChanges);
 
             if (isStateReadyOrActive(newState)) {
                 logger.debug("Triggering task-routers for MRD: {}", agentMrdState.getMrd().getId());
@@ -129,7 +134,7 @@ public class AgentMrdStateListener {
         } else {
             logger.info("MRD state change from: {} to: {} not allowed | MRD: {} | Agent: {}", currentState, newState,
                     mrdId, agent.getId());
-            this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED);
+            this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED, new ArrayList<>());
         }
     }
 
@@ -154,10 +159,10 @@ public class AgentMrdStateListener {
      *
      * @param agent the agent
      */
-    void publish(Agent agent, Enums.JmsEventName eventName) {
+    void publish(Agent agent, Enums.JmsEventName eventName, List<String> mrdStateChanges) {
         try {
             AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId());
-            AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, false);
+            AgentStateChangedResponse res = new AgentStateChangedResponse(agentPresence, false, mrdStateChanges);
             jmsCommunicator.publish(res, eventName);
         } catch (Exception e) {
             e.printStackTrace();
