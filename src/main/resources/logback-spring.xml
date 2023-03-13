@@ -1,39 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <appender class="ch.qos.logback.core.ConsoleAppender" name="Console">
-    <layout class="ch.qos.logback.classic.PatternLayout">
-      <Pattern>
-        %d{yyyy-MM-dd HH:mm:ss,SSS} | %-5p | %m |%M Line:%L| %t%n
-      </Pattern>
-    </layout>
-  </appender>
+    <property name="LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(|){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(|){faint} %clr(%class{0}){cyan} %clr(|){faint} %clr(%method | Line:%L){magenta} %clr(|){faint} %m | %clr(%X{correlationId}){yellow} | %clr(%X{topicId}){blue} | %clr(%thread){red}%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
 
-  <appender class="ch.qos.logback.core.rolling.RollingFileAppender" name="FILE">
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-      <Pattern>
-        %d{dd-MM-yyyy HH:mm:ss.SSS} [%thread] %-5level %logger{36}.%M - %msg%n
-      </Pattern>
-    </encoder>
-    <file>${LOG_PATH}/log.log</file>
+    <appender class="ch.qos.logback.core.ConsoleAppender" name="Console">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                ${LOG_PATTERN}
+            </Pattern>
+        </layout>
+    </appender>
 
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>
-        ${LOG_PATH}/archived/log_%d{dd-MM-yyyy}.log
-      </fileNamePattern>
-      <maxHistory>10</maxHistory>
-      <totalSizeCap>100MB</totalSizeCap>
-    </rollingPolicy>
+    <appender class="ch.qos.logback.core.rolling.RollingFileAppender" name="FILE">
 
-  </appender>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>
+                ${LOG_PATTERN}
+            </Pattern>
+        </encoder>
+        <file>${LOG_PATH}/log.log</file>
 
-  <logger additivity="false" level="trace" name="com.ef">
-    <appender-ref ref="Console"/>
-    <appender-ref ref="FILE"/>
-  </logger>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>
+                ${LOG_PATH}/archived/log_%d{dd-MM-yyyy}.log
+            </fileNamePattern>
+            <maxHistory>10</maxHistory>
+            <totalSizeCap>100MB</totalSizeCap>
+        </rollingPolicy>
 
-  <!-- Log everything at the TRACE level -->
-  <root level="info">
-    <appender-ref ref="Console"/>
-  </root>
+    </appender>
+
+    <logger additivity="false" level="trace" name="com.ef">
+        <appender-ref ref="Console"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- Log everything at the TRACE level -->
+    <root level="info">
+        <appender-ref ref="Console"/>
+    </root>
 </configuration>

@@ -1,9 +1,9 @@
 version: "3"
 services:
-  media-routing-engine:
+  routing-engine:
     image: gitlab.expertflow.com:9242/cim/media-routing-engine:CIM-364
     ports:
       - 8081:8081
     env_file:
-      - media-routing-engine-variables.env
+      - docker-variables.env
     restart: always

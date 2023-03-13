@@ -3,62 +3,133 @@ package com.ef.mediaroutingengine.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * This class reads the Assign-Resource feature properties from the application's property file. A singleton bean
+ * for this class is created at startup. This bean is used in the project wherever these properties are required.
+ */
 @Configuration
 @ConfigurationProperties(prefix = "routing-engine.assign-resource")
 public class AssignResourceProperties {
-
+    /**
+     * Number of retries to assign a task to an Agent on 404 from Agent Manager.
+     */
     private int retries;
-    private String changeStateUri;
+    /**
+     * Base url of Agent-Manager component to call its Apis.
+     */
+    private String agentManagerBaseUri;
+    /**
+     * Base url of Bot-Framework component to call its Apis.
+     */
+    private String conversationManagerBaseUri;
+    /**
+     * The Assign task uri.
+     */
     private String assignTaskUri;
+    /**
+     * The Agent reserved uri.
+     */
     private String agentReservedUri;
-    private String agentEwtUri;
+    /**
+     * The No agent available uri.
+     */
     private String noAgentAvailableUri;
+    /**
+     * The Revoke task uri.
+     */
+    private String revokeTaskUri;
 
+    /**
+     * Gets retries.
+     *
+     * @return the retries
+     */
     public int getRetries() {
         return this.retries;
     }
 
+    /**
+     * Sets retries.
+     *
+     * @param retries the retries
+     */
     public void setRetries(int retries) {
         this.retries = retries;
     }
 
-    public String getChangeStateUri() {
-        return changeStateUri;
+    /**
+     * Gets agent manager base uri.
+     *
+     * @return the agent manager base uri
+     */
+    public String getAgentManagerBaseUri() {
+        return agentManagerBaseUri;
     }
 
-    public void setChangeStateUri(String changeStateUri) {
-        this.changeStateUri = changeStateUri;
+    /**
+     * Sets agent manager base uri.
+     *
+     * @param agentManagerBaseUri the agent manager base uri
+     */
+    public void setAgentManagerBaseUri(String agentManagerBaseUri) {
+        this.agentManagerBaseUri = agentManagerBaseUri;
+        this.assignTaskUri = agentManagerBaseUri + "/agent/assign-task";
+        this.revokeTaskUri = agentManagerBaseUri + "/agent/revoke-task";
     }
 
+    /**
+     * Gets bot framework base uri.
+     *
+     * @return the bot framework base uri
+     */
+    public String getConversationManagerBaseUri() {
+        return conversationManagerBaseUri;
+    }
+
+    /**
+     * Sets bot framework base uri.
+     *
+     * @param conversationManagerBaseUri the bot framework base uri
+     */
+    public void setConversationManagerBaseUri(String conversationManagerBaseUri) {
+        this.conversationManagerBaseUri = conversationManagerBaseUri;
+        this.agentReservedUri = conversationManagerBaseUri + "/agent-reserved";
+        this.noAgentAvailableUri = conversationManagerBaseUri + "/no-agent-available";
+    }
+
+    /**
+     * Returns the complete url of Agent-Manager's Assign-Task API.
+     *
+     * @return Agent -Manager's Assign-Task API's url
+     */
     public String getAssignTaskUri() {
-        return assignTaskUri;
+        return this.assignTaskUri;
     }
 
-    public void setAssignTaskUri(String assignTaskUri) {
-        this.assignTaskUri = assignTaskUri;
-    }
-
+    /**
+     * Returns the complete url of Bot-Framework's Agent-Reserved API.
+     *
+     * @return Bot -Framework's Agent-Reserved API's url
+     */
     public String getAgentReservedUri() {
-        return agentReservedUri;
+        return this.agentReservedUri;
     }
 
-    public void setAgentReservedUri(String agentReservedUri) {
-        this.agentReservedUri = agentReservedUri;
-    }
-
-    public String getAgentEwtUri() {
-        return agentEwtUri;
-    }
-
-    public void setAgentEwtUri(String agentEwtUri) {
-        this.agentEwtUri = agentEwtUri;
-    }
-
+    /**
+     * Returns the complete url of Bot-Framework's No-Agent-Available API.
+     *
+     * @return Bot -Framework's No-Agent-Available API's url
+     */
     public String getNoAgentAvailableUri() {
-        return noAgentAvailableUri;
+        return this.noAgentAvailableUri;
     }
 
-    public void setNoAgentAvailableUri(String noAgentAvailableUri) {
-        this.noAgentAvailableUri = noAgentAvailableUri;
+    /**
+     * Gets revoke task uri.
+     *
+     * @return the revoke task uri
+     */
+    public String getRevokeTaskUri() {
+        return this.revokeTaskUri;
     }
 }

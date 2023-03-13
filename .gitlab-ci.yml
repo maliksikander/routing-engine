@@ -126,18 +126,19 @@ mvn_artifacts:
 
 
 #+==================Runs on merge requests only========================+
-
+##commented because CI Job was failing due to JDK version missmatch by sonarqube binaries##
+## sonarqube binaries does not support JDK 16 #####
 sonarqube-check:
    image: maven:latest
    stage: mvn-scan
    when: on_success
    variables:
-     SONAR_TOKEN: "a7e1c1503f8d4b2d3e2efb29fcbeb26f7e13f2f3"
+     SONAR_TOKEN: "d94247ce9737cc26840be92f7940b696e15e6184"
      SONAR_HOST_URL: "http://192.168.1.109:9000"
      SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" 
      GIT_DEPTH: 0
    script: 
-       - mvn verify sonar:sonar -Dsonar.qualitygate.wait=true -Dsonar.projectKey=MediaRoutingEngine-CIM-364 -Dsonar.projectName=MediaRoutingEngine-CIM-364
+       - mvn verify sonar:sonar -Dsonar.qualitygate.wait=true -Dsonar.projectKey=MediaRoutingEngine-CIM -Dsonar.projectName=MediaRoutingEngine-CIM
        #- mvn test sonar:sonar -Dsonar.qualitygate.wait=true -Dsonar.projectKey=junit-test -Dsonar.projectName=junit-test
        #- cat target/site/jacoco/index.html | grep -o '.*'
    artifacts:
@@ -156,8 +157,6 @@ sonarqube-check:
          paths:
          - .sonar/cache
    only:
-     #- /^.+_f-.+$/
-     #- /^.+_b-.+$/
      - merge_requests
 #+==================Runs on merge requests only========================+
 
