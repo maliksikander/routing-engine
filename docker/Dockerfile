@@ -1,7 +1,8 @@
-FROM gitlab.expertflow.com:9242/general/openjdk:8-jre-alpine-3.11
+FROM adoptopenjdk:16-jdk-openj9
 MAINTAINER CTI Team Expertflow
 WORKDIR /app
-RUN apk update && apk add tzdata
+#RUN apk add curl=7.78.0-r0
+#RUN apk update && apk add tzdata
 COPY media-routing-engine.jar media-routing-engine.jar
 COPY docker-entrypoint.sh docker-entrypoint.sh
 RUN echo "user:x:1001060000:0::/app:" >> /etc/passwd \
