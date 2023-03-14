@@ -53,7 +53,7 @@ public class TaskStateActive implements TaskStateModifier {
 
     @Override
     public boolean updateState(Task task, TaskState state) {
-        Agent agent = this.agentsPool.findById(task.getAssignedTo());
+        Agent agent = this.agentsPool.findBy(task.getAssignedTo());
 
         if (agent == null) {
             logger.error("Could not update task state to Active, Assigned Agent not found");

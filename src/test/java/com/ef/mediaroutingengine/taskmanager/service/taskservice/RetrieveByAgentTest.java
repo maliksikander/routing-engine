@@ -36,10 +36,10 @@ class RetrieveByAgentTest {
         1 task assigned to no one
         1 to another agent
          */
-        taskList.add(getNewTask(agentId));
-        taskList.add(getNewTask(agentId));
+        taskList.add(getNewTask(new TaskAgent(agentId, null)));
+        taskList.add(getNewTask(new TaskAgent(agentId, null)));
         taskList.add(getNewTask(null));
-        taskList.add(getNewTask(UUID.randomUUID().toString()));
+        taskList.add(getNewTask(new TaskAgent(UUID.randomUUID().toString(), null)));
 
         when(tasksPool.findAll()).thenReturn(taskList);
 
@@ -47,7 +47,7 @@ class RetrieveByAgentTest {
         assertEquals(2, result.size());
     }
 
-    private Task getNewTask(String assignedTo) {
+    private Task getNewTask(TaskAgent assignedTo) {
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.AGENT,null);
         TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "queue1");

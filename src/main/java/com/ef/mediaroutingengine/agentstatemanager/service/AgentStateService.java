@@ -73,7 +73,7 @@ public class AgentStateService {
 
         this.agentsService.createOrUpdate(keycloakUser);
 
-        Agent agent = this.agentsPool.findById(keycloakUser.getId());
+        Agent agent = this.agentsPool.findBy(keycloakUser.getId());
         this.agentStateListener.propertyChange(agent, new AgentState(Enums.AgentStateName.LOGIN, null), false);
     }
 
@@ -104,7 +104,7 @@ public class AgentStateService {
      * @return the agent
      */
     Agent validateAndGetAgent(String agentId) {
-        Agent agent = this.agentsPool.findById(agentId);
+        Agent agent = this.agentsPool.findBy(agentId);
         if (agent == null) {
             throw new NotFoundException("Agent: " + agentId + " not found");
         }

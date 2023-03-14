@@ -124,7 +124,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
     void endReservedTask(Task task, Enums.TaskStateReasonCode closeReasonCode) {
         removeAndPublish(task, closeReasonCode);
 
-        Agent agent = this.agentsPool.findById(task.getAssignedTo());
+        Agent agent = this.agentsPool.findBy(task.getAssignedTo());
 
         if (agent != null) {
             agent.removeReservedTask();

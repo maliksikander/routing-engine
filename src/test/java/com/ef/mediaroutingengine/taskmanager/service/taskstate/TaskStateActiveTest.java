@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.TaskAgent;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
@@ -47,9 +48,10 @@ class TaskStateActiveTest {
     void test_updateState_when_agentIsNull() {
         Task task = mock(Task.class);
         TaskState taskState = new TaskState(Enums.TaskStateName.ACTIVE, null);
+        TaskAgent taskAgent = new TaskAgent(UUID.randomUUID().toString(), "agent1");
 
-        when(task.getAssignedTo()).thenReturn(UUID.randomUUID().toString());
-        when(agentsPool.findById(any())).thenReturn(null);
+        when(task.getAssignedTo()).thenReturn(taskAgent);
+        when(agentsPool.findBy(taskAgent)).thenReturn(null);
 
         taskStateActive.updateState(task, taskState);
 
@@ -64,10 +66,11 @@ class TaskStateActiveTest {
         Agent agent = mock(Agent.class);
         String topicId = UUID.randomUUID().toString();
         MediaRoutingDomain mrd = getNewMrd();
+        TaskAgent taskAgent = new TaskAgent(UUID.randomUUID().toString(), "agent1");
 
         when(task.getTaskState()).thenReturn(new TaskState(Enums.TaskStateName.RESERVED, null));
-        when(task.getAssignedTo()).thenReturn(UUID.randomUUID().toString());
-        when(agentsPool.findById(any())).thenReturn(agent);
+        when(task.getAssignedTo()).thenReturn(taskAgent);
+        when(agentsPool.findBy(taskAgent)).thenReturn(agent);
 
         when(task.getType()).thenReturn(new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null));
         when(task.getId()).thenReturn(UUID.randomUUID().toString());

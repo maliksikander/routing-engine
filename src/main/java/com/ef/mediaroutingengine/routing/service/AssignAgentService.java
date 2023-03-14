@@ -64,7 +64,7 @@ public class AssignAgentService {
         Task task = this.getExistingTask(agent.getId(), req.getChannelSession());
 
         if (task == null) {
-            task = Task.getInstanceFrom(agent.getId(), mrd, req.getTaskState(), req.getChannelSession(),
+            task = Task.getInstanceFrom(agent.toTaskAgent(), mrd, req.getTaskState(), req.getChannelSession(),
                     req.getTaskType());
 
             this.taskManager.insertInPoolAndRepository(task);
@@ -82,7 +82,7 @@ public class AssignAgentService {
 
     Task getExistingTask(String agentId, ChannelSession channelSession) {
         return this.tasksPool.findByConversationId(channelSession.getConversationId()).stream()
-                .filter(task -> task.getAssignedTo() != null && task.getAssignedTo().equals(agentId))
+                .filter(task -> task.getAssignedTo() != null && task.getAssignedTo().getId().equals(agentId))
                 .findFirst()
                 .orElse(null);
     }

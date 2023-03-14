@@ -108,7 +108,7 @@ public class TaskManager {
      * @param task task to remove.
      */
     public void endTaskFromAssignedAgent(Task task) {
-        Agent agent = this.agentsPool.findById(task.getAssignedTo());
+        Agent agent = this.agentsPool.findBy(task.getAssignedTo());
 
         if (agent == null) {
             return;
@@ -166,7 +166,7 @@ public class TaskManager {
      * @param task task to be removed.
      */
     public void endTaskFromAgentOnRona(Task task) {
-        Agent agent = this.agentsPool.findById(task.getAssignedTo());
+        Agent agent = this.agentsPool.findBy(task.getAssignedTo());
 
         if (agent != null) {
             agent.removeReservedTask();

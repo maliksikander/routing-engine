@@ -122,7 +122,7 @@ class AgentsServiceImplTest {
             doNothing().when(spy).validateAndSetRoutingAttributes(ccUser);
 
             Agent agent = mock(Agent.class);
-            when(agentsPool.findById(id)).thenReturn(agent);
+            when(agentsPool.findBy(id)).thenReturn(agent);
             when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.BUSY));
 
             spy.update(ccUser, id);
@@ -158,7 +158,7 @@ class AgentsServiceImplTest {
             Optional<CCUser> optionalCCUser = Optional.of(getNewCcUser());
 
             when(repository.findById(id)).thenReturn(optionalCCUser);
-            when(agentsPool.findById(id)).thenReturn(agent);
+            when(agentsPool.findBy(id)).thenReturn(agent);
             when(agent.getAllTasks()).thenReturn(taskList);
 
             ResponseEntity<Object> response = agentsService.delete(id);
@@ -173,7 +173,7 @@ class AgentsServiceImplTest {
             Optional<CCUser> optionalCCUser = Optional.of(getNewCcUser());
 
             when(repository.findById(id)).thenReturn(optionalCCUser);
-            when(agentsPool.findById(id)).thenReturn(agent);
+            when(agentsPool.findBy(id)).thenReturn(agent);
             when(agent.getAllTasks()).thenReturn(new ArrayList<>());
 
             ResponseEntity<Object> response = agentsService.delete(id);
@@ -244,7 +244,7 @@ class AgentsServiceImplTest {
         String mrdId = ccUser.getAssociatedMrds().get(0).getMrdId();
         Agent agent = mock(Agent.class);
 
-        when(agentsPool.findById(ccUser.getId())).thenReturn(agent);
+        when(agentsPool.findBy(ccUser.getId())).thenReturn(agent);
         when(agent.getNoOfActiveQueueTasks(mrdId)).thenReturn(12);
         when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.ACTIVE));
 
@@ -258,7 +258,7 @@ class AgentsServiceImplTest {
         String mrdId = ccUser.getAssociatedMrds().get(0).getMrdId();
         Agent agent = mock(Agent.class);
 
-        when(agentsPool.findById(ccUser.getId())).thenReturn(agent);
+        when(agentsPool.findBy(ccUser.getId())).thenReturn(agent);
         when(agent.getNoOfActiveQueueTasks(mrdId)).thenReturn(3);
         when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.BUSY));
 

@@ -141,7 +141,7 @@ public class AgentsServiceImpl implements AgentsService {
         logger.info("A user exists with username: {}, Deleting the existing user..", username);
 
         String id = userWithSameUsername.getId();
-        Agent agent = this.agentsPool.findById(id);
+        Agent agent = this.agentsPool.findBy(id);
 
         if (!agent.getAllTasks().isEmpty()) {
             String errStr = "Couldn't create agent, an agent exists with username" + username + "with active tasks";
@@ -233,7 +233,7 @@ public class AgentsServiceImpl implements AgentsService {
         this.validateAndSetRoutingAttributes(ccUser);
         logger.debug("CCUser's RoutingAttributes validated | CCUser: {}", ccUser.getId());
 
-        Agent agent = this.agentsPool.findById(ccUser.getId());
+        Agent agent = this.agentsPool.findBy(ccUser.getId());
 
         if (ccUser.getAssociatedMrds().isEmpty()) {
             ccUser.setAssociatedMrds(agent.toCcUser().getAssociatedMrds());
@@ -263,7 +263,7 @@ public class AgentsServiceImpl implements AgentsService {
 
         if (optionalCcUser.isPresent()) {
             CCUser ccUser = optionalCcUser.get();
-            Agent agent = this.agentsPool.findById(keycloakUser.getId());
+            Agent agent = this.agentsPool.findBy(keycloakUser.getId());
 
             agent.setKeycloakUser(keycloakUser);
             ccUser.setKeycloakUser(keycloakUser);
@@ -285,7 +285,7 @@ public class AgentsServiceImpl implements AgentsService {
             throw new NotFoundException(errorMessage);
         }
 
-        Agent agent = this.agentsPool.findById(id);
+        Agent agent = this.agentsPool.findBy(id);
 
         List<Task> tasks = agent.getAllTasks();
         if (!tasks.isEmpty()) {
@@ -343,7 +343,7 @@ public class AgentsServiceImpl implements AgentsService {
      */
     protected void updateAgentMrdState(CCUser ccUser) {
         String agentId = ccUser.getId();
-        Agent agent = this.agentsPool.findById(agentId);
+        Agent agent = this.agentsPool.findBy(agentId);
         AgentState agentState = agent.getState();
 
         ccUser.getAssociatedMrds().forEach(
@@ -419,7 +419,7 @@ public class AgentsServiceImpl implements AgentsService {
     protected AssociatedMrdUpdateConflictResponse getConflictedAssociatedMrds(CCUser ccUser) {
         List<AssociatedMrd> conflictedAssociatedMrds = new ArrayList<>();
         AtomicBoolean isInvalidMaxAgentTasks = new AtomicBoolean(false);
-        Agent agent = this.agentsPool.findById(ccUser.getId());
+        Agent agent = this.agentsPool.findBy(ccUser.getId());
 
         ccUser.getAssociatedMrds().forEach(
                 associatedMrd -> {

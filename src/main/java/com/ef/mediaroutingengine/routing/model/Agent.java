@@ -8,6 +8,7 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.TaskAgent;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -364,6 +365,10 @@ public class Agent {
         ccUser.setAssociatedRoutingAttributes(getAssociatedRoutingAttributesList());
         ccUser.setAssociatedMrds(getAssociatedMrdList());
         return ccUser;
+    }
+
+    public TaskAgent toTaskAgent() {
+        return new TaskAgent(this.getId(), this.keycloakUser.displayName());
     }
 
     /**

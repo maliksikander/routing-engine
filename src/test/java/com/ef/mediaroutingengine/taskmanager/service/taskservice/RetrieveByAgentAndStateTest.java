@@ -3,7 +3,13 @@ package com.ef.mediaroutingengine.taskmanager.service.taskservice;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-import com.ef.cim.objectmodel.*;
+import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.TaskAgent;
+import com.ef.cim.objectmodel.TaskQueue;
+import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.TaskType;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
@@ -33,11 +39,11 @@ class RetrieveByAgentAndStateTest {
     void testFindTasks_returnsAllTasksInTasksPoolWithSpecificStateAndAssignedToSpecificAgent() {
         List<Task> taskList = new ArrayList<>();
         // 2 tasks that meet our criteria
-        taskList.add(getNewTask(agentId, Enums.TaskStateName.QUEUED));
-        taskList.add(getNewTask(agentId, Enums.TaskStateName.QUEUED));
+        taskList.add(getNewTask(createTaskAgent(agentId), Enums.TaskStateName.QUEUED));
+        taskList.add(getNewTask(createTaskAgent(agentId), Enums.TaskStateName.QUEUED));
         // Tasks that do not meet our criteria
-        taskList.add(getNewTask(agentId, Enums.TaskStateName.RESERVED));
-        taskList.add(getNewTask(UUID.randomUUID().toString(), Enums.TaskStateName.QUEUED));
+        taskList.add(getNewTask(createTaskAgent(agentId), Enums.TaskStateName.RESERVED));
+        taskList.add(getNewTask(createTaskAgent(UUID.randomUUID().toString()), Enums.TaskStateName.QUEUED));
         taskList.add(getNewTask(null, Enums.TaskStateName.QUEUED));
 
         when(tasksPool.findAll()).thenReturn(taskList);
@@ -46,11 +52,11 @@ class RetrieveByAgentAndStateTest {
         assertEquals(2, taskDtoList.size());
     }
 
-    private Task getNewTask(String assignedTo, Enums.TaskStateName stateName) {
+    private Task getNewTask(TaskAgent assignedTo, Enums.TaskStateName stateName) {
         TaskState taskState = new TaskState(stateName, null);
-        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE,null);
+        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
         TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "queue1");
-        Task task = Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), taskQueue, taskState,type);
+        Task task = Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), taskQueue, taskState, type);
         task.setAssignedTo(assignedTo);
         return task;
     }
@@ -68,5 +74,9 @@ class RetrieveByAgentAndStateTest {
         mrd.setName("Chat");
         mrd.setDescription("Description");
         return mrd;
+    }
+
+    private TaskAgent createTaskAgent(String id) {
+        return new TaskAgent(id, null);
     }
 }

@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.taskmanager.service.taskservice;
 
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.TaskAgent;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
@@ -42,8 +43,8 @@ public class RetrieveByAgentAndState implements TasksRetriever {
     public List<TaskDto> findTasks() {
         List<TaskDto> result = new ArrayList<>();
         for (Task task : tasksPool.findAll()) {
-            String assignedTo = task.getAssignedTo();
-            if (assignedTo != null && assignedTo.equals(this.agentId)
+            TaskAgent assignedTo = task.getAssignedTo();
+            if (assignedTo != null && assignedTo.getId().equals(this.agentId)
                     && task.getTaskState().getName().equals(this.stateName)) {
                 result.add(AdapterUtility.createTaskDtoFrom(task));
             }
