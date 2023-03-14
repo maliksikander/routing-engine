@@ -6,45 +6,35 @@ import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Task type Wrap Up Implementation.
  */
 public class TaskStateWrapUp implements TaskStateModifier {
     /**
-     * The Logger.
-     */
-    private static Logger logger = LoggerFactory.getLogger(TaskStateWrapUp.class);
-    /**
      * The JMS Communicator.
      */
-    private JmsCommunicator jmsCommunicator;
+    private final JmsCommunicator jmsCommunicator;
     /**
      * Repository to store tasks.
      */
-    private TasksRepository tasksRepository;
+    private final TasksRepository tasksRepository;
 
-    @Autowired
     public TaskStateWrapUp(TasksRepository tasksRepository, JmsCommunicator jmsCommunicator) {
         this.tasksRepository = tasksRepository;
         this.jmsCommunicator = jmsCommunicator;
     }
 
     @Override
-    public void updateState(Task task, TaskState state) {
+    public boolean updateState(Task task, TaskState state) {
         if (!task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
-            String error = "Task is not active, could not change the task state to wrap up.";
-            logger.error(error);
-            throw new IllegalStateException(error);
+            return false;
         }
 
         task.setTaskState(state);
-
         tasksRepository.save(task.getId(), AdapterUtility.createTaskDtoFrom(task));
         jmsCommunicator.publishTaskStateChangeForReporting(task);
 
+        return true;
     }
 }

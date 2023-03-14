@@ -1,5 +1,14 @@
 package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.TaskState;
@@ -7,19 +16,15 @@ import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
-public class TaskStateWrapUpTest {
+class TaskStateWrapUpTest {
     private TaskStateWrapUp taskStateWrapUp;
     @Mock
     private JmsCommunicator jmsCommunicator;
@@ -32,28 +37,19 @@ public class TaskStateWrapUpTest {
     }
 
     @Test
-    void test_updateToWrapUp_whenTaskIsNotActive() {
-        String mrdId = UUID.randomUUID().toString();
-        String error = "Task is not active, could not change the task state to wrap up.";
-
-        TaskState currentState = new TaskState();
-        currentState.setName(Enums.TaskStateName.CLOSED);
-        MediaRoutingDomain mrd = getMrdInstance(mrdId);
+    void test_updateState_returnsFalse_whenCurrentStateIsNotActive() {
+        TaskState currentState = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.DONE);
+        MediaRoutingDomain mrd = getMrdInstance(UUID.randomUUID().toString());
         Task task = Task.getInstanceFrom(null, mrd, null, currentState, getTaskType());
-        TaskState newState = new TaskState();
-        newState.setName(Enums.TaskStateName.WRAP_UP);
 
-
-        assertThatThrownBy(() -> taskStateWrapUp.updateState(task, newState)).isInstanceOf(IllegalStateException.class)
-                .hasMessage(error);
+        assertFalse(taskStateWrapUp.updateState(task, new TaskState(Enums.TaskStateName.WRAP_UP, null)));
 
         verifyNoInteractions(tasksRepository);
         verifyNoInteractions(jmsCommunicator);
-
     }
 
     @Test
-    void test_updateToWrapUp_successfully() {
+    void test_updateState_returnsTrue_whenCurrentStateIsActive() {
         Task task = mock(Task.class);
         TaskState currentState = new TaskState();
         currentState.setName(Enums.TaskStateName.ACTIVE);
@@ -80,7 +76,6 @@ public class TaskStateWrapUpTest {
     }
 
     protected TaskType getTaskType() {
-        TaskType taskType = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
-        return taskType;
+        return new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
     }
 }

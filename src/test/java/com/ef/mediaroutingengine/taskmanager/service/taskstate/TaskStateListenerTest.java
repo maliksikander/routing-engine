@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
-import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,12 +26,10 @@ class TaskStateListenerTest {
     private TasksPool tasksPool;
     @Mock
     private TaskStateModifierFactory factory;
-    @Mock
-    private JmsCommunicator jmsCommunicator;
 
     @BeforeEach
     void setUp() {
-        this.taskStateListener = new TaskStateListener(tasksPool, factory, jmsCommunicator);
+        this.taskStateListener = new TaskStateListener(tasksPool, factory);
     }
 
     @Test
@@ -41,7 +38,6 @@ class TaskStateListenerTest {
         taskStateListener.propertyChange(UUID.randomUUID().toString(), new TaskState(Enums.TaskStateName.ACTIVE, null));
 
         verifyNoInteractions(factory);
-        verifyNoInteractions(jmsCommunicator);
     }
 
     @Test

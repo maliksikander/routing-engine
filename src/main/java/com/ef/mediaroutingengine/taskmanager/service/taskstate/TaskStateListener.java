@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 
 import com.ef.cim.objectmodel.TaskState;
-import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import org.slf4j.Logger;
@@ -29,24 +28,17 @@ public class TaskStateListener {
      * The Factory.
      */
     private final TaskStateModifierFactory factory;
-    /**
-     * The Application context.
-     */
-    private final JmsCommunicator jmsCommunicator;
 
     /**
      * Default constructor. Autowired -> loads the beans.
      *
-     * @param tasksPool       the tasks pool
-     * @param factory         the factory
-     * @param jmsCommunicator the jms communicator
+     * @param tasksPool the tasks pool
+     * @param factory   the factory
      */
     @Autowired
-    public TaskStateListener(TasksPool tasksPool, TaskStateModifierFactory factory,
-                             JmsCommunicator jmsCommunicator) {
+    public TaskStateListener(TasksPool tasksPool, TaskStateModifierFactory factory) {
         this.tasksPool = tasksPool;
         this.factory = factory;
-        this.jmsCommunicator = jmsCommunicator;
     }
 
     /**
@@ -66,13 +58,16 @@ public class TaskStateListener {
         }
 
         TaskState currentState = task.getTaskState();
-
         logger.info("Task:{} | Current State: {}, Requested state: {}", taskId, currentState, requestedState);
 
         TaskStateModifier stateModifier = this.factory.getModifier(requestedState.getName());
-        stateModifier.updateState(task, requestedState);
+        boolean isUpdated = stateModifier.updateState(task, requestedState);
 
-        logger.info("Task:{} state changed from {} to {}", task.getId(), currentState, requestedState);
+        if (isUpdated) {
+            logger.info("Task:{} state changed from {} to {}", task.getId(), currentState, requestedState);
+        } else {
+            logger.info("Could not change Task:{} state from {} to {}", task.getId(), currentState, requestedState);
+        }
 
         return task;
     }
