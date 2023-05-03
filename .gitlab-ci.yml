@@ -6,15 +6,15 @@ variables:
 include:
   - project: '$CI_PROJECT_ROOT_NAMESPACE/ci-templates'
     ref: 'main'
-    file: 
+    file:
       - maven-compile.yaml
       - maven-validate.yaml
       - maven-test.yaml
       - maven-format.yaml
       - sonarqube.yaml
-# uncomment if need to publish to dockerhub
-#      - dockerhub-build.yaml
-#      - dockerhub-publish.yaml
+      # uncomment if need to publish to dockerhub
+      #      - dockerhub-build.yaml
+      #      - dockerhub-publish.yaml
       - auto-increment.yaml
       - trivy.yaml
       - trivy-merge.yaml
@@ -33,8 +33,8 @@ stages:
   - init
   - build
   - build-gitlab
-# uncomment if need to publish to dockerhub
-#  - build-dockerhub
+  # uncomment if need to publish to dockerhub
+  #  - build-dockerhub
   - scan
   - publish_gitlab
 # uncomment if need to publish to dockerhub
@@ -181,7 +181,7 @@ gitlab_build_branch:
     - mvn_artifacts
   script:
     - export TIME_TOKEN="$(cat .ci_status/ci_time)"
-    - echo ${TIME_TOKEN} 
+    - echo ${TIME_TOKEN}
     - cp -r ./target/${CI_PROJECT_NAME}-*.jar ./docker/${CI_PROJECT_NAME}.jar
     - cd docker
     - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
@@ -215,7 +215,7 @@ gitlab_build_merge:
 
   script:
     - export TIME_TOKEN="$(cat .ci_status/ci_time)"
-    - echo ${TIME_TOKEN} 
+    - echo ${TIME_TOKEN}
     - "curl -s -f --request PUT --header \"PRIVATE-TOKEN: ${TOKEN}\" \"${GITLAB_URL}/api/v4/projects/${CI_PROJECT_ID}/variables/${TIME_VAR}\" --form \"value=${TIME_TOKEN}\" "
     - "curl -s -f --request PUT --header \"PRIVATE-TOKEN: ${TOKEN}\" \"${GITLAB_URL}/api/v4/projects/${CI_PROJECT_ID}/variables/${BRANCH}\" --form \"value=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}\" "
     - cp -r ./target/${CI_PROJECT_NAME}-"${TIME_TOKEN}".jar ./docker/${CI_PROJECT_NAME}.jar
@@ -235,7 +235,7 @@ gitlab_build_merge:
 trivy_scanning_branch:
   extends: .trivy_scan_template
   when: on_success
-  needs: 
+  needs:
     - job: gitlab_build_branch
   stage: scan
   variables:
@@ -251,7 +251,7 @@ trivy_scanning_merge:
   when: on_success
   stage: scan
   extends: .trivy_scan_merge
-  needs: 
+  needs:
     - job: gitlab_build_merge
     - job: time_build
       artifacts: true
@@ -267,7 +267,7 @@ grype_scan_branch:
   needs:
     - job: gitlab_build_branch
   when: on_success
-  variables: 
+  variables:
     SCAN_IMAGE: $CI_REGISTRY_IMAGE/build:$CI_COMMIT_BRANCH-$CI_COMMIT_SHA
   only:
     - /^.+_f-.+$/
@@ -289,7 +289,7 @@ gitlab_publish:
   extends: .gitlab_publish
   only:
     - tags
-  
+
 # #+==================Runs on merge requests only========================+
 
 # uncomment if need to publish to dockerhub
