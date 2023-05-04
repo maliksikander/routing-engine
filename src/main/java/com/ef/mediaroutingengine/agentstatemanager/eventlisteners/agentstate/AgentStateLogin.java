@@ -73,17 +73,18 @@ public class AgentStateLogin implements AgentStateDelegate {
         agent.setState(state);
         List<String> mrdStateChanges = new ArrayList<>();
 
+        AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId());
+        agentPresence.setAgentLoginTime(new Timestamp(System.currentTimeMillis()));
+        agentPresence.setState(agent.getState());
+
         for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
             if (!agentMrdState.getState().equals(Enums.AgentMrdStateName.LOGIN)) {
                 agentMrdState.setState(Enums.AgentMrdStateName.LOGIN);
                 mrdStateChanges.add(agentMrdState.getMrd().getId());
             }
         }
-        AgentPresence agentPresence = this.agentPresenceRepository.find(agent.getId());
-        agentPresence.setState(agent.getState());
-        agentPresence.setAgentMrdStates(agent.getAgentMrdStates());
-        agentPresence.setAgentLoginTime(new Timestamp(System.currentTimeMillis()));
 
+        agentPresence.setAgentMrdStates(agent.getAgentMrdStates());
         this.agentPresenceRepository.updateAgentLoginTime(agent.getId(), agentPresence.getAgentLoginTime());
         this.publish(agentPresence, mrdStateChanges);
 
