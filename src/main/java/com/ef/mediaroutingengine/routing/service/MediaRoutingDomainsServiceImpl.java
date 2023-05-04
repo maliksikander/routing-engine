@@ -171,13 +171,6 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             throw new NotFoundException(errorMessage);
         }
 
-        if (id.equals(Constants.VOICE_MRD_ID)
-                && (!mediaRoutingDomain.getName().equals("VOICE") || mediaRoutingDomain.getMaxRequests() != 1)) {
-            String errorMessage = "Update operation is forbidden for name and max-requests fields for VOICE MRD";
-            logger.error(errorMessage);
-            throw new ForbiddenException(errorMessage);
-        }
-
         mediaRoutingDomain.setId(id);
         List<CCUser> agentsWithConflictedMaxTask =
                 getAgentsWithConflictedMaxTasks(id, mediaRoutingDomain.getMaxRequests());
@@ -259,9 +252,8 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             throw new NotFoundException(errorMessage);
         }
 
-        if (id.equals(Constants.VOICE_MRD_ID) || id.equals(Constants.CHAT_MRD_ID)) {
-            String errorMessage = String.format("Delete operation is forbidden for the %1$s MRD",
-                    id.equals(Constants.VOICE_MRD_ID) ? "VOICE" : "CHAT");
+        if (id.equals(Constants.CHAT_MRD_ID)) {
+            String errorMessage = "Delete operation is forbidden for the CHAT MRD";
             logger.error(errorMessage);
             throw new ForbiddenException(errorMessage);
         }

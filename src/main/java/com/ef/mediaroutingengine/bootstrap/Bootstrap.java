@@ -259,45 +259,6 @@ public class Bootstrap {
         return taskDtoList;
     }
 
-    private boolean voiceMrdExists(List<MediaRoutingDomain> mrdList) {
-        for (MediaRoutingDomain mrd : mrdList) {
-            if (mrd.getId().equals(Constants.VOICE_MRD_ID)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    private boolean chatMrdExists(List<MediaRoutingDomain> mrdList) {
-        for (MediaRoutingDomain mrd : mrdList) {
-            if (mrd.getId().equals(Constants.CHAT_MRD_ID)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private MediaRoutingDomain createVoiceMrd() {
-        MediaRoutingDomain voiceMrd = new MediaRoutingDomain();
-        voiceMrd.setId(Constants.VOICE_MRD_ID);
-        voiceMrd.setName("VOICE");
-        voiceMrd.setInterruptible(true);
-        voiceMrd.setDescription("Standard voice MRD");
-        voiceMrd.setMaxRequests(1);
-        voiceMrd.setManagedByRe(false);
-        return voiceMrd;
-    }
-
-    private MediaRoutingDomain createChatMrd() {
-        MediaRoutingDomain chatMrd = new MediaRoutingDomain();
-        chatMrd.setId(Constants.CHAT_MRD_ID);
-        chatMrd.setName("CHAT");
-        chatMrd.setDescription("Standard chat MRD");
-        chatMrd.setMaxRequests(5);
-        chatMrd.setManagedByRe(true);
-        return chatMrd;
-    }
 
     private List<PrecisionQueueEntity> getQueuesFromConfigDb() {
         List<PrecisionQueueEntity> precisionQueueEntities = precisionQueueRepository.findAll();
@@ -322,13 +283,18 @@ public class Bootstrap {
         return precisionQueueEntities;
     }
 
-    private List<MediaRoutingDomain> getMrdFromConfigDb() {
+    protected List<MediaRoutingDomain> getMrdFromConfigDb() {
         List<MediaRoutingDomain> mrdList = mediaRoutingDomainRepository.findAll();
 
-        if (!voiceMrdExists(mrdList)) {
-            MediaRoutingDomain voiceMrd = createVoiceMrd();
-            this.mediaRoutingDomainRepository.save(voiceMrd);
-            mrdList.add(voiceMrd);
+        if (!ciscoCcMrdExists(mrdList)) {
+            MediaRoutingDomain ciscoCcMrd = createCiscoCcMrd();
+            this.mediaRoutingDomainRepository.save(ciscoCcMrd);
+            mrdList.add(ciscoCcMrd);
+        }
+        if (!cxVoiceMrdExist(mrdList)) {
+            MediaRoutingDomain cxVoiceMrd = createCxVoiceMrd();
+            this.mediaRoutingDomainRepository.save(cxVoiceMrd);
+            mrdList.add(cxVoiceMrd);
         }
         if (!chatMrdExists(mrdList)) {
             MediaRoutingDomain chatMrd = createChatMrd();
@@ -336,6 +302,65 @@ public class Bootstrap {
             mrdList.add(chatMrd);
         }
         return mrdList;
+    }
+
+    private boolean ciscoCcMrdExists(List<MediaRoutingDomain> mrdList) {
+        for (MediaRoutingDomain mrd : mrdList) {
+            if (mrd.getId().equals(Constants.CISCO_CC_MRD_ID)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean cxVoiceMrdExist(List<MediaRoutingDomain> mrdList) {
+        for (MediaRoutingDomain mrd : mrdList) {
+            if (mrd.getId().equals(Constants.CX_VOICE_MRD_ID)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean chatMrdExists(List<MediaRoutingDomain> mrdList) {
+        for (MediaRoutingDomain mrd : mrdList) {
+            if (mrd.getId().equals(Constants.CHAT_MRD_ID)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected MediaRoutingDomain createCiscoCcMrd() {
+        MediaRoutingDomain ciscoCcMrd = new MediaRoutingDomain();
+        ciscoCcMrd.setId(Constants.CISCO_CC_MRD_ID);
+        ciscoCcMrd.setName("CISCO CC");
+        ciscoCcMrd.setInterruptible(false);
+        ciscoCcMrd.setDescription("Standard voice MRD for CISCO CC");
+        ciscoCcMrd.setMaxRequests(1);
+        ciscoCcMrd.setManagedByRe(false);
+        return ciscoCcMrd;
+    }
+
+    protected MediaRoutingDomain createCxVoiceMrd() {
+        MediaRoutingDomain cxVoiceMrd = new MediaRoutingDomain();
+        cxVoiceMrd.setId(Constants.CX_VOICE_MRD_ID);
+        cxVoiceMrd.setName("CX VOICE");
+        cxVoiceMrd.setInterruptible(false);
+        cxVoiceMrd.setDescription("Standard voice MRD for CX Voice");
+        cxVoiceMrd.setMaxRequests(1);
+        cxVoiceMrd.setManagedByRe(true);
+        return cxVoiceMrd;
+    }
+
+    protected MediaRoutingDomain createChatMrd() {
+        MediaRoutingDomain chatMrd = new MediaRoutingDomain();
+        chatMrd.setId(Constants.CHAT_MRD_ID);
+        chatMrd.setName("CHAT");
+        chatMrd.setDescription("Standard chat MRD");
+        chatMrd.setMaxRequests(5);
+        chatMrd.setManagedByRe(true);
+        return chatMrd;
     }
 
     private List<CCUser> getCcUsersFromConfigDb() {

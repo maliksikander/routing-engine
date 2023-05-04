@@ -97,23 +97,9 @@ class MediaRoutingDomainsServiceImplTest {
         }
 
         @Test
-        void when_mrdIdEqualsToVoiceMrdId(){
-            String id = "6298b744b777de61844f616b";
-            String errorMessage = String.format("Delete operation is forbidden for the %1$s MRD",
-                    id.equals(Constants.VOICE_MRD_ID) ? "VOICE" : "CHAT");
-            given(repository.existsById(id)).willReturn(true);
-
-            assertThatThrownBy(() -> mediaRoutingDomainsService.delete(id)).isInstanceOf(ForbiddenException.class)
-                    .hasMessage(errorMessage);
-
-            verify(repository, never()).deleteById(id);
-        }
-
-        @Test
         void when_mrdIdEqualsToChatMrdId(){
             String id = "6305de07166ba1099d11d8e6";
-            String errorMessage = String.format("Delete operation is forbidden for the %1$s MRD",
-                    id.equals(Constants.VOICE_MRD_ID) ? "VOICE" : "CHAT");
+            String errorMessage = "Delete operation is forbidden for the CHAT MRD";
             given(repository.existsById(id)).willReturn(true);
 
             assertThatThrownBy(() -> mediaRoutingDomainsService.delete(id)).isInstanceOf(ForbiddenException.class)
