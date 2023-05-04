@@ -13,5 +13,5 @@ public interface TaskStateModifier {
      * @param task  the task
      * @param state the state
      */
-    void updateState(Task task, TaskState state);
+    boolean updateState(Task task, TaskState state);
 }

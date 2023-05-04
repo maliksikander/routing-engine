@@ -358,7 +358,7 @@ public class Bootstrap {
      */
     private void associateTaskWithAgents() {
         for (Task task : this.tasksPool.findAll()) {
-            Agent agent = this.agentsPool.findById(task.getAssignedTo());
+            Agent agent = this.agentsPool.findBy(task.getAssignedTo());
             if (agent != null) {
                 if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
                     agent.reserveTask(task);

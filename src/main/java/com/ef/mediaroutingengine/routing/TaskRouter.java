@@ -178,7 +178,7 @@ public class TaskRouter implements PropertyChangeListener {
     private boolean assignToLastAssignedAgent(Task task) {
         String lastAssignedAgentId = task.getLastAssignedAgentId();
         if (lastAssignedAgentId != null) {
-            Agent agent = this.agentsPool.findById(lastAssignedAgentId);
+            Agent agent = this.agentsPool.findBy(lastAssignedAgentId);
             String mrdId = this.precisionQueue.getMrd().getId();
             if (agent != null && agent.isAvailableForRouting(mrdId, task.getTopicId())) {
                 assignTaskTo(agent, task);
@@ -231,7 +231,7 @@ public class TaskRouter implements PropertyChangeListener {
 
             if (isPresented) {
                 agent.reserveTask(task);
-                this.changeStateOf(task, taskState, agent.getId());
+                this.changeStateOf(task, taskState, agent);
                 this.jmsCommunicator.publishTaskStateChangeForReporting(task);
 
                 this.jmsCommunicator.publishAgentReserved(task, agent.toCcUser());
@@ -259,12 +259,12 @@ public class TaskRouter implements PropertyChangeListener {
      *
      * @param task    the task
      * @param state   the state
-     * @param agentId the agent id
+     * @param agent the agent
      */
-    private void changeStateOf(Task task, TaskState state, String agentId) {
+    private void changeStateOf(Task task, TaskState state, Agent agent) {
         task.setTaskState(state);
-        task.setAssignedTo(agentId);
+        task.setAssignedTo(agent.toTaskAgent());
         this.tasksRepository.changeState(task.getId(), state);
-        this.tasksRepository.updateAssignedTo(task.getId(), agentId);
+        this.tasksRepository.updateAssignedTo(task.getId(), agent.toTaskAgent());
     }
 }

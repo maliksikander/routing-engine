@@ -4,6 +4,7 @@ import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
+import com.ef.cim.objectmodel.TaskAgent;
 import com.ef.cim.objectmodel.TaskQueue;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
@@ -71,7 +72,7 @@ public class Task {
     /**
      * The Assigned to.
      */
-    private String assignedTo;
+    private TaskAgent assignedTo;
     /**
      * The Enqueue time.
      */
@@ -168,15 +169,15 @@ public class Task {
     /**
      * Gets instance.
      *
-     * @param agentId        the agent id
+     * @param agent        the agent
      * @param mrd            the mrd
      * @param channelSession the channel session
      * @return the instance
      */
-    public static Task getInstanceFrom(String agentId, MediaRoutingDomain mrd,
+    public static Task getInstanceFrom(TaskAgent agent, MediaRoutingDomain mrd,
                                        TaskState taskState, ChannelSession channelSession, TaskType type) {
         Task task = getInstanceFrom(channelSession, mrd, null, taskState, type);
-        task.setAssignedTo(agentId);
+        task.setAssignedTo(agent);
         return task;
     }
 
@@ -281,7 +282,7 @@ public class Task {
      *
      * @return the assigned to
      */
-    public String getAssignedTo() {
+    public TaskAgent getAssignedTo() {
         return assignedTo;
     }
 
@@ -290,7 +291,7 @@ public class Task {
      *
      * @param assignedTo the assigned to
      */
-    public void setAssignedTo(String assignedTo) {
+    public void setAssignedTo(TaskAgent assignedTo) {
         this.assignedTo = assignedTo;
     }
 

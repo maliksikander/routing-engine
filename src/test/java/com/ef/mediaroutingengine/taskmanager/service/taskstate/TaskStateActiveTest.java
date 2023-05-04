@@ -11,15 +11,15 @@ import static org.mockito.Mockito.when;
 
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.cim.objectmodel.RoutingMode;
+import com.ef.cim.objectmodel.TaskAgent;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
-import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
+import com.ef.mediaroutingengine.taskmanager.model.Task;
+import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,16 +41,17 @@ class TaskStateActiveTest {
 
     @BeforeEach
     void setUp() {
-        this.taskStateActive = new TaskStateActive(taskManager, agentsPool, tasksRepository,jmsCommunicator);
+        this.taskStateActive = new TaskStateActive(taskManager, agentsPool, tasksRepository, jmsCommunicator);
     }
 
     @Test
     void test_updateState_when_agentIsNull() {
         Task task = mock(Task.class);
         TaskState taskState = new TaskState(Enums.TaskStateName.ACTIVE, null);
+        TaskAgent taskAgent = new TaskAgent(UUID.randomUUID().toString(), "agent1");
 
-        when(task.getAssignedTo()).thenReturn(UUID.randomUUID().toString());
-        when(agentsPool.findById(any())).thenReturn(null);
+        when(task.getAssignedTo()).thenReturn(taskAgent);
+        when(agentsPool.findBy(taskAgent)).thenReturn(null);
 
         taskStateActive.updateState(task, taskState);
 
@@ -65,9 +66,11 @@ class TaskStateActiveTest {
         Agent agent = mock(Agent.class);
         String topicId = UUID.randomUUID().toString();
         MediaRoutingDomain mrd = getNewMrd();
+        TaskAgent taskAgent = new TaskAgent(UUID.randomUUID().toString(), "agent1");
 
-        when(task.getAssignedTo()).thenReturn(UUID.randomUUID().toString());
-        when(agentsPool.findById(any())).thenReturn(agent);
+        when(task.getTaskState()).thenReturn(new TaskState(Enums.TaskStateName.RESERVED, null));
+        when(task.getAssignedTo()).thenReturn(taskAgent);
+        when(agentsPool.findBy(taskAgent)).thenReturn(agent);
 
         when(task.getType()).thenReturn(new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null));
         when(task.getId()).thenReturn(UUID.randomUUID().toString());

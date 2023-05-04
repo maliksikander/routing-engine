@@ -23,10 +23,7 @@ import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate.AgentStateListener;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.routing.model.Agent;
-import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
-import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
-import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.service.AgentsService;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,7 +97,7 @@ class AgentStateServiceTest {
             KeycloakUser request = getKeyCloakUserInstance();
             Agent agent = mock(Agent.class);
 
-            when(agentsPool.findById(request.getId())).thenReturn(agent);
+            when(agentsPool.findBy(request.getId())).thenReturn(agent);
             agentStateService.agentLogin(request);
 
             ArgumentCaptor<AgentState> captor = ArgumentCaptor.forClass(AgentState.class);
@@ -144,7 +141,7 @@ class AgentStateServiceTest {
         @Test
         void throwsNotFoundException_when_agentNotFoundInPool() {
             String agentId = UUID.randomUUID().toString();
-            when(agentsPool.findById(agentId)).thenReturn(null);
+            when(agentsPool.findBy(agentId)).thenReturn(null);
             assertThrows(NotFoundException.class, () -> agentStateService.validateAndGetAgent(agentId));
         }
 
@@ -153,7 +150,7 @@ class AgentStateServiceTest {
             String agentId = UUID.randomUUID().toString();
             Agent agent = mock(Agent.class);
 
-            when(agentsPool.findById(agentId)).thenReturn(agent);
+            when(agentsPool.findBy(agentId)).thenReturn(agent);
 
             Agent found = agentStateService.validateAndGetAgent(agentId);
             assertEquals(agent, found);

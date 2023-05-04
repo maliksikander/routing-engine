@@ -71,6 +71,8 @@ public class TaskStateModifierFactory {
             return new TaskStateClose(precisionQueuesPool, tasksPool, taskManager, jmsCommunicator);
         } else if (state.equals(Enums.TaskStateName.ACTIVE)) {
             return new TaskStateActive(taskManager, agentsPool, tasksRepository, jmsCommunicator);
+        } else if (state.equals(Enums.TaskStateName.WRAP_UP)) {
+            return new TaskStateWrapUp(tasksRepository, jmsCommunicator);
         } else {
             return new TaskStateOther();
         }

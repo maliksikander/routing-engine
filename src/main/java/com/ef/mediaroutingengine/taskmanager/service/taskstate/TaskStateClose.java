@@ -45,7 +45,7 @@ public class TaskStateClose implements TaskStateModifier {
 
 
     @Override
-    public void updateState(Task task, TaskState state) {
+    public boolean updateState(Task task, TaskState state) {
         task.setTaskState(state);
 
         this.precisionQueuesPool.endTask(task);
@@ -55,7 +55,7 @@ public class TaskStateClose implements TaskStateModifier {
         if (isRona(state)) {
             this.taskManager.endTaskFromAgentOnRona(task);
             this.taskManager.rerouteReservedTask(task);
-            return;
+            return true;
         }
 
         String conversationId = task.getTopicId();
@@ -66,6 +66,7 @@ public class TaskStateClose implements TaskStateModifier {
         }
 
         this.taskManager.endTaskFromAssignedAgent(task);
+        return true;
     }
 
     private boolean isRona(TaskState state) {

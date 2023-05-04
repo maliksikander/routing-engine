@@ -7,9 +7,9 @@ import com.ef.mediaroutingengine.taskmanager.model.Task;
  * The type Task state other.
  */
 public class TaskStateOther implements TaskStateModifier {
-
     @Override
-    public void updateState(Task task, TaskState state) {
+    public boolean updateState(Task task, TaskState state) {
         task.setTaskState(state);
+        return true;
     }
 }

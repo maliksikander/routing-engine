@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.TaskAgent;
 import com.ef.cim.objectmodel.TaskQueue;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
@@ -143,13 +144,13 @@ class CancelResourceServiceImplTest {
             Task task = mock(Task.class);
             Enums.TaskStateReasonCode closeReasonCode = Enums.TaskStateReasonCode.CANCELLED;
             Agent agent = mock(Agent.class);
-            String agentId = UUID.randomUUID().toString();
+            TaskAgent taskAgent = new TaskAgent(UUID.randomUUID().toString(), "agent1");
 
             CancelResourceServiceImpl spy = Mockito.spy(cancelResourceService);
 
             doNothing().when(spy).removeAndPublish(task, closeReasonCode);
-            when(task.getAssignedTo()).thenReturn(agentId);
-            doReturn(agent).when(agentsPool).findById(agentId);
+            when(task.getAssignedTo()).thenReturn(taskAgent);
+            doReturn(agent).when(agentsPool).findBy(taskAgent);
 
             spy.endReservedTask(task, closeReasonCode);
             verify(agent, times(1)).removeReservedTask();

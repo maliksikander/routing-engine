@@ -73,7 +73,7 @@ public class AssignAgentController {
     }
 
     private Agent validateAndGetAgent(String agentId) {
-        Agent agent = this.agentsPool.findById(agentId);
+        Agent agent = this.agentsPool.findBy(agentId);
 
         if (agent == null) {
             String errMessage = "No Agent found with id: " + agentId;

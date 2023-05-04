@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.taskmanager.repository;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.TaskAgent;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.global.redis.RedisClient;
@@ -42,7 +43,7 @@ public class TasksRepository extends RedisJsonDao<TaskDto> {
      * @param assignedTo the assigned to
      * @return the boolean
      */
-    public boolean updateAssignedTo(String taskId, String assignedTo) {
+    public boolean updateAssignedTo(String taskId, TaskAgent assignedTo) {
         return this.updateField(taskId, ".assignedTo", assignedTo);
     }
 

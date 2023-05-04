@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.routing.pool;
 
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.TaskAgent;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,11 +46,25 @@ public class AgentsPool {
      * @param id find the agent by this id.
      * @return Agent if found, null otherwise.
      */
-    public Agent findById(String id) {
+    public Agent findBy(String id) {
         if (id == null) {
             return null;
         }
         return pool.get(id);
+    }
+
+    /**
+     * Find by task agent.
+     *
+     * @param taskAgent the task agent
+     * @return the agent
+     */
+    public Agent findBy(TaskAgent taskAgent) {
+        if (taskAgent == null) {
+            return null;
+        }
+
+        return this.findBy(taskAgent.getId());
     }
 
     /**
