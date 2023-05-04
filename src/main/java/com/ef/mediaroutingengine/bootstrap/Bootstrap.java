@@ -43,7 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * The Bootstrap service is triggerred when the Routing-Engine starts. It loads the routing-engine's
+ * The Bootstrap service is triggered when the Routing-Engine starts. It loads the routing-engine's
  * in-memory pools and Object states from the Configuration DB and Redis shared DB.
  * It also subscribes to the JMS topic to communicate state changes with Agent-Manager.
  */
@@ -286,49 +286,22 @@ public class Bootstrap {
     protected List<MediaRoutingDomain> getMrdFromConfigDb() {
         List<MediaRoutingDomain> mrdList = mediaRoutingDomainRepository.findAll();
 
-        if (!ciscoCcMrdExists(mrdList)) {
-            MediaRoutingDomain ciscoCcMrd = createCiscoCcMrd();
-            this.mediaRoutingDomainRepository.save(ciscoCcMrd);
-            mrdList.add(ciscoCcMrd);
-        }
-        if (!cxVoiceMrdExist(mrdList)) {
-            MediaRoutingDomain cxVoiceMrd = createCxVoiceMrd();
-            this.mediaRoutingDomainRepository.save(cxVoiceMrd);
-            mrdList.add(cxVoiceMrd);
-        }
-        if (!chatMrdExists(mrdList)) {
-            MediaRoutingDomain chatMrd = createChatMrd();
-            this.mediaRoutingDomainRepository.save(chatMrd);
-            mrdList.add(chatMrd);
-        }
+        createAndSaveMrdIfNotExist(mrdList, createChatMrd());
+        createAndSaveMrdIfNotExist(mrdList, createCiscoCcMrd());
+        createAndSaveMrdIfNotExist(mrdList, createCxVoiceMrd());
+
         return mrdList;
     }
 
-    private boolean ciscoCcMrdExists(List<MediaRoutingDomain> mrdList) {
-        for (MediaRoutingDomain mrd : mrdList) {
-            if (mrd.getId().equals(Constants.CISCO_CC_MRD_ID)) {
-                return true;
-            }
+    private void createAndSaveMrdIfNotExist(List<MediaRoutingDomain> mediaRoutingDomainList, MediaRoutingDomain mrd) {
+        if (!ifExist(mediaRoutingDomainList, mrd)) {
+            this.mediaRoutingDomainRepository.save(mrd);
+            mediaRoutingDomainList.add(mrd);
         }
-        return false;
     }
 
-    private boolean cxVoiceMrdExist(List<MediaRoutingDomain> mrdList) {
-        for (MediaRoutingDomain mrd : mrdList) {
-            if (mrd.getId().equals(Constants.CX_VOICE_MRD_ID)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean chatMrdExists(List<MediaRoutingDomain> mrdList) {
-        for (MediaRoutingDomain mrd : mrdList) {
-            if (mrd.getId().equals(Constants.CHAT_MRD_ID)) {
-                return true;
-            }
-        }
-        return false;
+    private boolean ifExist(List<MediaRoutingDomain> mediaRoutingDomainList, MediaRoutingDomain mrd) {
+        return mediaRoutingDomainList.stream().anyMatch(existingMrd -> existingMrd.getId().equals(mrd.getId()));
     }
 
     protected MediaRoutingDomain createCiscoCcMrd() {
