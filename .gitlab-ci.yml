@@ -21,6 +21,7 @@ include:
       - grype.yaml
       - grype-merge.yaml
       - gitlab-publish.yaml
+      - mvn_build_tag.yaml
       - build_time.yml
 
 stages:
@@ -36,12 +37,14 @@ stages:
 # uncomment if need to publish to dockerhub
 #  - build-dockerhub
   - scan
+  - mvn_build_tag
   - publish_gitlab
 # uncomment if need to publish to dockerhub
 #  - publish_dockerhub
 #+==================Runs on Every Commit and merge requests========================+
 maven-validate:
   stage: validate
+  image: maven:3.6.0
   extends: .maven_validate
   only:
     - /^.+_f-.+$/
@@ -52,6 +55,7 @@ maven-validate:
 
 maven-compile:
   extends: .maven_compile
+  image: maven:3.6.0
   stage: compile
   when: on_success
   only:
@@ -66,6 +70,7 @@ maven-compile:
 
 maven-test:
   stage: test
+  image: maven:3.6.0
   when: on_success
   extends: .maven_test
   only:
@@ -79,6 +84,7 @@ maven-test:
 
 maven-format:
   stage: code_format
+  image: maven:3.6.0
   when: on_success
   extends: .maven_format
   allow_failure: false
@@ -91,7 +97,7 @@ maven-format:
 
 mvn_artifacts:
   stage: artifacts
-  image: maven:3.6.3
+  image: maven:3.6.0
   when: on_success
   script:
     - mvn clean
@@ -120,11 +126,9 @@ mvn_artifacts:
 
 sonarqube-check:
   extends: .sonarqube_scan
+  image: maven:3.6.0
   stage: mvn-scan
   when: on_success
-  variables:
-    SONAR_TOKEN: "d94247ce9737cc26840be92f7940b696e15e6184"
-    GIT_DEPTH: 0
   script:
     - mvn verify sonar:sonar -Dsonar.qualitygate.wait=true -Dsonar.projectKey=${CI_PROJECT_NAME}-CIM -Dsonar.projectName=${CI_PROJECT_NAME}-CIM
 
@@ -145,7 +149,7 @@ time_build:
 #+==================Runs on merge requests only========================+
 mvn_build:
   stage: build
-  image: maven:3.6.3
+  image: maven:3.6.0
   when: on_success
   script:
     - export TIME_TOKEN="$(cat .ci_status/ci_time)"
@@ -283,6 +287,18 @@ grype_scan_merge:
   when: on_success
   only:
     - merge_requests
+
+
+#+==================Runs on merge requests only========================+
+mvn_build_tag:
+  stage: mvn_build_tag
+  extends: .mvn_tag
+  image: maven:3.6.0
+  only:
+    - tags
+  
+# #+==================Runs on merge requests only========================+
+
 #+==================Runs on merge requests only========================+
 gitlab_publish:
   stage: publish_gitlab
@@ -302,3 +318,4 @@ gitlab_publish:
 #     - job: gitlab_publish
 #   only:
 #     - tags
+
