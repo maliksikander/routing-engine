@@ -313,4 +313,3 @@ gitlab_publish:
 #     - job: gitlab_publish
 #   only:
 #     - tags
-
