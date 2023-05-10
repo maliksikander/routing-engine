@@ -21,9 +21,13 @@ public final class Constants {
      */
     public static final String MDC_CORRELATION_ID = "correlationId";
     /**
-     * The constant VOICE_MRD_ID.
+     * Cisco CC constant mrd id.
      */
-    public static final String VOICE_MRD_ID = "6298b744b777de61844f616b";
+    public static final String CISCO_CC_MRD_ID = "20316843be924c8ab4f57a7a";
+    /**
+     * CX Voice constant mrd id.
+     */
+    public static final String CX_VOICE_MRD_ID = "62f9e360ea5311eda05b0242";
     /**
      * The constant CHAT_MRD_ID.
      */

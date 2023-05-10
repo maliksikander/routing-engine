@@ -426,13 +426,6 @@ public class AgentsServiceImpl implements AgentsService {
                     int mrdMaxRequests = agent.getAgentMrdState(associatedMrd.getMrdId()) != null
                             ? agent.getAgentMrdState(associatedMrd.getMrdId()).getMrd().getMaxRequests() : 0;
 
-                    if (associatedMrd.getMrdId().equals(Constants.VOICE_MRD_ID)
-                            && associatedMrd.getMaxAgentTasks() != 1) {
-                        String errorMessage = "The maxAgentTasks against VOICE MRD should be equal to 1.";
-                        logger.error(errorMessage);
-                        throw new ForbiddenException(errorMessage);
-                    }
-
                     if (associatedMrd.getMaxAgentTasks() < 0) {
                         isInvalidMaxAgentTasks.set(true);
                         conflictedAssociatedMrds.add(associatedMrd);
