@@ -97,18 +97,6 @@ class MediaRoutingDomainsServiceImplTest {
         }
 
         @Test
-        void when_mrdIdEqualsToChatMrdId(){
-            String id = "6305de07166ba1099d11d8e6";
-            String errorMessage = "Delete operation is forbidden for the CHAT MRD";
-            given(repository.existsById(id)).willReturn(true);
-
-            assertThatThrownBy(() -> mediaRoutingDomainsService.delete(id)).isInstanceOf(ForbiddenException.class)
-                    .hasMessage(errorMessage);
-
-            verify(repository, never()).deleteById(id);
-        }
-
-        @Test
         void when_mrdIsAssociatedToPrecisionQueueEntity(){
             String mrdId = UUID.randomUUID().toString();
             List<PrecisionQueueEntity> precisionQueueEntityList = new ArrayList<>();

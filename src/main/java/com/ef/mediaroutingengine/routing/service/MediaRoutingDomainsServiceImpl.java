@@ -252,12 +252,6 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
             throw new NotFoundException(errorMessage);
         }
 
-        if (id.equals(Constants.CHAT_MRD_ID)) {
-            String errorMessage = "Delete operation is forbidden for the CHAT MRD";
-            logger.error(errorMessage);
-            throw new ForbiddenException(errorMessage);
-        }
-
         List<PrecisionQueueEntity> precisionQueueEntities = this.precisionQueueRepository.findByMrdId(id);
         List<Task> tasks = this.tasksPool.findByMrdId(id);
 

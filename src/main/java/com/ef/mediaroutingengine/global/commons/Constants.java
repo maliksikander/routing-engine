@@ -23,7 +23,7 @@ public final class Constants {
     /**
      * Cisco CC constant mrd id.
      */
-    public static final String CISCO_CC_MRD_ID = "35eb1722ea5311eda05b0242";
+    public static final String CISCO_CC_MRD_ID = "20316843be924c8ab4f57a7a";
     /**
      * CX Voice constant mrd id.
      */
