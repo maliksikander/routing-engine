@@ -28,4 +28,14 @@ public class AssignAgentRequest {
     private TaskState taskState;
     @NotNull
     private TaskType taskType;
+
+    @Override
+    public String toString() {
+        return "AssignAgentRequest{"
+                + "agent='" + agent + '\''
+                + ", channelSession=" + channelSession
+                + ", taskState=" + taskState
+                + ", taskType=" + taskType
+                + '}';
+    }
 }

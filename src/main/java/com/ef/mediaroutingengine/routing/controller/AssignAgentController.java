@@ -60,6 +60,8 @@ public class AssignAgentController {
     public ResponseEntity<Object> assignAgent(@Valid @RequestBody AssignAgentRequest req,
                                               @RequestParam(required = false) boolean updateTask,
                                               @RequestParam(required = false) boolean offerToAgent) {
+        logger.debug("call received to assign agent");
+        logger.debug(String.valueOf(req));
         if (!req.getTaskType().getMode().equals(Enums.TaskTypeMode.AGENT)) {
             String errorMsg = "taskType.mode should be AGENT";
             logger.error(errorMsg);
