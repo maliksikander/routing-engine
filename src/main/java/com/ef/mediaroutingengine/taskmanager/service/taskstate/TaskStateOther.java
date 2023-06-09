@@ -10,7 +10,7 @@ import com.ef.mediaroutingengine.taskmanager.model.Task;
 public class TaskStateOther implements TaskStateModifier {
     @Override
     public boolean updateState(Task task, TaskState state) {
-        if (task.getTaskState().getName().equals(Enums.TaskStateName.WRAP_UP)) {
+        if (Enums.TaskStateName.WRAP_UP.equals(task.getTaskState().getName())) {
             return false;
         }
         task.setTaskState(state);

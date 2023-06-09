@@ -60,7 +60,7 @@ public class TaskStateListener {
         TaskState currentState = task.getTaskState();
         logger.info("Task:{} | Current State: {}, Requested state: {}", taskId, currentState, requestedState);
 
-        if (currentState.getName() == requestedState.getName()) {
+        if (currentState.getName().equals(requestedState.getName())) {
             logger.info("States are same, could not change Task:{} state from {} to {}", task.getId(), currentState,
                     requestedState);
             return task;
