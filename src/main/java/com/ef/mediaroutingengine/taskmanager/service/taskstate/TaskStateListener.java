@@ -60,6 +60,12 @@ public class TaskStateListener {
         TaskState currentState = task.getTaskState();
         logger.info("Task:{} | Current State: {}, Requested state: {}", taskId, currentState, requestedState);
 
+        if (currentState.getName() == requestedState.getName()) {
+            logger.info("States are same, could not change Task:{} state from {} to {}", task.getId(), currentState,
+                    requestedState);
+            return task;
+        }
+
         TaskStateModifier stateModifier = this.factory.getModifier(requestedState.getName());
         boolean isUpdated = stateModifier.updateState(task, requestedState);
 
