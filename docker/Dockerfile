@@ -3,6 +3,7 @@ MAINTAINER CTI Team Expertflow
 WORKDIR /app
 #RUN apk add curl=7.78.0-r0
 #RUN apk update && apk add tzdata
+Run apt-get -y install tzdata
 COPY media-routing-engine.jar media-routing-engine.jar
 COPY docker-entrypoint.sh docker-entrypoint.sh
 RUN echo "user:x:1001060000:0::/app:" >> /etc/passwd \
