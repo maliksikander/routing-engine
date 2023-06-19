@@ -43,8 +43,10 @@ class TaskStateListenerTest {
     @Test
     void testPropertyChange_when_taskFoundInTasksPool() {
         Task task = mock(Task.class);
+        TaskState currentTaskState = new TaskState(Enums.TaskStateName.RESERVED, null);
         TaskStateModifier taskStateModifier = mock(TaskStateModifier.class);
 
+        when(task.getTaskState()).thenReturn(currentTaskState);
         when(tasksPool.findById(any())).thenReturn(task);
         when(factory.getModifier(any())).thenReturn(taskStateModifier);
 

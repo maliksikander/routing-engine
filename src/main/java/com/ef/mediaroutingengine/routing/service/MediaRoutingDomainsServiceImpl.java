@@ -121,19 +121,21 @@ public class MediaRoutingDomainsServiceImpl implements MediaRoutingDomainsServic
         this.mrdPool.insert(inserted);
         logger.debug("MRD inserted in in-memory MRD pool | MRD: {}", inserted.getId());
 
-        AgentMrdState agentMrdState = new AgentMrdState(inserted, Enums.AgentMrdStateName.NOT_READY);
-        for (Agent agent : agentsPool.findAll()) {
-            agent.addAgentMrdState(agentMrdState);
-        }
-        logger.debug("MRD associated to all Agents in in-memory Agents pool | MRD: {}", inserted.getId());
-
         Map<String, AgentPresence> agentPresenceMap = new HashMap<>();
-        for (AgentPresence agentPresence : this.agentPresenceRepository.findAll(2500)) {
+        List<AgentPresence> agentPresenceList = this.agentPresenceRepository.findAll(2500);
+
+        for (AgentPresence agentPresence : agentPresenceList) {
+            AgentMrdState agentMrdState = new AgentMrdState(inserted, Enums.AgentMrdStateName.NOT_READY);
+            Agent agent = agentsPool.findBy(agentPresence.getAgent().getId());
+            agent.addAgentMrdState(agentMrdState);
+
             agentPresence.getAgentMrdStates().add(agentMrdState);
             agentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
         }
+
         this.agentPresenceRepository.saveAllByKeyValueMap(agentPresenceMap, 2500);
-        logger.debug("MRD associated to all Agents in Agent presence Repository | MRD: {}", inserted.getId());
+        logger.debug("MRD associated to all Agents in in-memory Agents pool and agent presence repository| MRD: {}",
+                inserted.getId());
 
         this.updateAllAgentsInDb();
         logger.debug("MRD has been saved as Associated MRD for all agents in DB | MRD: {}", inserted.getId());
