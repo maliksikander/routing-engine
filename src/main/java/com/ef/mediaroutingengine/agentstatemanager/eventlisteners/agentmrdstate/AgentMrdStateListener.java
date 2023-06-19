@@ -81,7 +81,7 @@ public class AgentMrdStateListener {
             logger.debug("Agent mrd state listener called asynchronously");
             String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
             CompletableFuture.runAsync(() -> {
-                // putting same correlation id from the caller thread into this thread
+                // putting same correlation id from the caller thread into this thread.
                 MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
                 this.run(agent, mrdId, requestedState);
                 MDC.clear();
@@ -100,7 +100,7 @@ public class AgentMrdStateListener {
      * @param requestedState the requested state
      */
     void run(Agent agent, String mrdId, Enums.AgentMrdStateName requestedState) {
-        logger.info("MRD state change requested | MRD: {}, Agent: {}", mrdId, agent.getId());
+        logger.info("MRD state change requested to {} | MRD: {}, Agent: {}", requestedState, mrdId, agent.getId());
         AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
         if (agentMrdState == null) {
             logger.error("Could not find MRD with id: {} associated with agent: {}", mrdId, agent.getId());
@@ -113,28 +113,31 @@ public class AgentMrdStateListener {
             logger.warn("Requested Agent-MRD state: {} is invalid, ignoring request..", requestedState);
             return;
         }
+        synchronized (agentMrdState) {
+            Enums.AgentMrdStateName currentState = agentMrdState.getState();
+            Enums.AgentMrdStateName newState = delegate.getNewState(agent, agentMrdState);
 
-        Enums.AgentMrdStateName currentState = agentMrdState.getState();
-        Enums.AgentMrdStateName newState = delegate.getNewState(agent, agentMrdState);
+            logger.debug("new state after evaluating states is {}", newState.name());
 
-        if (!newState.equals(currentState)) {
-            this.updateState(agent, agentMrdState, newState);
-            logger.info("MRD state changed from: {} to: {} | MRD: {} | Agent: {}", currentState, newState,
-                    mrdId, agent.getId());
+            if (!newState.equals(currentState)) {
+                this.updateState(agent, agentMrdState, newState);
+                logger.info("MRD state changed from: {} to: {} | MRD: {} | Agent: {}", currentState, newState,
+                        mrdId, agent.getId());
 
-            List<String> mrdStateChanges = new ArrayList<>();
-            mrdStateChanges.add(mrdId);
+                List<String> mrdStateChanges = new ArrayList<>();
+                mrdStateChanges.add(mrdId);
 
-            this.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED, mrdStateChanges);
+                this.publish(agent, Enums.JmsEventName.AGENT_STATE_CHANGED, mrdStateChanges);
 
-            if (isStateReadyOrActive(newState)) {
-                logger.debug("Triggering task-routers for MRD: {}", agentMrdState.getMrd().getId());
-                this.fireStateChangeToTaskSchedulers(agentMrdState);
+                if (isStateReadyOrActive(newState)) {
+                    logger.debug("Triggering task-routers for MRD: {}", agentMrdState.getMrd().getId());
+                    this.fireStateChangeToTaskSchedulers(agentMrdState);
+                }
+            } else {
+                logger.info("MRD state change from: {} to: {} not allowed | MRD: {} | Agent: {}", currentState,
+                        newState, mrdId, agent.getId());
+                this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED, new ArrayList<>());
             }
-        } else {
-            logger.info("MRD state change from: {} to: {} not allowed | MRD: {} | Agent: {}", currentState, newState,
-                    mrdId, agent.getId());
-            this.publish(agent, Enums.JmsEventName.AGENT_STATE_UNCHANGED, new ArrayList<>());
         }
     }
 
@@ -151,6 +154,10 @@ public class AgentMrdStateListener {
      */
     void updateState(Agent agent, AgentMrdState agentMrdState, Enums.AgentMrdStateName state) {
         agentMrdState.setState(state);
+        logger.debug("agent {} MRDs state after updating in memory agent object {} ",
+                agent.getKeycloakUser().getUsername(),
+                agent.getAgentMrdStates().toString());
+
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
     }
 

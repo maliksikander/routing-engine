@@ -6,6 +6,8 @@ import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateApiRes;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangeRequest;
 import com.ef.mediaroutingengine.agentstatemanager.service.AgentStateService;
 import javax.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -22,6 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AgentStateController {
+    /**
+     *The Logger.
+     */
+    private static final Logger logger = LoggerFactory.getLogger(AgentStateController.class);
+
     /**
      * The API calls are passed to this service for processing.
      */
@@ -73,6 +80,7 @@ public class AgentStateController {
      */
     @PutMapping("/mrd-state")
     public ResponseEntity<Object> mrdState(@Valid @RequestBody AgentMrdStateChangeRequest request) {
+        logger.debug("Request received to change agent {} mrd state with payload: {} ", request.getAgentId(), request);
         this.agentStateService.agentMrdState(request);
 
         String resMessage = "Agent MRD state change request received";
