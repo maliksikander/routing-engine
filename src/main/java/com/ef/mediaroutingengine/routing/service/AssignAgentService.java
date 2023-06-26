@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
@@ -70,7 +71,7 @@ public class AssignAgentService {
             this.taskManager.insertInPoolAndRepository(task);
             this.jmsCommunicator.publishTaskStateChangeForReporting(task);
         } else if (updateTask) {
-            this.update(task, req.getChannelSession(), mrd);
+            this.update(task, req.getChannelSession(), mrd, req.getTaskState());
         }
 
         if (offerToAgent) {
@@ -87,9 +88,10 @@ public class AssignAgentService {
                 .orElse(null);
     }
 
-    void update(Task existingTask, ChannelSession channelSession, MediaRoutingDomain mrd) {
+    void update(Task existingTask, ChannelSession channelSession, MediaRoutingDomain mrd, TaskState state) {
         existingTask.setChannelSession(channelSession);
         existingTask.setMrd(mrd);
+        existingTask.setTaskState(state);
         this.tasksRepository.save(existingTask.getId(), AdapterUtility.createTaskDtoFrom(existingTask));
     }
 }
