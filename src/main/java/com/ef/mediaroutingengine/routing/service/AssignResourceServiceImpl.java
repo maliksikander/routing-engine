@@ -14,6 +14,7 @@ import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +62,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     }
 
     @Override
-    public String assign(AssignResourceRequest request, boolean useQueueName, boolean offerToAgent) {
+    public String assign(AssignResourceRequest request, boolean useQueueName, boolean offerToAgent, int priority) {
         String conversationId = request.getChannelSession().getConversationId();
         logger.info("Assign resource request initiated | Conversation: {}", conversationId);
 
@@ -94,7 +95,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             // putting same correlation id and topic id from the caller thread into this thread
             MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
             MDC.put(Constants.MDC_TOPIC_ID, channelSession.getConversationId());
-            this.taskManager.enqueueTask(channelSession, queue, mrd, request.getRequestType());
+            this.taskManager.enqueueTask(channelSession, queue, mrd, request.getRequestType(),priority);
             MDC.clear();
         });
 

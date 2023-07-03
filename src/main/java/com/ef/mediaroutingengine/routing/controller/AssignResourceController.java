@@ -46,9 +46,10 @@ public class AssignResourceController {
             produces = "application/json")
     public ResponseEntity<String> assignResource(@RequestBody AssignResourceRequest request,
                                                  @RequestParam Optional<Boolean> queueName,
-                                                 @RequestParam Optional<Boolean> offerToAgent) {
+                                                 @RequestParam Optional<Boolean> offerToAgent,
+                                                 @RequestParam(defaultValue="1" ,required = false) int priority) {
         MDC.put(Constants.MDC_TOPIC_ID, request.getChannelSession().getConversationId());
         return ResponseEntity.ok().body(this.assignResourceService.assign(request, queueName.orElse(false),
-                offerToAgent.orElse(true)));
+                offerToAgent.orElse(true),priority));
     }
 }

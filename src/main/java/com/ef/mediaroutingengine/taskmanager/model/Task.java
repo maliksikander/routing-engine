@@ -122,9 +122,10 @@ public class Task {
      * @return the instance
      */
     public static Task getInstanceFrom(ChannelSession channelSession, MediaRoutingDomain mrd,
-                                       TaskQueue queue, TaskState state, TaskType type) {
+                                       TaskQueue queue, TaskState state, TaskType type,int priority) {
         Task task = new Task(UUID.randomUUID().toString(), channelSession, mrd, queue, type);
         task.setTaskState(state);
+        task.setPriority(priority);
         if (Enums.TaskTypeDirection.DIRECT_TRANSFER.equals(task.getType().getDirection())
                 || Enums.TaskTypeDirection.DIRECT_CONFERENCE.equals(task.getType().getDirection())) {
             task.setPriority(11);
@@ -161,8 +162,8 @@ public class Task {
     public static Task getInstanceFrom(Task oldTask) {
         TaskState newTaskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         Task task = getInstanceFrom(oldTask.channelSession, oldTask.mrd, oldTask.queue, newTaskState,
-                oldTask.getType());
-        task.priority = 11;
+                oldTask.getType(), 11);
+       // task.priority = 11;
         return task;
     }
 
@@ -175,8 +176,8 @@ public class Task {
      * @return the instance
      */
     public static Task getInstanceFrom(TaskAgent agent, MediaRoutingDomain mrd,
-                                       TaskState taskState, ChannelSession channelSession, TaskType type) {
-        Task task = getInstanceFrom(channelSession, mrd, null, taskState, type);
+                                       TaskState taskState, ChannelSession channelSession, TaskType type,int priority) {
+        Task task = getInstanceFrom(channelSession, mrd, null, taskState, type,priority);
         task.setAssignedTo(agent);
         return task;
     }
