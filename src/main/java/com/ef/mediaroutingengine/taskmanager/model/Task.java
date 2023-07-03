@@ -176,7 +176,8 @@ public class Task {
      * @return the instance
      */
     public static Task getInstanceFrom(TaskAgent agent, MediaRoutingDomain mrd,
-                                       TaskState taskState, ChannelSession channelSession, TaskType type, int priority) {
+                                       TaskState taskState, ChannelSession channelSession, TaskType type,
+                                       int priority) {
         Task task = getInstanceFrom(channelSession, mrd, null, taskState, type, priority);
         task.setAssignedTo(agent);
         return task;
