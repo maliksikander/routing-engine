@@ -285,10 +285,10 @@ public class TaskManager {
      * @param mrd            mrd in request.
      */
     public void enqueueTask(ChannelSession channelSession, PrecisionQueue queue, MediaRoutingDomain mrd,
-                            TaskType requestType,int priority) {
+                            TaskType requestType, int priority) {
         logger.debug(Constants.METHOD_STARTED);
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = Task.getInstanceFrom(channelSession, mrd, queue.toTaskQueue(), taskState, requestType,priority);
+        Task task = Task.getInstanceFrom(channelSession, mrd, queue.toTaskQueue(), taskState, requestType, priority);
         this.insertInPoolAndRepository(task);
         this.jmsCommunicator.publishTaskStateChangeForReporting(task);
         this.scheduleAgentRequestTimeoutTask(task.getChannelSession());

@@ -122,7 +122,7 @@ public class Task {
      * @return the instance
      */
     public static Task getInstanceFrom(ChannelSession channelSession, MediaRoutingDomain mrd,
-                                       TaskQueue queue, TaskState state, TaskType type,int priority) {
+                                       TaskQueue queue, TaskState state, TaskType type, int priority) {
         Task task = new Task(UUID.randomUUID().toString(), channelSession, mrd, queue, type);
         task.setTaskState(state);
         task.setPriority(priority);
@@ -176,8 +176,8 @@ public class Task {
      * @return the instance
      */
     public static Task getInstanceFrom(TaskAgent agent, MediaRoutingDomain mrd,
-                                       TaskState taskState, ChannelSession channelSession, TaskType type,int priority) {
-        Task task = getInstanceFrom(channelSession, mrd, null, taskState, type,priority);
+                                       TaskState taskState, ChannelSession channelSession, TaskType type, int priority) {
+        Task task = getInstanceFrom(channelSession, mrd, null, taskState, type, priority);
         task.setAssignedTo(agent);
         return task;
     }

@@ -1,9 +1,6 @@
 package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.mediaroutingengine.routing.dto.AssignResourceRequest;
-
-import java.util.Optional;
-
 /**
  * The interface Assign resource service.
  */
