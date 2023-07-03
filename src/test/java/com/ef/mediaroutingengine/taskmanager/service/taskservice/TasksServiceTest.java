@@ -60,7 +60,7 @@ class TasksServiceTest {
         MediaRoutingDomain mrd = mock(MediaRoutingDomain.class);
         TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
         TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "queue1");
-        Task task = Task.getInstanceFrom(channelSession, mrd, taskQueue, taskState, type);
+        Task task = Task.getInstanceFrom(channelSession, mrd, taskQueue, taskState, type, 1);
 
         when(tasksPool.findById(task.getId())).thenReturn(task);
         TaskDto taskDto = tasksService.retrieveById(task.getId());

@@ -183,6 +183,6 @@ class CancelResourceServiceImplTest {
         channelSession.setConversationId(topicId);
         TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE,null);
         TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "Queue1");
-        return Task.getInstanceFrom(channelSession, null, taskQueue, taskState,type);
+        return Task.getInstanceFrom(channelSession, null, taskQueue, taskState, type, 1);
     }
 }
