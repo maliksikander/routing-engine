@@ -98,13 +98,14 @@ public class Task {
      * @param mrd            the mrd
      * @param queue          the queue
      */
-    private Task(String id, ChannelSession channelSession, MediaRoutingDomain mrd, TaskQueue queue, TaskType type) {
+    private Task(String id, ChannelSession channelSession, MediaRoutingDomain mrd, TaskQueue queue, TaskType type,
+                 int priority) {
         this.id = id;
         this.channelSession = channelSession;
         this.mrd = mrd;
         this.queue = queue;
 
-        this.priority = 1; // Right now hardcoded at highest priority level
+        this.priority = priority; // Right now hardcoded at highest priority level
         this.enqueueTime = System.currentTimeMillis();
         this.timer = new Timer();
         this.handlingTime = 0L;
@@ -123,9 +124,8 @@ public class Task {
      */
     public static Task getInstanceFrom(ChannelSession channelSession, MediaRoutingDomain mrd,
                                        TaskQueue queue, TaskState state, TaskType type, int priority) {
-        Task task = new Task(UUID.randomUUID().toString(), channelSession, mrd, queue, type);
+        Task task = new Task(UUID.randomUUID().toString(), channelSession, mrd, queue, type, priority);
         task.setTaskState(state);
-        task.setPriority(priority);
         if (Enums.TaskTypeDirection.DIRECT_TRANSFER.equals(task.getType().getDirection())
                 || Enums.TaskTypeDirection.DIRECT_CONFERENCE.equals(task.getType().getDirection())) {
             task.setPriority(11);
@@ -145,9 +145,8 @@ public class Task {
      */
     public static Task getInstanceFrom(TaskDto taskDto) {
         Task task = new Task(taskDto.getId(), taskDto.getChannelSession(), taskDto.getMrd(),
-                taskDto.getQueue(), taskDto.getType());
+                taskDto.getQueue(), taskDto.getType(), taskDto.getPriority());
         task.state = taskDto.getState();
-        task.priority = taskDto.getPriority();
         task.assignedTo = taskDto.getAssignedTo();
         task.enqueueTime = taskDto.getEnqueueTime();
         return task;
@@ -163,7 +162,6 @@ public class Task {
         TaskState newTaskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         Task task = getInstanceFrom(oldTask.channelSession, oldTask.mrd, oldTask.queue, newTaskState,
                 oldTask.getType(), 11);
-       // task.priority = 11;
         return task;
     }
 
