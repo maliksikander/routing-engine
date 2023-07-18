@@ -66,8 +66,7 @@ public class AssignAgentService {
 
         if (task == null) {
             task = Task.getInstanceFrom(agent.toTaskAgent(), mrd, req.getTaskState(), req.getChannelSession(),
-                    req.getTaskType(), 1);
-
+                    req.getTaskType());
             this.taskManager.insertInPoolAndRepository(task);
             this.jmsCommunicator.publishTaskStateChangeForReporting(task);
         } else if (updateTask) {

@@ -66,7 +66,6 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         logger.info("Assign resource request initiated | Conversation: {}", conversationId);
 
         this.throwExceptionIfRequestExistsFor(conversationId);
-
         if (request.getRequestType() == null) {
             TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
             request.setRequestType(type);

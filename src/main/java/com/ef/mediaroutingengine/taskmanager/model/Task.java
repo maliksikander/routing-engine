@@ -104,8 +104,7 @@ public class Task {
         this.channelSession = channelSession;
         this.mrd = mrd;
         this.queue = queue;
-
-        this.priority = priority; // Right now hardcoded at highest priority level
+        this.priority = priority;
         this.enqueueTime = System.currentTimeMillis();
         this.timer = new Timer();
         this.handlingTime = 0L;
@@ -174,9 +173,9 @@ public class Task {
      * @return the instance
      */
     public static Task getInstanceFrom(TaskAgent agent, MediaRoutingDomain mrd,
-                                       TaskState taskState, ChannelSession channelSession, TaskType type,
-                                       int priority) {
-        Task task = getInstanceFrom(channelSession, mrd, null, taskState, type, priority);
+                                       TaskState taskState, ChannelSession channelSession, TaskType type
+                                       ) {
+        Task task = getInstanceFrom(channelSession, mrd, null, taskState, type,1);
         task.setAssignedTo(agent);
         return task;
     }

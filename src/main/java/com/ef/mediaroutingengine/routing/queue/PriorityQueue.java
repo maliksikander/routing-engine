@@ -39,11 +39,6 @@ public class PriorityQueue {
      * @return the boolean
      */
     public boolean enqueue(@NotNull Task task) {
-        if (task.getPriority() > 10) {
-            task.setPriority(10);
-        } else if (task.getPriority() < 1) {
-            task.setPriority(1);
-        }
         return this.multiLevelQueueMap.get(task.getPriority()).offer(task);
     }
 
