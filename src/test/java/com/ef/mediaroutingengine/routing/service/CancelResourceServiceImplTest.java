@@ -28,7 +28,9 @@ import com.ef.mediaroutingengine.routing.utility.RestRequest;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
+
 import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -181,7 +183,7 @@ class CancelResourceServiceImplTest {
     private Task getTaskInstance(String topicId, TaskState taskState) {
         ChannelSession channelSession = new ChannelSession();
         channelSession.setConversationId(topicId);
-        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE,null);
+        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
         TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "Queue1");
         return Task.getInstanceFrom(channelSession, null, taskQueue, taskState, type, 1);
     }
