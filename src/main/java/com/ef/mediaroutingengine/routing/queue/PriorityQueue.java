@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.routing.queue;
 
 import com.ef.mediaroutingengine.taskmanager.model.Task;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;

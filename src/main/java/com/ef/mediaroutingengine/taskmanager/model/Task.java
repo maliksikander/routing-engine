@@ -10,7 +10,6 @@ import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
-
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.Objects;
@@ -18,7 +17,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

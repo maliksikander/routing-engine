@@ -18,7 +18,6 @@ import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
-
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -28,7 +27,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
