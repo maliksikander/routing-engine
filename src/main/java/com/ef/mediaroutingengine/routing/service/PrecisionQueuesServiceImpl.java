@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,15 +50,12 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      */
     private final PrecisionQueueRepository repository;
 
+    private final TasksPool tasksPool;
+
     /**
      * The Precision queues pool.
      */
     private final PrecisionQueuesPool precisionQueuesPool;
-    /**
-     * The Tasks pool.
-     */
-    private final TasksPool tasksPool;
-
     /**
      * The Mrd pool.
      */
@@ -387,4 +385,21 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         }
         requestBody.setMrd(mediaRoutingDomain);
     }
+
+
+    public int getTaskPosition(Task task) {
+        int priority = task.getPriority();
+        long enqueueTime = task.getEnqueueTime();
+        String queueId = task.getQueue().getId();
+        List<Task> tasks = tasksPool.findByQueueId(queueId);
+        List<Task> filteredTasks = tasks.stream()
+                .filter(t -> t.getPriority() > priority || (t.getPriority() == priority && t.getEnqueueTime() > enqueueTime))
+                .collect(Collectors.toList());
+        int position = filteredTasks.size();
+        return position;
+    }
+
+
+
+
 }
