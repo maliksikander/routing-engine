@@ -387,18 +387,6 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     }
 
 
-    public int getTaskPosition(Task task) {
-        int priority = task.getPriority();
-        long enqueueTime = task.getEnqueueTime();
-        String queueId = task.getQueue().getId();
-        List<Task> tasks = tasksPool.findByQueueId(queueId);
-        List<Task> filteredTasks = tasks.stream()
-                .filter(t -> t.getPriority() > priority || (t.getPriority() == priority && t.getEnqueueTime() > enqueueTime))
-                .collect(Collectors.toList());
-        int position = filteredTasks.size();
-        return position;
-    }
-
 
 
 

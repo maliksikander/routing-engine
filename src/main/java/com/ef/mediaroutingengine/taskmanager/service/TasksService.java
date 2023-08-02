@@ -18,6 +18,7 @@ import com.ef.mediaroutingengine.taskmanager.service.taskservice.TasksRetriever;
 import com.ef.mediaroutingengine.taskmanager.service.taskservice.TasksRetrieverFactory;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -105,4 +106,19 @@ public class TasksService {
         return AdapterUtility.createTaskDtoFrom(task);
     }
 
+
+    public int getTaskPosition(Task task) {
+        if (task == null) {
+            throw new IllegalArgumentException("Task object is null");
+        }
+        int priority = task.getPriority();
+        long enqueueTime = task.getEnqueueTime();
+        String queueId = task.getQueue().getId();
+        List<Task> tasks = tasksPool.findByQueueId(queueId);
+        List<Task> filteredTasks = tasks.stream()
+                .filter(t -> t.getPriority() > priority || (t.getPriority() == priority && t.getEnqueueTime() < enqueueTime))
+                .collect(Collectors.toList());
+        int position = filteredTasks.size() + 1;
+        return position;
+    }
 }

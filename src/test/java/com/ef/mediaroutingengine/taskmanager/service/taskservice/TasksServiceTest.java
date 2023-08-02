@@ -85,4 +85,48 @@ class TasksServiceTest {
         List<TaskDto> result = tasksService.retrieve(agentId, taskState);
         assertEquals(taskDtoList.size(), result.size());
     }
+
+    @Test
+    void TestTaskPosition()
+    {
+        List<Task> taskList = new ArrayList<>();
+        TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
+        TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE,null);
+        TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "Chat");
+        for (int i = 1; i <= 10; i++) {
+            taskList.add(Task.getInstanceFrom(
+                    getNewChannelSession(),
+                    getNewMrd(),
+                    taskQueue,
+                    taskState,
+                    type,
+                    i
+            ));
+        }
+        Task task = Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), taskQueue, taskState,type, 4);
+        taskList.add(task);
+        when(tasksPool.findByQueueId(taskQueue.getId())).thenReturn(taskList);
+        int checktask = tasksService.getTaskPosition(task);
+        assertEquals(8, checktask);
+        assertThrows(IllegalArgumentException.class, () -> {
+            tasksService.getTaskPosition(null);
+        });
+
+
+    }
+
+    private ChannelSession getNewChannelSession() {
+        ChannelSession channelSession = new ChannelSession();
+        channelSession.setId(UUID.randomUUID().toString());
+        channelSession.setConversationId(UUID.randomUUID().toString());
+        return channelSession;
+    }
+
+    private MediaRoutingDomain getNewMrd() {
+        MediaRoutingDomain mrd = new MediaRoutingDomain();
+        mrd.setId(UUID.randomUUID().toString());
+        mrd.setName("Chat");
+        mrd.setDescription("Description");
+        return mrd;
+    }
 }
