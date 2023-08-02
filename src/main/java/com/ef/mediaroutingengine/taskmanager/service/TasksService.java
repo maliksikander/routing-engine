@@ -106,7 +106,12 @@ public class TasksService {
         return AdapterUtility.createTaskDtoFrom(task);
     }
 
-
+    /**
+     * get task position.
+     *
+     * @param task  the task
+     * @return the task position
+     */
     public int getTaskPosition(Task task) {
         if (task == null) {
             throw new IllegalArgumentException("Task object is null");
@@ -116,7 +121,8 @@ public class TasksService {
         String queueId = task.getQueue().getId();
         List<Task> tasks = tasksPool.findByQueueId(queueId);
         List<Task> filteredTasks = tasks.stream()
-                .filter(t -> t.getPriority() > priority || (t.getPriority() == priority && t.getEnqueueTime() < enqueueTime))
+                .filter(t -> t.getPriority() > priority || (t.getPriority() == priority
+                        && t.getEnqueueTime() < enqueueTime))
                 .collect(Collectors.toList());
         int position = filteredTasks.size() + 1;
         return position;
