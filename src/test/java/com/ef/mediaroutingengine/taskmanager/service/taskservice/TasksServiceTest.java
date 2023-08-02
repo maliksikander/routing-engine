@@ -106,13 +106,11 @@ class TasksServiceTest {
         Task task = Task.getInstanceFrom(getNewChannelSession(), getNewMrd(), taskQueue, taskState,type, 4);
         taskList.add(task);
         when(tasksPool.findByQueueId(taskQueue.getId())).thenReturn(taskList);
-        int checktask = tasksService.getTaskPosition(task);
-        assertEquals(8, checktask);
+        int checkTask = tasksService.getTaskPosition(task);
+        assertEquals(8, checkTask);
         assertThrows(IllegalArgumentException.class, () -> {
             tasksService.getTaskPosition(null);
         });
-
-
     }
 
     private ChannelSession getNewChannelSession() {
