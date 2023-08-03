@@ -156,7 +156,7 @@ public class TasksService {
      * Returns the EWT and position of a task.
      *
      * @param task The task.
-     * @return the EWT and position.
+     * @return the task, its EWT, and position.
      */
     public TaskEwtAndPositionResponse calculateTaskEwtAndPosition(Task task) {
         int ewt;
@@ -177,7 +177,7 @@ public class TasksService {
 
         logger.info("Request received to fetch the EWT and position for conversation id: {}", task.getId());
 
-        return new TaskEwtAndPositionResponse(task, ewt, queuePosition);
+        return new TaskEwtAndPositionResponse(AdapterUtility.createTaskDtoFrom(task), ewt, queuePosition);
     }
 
     /**

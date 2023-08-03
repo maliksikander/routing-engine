@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.taskmanager.dto;
 
+import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TaskEwtAndPositionResponse {
-    private Task task;
+    private TaskDto task;
     private int ewt;
     private int position;
 }
