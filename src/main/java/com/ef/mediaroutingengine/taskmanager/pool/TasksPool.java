@@ -104,6 +104,22 @@ public class TasksPool {
     }
 
     /**
+     * Find queued tasks for the given conversation id.
+     *
+     * @param conversationId the conversation id.
+     * @return returns list of tasks.
+     */
+    public List<Task> findQueuedTasksFor(String conversationId) {
+        return this.pool.stream()
+                .filter(t -> {
+                    Enums.TaskStateName stateName = t.getTaskState().getName();
+                    return t.getTopicId().equals(conversationId)
+                            && (stateName.equals(Enums.TaskStateName.QUEUED));
+                })
+                .toList();
+    }
+
+    /**
      * Find by conversation id list.
      *
      * @param conversationId the conversation id

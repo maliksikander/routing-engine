@@ -4,9 +4,11 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.config.AssignResourceProperties;
+import com.ef.mediaroutingengine.config.jmsconfig.ExternalServiceConfig;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.dto.AssignTaskRequest;
+import com.ef.mediaroutingengine.routing.dto.QueueHistoricalStats;
 import com.ef.mediaroutingengine.routing.dto.RevokeTaskRequest;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.time.Duration;
@@ -40,6 +42,9 @@ public class RestRequest {
      * The Config.
      */
     private final AssignResourceProperties config;
+    private final ExternalServiceConfig externalServiceConfig;
+
+    private final RestTemplate restTemplate;
 
     /**
      * Instantiates a new Rest request.
@@ -47,8 +52,13 @@ public class RestRequest {
      * @param config the config
      */
     @Autowired
-    public RestRequest(AssignResourceProperties config) {
+    public RestRequest(AssignResourceProperties config, ExternalServiceConfig externalServiceConfig) {
+        RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
+        Duration duration = Duration.ofSeconds(5);
+        this.restTemplate = restTemplateBuilder.setConnectTimeout(duration).build();
+
         this.config = config;
+        this.externalServiceConfig = externalServiceConfig;
     }
 
     /**
@@ -144,5 +154,16 @@ public class RestRequest {
         }
 
         return null;
+    }
+
+    /**
+     * Get request to fetch Historical stats from Real-Time-Reports.
+     *
+     * @param queueId the queue for which the stats are required.
+     * @return returns the QueueHistoricalStats DTO.
+     */
+    public QueueHistoricalStats getQueueHistoricalStats(String queueId) {
+        String url = externalServiceConfig.getRealTimeReportsUri() + "/queue/" + queueId + "/historical-stats";
+        return this.restTemplate.getForEntity(url, QueueHistoricalStats.class).getBody();
     }
 }

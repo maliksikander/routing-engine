@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -385,9 +384,5 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         }
         requestBody.setMrd(mediaRoutingDomain);
     }
-
-
-
-
 
 }

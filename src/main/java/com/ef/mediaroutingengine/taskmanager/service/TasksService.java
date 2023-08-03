@@ -1,36 +1,44 @@
 package com.ef.mediaroutingengine.taskmanager.service;
 
-import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.cim.objectmodel.TaskState;
-import com.ef.cim.objectmodel.TaskType;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
-import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.dto.QueueHistoricalStats;
+import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
+import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
+import com.ef.mediaroutingengine.routing.utility.RestRequest;
+import com.ef.mediaroutingengine.taskmanager.dto.TaskEwtAndPositionResponse;
 import com.ef.mediaroutingengine.taskmanager.dto.UpdateTaskRequest;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import com.ef.mediaroutingengine.taskmanager.service.taskservice.TasksRetriever;
 import com.ef.mediaroutingengine.taskmanager.service.taskservice.TasksRetrieverFactory;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
 
 /**
  * The type Tasks service.
  */
 @Service
 public class TasksService {
+    private static final Logger logger = LoggerFactory.getLogger(TasksService.class);
     /**
      * The Tasks pool.
      */
     private final TasksPool tasksPool;
+    private final PrecisionQueuesPool queuesPool;
+    private final RestRequest restRequest;
     /**
      * The Tasks repository.
      */
@@ -51,12 +59,15 @@ public class TasksService {
      * @param tasksRetrieverFactory the task retriever factory
      */
     @Autowired
-    public TasksService(TasksPool tasksPool, TasksRepository tasksRepository,
-                        TasksRetrieverFactory tasksRetrieverFactory, JmsCommunicator jmsCommunicator) {
+    public TasksService(TasksPool tasksPool, PrecisionQueuesPool queuesPool, TasksRepository tasksRepository,
+                        TasksRetrieverFactory tasksRetrieverFactory, JmsCommunicator jmsCommunicator,
+                        RestRequest restRequest) {
         this.tasksPool = tasksPool;
+        this.queuesPool = queuesPool;
         this.tasksRepository = tasksRepository;
         this.tasksRetrieverFactory = tasksRetrieverFactory;
         this.jmsCommunicator = jmsCommunicator;
+        this.restRequest = restRequest;
     }
 
     /**
@@ -107,9 +118,72 @@ public class TasksService {
     }
 
     /**
+     * Calls the required methods for EWT and position.
+     *
+     * @param conversationId The conversation id.
+     * @return The response entity.
+     */
+    public ResponseEntity<Object> getTaskEwtAndPosition(String conversationId) {
+        logger.info("Request received to fetch the EWT and position for conversation id: {}", conversationId);
+        try {
+            List<Task> queuedTasks = this.tasksPool.findQueuedTasksFor(conversationId);
+            List<TaskEwtAndPositionResponse> responseList = new ArrayList<>();
+
+            if (queuedTasks.isEmpty()) {
+                logger.info("No queued tasks found for conversation id: {}", conversationId);
+                return new ResponseEntity<>(responseList, HttpStatus.OK);
+            }
+
+            logger.info(responseList.size() + " task found in queued for conversation id: {}", conversationId);
+
+            for (Task task : queuedTasks) {
+                TaskEwtAndPositionResponse response = calculateTaskEwtAndPosition(task);
+                logger.info("EWT and position for task {} : {}", task.getId(), response);
+                responseList.add(response);
+            }
+
+            return new ResponseEntity<>(responseList, HttpStatus.OK);
+
+        } catch (Exception ex) {
+            String errorMessage = "Internal processing exception occurred";
+            logger.error(errorMessage);
+            ex.printStackTrace();
+            return new ResponseEntity<>(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Returns the EWT and position of a task.
+     *
+     * @param task The task.
+     * @return the EWT and position.
+     */
+    public TaskEwtAndPositionResponse calculateTaskEwtAndPosition(Task task) {
+        int ewt;
+        int associatedAgentsCount;
+        int queuePosition = getTaskPosition(task);
+        PrecisionQueue precisionQueue = queuesPool.findById(task.getQueue().getId());
+
+        QueueHistoricalStats queueHistoricalStats = restRequest.getQueueHistoricalStats(task.getQueue().getId());
+
+        if (queueHistoricalStats.getAverageHandleTime() == 0) {
+            queueHistoricalStats.setAverageHandleTime(5);
+        }
+
+        associatedAgentsCount = precisionQueue.getAssociatedAgents().isEmpty() ? 1 : precisionQueue
+                .getAssociatedAgents().size();
+
+        ewt = queuePosition * queueHistoricalStats.getAverageHandleTime() / associatedAgentsCount;
+
+        logger.info("Request received to fetch the EWT and position for conversation id: {}", task.getId());
+
+        return new TaskEwtAndPositionResponse(task, ewt, queuePosition);
+    }
+
+    /**
      * get task position.
      *
-     * @param task  the task
+     * @param task the task
      * @return the task position
      */
     public int getTaskPosition(Task task) {
@@ -122,9 +196,7 @@ public class TasksService {
         List<Task> tasks = tasksPool.findByQueueId(queueId);
         List<Task> filteredTasks = tasks.stream()
                 .filter(t -> t.getPriority() > priority || (t.getPriority() == priority
-                        && t.getEnqueueTime() < enqueueTime))
-                .collect(Collectors.toList());
-        int position = filteredTasks.size() + 1;
-        return position;
+                        && t.getEnqueueTime() < enqueueTime)).toList();
+        return filteredTasks.size() + 1;
     }
 }
