@@ -134,7 +134,7 @@ public class TasksService {
                 return new ResponseEntity<>(responseList, HttpStatus.OK);
             }
 
-            logger.info(responseList.size() + " task found in queued for conversation id: {}", conversationId);
+            logger.info(queuedTasks.size() + " task found in queued for conversation id: {}", conversationId);
 
             for (Task task : queuedTasks) {
                 TaskEwtAndPositionResponse response = calculateTaskEwtAndPosition(task);
