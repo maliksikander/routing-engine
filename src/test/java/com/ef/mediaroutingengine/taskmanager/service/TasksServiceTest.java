@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.Collections;
 import com.ef.mediaroutingengine.taskmanager.service.taskservice.TasksRetriever;
 import com.ef.mediaroutingengine.taskmanager.service.taskservice.TasksRetrieverFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -134,15 +135,48 @@ class TasksServiceTest {
     class GetEwtAndPosition_Tests {
         @Test
         void whenNoQueuedTaskExist() {
+            //given
             String conversationId = UUID.randomUUID().toString();
-            List<Task> queuedTask = new ArrayList<>();
             when(tasksPool.findQueuedTasksFor(conversationId)).thenReturn(Collections.EMPTY_LIST);
 
+            //when
             ResponseEntity<Object> response = tasksService.getTaskEwtAndPosition(conversationId);
 
+            //then
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isInstanceOf(List.class);
             verifyNoMoreInteractions(queuePool);
+        }
+
+        @Test
+        void whenQueuedTaskExist() {
+            ObjectMapper objectMapper = new ObjectMapper();
+            //given
+            String conversationId = UUID.randomUUID().toString();
+            Task task = getTask(Enums.TaskStateName.QUEUED, Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE);
+            List<Task> queuedTasks = new ArrayList<>();
+            queuedTasks.add(task);
+
+            PrecisionQueue precisionQueue = mock(PrecisionQueue.class);
+            QueueHistoricalStats queueHistoricalStats = new QueueHistoricalStats();
+            QueueDto queueDto = new QueueDto(UUID.randomUUID().toString(), "chat");
+            queueHistoricalStats.setQueue(queueDto);
+            queueHistoricalStats.setAverageHandleTime(10);
+            queueHistoricalStats.setAverageWaitTime(10);
+
+            when(tasksPool.findQueuedTasksFor(conversationId)).thenReturn(queuedTasks);
+            when(queuePool.findById(task.getQueue().getId())).thenReturn(precisionQueue);
+            when(restRequest.getQueueHistoricalStats(task.getQueue().getId())).thenReturn(queueHistoricalStats);
+
+            //when
+            ResponseEntity<Object> response = tasksService.getTaskEwtAndPosition(conversationId);
+
+            //then
+            List<TaskEwtAndPositionResponse> responseList = (List<TaskEwtAndPositionResponse>) response.getBody();
+            assertThat(responseList).isNotNull().hasSize(1);
+            assertThat(responseList.get(0).getEwt()).isEqualTo(10);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).isInstanceOf(List.class);
         }
     }
 
@@ -151,8 +185,8 @@ class TasksServiceTest {
     class CalculateEwtAndPosition {
         @Test
         void test_whenAverageHandleTimeIsZero() {
+            //given
             Task task = getTask(Enums.TaskStateName.QUEUED, Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE);
-            TasksService mockInstance = mock(TasksService.class);
             PrecisionQueue precisionQueue = mock(PrecisionQueue.class);
             QueueHistoricalStats queueHistoricalStats = new QueueHistoricalStats();
             QueueDto queueDto = new QueueDto(UUID.randomUUID().toString(), "chat");
@@ -167,9 +201,10 @@ class TasksServiceTest {
             when(restRequest.getQueueHistoricalStats(task.getQueue().getId())).thenReturn(queueHistoricalStats);
             when(precisionQueue.getAssociatedAgents()).thenReturn(Collections.EMPTY_LIST);
 
-
+            //when
             TaskEwtAndPositionResponse response = tasksService.calculateTaskEwtAndPosition(task);
 
+            //then
             assertThat(response.getPosition()).isEqualTo(1);
             assertThat(response.getEwt()).isEqualTo(5);
         }
