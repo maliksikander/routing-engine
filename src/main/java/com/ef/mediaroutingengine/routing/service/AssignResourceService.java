@@ -13,5 +13,5 @@ public interface AssignResourceService {
      * @param request the request
      * @return the string
      */
-    String assign(AssignResourceRequest request, boolean useQueueName, boolean offerToAgent);
+    String assign(AssignResourceRequest request, boolean useQueueName, boolean offerToAgent, int priority);
 }

@@ -61,7 +61,7 @@ class AssignResourceServiceImplTest {
         doReturn(mrd).when(queue).getMrd();
         doReturn(queue).when(spy).validateAndGetQueue(channelSession, requestedQueue, false);
 
-        String response = spy.assign(request, false, true);
+        String response = spy.assign(request, false, true,1);
         assertEquals("The request is received Successfully", response);
     }
 
