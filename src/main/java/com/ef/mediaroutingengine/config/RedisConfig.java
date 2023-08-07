@@ -1,12 +1,17 @@
 package com.ef.mediaroutingengine.config;
 
+import com.google.common.collect.Sets;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisSentinelPool;
+import redis.clients.jedis.util.Pool;
 
 /**
  * This class creates a singleton bean of JedisPool which is used to communicate with the Redis instance.
@@ -38,13 +43,37 @@ public class RedisConfig {
      * @return JedisPool bean
      */
     @Bean
-    public JedisPool jedisPool() {
+    public Pool<Jedis> jedisPool() {
+
         logger.info("Initializing redis pool ........");
         logger.info("Redis config info {}", redisProperties);
         JedisPoolConfig poolConfig = this.getJedisPoolConfig();
-        final JedisPool jedisPool = new JedisPool(poolConfig, redisProperties.getHost(), redisProperties.getPort(),
-                redisProperties.getTimeout(), redisProperties.getPassword(), redisProperties.isSsl());
-        logger.info("Redis pool initialized on -> {}:{}", redisProperties.getHost(), redisProperties.getPort());
+        final Pool<Jedis> jedisPool;
+        if (redisProperties.getSentinel().isEnable()) {
+
+            logger.info("Redis Connect with Sentinel");
+            Set<String> sentinels = Sets.newHashSet(redisProperties.getSentinel().getNodes());
+            JedisSentinelPool jedisSentinelPool = new JedisSentinelPool(redisProperties.getSentinel().getMaster(),
+                    sentinels, poolConfig,
+                    redisProperties.getTimeout(), redisProperties.getSentinel().getPassword());
+
+            logger.info("Redis sentinel pool initialized on -> {}:{}:{}. Current Master is {}",
+                    redisProperties.getSentinel().getNodes(),
+                    redisProperties.getSentinel().getMaster(), redisProperties.getSentinel().getPassword(),
+                    jedisSentinelPool.getCurrentHostMaster());
+
+            jedisPool = jedisSentinelPool;
+
+        } else {
+
+            jedisPool =
+                    new JedisPool(poolConfig, redisProperties.getHost(), redisProperties.getPort(),
+                            redisProperties.getTimeout(), redisProperties.getPassword(),
+                            redisProperties.isSsl());
+            logger.info("Redis pool initialized on ---> {}:{} ........", redisProperties.getHost(),
+                    redisProperties.getPort());
+
+        }
         return jedisPool;
     }
 
