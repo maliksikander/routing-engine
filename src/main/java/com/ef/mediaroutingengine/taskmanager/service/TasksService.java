@@ -158,24 +158,20 @@ public class TasksService {
      * @return the task, its EWT, and position.
      */
     public TaskEwtAndPositionResponse calculateTaskEwtAndPosition(Task task) {
-        int ewt;
-        int associatedAgentsCount;
-        int queuePosition = getTaskPosition(task);
-
         logger.info("Request received to fetch the EWT and position for conversation id: {}", task.getId());
 
+        int queuePosition = getTaskPosition(task);
         PrecisionQueue precisionQueue = queuesPool.findById(task.getQueue().getId());
-
         QueueHistoricalStats queueHistoricalStats = restRequest.getQueueHistoricalStats(task.getQueue().getId());
 
         if (queueHistoricalStats.getAverageHandleTime() == 0) {
             queueHistoricalStats.setAverageHandleTime(5);
         }
 
-        associatedAgentsCount = precisionQueue.getAssociatedAgents().isEmpty() ? 1 : precisionQueue
+        int associatedAgentsCount = precisionQueue.getAssociatedAgents().isEmpty() ? 1 : precisionQueue
                 .getAssociatedAgents().size();
 
-        ewt = queuePosition * queueHistoricalStats.getAverageHandleTime() / associatedAgentsCount;
+        int ewt = queuePosition * queueHistoricalStats.getAverageHandleTime() / associatedAgentsCount;
 
         return new TaskEwtAndPositionResponse(AdapterUtility.createTaskDtoFrom(task), ewt, queuePosition);
     }
