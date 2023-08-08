@@ -134,7 +134,7 @@ public class TasksService {
                 return new ResponseEntity<>(responseList, HttpStatus.OK);
             }
 
-            logger.info(queuedTasks.size() + " task found in queued for conversation id: {}", conversationId);
+            logger.info("{} task found in queue for conversation id: {}", queuedTasks.size(), conversationId);
 
             for (Task task : queuedTasks) {
                 TaskEwtAndPositionResponse response = calculateTaskEwtAndPosition(task);
@@ -145,9 +145,8 @@ public class TasksService {
             return new ResponseEntity<>(responseList, HttpStatus.OK);
 
         } catch (Exception ex) {
-            String errorMessage = "Internal processing exception occurred";
-            logger.error(errorMessage);
-            ex.printStackTrace();
+            String errorMessage = "Internal processing exception occurred: " + ex.getMessage();
+            logger.error(errorMessage, ex);
             return new ResponseEntity<>(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -162,6 +161,9 @@ public class TasksService {
         int ewt;
         int associatedAgentsCount;
         int queuePosition = getTaskPosition(task);
+
+        logger.info("Request received to fetch the EWT and position for conversation id: {}", task.getId());
+
         PrecisionQueue precisionQueue = queuesPool.findById(task.getQueue().getId());
 
         QueueHistoricalStats queueHistoricalStats = restRequest.getQueueHistoricalStats(task.getQueue().getId());
@@ -174,8 +176,6 @@ public class TasksService {
                 .getAssociatedAgents().size();
 
         ewt = queuePosition * queueHistoricalStats.getAverageHandleTime() / associatedAgentsCount;
-
-        logger.info("Request received to fetch the EWT and position for conversation id: {}", task.getId());
 
         return new TaskEwtAndPositionResponse(AdapterUtility.createTaskDtoFrom(task), ewt, queuePosition);
     }
@@ -197,7 +197,8 @@ public class TasksService {
         List<Task> tasks = precisionQueue.getTasks();
         List<Task> filteredTasks = tasks.stream()
                 .filter(t -> (t.getPriority() > priority || (t.getPriority() == priority
-                        && t.getEnqueueTime() < enqueueTime))).toList();
+                        && t.getEnqueueTime() < enqueueTime)))
+                .toList();
         return filteredTasks.size() + 1;
     }
 }
