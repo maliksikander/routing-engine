@@ -107,6 +107,7 @@ class TasksServiceTest {
     @Test
     void TestTaskPosition() {
         List<Task> taskList = new ArrayList<>();
+        PrecisionQueue precisionQueue = mock(PrecisionQueue.class);
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
         TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "Chat");
@@ -122,9 +123,10 @@ class TasksServiceTest {
         }
         Task task = Task.getInstanceFrom(getNewChannelSession(), getMrd(), taskQueue, taskState, type, 4);
         taskList.add(task);
-        when(tasksPool.findByQueueId(taskQueue.getId())).thenReturn(taskList);
-        int checkTask = tasksService.getTaskPosition(task);
-        assertEquals(8, checkTask);
+        when(queuePool.findById(taskQueue.getId())).thenReturn(precisionQueue);
+        when(precisionQueue.getTasks()).thenReturn(taskList);
+        int actualPosition = tasksService.getTaskPosition(task);
+        assertEquals(8, actualPosition);
         assertThrows(IllegalArgumentException.class, () -> {
             tasksService.getTaskPosition(null);
         });
@@ -196,8 +198,8 @@ class TasksServiceTest {
             List<Task> tasksInQueue = new ArrayList<>();
             tasksInQueue.add(task);
 
-            when(tasksPool.findByQueueId(task.getQueue().getId())).thenReturn(tasksInQueue);
             when(queuePool.findById(task.getQueue().getId())).thenReturn(precisionQueue);
+            when(precisionQueue.getTasks()).thenReturn(tasksInQueue);
             when(restRequest.getQueueHistoricalStats(task.getQueue().getId())).thenReturn(queueHistoricalStats);
             when(precisionQueue.getAssociatedAgents()).thenReturn(Collections.EMPTY_LIST);
 

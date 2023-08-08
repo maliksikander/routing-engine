@@ -193,10 +193,11 @@ public class TasksService {
         int priority = task.getPriority();
         long enqueueTime = task.getEnqueueTime();
         String queueId = task.getQueue().getId();
-        List<Task> tasks = tasksPool.findByQueueId(queueId);
+        PrecisionQueue precisionQueue = queuesPool.findById(queueId);
+        List<Task> tasks = precisionQueue.getTasks();
         List<Task> filteredTasks = tasks.stream()
-                .filter(t -> t.getPriority() > priority || (t.getPriority() == priority
-                        && t.getEnqueueTime() < enqueueTime)).toList();
+                .filter(t -> (t.getPriority() > priority || (t.getPriority() == priority
+                        && t.getEnqueueTime() < enqueueTime))).toList();
         return filteredTasks.size() + 1;
     }
 }
