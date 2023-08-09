@@ -52,6 +52,9 @@ public class RedisProperties {
      */
     private String channelTopic;
 
+
+    private Sentinel sentinel;
+
     /**
      * Gets host.
      *
@@ -230,6 +233,14 @@ public class RedisProperties {
      */
     public void setChannelTopic(String channelTopic) {
         this.channelTopic = channelTopic;
+    }
+
+    public Sentinel getSentinel() {
+        return sentinel;
+    }
+
+    public void setSentinel(Sentinel sentinel) {
+        this.sentinel = sentinel;
     }
 
     @Override

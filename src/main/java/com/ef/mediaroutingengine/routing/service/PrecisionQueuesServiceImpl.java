@@ -14,9 +14,7 @@ import com.ef.mediaroutingengine.routing.dto.AssociatedAgentEntity;
 import com.ef.mediaroutingengine.routing.dto.AssociatedAgentsResponse;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.dto.QueuesWithAvailableAgentsResponse;
-import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
-import com.ef.mediaroutingengine.routing.model.Step;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
@@ -201,27 +199,21 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     @Override
     public ResponseEntity<Object> retrieveQueuesWithAssociatedAvailableAgents(String conversationId) {
         List<QueuesWithAvailableAgentsResponse> responseList = new ArrayList<>();
-        AtomicInteger totalAvailableAgents = new AtomicInteger();
 
-        this.precisionQueuesPool.toList().forEach(precisionQueue -> {
-                    totalAvailableAgents.set(0);
-                    QueuesWithAvailableAgentsResponse response = new QueuesWithAvailableAgentsResponse();
-                    response.setQueueId(precisionQueue.getId());
-                    response.setQueueName(precisionQueue.getName());
-                    String mrdId = precisionQueue.getMrd().getId();
-                    List<Step> steps = precisionQueue.getSteps();
-                    steps.forEach(step -> {
-                        List<Agent> agents = step.getAssociatedAgents();
-                        agents.forEach(agent -> {
-                            if (agent != null && agent.isAvailableForRouting(mrdId, conversationId)) {
-                                totalAvailableAgents.getAndIncrement();
-                            }
-                        });
-                    });
-                    response.setTotalAvailableAgents(totalAvailableAgents.intValue());
-                    responseList.add(response);
+        this.precisionQueuesPool.toList().forEach(pq -> {
+            String mrdId = pq.getMrd().getId();
+            AtomicInteger totalAvailableAgents = new AtomicInteger(0);
+
+            pq.getSteps().forEach(step -> step.getAssociatedAgents().forEach(agent -> {
+                if (agent != null && agent.isAvailableForRouting(mrdId, conversationId)) {
+                    totalAvailableAgents.getAndIncrement();
                 }
-        );
+            }));
+
+            responseList.add(new QueuesWithAvailableAgentsResponse(pq.getId(), pq.getName(),
+                    totalAvailableAgents.intValue(), mrdId, new ArrayList<>()));
+        });
+
         logger.info("returning the list of the precision queues with the available agents");
         return new ResponseEntity<>(responseList, HttpStatus.OK);
     }
