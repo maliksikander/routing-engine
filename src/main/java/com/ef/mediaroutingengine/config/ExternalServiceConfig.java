@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration;
  * for this class is created at startup. This bean is used in the project wherever these properties are required.
  */
 @Configuration
-@ConfigurationProperties(prefix = "routing-engine.assign-resource")
-public class AssignResourceProperties {
+@ConfigurationProperties(prefix = "external.service")
+public class ExternalServiceConfig {
     /**
      * Number of retries to assign a task to an Agent on 404 from Agent Manager.
      */
@@ -19,25 +19,18 @@ public class AssignResourceProperties {
      */
     private String agentManagerBaseUri;
     /**
-     * Base url of Bot-Framework component to call its Apis.
-     */
-    private String conversationManagerBaseUri;
-    /**
      * The Assign task uri.
      */
     private String assignTaskUri;
     /**
-     * The Agent reserved uri.
-     */
-    private String agentReservedUri;
-    /**
-     * The No agent available uri.
-     */
-    private String noAgentAvailableUri;
-    /**
      * The Revoke task uri.
      */
     private String revokeTaskUri;
+    /**
+     *  The real-time reports uri.
+     */
+    private String realTimeReportsUri;
+
 
     /**
      * Gets retries.
@@ -78,23 +71,21 @@ public class AssignResourceProperties {
     }
 
     /**
-     * Gets bot framework base uri.
+     * Sets the real time reports uri.
      *
-     * @return the bot framework base uri
+     * @param realTimeReportsUri the real-time reports uri.
      */
-    public String getConversationManagerBaseUri() {
-        return conversationManagerBaseUri;
+    public void setRealTimeReportsUri(String realTimeReportsUri) {
+        this.realTimeReportsUri = realTimeReportsUri;
     }
 
     /**
-     * Sets bot framework base uri.
+     * Gets the real-time reports uri.
      *
-     * @param conversationManagerBaseUri the bot framework base uri
+     * @return the real-time reporting URI.
      */
-    public void setConversationManagerBaseUri(String conversationManagerBaseUri) {
-        this.conversationManagerBaseUri = conversationManagerBaseUri;
-        this.agentReservedUri = conversationManagerBaseUri + "/agent-reserved";
-        this.noAgentAvailableUri = conversationManagerBaseUri + "/no-agent-available";
+    public String getRealTimeReportsUri() {
+        return this.realTimeReportsUri;
     }
 
     /**
@@ -104,24 +95,6 @@ public class AssignResourceProperties {
      */
     public String getAssignTaskUri() {
         return this.assignTaskUri;
-    }
-
-    /**
-     * Returns the complete url of Bot-Framework's Agent-Reserved API.
-     *
-     * @return Bot -Framework's Agent-Reserved API's url
-     */
-    public String getAgentReservedUri() {
-        return this.agentReservedUri;
-    }
-
-    /**
-     * Returns the complete url of Bot-Framework's No-Agent-Available API.
-     *
-     * @return Bot -Framework's No-Agent-Available API's url
-     */
-    public String getNoAgentAvailableUri() {
-        return this.noAgentAvailableUri;
     }
 
     /**
