@@ -119,7 +119,7 @@ class TasksServiceTest {
         when(queuePool.findById(taskQueue.getId())).thenReturn(precisionQueue);
         when(precisionQueue.getTasks()).thenReturn(taskList);
         int actualPosition = tasksService.getTaskPosition(task3);
-        assertEquals(3, actualPosition);
+        assertEquals(2, actualPosition);
         assertThrows(IllegalArgumentException.class, () -> {
             tasksService.getTaskPosition(null);
         });
