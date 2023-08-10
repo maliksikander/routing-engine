@@ -167,8 +167,6 @@ public class TasksService {
      */
     public TaskEwtAndPositionResponse calculateTaskEwtAndPosition(Task task,
                                                                   QueueHistoricalStatsDto queueHistoricalStatsDto) {
-        logger.info("Request received to fetch the EWT and position for conversation id: {}", task.getId());
-
         int queuePosition = getTaskPosition(task);
 
         if (queuePosition == -1) {
@@ -196,18 +194,17 @@ public class TasksService {
             throw new IllegalArgumentException("Task object is null");
         }
 
+        int priority = task.getPriority();
+        long enqueueTime = task.getEnqueueTime();
+
         String queueId = task.getQueue().getId();
         PrecisionQueue precisionQueue = queuesPool.findById(queueId);
         List<Task> tasks = precisionQueue.getTasks();
+        List<Task> filteredTasks = tasks.stream()
+                .filter(t -> (t.getPriority() > priority || (t.getPriority() == priority
+                        && t.getEnqueueTime() < enqueueTime)))
+                .toList();
 
-        for (int position = 0; position < tasks.size(); position++) {
-            Task currentTask = tasks.get(position);
-            if (currentTask.getId().equals(task.getId())) {
-                int queueSize = tasks.size();
-                return queueSize - position;
-            }
-        }
-
-        return -1;
+        return filteredTasks.size() + 1;
     }
 }
