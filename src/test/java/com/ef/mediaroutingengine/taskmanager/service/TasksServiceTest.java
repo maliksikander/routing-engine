@@ -106,20 +106,24 @@ class TasksServiceTest {
         TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
         TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "Chat");
 
-        Task task1 = Task.getInstanceFrom(getNewChannelSession(), getMrd(), taskQueue, taskState, type, 1);
-        Task task2 = Task.getInstanceFrom(getNewChannelSession(), getMrd(), taskQueue, taskState, type, 1);
-        Task task3 = Task.getInstanceFrom(getNewChannelSession(), getMrd(), taskQueue, taskState, type, 1);
-        Task task4 = Task.getInstanceFrom(getNewChannelSession(), getMrd(), taskQueue, taskState, type, 1);
-
-        taskList.add(task4);
-        taskList.add(task3);
-        taskList.add(task2);
-        taskList.add(task1);
+        for (int i = 1; i <= 10; i++) {
+            taskList.add(Task.getInstanceFrom(
+                    getNewChannelSession(),
+                    getMrd(),
+                    taskQueue,
+                    taskState,
+                    type,
+                    i
+            ));
+        }
+        Task task = Task.getInstanceFrom(getNewChannelSession(), getMrd(), taskQueue, taskState, type, 4);
+        taskList.add(task);
 
         when(queuePool.findById(taskQueue.getId())).thenReturn(precisionQueue);
         when(precisionQueue.getTasks()).thenReturn(taskList);
-        int actualPosition = tasksService.getTaskPosition(task3);
-        assertEquals(2, actualPosition);
+        int actualPosition = tasksService.getTaskPosition(task);
+        assertEquals(8, actualPosition);
+
         assertThrows(IllegalArgumentException.class, () -> {
             tasksService.getTaskPosition(null);
         });
