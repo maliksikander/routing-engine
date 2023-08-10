@@ -1,6 +1,8 @@
 package com.ef.mediaroutingengine.config;
 
 import com.google.common.collect.Sets;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +29,7 @@ public class RedisConfig {
      */
     private final RedisProperties redisProperties;
 
+
     /**
      * Default Constructor. Loads the required beans.
      *
@@ -49,17 +52,19 @@ public class RedisConfig {
         logger.info("Redis config info {}", redisProperties);
         JedisPoolConfig poolConfig = this.getJedisPoolConfig();
         final Pool<Jedis> jedisPool;
-        if (redisProperties.getSentinel().isEnable()) {
+        if (Boolean.parseBoolean(redisProperties.getEnableSentinel())) {
 
             logger.info("Redis Connect with Sentinel");
-            Set<String> sentinels = Sets.newHashSet(redisProperties.getSentinel().getNodes());
-            JedisSentinelPool jedisSentinelPool = new JedisSentinelPool(redisProperties.getSentinel().getMaster(),
+            String[] nodes = redisProperties.getSentinelNodes().split(",");
+            Set<String> sentinels = new HashSet<>(Arrays.asList(nodes));
+            logger.info("Sentinel {} ", sentinels.toArray());
+            JedisSentinelPool jedisSentinelPool = new JedisSentinelPool(redisProperties.getSentinelMaster(),
                     sentinels, poolConfig,
-                    redisProperties.getTimeout(), redisProperties.getSentinel().getPassword());
+                    redisProperties.getTimeout(), redisProperties.getSentinelPassword());
 
             logger.info("Redis sentinel pool initialized on -> {}:{}:{}. Current Master is {}",
-                    redisProperties.getSentinel().getNodes(),
-                    redisProperties.getSentinel().getMaster(), redisProperties.getSentinel().getPassword(),
+                    redisProperties.getSentinelNodes(),
+                    redisProperties.getSentinelMaster(), redisProperties.getSentinelPassword(),
                     jedisSentinelPool.getCurrentHostMaster());
 
             jedisPool = jedisSentinelPool;
