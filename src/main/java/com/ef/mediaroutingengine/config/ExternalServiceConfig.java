@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * This class reads the Assign-Resource feature properties from the application's property file. A singleton bean
+ * This class reads the External Services properties from the application's property file. A singleton bean
  * for this class is created at startup. This bean is used in the project wherever these properties are required.
  */
 @Configuration
