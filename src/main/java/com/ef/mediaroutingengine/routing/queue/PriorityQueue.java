@@ -173,6 +173,39 @@ public class PriorityQueue {
     }
 
     /**
+     * Gets position.
+     *
+     * @param task the task
+     * @return the position
+     */
+    public int getPosition(Task task) {
+        int positionInSamePriority = getPositionInSamePriority(task);
+
+        if (positionInSamePriority == -1) {
+            return -1;
+        }
+
+        int position = positionInSamePriority;
+
+        for (int i = task.getPriority() + 1; i <= NO_OF_QUEUE_LEVELS; i++) {
+            position += this.multiLevelQueueMap.get(i).size();
+        }
+
+        return position;
+    }
+
+    private int getPositionInSamePriority(Task task) {
+        int position = 1;
+        for (Task queuedTask : this.multiLevelQueueMap.get(task.getPriority())) {
+            if (queuedTask.getId().equals(task.getId())) {
+                return position;
+            }
+            position++;
+        }
+        return -1;
+    }
+
+    /**
      * Restores the tasks in the queue from backup.
      *
      * @param taskList list of tasks to be restored

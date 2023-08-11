@@ -1,11 +1,14 @@
 package com.ef.mediaroutingengine.taskmanager.pool;
 
 
+import static java.util.stream.Collectors.groupingBy;
+
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.springframework.stereotype.Service;
 
@@ -104,19 +107,16 @@ public class TasksPool {
     }
 
     /**
-     * Find queued tasks for the given conversation id.
+     * Find queued grouped by queue id map.
      *
-     * @param conversationId the conversation id.
-     * @return returns list of tasks.
+     * @param conversationId the conversation id
+     * @return the map
      */
-    public List<Task> findQueuedTasksFor(String conversationId) {
+    public Map<String, List<Task>> findQueuedGroupedByQueueId(String conversationId) {
         return this.pool.stream()
-                .filter(t -> {
-                    Enums.TaskStateName stateName = t.getTaskState().getName();
-                    return t.getTopicId().equals(conversationId)
-                            && (stateName.equals(Enums.TaskStateName.QUEUED));
-                })
-                .toList();
+                .filter(t -> t.getTopicId().equals(conversationId)
+                        && (t.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)))
+                .collect(groupingBy(t -> t.getQueue().getId()));
     }
 
     /**

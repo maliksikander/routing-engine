@@ -9,7 +9,7 @@ import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.utility.RestRequest;
-import com.ef.mediaroutingengine.taskmanager.dto.TaskEwtAndPositionResponse;
+import com.ef.mediaroutingengine.taskmanager.dto.TaskEwtResponse;
 import com.ef.mediaroutingengine.taskmanager.dto.UpdateTaskRequest;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
@@ -17,7 +17,6 @@ import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import com.ef.mediaroutingengine.taskmanager.service.taskservice.TasksRetriever;
 import com.ef.mediaroutingengine.taskmanager.service.taskservice.TasksRetrieverFactory;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -125,96 +124,37 @@ public class TasksService {
      * @param conversationId The conversation id.
      * @return The response entity.
      */
-    public ResponseEntity<Object> getTaskEwtAndPosition(String conversationId) {
+    public ResponseEntity<Object> getEwtAndPosition(String conversationId) {
         logger.info("Request received to fetch the EWT and position for conversation id: {}", conversationId);
-        try {
-            List<Task> queuedTasks = this.tasksPool.findQueuedTasksFor(conversationId);
-            List<TaskEwtAndPositionResponse> responseList = new ArrayList<>();
 
-            if (queuedTasks.isEmpty()) {
-                logger.info("No queued tasks found for conversation id: {}", conversationId);
-                return new ResponseEntity<>(responseList, HttpStatus.OK);
+        List<TaskEwtResponse> responses = new ArrayList<>();
+        Map<String, List<Task>> queuedTasks = this.tasksPool.findQueuedGroupedByQueueId(conversationId);
+
+        for (Map.Entry<String, List<Task>> entry : queuedTasks.entrySet()) {
+            QueueHistoricalStatsDto queueStats = this.restRequest.getQueueHistoricalStats(entry.getKey());
+
+            PrecisionQueue precisionQueue = queuesPool.findById(entry.getKey());
+            int totalAgents = precisionQueue.getAssociatedAgents().size();
+
+            synchronized (precisionQueue.getServiceQueue()) {
+                for (Task task : entry.getValue()) {
+                    int position = precisionQueue.getPosition(task);
+
+                    if (position == -1) {
+                        continue;
+                    }
+
+                    int ewt = this.calculateEwt(position, totalAgents, queueStats.getAverageHandleTime());
+                    responses.add(new TaskEwtResponse(AdapterUtility.createTaskDtoFrom(task), ewt, position));
+                }
             }
-
-            logger.info("{} task found in queue for conversation id: {}", queuedTasks.size(), conversationId);
-
-            Map<String, QueueHistoricalStatsDto> queueHistoricalStatsDtoMap = new HashMap<>();
-
-            for (Task task : queuedTasks) {
-                QueueHistoricalStatsDto queueHistoricalStatsDto = queueHistoricalStatsDtoMap.computeIfAbsent(
-                        task.getQueue().getId(), restRequest::getQueueHistoricalStats
-                );
-
-                TaskEwtAndPositionResponse response = calculateTaskEwtAndPosition(task, queueHistoricalStatsDto);
-                logger.info("EWT and position for task {} : {}", task.getId(), response);
-                responseList.add(response);
-            }
-
-            return new ResponseEntity<>(responseList, HttpStatus.OK);
-
-        } catch (Exception ex) {
-            String errorMessage = "Internal processing exception occurred: " + ex.getMessage();
-            logger.error(errorMessage, ex);
-            return new ResponseEntity<>(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
+        logger.info("Request to fetch the EWT and position for conversation id: {} handled", conversationId);
+        return new ResponseEntity<>(responses, HttpStatus.OK);
     }
 
-    /**
-     * Returns the EWT and position of a task.
-     *
-     * @param task The task.
-     * @return the task, its EWT, and position.
-     */
-    public TaskEwtAndPositionResponse calculateTaskEwtAndPosition(Task task,
-                                                                  QueueHistoricalStatsDto queueHistoricalStatsDto) {
-        int taskPosition = getTaskPosition(task);
-
-        if (taskPosition == -1) {
-            return new TaskEwtAndPositionResponse();
-        }
-
-        PrecisionQueue precisionQueue = queuesPool.findById(task.getQueue().getId());
-
-        int associatedAgentsCount = precisionQueue.getAssociatedAgents().size();
-
-        int ewt = associatedAgentsCount != 0 ? taskPosition * queueHistoricalStatsDto.getAverageHandleTime()
-                / associatedAgentsCount : Integer.MAX_VALUE;
-
-        return new TaskEwtAndPositionResponse(AdapterUtility.createTaskDtoFrom(task), ewt, taskPosition);
-    }
-
-    /**
-     * get task position.
-     *
-     * @param task the task
-     * @return the task position
-     */
-    public int getTaskPosition(Task task) {
-        if (task == null) {
-            throw new IllegalArgumentException("Task object is null");
-        }
-
-        int priority = task.getPriority();
-        long enqueueTime = task.getEnqueueTime();
-
-        String queueId = task.getQueue().getId();
-        PrecisionQueue precisionQueue = queuesPool.findById(queueId);
-        List<Task> filteredTasks;
-
-        synchronized (precisionQueue.getServiceQueue()) {
-
-            List<Task> tasks = precisionQueue.getTasks();
-
-            if (!tasks.contains(task)) {
-                return -1;
-            }
-
-            filteredTasks = tasks.stream()
-                    .filter(t -> (t.getPriority() > priority || (t.getPriority() == priority
-                            && t.getEnqueueTime() <= enqueueTime)))
-                    .toList();
-        }
-
-        return filteredTasks.size();
+    private int calculateEwt(int taskPosition, int totalAgents, int averageHandleTime) {
+        return totalAgents == 0 ? Integer.MAX_VALUE : taskPosition * averageHandleTime / totalAgents;
     }
 }
