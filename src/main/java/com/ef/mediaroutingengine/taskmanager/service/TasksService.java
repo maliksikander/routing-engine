@@ -167,9 +167,9 @@ public class TasksService {
      */
     public TaskEwtAndPositionResponse calculateTaskEwtAndPosition(Task task,
                                                                   QueueHistoricalStatsDto queueHistoricalStatsDto) {
-        int queuePosition = getTaskPosition(task);
+        int taskPosition = getTaskPosition(task);
 
-        if (queuePosition == -1) {
+        if (taskPosition == -1) {
             return new TaskEwtAndPositionResponse();
         }
 
@@ -177,10 +177,10 @@ public class TasksService {
 
         int associatedAgentsCount = precisionQueue.getAssociatedAgents().size();
 
-        int ewt = associatedAgentsCount != 0 ? queuePosition * queueHistoricalStatsDto.getAverageHandleTime()
+        int ewt = associatedAgentsCount != 0 ? taskPosition * queueHistoricalStatsDto.getAverageHandleTime()
                 / associatedAgentsCount : Integer.MAX_VALUE;
 
-        return new TaskEwtAndPositionResponse(AdapterUtility.createTaskDtoFrom(task), ewt, queuePosition);
+        return new TaskEwtAndPositionResponse(AdapterUtility.createTaskDtoFrom(task), ewt, taskPosition);
     }
 
     /**
@@ -199,12 +199,22 @@ public class TasksService {
 
         String queueId = task.getQueue().getId();
         PrecisionQueue precisionQueue = queuesPool.findById(queueId);
-        List<Task> tasks = precisionQueue.getTasks();
-        List<Task> filteredTasks = tasks.stream()
-                .filter(t -> (t.getPriority() > priority || (t.getPriority() == priority
-                        && t.getEnqueueTime() < enqueueTime)))
-                .toList();
+        List<Task> filteredTasks;
 
-        return filteredTasks.size() + 1;
+        synchronized (precisionQueue.getServiceQueue()) {
+
+            List<Task> tasks = precisionQueue.getTasks();
+
+            if (!tasks.contains(task)) {
+                return -1;
+            }
+
+            filteredTasks = tasks.stream()
+                    .filter(t -> (t.getPriority() > priority || (t.getPriority() == priority
+                            && t.getEnqueueTime() <= enqueueTime)))
+                    .toList();
+        }
+
+        return filteredTasks.size();
     }
 }

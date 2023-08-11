@@ -3,9 +3,7 @@ package com.ef.mediaroutingengine.taskmanager.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.*;
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
@@ -35,6 +33,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.ef.mediaroutingengine.routing.queue.PriorityQueue;
 
 @ExtendWith(MockitoExtension.class)
 class TasksServiceTest {
@@ -102,6 +101,7 @@ class TasksServiceTest {
     void TestTaskPosition() {
         List<Task> taskList = new ArrayList<>();
         PrecisionQueue precisionQueue = mock(PrecisionQueue.class);
+        PriorityQueue serviceQueue = new PriorityQueue();
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
         TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "Chat");
@@ -121,6 +121,8 @@ class TasksServiceTest {
 
         when(queuePool.findById(taskQueue.getId())).thenReturn(precisionQueue);
         when(precisionQueue.getTasks()).thenReturn(taskList);
+        when(precisionQueue.getServiceQueue()).thenReturn(serviceQueue);
+
         int actualPosition = tasksService.getTaskPosition(task);
         assertEquals(8, actualPosition);
 
@@ -157,6 +159,7 @@ class TasksServiceTest {
             //given
             Task task = getTask(Enums.TaskStateName.QUEUED, Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE);
             PrecisionQueue precisionQueue = mock(PrecisionQueue.class);
+            PriorityQueue serviceQueue = new PriorityQueue();
             QueueHistoricalStatsDto queueHistoricalStats = new QueueHistoricalStatsDto();
             com.ef.cim.objectmodel.dto.QueueDto queueDto = new com.ef.cim.objectmodel.dto.QueueDto(UUID.randomUUID().toString(), "chat");
             queueHistoricalStats.setQueue(queueDto);
@@ -168,6 +171,7 @@ class TasksServiceTest {
             when(queuePool.findById(task.getQueue().getId())).thenReturn(precisionQueue);
             when(precisionQueue.getTasks()).thenReturn(tasksInQueue);
             when(precisionQueue.getAssociatedAgents()).thenReturn(Collections.EMPTY_LIST);
+            when(precisionQueue.getServiceQueue()).thenReturn(serviceQueue);
 
             //when
             TaskEwtAndPositionResponse response = tasksService.calculateTaskEwtAndPosition(task, queueHistoricalStats);
