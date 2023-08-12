@@ -2,8 +2,9 @@ package com.ef.mediaroutingengine.routing.utility;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.dto.QueueHistoricalStatsDto;
 import com.ef.cim.objectmodel.dto.TaskDto;
-import com.ef.mediaroutingengine.config.AssignResourceProperties;
+import com.ef.mediaroutingengine.config.ExternalServiceConfig;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.dto.AssignTaskRequest;
@@ -39,7 +40,11 @@ public class RestRequest {
     /**
      * The Config.
      */
-    private final AssignResourceProperties config;
+    private final ExternalServiceConfig config;
+    /**
+     * The Rest Template.
+     */
+    private final RestTemplate restTemplate;
 
     /**
      * Instantiates a new Rest request.
@@ -47,7 +52,10 @@ public class RestRequest {
      * @param config the config
      */
     @Autowired
-    public RestRequest(AssignResourceProperties config) {
+    public RestRequest(ExternalServiceConfig config) {
+        RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
+        Duration duration = Duration.ofSeconds(5);
+        this.restTemplate = restTemplateBuilder.setConnectTimeout(duration).build();
         this.config = config;
     }
 
@@ -144,5 +152,16 @@ public class RestRequest {
         }
 
         return null;
+    }
+
+    /**
+     * Get request to fetch Historical stats from Real-Time-Reports.
+     *
+     * @param queueId the queue for which the stats are required.
+     * @return returns the QueueHistoricalStats DTO.
+     */
+    public QueueHistoricalStatsDto getQueueHistoricalStats(String queueId) {
+        String url = config.getRealTimeReportsUri() + "/queue/" + queueId + "/historical-stats";
+        return this.restTemplate.getForEntity(url, QueueHistoricalStatsDto.class).getBody();
     }
 }

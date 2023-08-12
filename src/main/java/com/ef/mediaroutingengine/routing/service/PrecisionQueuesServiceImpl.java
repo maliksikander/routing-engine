@@ -47,15 +47,12 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      */
     private final PrecisionQueueRepository repository;
 
+    private final TasksPool tasksPool;
+
     /**
      * The Precision queues pool.
      */
     private final PrecisionQueuesPool precisionQueuesPool;
-    /**
-     * The Tasks pool.
-     */
-    private final TasksPool tasksPool;
-
     /**
      * The Mrd pool.
      */
@@ -379,4 +376,5 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         }
         requestBody.setMrd(mediaRoutingDomain);
     }
+
 }
