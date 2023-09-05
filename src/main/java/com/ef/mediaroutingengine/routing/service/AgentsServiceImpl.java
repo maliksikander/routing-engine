@@ -8,20 +8,20 @@ import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
+import com.ef.cim.objectmodel.MrdType;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
-import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.ConflictException;
-import com.ef.mediaroutingengine.global.exceptions.ForbiddenException;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.dto.AssociatedMrdUpdateConflictResponse;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
+import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.pool.RoutingAttributesPool;
 import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
@@ -60,6 +60,10 @@ public class AgentsServiceImpl implements AgentsService {
      */
     private final MrdPool mrdPool;
     /**
+     * The Mrd type pool.
+     */
+    private final MrdTypePool mrdTypePool;
+    /**
      * The Precision queues pool.
      */
     private final PrecisionQueuesPool precisionQueuesPool;
@@ -83,13 +87,14 @@ public class AgentsServiceImpl implements AgentsService {
     @Autowired
     public AgentsServiceImpl(AgentsRepository repository,
                              RoutingAttributesPool routingAttributesPool, AgentsPool agentsPool,
-                             MrdPool mrdPool, PrecisionQueuesPool precisionQueuesPool,
+                             MrdPool mrdPool, MrdTypePool mrdTypePool, PrecisionQueuesPool precisionQueuesPool,
                              AgentPresenceRepository agentPresenceRepository,
                              AgentMrdStateListener agentMrdStateListener) {
         this.repository = repository;
         this.routingAttributesPool = routingAttributesPool;
         this.agentsPool = agentsPool;
         this.mrdPool = mrdPool;
+        this.mrdTypePool = mrdTypePool;
         this.precisionQueuesPool = precisionQueuesPool;
         this.agentPresenceRepository = agentPresenceRepository;
         this.agentMrdStateListener = agentMrdStateListener;
@@ -388,7 +393,9 @@ public class AgentsServiceImpl implements AgentsService {
     private void putAgentMrdStateChangeRequest(Agent agent, String mrdId,
                                                Enums.AgentMrdStateName agentMrdStateName) {
         AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
-        if (agentMrdState.getMrd().isManagedByRe()) {
+        MrdType mrdType = this.mrdTypePool.getById(agentMrdState.getMrd().getType());
+
+        if (mrdType.isManagedByRe()) {
             this.agentMrdStateListener.propertyChange(agent, mrdId, agentMrdStateName, true);
         }
     }

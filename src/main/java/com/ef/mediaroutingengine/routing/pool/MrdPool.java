@@ -45,8 +45,8 @@ public class MrdPool {
         MediaRoutingDomain existing = this.pool.get(mediaRoutingDomain.getId());
         if (existing != null) {
             existing.setName(mediaRoutingDomain.getName());
+            existing.setType(mediaRoutingDomain.getType());
             existing.setDescription(mediaRoutingDomain.getDescription());
-            existing.setInterruptible(mediaRoutingDomain.isInterruptible());
             existing.setMaxRequests(mediaRoutingDomain.getMaxRequests());
         }
     }

@@ -3,7 +3,6 @@ package com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -19,8 +18,9 @@ import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.ReasonCode;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
-import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
+import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -33,13 +33,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class AgentStateNotReadyTest {
-    private AgentStateNotReady agentStateNotReady;
     @Mock
     private AgentPresenceRepository agentPresenceRepository;
+    @Mock
+    private MrdTypePool mrdTypePool;
+
+    private AgentStateNotReady agentStateNotReady;
 
     @BeforeEach
     void setUp() {
-        this.agentStateNotReady = new AgentStateNotReady(agentPresenceRepository);
+        this.agentStateNotReady = new AgentStateNotReady(agentPresenceRepository, mrdTypePool);
     }
 
     @Test
@@ -55,7 +58,7 @@ class AgentStateNotReadyTest {
         when(agent.getNoOfActiveQueueTasks(agentMrdStateList.get(1).getMrd().getId())).thenReturn(0);
         when(agent.getNoOfActiveQueueTasks(agentMrdStateList.get(2).getMrd().getId())).thenReturn(2);
 
-        this.agentStateNotReady.updateAgentMrdStates(agent, null,false);
+        this.agentStateNotReady.updateAgentMrdStates(agent, null, false);
 
         assertEquals(Enums.AgentMrdStateName.NOT_READY, agentMrdStateList.get(0).getState());
         assertEquals(Enums.AgentMrdStateName.NOT_READY, agentMrdStateList.get(1).getState());
@@ -71,10 +74,10 @@ class AgentStateNotReadyTest {
 
         AgentStateNotReady spy = Mockito.spy(agentStateNotReady);
 
-        doReturn(new ArrayList<>()).when(spy).updateAgentMrdStates(agent, null,false);
+        doReturn(new ArrayList<>()).when(spy).updateAgentMrdStates(agent, null, false);
         doReturn(false).when(spy).isAnyMrdInAvailableState(agent);
 
-        AgentStateChangedResponse res = spy.updateState(agent, newState,false);
+        AgentStateChangedResponse res = spy.updateState(agent, newState, false);
 
         verify(agentPresenceRepository, times(1)).updateAgentState(agent.getId(), newState);
         assertTrue(res.isAgentStateChanged());
@@ -88,7 +91,7 @@ class AgentStateNotReadyTest {
         ReasonCode reasonCode = new ReasonCode("Lunch break", Enums.ReasonCodeType.NOT_READY);
         AgentState newState = new AgentState(Enums.AgentStateName.NOT_READY, reasonCode);
 
-        AgentStateChangedResponse res = this.agentStateNotReady.updateState(agent, newState,false);
+        AgentStateChangedResponse res = this.agentStateNotReady.updateState(agent, newState, false);
         // Assert that agent's state is updated to new state
         assertEquals(newState, agent.getState());
         // Verify that correct repository calls are made.
@@ -105,10 +108,10 @@ class AgentStateNotReadyTest {
 
         AgentState newState = new AgentState(Enums.AgentStateName.NOT_READY, null);
 
-        assertFalse(this.agentStateNotReady.updateState(agent, newState,false).isAgentStateChanged());
+        assertFalse(this.agentStateNotReady.updateState(agent, newState, false).isAgentStateChanged());
 
         agent.setState(new AgentState(Enums.AgentStateName.LOGOUT, null));
-        assertFalse(this.agentStateNotReady.updateState(agent, newState,false).isAgentStateChanged());
+        assertFalse(this.agentStateNotReady.updateState(agent, newState, false).isAgentStateChanged());
     }
 
     private MediaRoutingDomain getNewMrd(String name) {

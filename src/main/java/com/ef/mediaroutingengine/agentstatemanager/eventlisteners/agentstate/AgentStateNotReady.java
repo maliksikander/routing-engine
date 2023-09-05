@@ -3,9 +3,11 @@ package com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate;
 import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.MrdType;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -22,14 +24,16 @@ public class AgentStateNotReady implements AgentStateDelegate {
      * The Agent presence repository.
      */
     private final AgentPresenceRepository agentPresenceRepository;
+    private final MrdTypePool mrdTypePool;
 
     /**
      * Instantiates a new Agent state not ready.
      *
      * @param agentPresenceRepository the agent presence repository
      */
-    public AgentStateNotReady(AgentPresenceRepository agentPresenceRepository) {
+    public AgentStateNotReady(AgentPresenceRepository agentPresenceRepository, MrdTypePool mrdTypePool) {
         this.agentPresenceRepository = agentPresenceRepository;
+        this.mrdTypePool = mrdTypePool;
     }
 
     @Override
@@ -80,8 +84,9 @@ public class AgentStateNotReady implements AgentStateDelegate {
 
         for (AgentMrdState agentMrdState : agentMrdStates) {
             String mrdId = agentMrdState.getMrd().getId();
+            MrdType mrdType = this.mrdTypePool.getById(agentMrdState.getMrd().getType());
 
-            if (mrdId.equals(except) || (isChangedInternally && !agentMrdState.getMrd().isManagedByRe())) {
+            if (mrdId.equals(except) || (isChangedInternally && !mrdType.isManagedByRe())) {
                 continue;
             }
 

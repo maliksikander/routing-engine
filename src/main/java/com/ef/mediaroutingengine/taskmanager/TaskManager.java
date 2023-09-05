@@ -4,6 +4,7 @@ import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.MrdType;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
@@ -14,6 +15,7 @@ import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
+import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
@@ -57,6 +59,10 @@ public class TaskManager {
      */
     private final TasksPool tasksPool;
     /**
+     * The Mrd type pool.
+     */
+    private final MrdTypePool mrdTypePool;
+    /**
      * The Tasks repository.
      */
     private final TasksRepository tasksRepository;
@@ -88,12 +94,13 @@ public class TaskManager {
      */
     @Autowired
     public TaskManager(AgentsPool agentsPool, ApplicationContext applicationContext,
-                       TasksPool tasksPool, TasksRepository tasksRepository,
+                       TasksPool tasksPool, MrdTypePool mrdTypePool, TasksRepository tasksRepository,
                        PrecisionQueuesPool precisionQueuesPool,
                        JmsCommunicator jmsCommunicator) {
         this.applicationContext = applicationContext;
         this.agentsPool = agentsPool;
         this.tasksPool = tasksPool;
+        this.mrdTypePool = mrdTypePool;
         this.tasksRepository = tasksRepository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.requestTtlTimers = new ConcurrentHashMap<>();
@@ -130,8 +137,9 @@ public class TaskManager {
 
     private void endPushTaskFromAssignedAgent(Task task, Agent agent) {
         agent.removeTask(task);
-        MediaRoutingDomain mediaRoutingDomain = task.getMrd();
-        if (!mediaRoutingDomain.isManagedByRe()) {
+        MrdType mrdType = this.mrdTypePool.getById(task.getMrd().getType());
+
+        if (!mrdType.isManagedByRe()) {
             return;
         }
         String mrdId = task.getMrd().getId();
@@ -141,7 +149,7 @@ public class TaskManager {
         if (currentMrdState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY) && noOfTasks < 1) {
             this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.NOT_READY, true);
         } else if (currentMrdState.equals(Enums.AgentMrdStateName.BUSY)) {
-            if (noOfTasks == 0 && mediaRoutingDomain.isManagedByRe()) {
+            if (noOfTasks == 0 && mrdType.isManagedByRe()) {
                 this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.READY, true);
             } else if (noOfTasks < maxAgentTasks) {
                 this.agentMrdStateListener().propertyChange(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, true);
@@ -182,10 +190,11 @@ public class TaskManager {
      * @param mrdId the mrd id
      */
     public void updateAgentMrdState(Agent agent, String mrdId) {
-        MediaRoutingDomain mediaRoutingDomain = agent.getAgentMrdState(mrdId).getMrd();
-        if (!mediaRoutingDomain.isManagedByRe()) {
+        MrdType mrdType = this.mrdTypePool.getById(agent.getAgentMrdState(mrdId).getMrd().getType());
+        if (!mrdType.isManagedByRe()) {
             return;
         }
+
         int noOfActiveTasks = agent.getNoOfActiveQueueTasks(mrdId);
         int maxRequestAllowed = agent.getAgentMrdState(mrdId).getMaxAgentTasks();
         if (noOfActiveTasks >= maxRequestAllowed) {

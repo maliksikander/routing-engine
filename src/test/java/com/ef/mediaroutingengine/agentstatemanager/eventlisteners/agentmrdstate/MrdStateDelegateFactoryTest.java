@@ -4,10 +4,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.ef.cim.objectmodel.Enums;
+import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class MrdStateDelegateFactoryTest {
-    MrdStateDelegateFactory factory = new MrdStateDelegateFactory();
+    @Mock
+    private MrdTypePool mrdTypePool;
+
+    MrdStateDelegateFactory factory;
+
+    @BeforeEach
+    void setUp() {
+        this.factory = new MrdStateDelegateFactory(this.mrdTypePool);
+    }
 
     @Test
     void testGetDelegate_returnsNull_when_requestedStateIsNull() {

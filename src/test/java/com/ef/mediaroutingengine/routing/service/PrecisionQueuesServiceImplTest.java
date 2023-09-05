@@ -3,7 +3,6 @@ package com.ef.mediaroutingengine.routing.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -32,10 +31,8 @@ import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -166,8 +163,8 @@ class PrecisionQueuesServiceImplTest {
             verify(taskManager).cancelAgentRequestTtlTimerTask(task.getTopicId());
             verify(taskManager).removeAgentRequestTtlTimerTask(task.getTopicId());
 
-            assertEquals(task.getTaskState().getName(), Enums.TaskStateName.CLOSED);
-            assertEquals(task.getTaskState().getReasonCode(), Enums.TaskStateReasonCode.FORCE_CLOSED);
+            assertEquals(Enums.TaskStateName.CLOSED, task.getTaskState().getName());
+            assertEquals(Enums.TaskStateReasonCode.FORCE_CLOSED, task.getTaskState().getReasonCode());
 
             verify(taskManager).removeFromPoolAndRepository(task);
             verify(jmsCommunicator).publishTaskStateChangeForReporting(task);
@@ -227,7 +224,6 @@ class PrecisionQueuesServiceImplTest {
         MediaRoutingDomain mediaRoutingDomain = new MediaRoutingDomain();
         mediaRoutingDomain.setId(UUID.randomUUID().toString());
         mediaRoutingDomain.setName("chat");
-        mediaRoutingDomain.setInterruptible(false);
         return mediaRoutingDomain;
     }
 
@@ -238,7 +234,6 @@ class PrecisionQueuesServiceImplTest {
         TaskQueue taskQueue = new TaskQueue(UUID.randomUUID().toString(), "queue1");
         return Task.getInstanceFrom(channelSession, null, taskQueue, taskState, type, 1);
     }
-
 
 
 }

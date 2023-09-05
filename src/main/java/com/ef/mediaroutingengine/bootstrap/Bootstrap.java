@@ -8,25 +8,28 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.ExpressionEntity;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.MrdType;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.StepEntity;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TermEntity;
 import com.ef.cim.objectmodel.dto.TaskDto;
+import com.ef.cim.objectmodel.enums.MrdTypeName;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
+import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.pool.RoutingAttributesPool;
 import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
 import com.ef.mediaroutingengine.routing.repository.MediaRoutingDomainRepository;
+import com.ef.mediaroutingengine.routing.repository.MrdTypeRepository;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.routing.repository.RoutingAttributeRepository;
-import com.ef.mediaroutingengine.routing.utility.RestRequest;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
@@ -77,6 +80,7 @@ public class Bootstrap {
      * The Routing attribute repository.
      */
     private final RoutingAttributeRepository routingAttributeRepository;
+    private final MrdTypeRepository mrdTypeRepository;
     /**
      * In-memory pool of all agents.
      */
@@ -85,6 +89,10 @@ public class Bootstrap {
      * In-memory pool of all MRDs.
      */
     private final MrdPool mrdPool;
+    /**
+     * The Mrd type pool.
+     */
+    private final MrdTypePool mrdTypePool;
     /**
      * In-memory pool of all Precision-Queues.
      */
@@ -105,8 +113,6 @@ public class Bootstrap {
      * Used here to Subscribe to the JMS Topic to communicate state changes with Agent-Manager.
      */
     private final JmsCommunicator jmsCommunicator;
-
-    private final RestRequest restRequest;
 
     /**
      * Default Constructor. Loads the dependency beans.
@@ -132,27 +138,30 @@ public class Bootstrap {
                      TasksRepository tasksRepository,
                      AgentPresenceRepository agentPresenceRepository,
                      RoutingAttributeRepository routingAttributeRepository,
+                     MrdTypeRepository mrdTypeRepository,
                      AgentsPool agentsPool,
                      MrdPool mrdPool,
+                     MrdTypePool mrdTypePool,
                      PrecisionQueuesPool precisionQueuesPool,
                      RoutingAttributesPool routingAttributesPool,
                      TasksPool tasksPool,
                      TaskManager taskManager,
-                     JmsCommunicator jmsCommunicator, RestRequest restRequest) {
+                     JmsCommunicator jmsCommunicator) {
         this.agentsRepository = agentsRepository;
         this.mediaRoutingDomainRepository = mediaRoutingDomainRepository;
         this.precisionQueueRepository = precisionQueueRepository;
         this.tasksRepository = tasksRepository;
         this.agentPresenceRepository = agentPresenceRepository;
         this.routingAttributeRepository = routingAttributeRepository;
+        this.mrdTypeRepository = mrdTypeRepository;
         this.agentsPool = agentsPool;
         this.mrdPool = mrdPool;
+        this.mrdTypePool = mrdTypePool;
         this.precisionQueuesPool = precisionQueuesPool;
         this.routingAttributesPool = routingAttributesPool;
         this.tasksPool = tasksPool;
         this.taskManager = taskManager;
         this.jmsCommunicator = jmsCommunicator;
-        this.restRequest = restRequest;
     }
 
     /**
@@ -179,6 +188,7 @@ public class Bootstrap {
      */
     public void loadPools() {
         logger.debug(Constants.METHOD_STARTED);
+        this.bootstrapMrdTypes();
         // Load in-memory Routing-Attributes pool from Routing-Attributes Config DB.
         this.routingAttributesPool.loadFrom(routingAttributeRepository.findAll());
         logger.debug("Routing-Attributes pool loaded from DB");
@@ -305,35 +315,36 @@ public class Bootstrap {
     }
 
     protected MediaRoutingDomain createCiscoCcMrd() {
-        MediaRoutingDomain ciscoCcMrd = new MediaRoutingDomain();
-        ciscoCcMrd.setId(Constants.CISCO_CC_MRD_ID);
-        ciscoCcMrd.setName("CISCO CC");
-        ciscoCcMrd.setInterruptible(false);
-        ciscoCcMrd.setDescription("Standard voice MRD for CISCO CC");
-        ciscoCcMrd.setMaxRequests(1);
-        ciscoCcMrd.setManagedByRe(false);
-        return ciscoCcMrd;
+        return new MediaRoutingDomain(Constants.CISCO_CC_MRD_ID, Constants.CISCO_CC_MRD_TYPE_ID,
+                "CISCO CC", "Standard voice MRD for CISCO CC", 1);
     }
 
     protected MediaRoutingDomain createCxVoiceMrd() {
-        MediaRoutingDomain cxVoiceMrd = new MediaRoutingDomain();
-        cxVoiceMrd.setId(Constants.CX_VOICE_MRD_ID);
-        cxVoiceMrd.setName("CX VOICE");
-        cxVoiceMrd.setInterruptible(false);
-        cxVoiceMrd.setDescription("Standard voice MRD for CX Voice");
-        cxVoiceMrd.setMaxRequests(1);
-        cxVoiceMrd.setManagedByRe(true);
-        return cxVoiceMrd;
+        return new MediaRoutingDomain(Constants.CX_VOICE_MRD_ID, Constants.CX_VOICE_MRD_TYPE_ID,
+                "CX VOICE", "Standard voice MRD for CX Voice", 1);
     }
 
     protected MediaRoutingDomain createChatMrd() {
-        MediaRoutingDomain chatMrd = new MediaRoutingDomain();
-        chatMrd.setId(Constants.CHAT_MRD_ID);
-        chatMrd.setName("CHAT");
-        chatMrd.setDescription("Standard chat MRD");
-        chatMrd.setMaxRequests(5);
-        chatMrd.setManagedByRe(true);
-        return chatMrd;
+        return new MediaRoutingDomain(Constants.CHAT_MRD_ID, Constants.CHAT_MRD_TYPE_ID,
+                "CHAT", "Standard chat MRD", 5);
+    }
+
+    void bootstrapMrdTypes() {
+        List<MrdType> mrdTypeList = this.mrdTypeRepository.findAll();
+        List<String> idList = mrdTypeList.stream().map(MrdType::getId).toList();
+
+        if (!idList.contains(Constants.CHAT_MRD_TYPE_ID)) {
+            mrdTypeList.add(new MrdType(Constants.CHAT_MRD_TYPE_ID, MrdTypeName.CHAT, true, true, true));
+        }
+        if (!idList.contains(Constants.CX_VOICE_MRD_TYPE_ID)) {
+            mrdTypeList.add(new MrdType(Constants.CX_VOICE_MRD_TYPE_ID, MrdTypeName.CX_VOICE, true, false, false));
+        }
+        if (idList.contains(Constants.CISCO_CC_MRD_TYPE_ID)) {
+            mrdTypeList.add(new MrdType(Constants.CISCO_CC_MRD_TYPE_ID, MrdTypeName.CISCO_CC, false, false, false));
+        }
+
+        this.mrdTypeRepository.saveAll(mrdTypeList);
+        this.mrdTypePool.loadFrom(mrdTypeList);
     }
 
     private List<CCUser> getCcUsersFromConfigDb() {

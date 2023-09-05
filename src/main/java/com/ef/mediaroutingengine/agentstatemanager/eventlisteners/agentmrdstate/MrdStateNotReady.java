@@ -2,16 +2,25 @@ package com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate
 
 import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.MrdType;
 import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
 
 /**
  * The type Mrd state not ready.
  */
 public class MrdStateNotReady implements MrdStateDelegate {
+    private final MrdTypePool mrdTypePool;
+
+    public MrdStateNotReady(MrdTypePool mrdTypePool) {
+        this.mrdTypePool = mrdTypePool;
+    }
 
     @Override
     public Enums.AgentMrdStateName getNewState(Agent agent, AgentMrdState agentMrdState) {
-        if (!agentMrdState.getMrd().isManagedByRe()) {
+        MrdType mrdType = this.mrdTypePool.getById(agentMrdState.getMrd().getType());
+
+        if (!mrdType.isManagedByRe()) {
             return Enums.AgentMrdStateName.NOT_READY;
         }
 
