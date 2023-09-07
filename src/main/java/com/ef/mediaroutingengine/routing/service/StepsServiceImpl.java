@@ -9,6 +9,7 @@ import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
+import com.ef.mediaroutingengine.routing.StepTimerService;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.model.Step;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
@@ -55,6 +56,7 @@ public class StepsServiceImpl implements StepsService {
      * The Tasks pool.
      */
     private final TasksPool tasksPool;
+    private StepTimerService stepTimerService;
 
     /**
      * Instantiates a new Steps service.
@@ -67,12 +69,14 @@ public class StepsServiceImpl implements StepsService {
     @Autowired
     public StepsServiceImpl(PrecisionQueueRepository repository,
                             PrecisionQueuesPool precisionQueuesPool, AgentsPool agentsPool,
-                            RoutingAttributesPool routingAttributesPool, TasksPool tasksPool) {
+                            RoutingAttributesPool routingAttributesPool, TasksPool tasksPool,
+                            StepTimerService stepTimerService) {
         this.repository = repository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.agentsPool = agentsPool;
         this.routingAttributesPool = routingAttributesPool;
         this.tasksPool = tasksPool;
+        this.stepTimerService = stepTimerService;
     }
 
     @Override
@@ -231,8 +235,8 @@ public class StepsServiceImpl implements StepsService {
         synchronized (precisionQueue.getServiceQueue()) {
             for (Task task : precisionQueue.getTasks()) {
                 if (task.getCurrentStep() != null && task.getCurrentStep().getStep().getId().equals(id)) {
-                    task.getTimer().cancel();
-                    task.setUpStepFrom(precisionQueue, stepIndex + 1);
+                    this.stepTimerService.stop(task.getId());
+                    this.stepTimerService.startNext(task, precisionQueue, stepIndex + 1);
                 }
             }
         }

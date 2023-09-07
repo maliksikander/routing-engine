@@ -63,6 +63,7 @@ public class TaskRouter implements PropertyChangeListener {
      * The Rest Request Class Object.
      */
     private final RestRequest restRequest;
+    private final StepTimerService stepTimerService;
 
     /**
      * Constructor.
@@ -73,12 +74,14 @@ public class TaskRouter implements PropertyChangeListener {
      */
     @Autowired
     public TaskRouter(AgentsPool agentsPool, TasksRepository tasksRepository,
-                      JmsCommunicator jmsCommunicator, TaskManager taskManager, RestRequest restRequest) {
+                      JmsCommunicator jmsCommunicator, TaskManager taskManager,
+                      RestRequest restRequest, StepTimerService stepTimerService) {
         this.agentsPool = agentsPool;
         this.tasksRepository = tasksRepository;
         this.jmsCommunicator = jmsCommunicator;
         this.taskManager = taskManager;
         this.restRequest = restRequest;
+        this.stepTimerService = stepTimerService;
     }
 
     /**
@@ -101,8 +104,6 @@ public class TaskRouter implements PropertyChangeListener {
 
         if (evt.getPropertyName().equals(Enums.EventName.NEW_TASK.name())) {
             this.onNewTask(evt);
-        } else if (evt.getPropertyName().equals(Enums.EventName.STEP_TIMEOUT.name())) {
-            this.onStepTimeout(evt);
         }
 
         try {
@@ -140,15 +141,8 @@ public class TaskRouter implements PropertyChangeListener {
             this.precisionQueue.enqueue(task);
             jmsCommunicator.publishTaskEnqueued(task, this.precisionQueue);
             logger.debug("Task: {} enqueued in Precision-Queue: {}", task.getId(), precisionQueue.getId());
-            task.addPropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), this);
-            task.setUpStepFrom(this.precisionQueue, 0);
+            this.stepTimerService.startNext(task, this.precisionQueue, 0);
         }
-    }
-
-    private void onStepTimeout(PropertyChangeEvent evt) {
-        Task task = (Task) evt.getNewValue();
-        int currentStepIndex = this.precisionQueue.getStepIndex(task.getCurrentStep().getStep());
-        task.setUpStepFrom(this.precisionQueue, currentStepIndex + 1);
     }
 
     private void reserve(Task task) {
@@ -236,8 +230,7 @@ public class TaskRouter implements PropertyChangeListener {
 
                 this.jmsCommunicator.publishAgentReserved(task, agent.toCcUser());
 
-                task.getTimer().cancel();
-                task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), this);
+                this.stepTimerService.stop(task.getId());
                 precisionQueue.dequeue();
             }
         } catch (Exception e) {

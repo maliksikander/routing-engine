@@ -12,6 +12,7 @@ import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate.Age
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
+import com.ef.mediaroutingengine.routing.StepTimerService;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
@@ -82,6 +83,7 @@ public class TaskManager {
      * The JMS Communicator.
      */
     private final JmsCommunicator jmsCommunicator;
+    private final StepTimerService stepTimerService;
 
     /**
      * Default Constructor. Loads the dependencies.
@@ -96,7 +98,7 @@ public class TaskManager {
     public TaskManager(AgentsPool agentsPool, ApplicationContext applicationContext,
                        TasksPool tasksPool, MrdTypePool mrdTypePool, TasksRepository tasksRepository,
                        PrecisionQueuesPool precisionQueuesPool,
-                       JmsCommunicator jmsCommunicator) {
+                       JmsCommunicator jmsCommunicator, StepTimerService stepTimerService) {
         this.applicationContext = applicationContext;
         this.agentsPool = agentsPool;
         this.tasksPool = tasksPool;
@@ -106,6 +108,7 @@ public class TaskManager {
         this.requestTtlTimers = new ConcurrentHashMap<>();
         this.changeSupport = new PropertyChangeSupport(this);
         this.jmsCommunicator = jmsCommunicator;
+        this.stepTimerService = stepTimerService;
     }
 
     /**
@@ -324,8 +327,7 @@ public class TaskManager {
 
             queue.enqueue(task);
             logger.debug("Task: {} enqueued in Precision-Queue: {}", task.getId(), queue.getId());
-            task.addPropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(), queue.getTaskScheduler());
-            task.setUpStepFrom(queue, 0);
+            this.stepTimerService.startNext(task, queue, 0);
         }
 
         this.changeSupport.firePropertyChange("FIRE_ON_FAILOVER", null, null);
@@ -460,7 +462,7 @@ public class TaskManager {
                 if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
                     logger.info("In process task: {} found in QUEUED state, removing task..", task.getId());
 
-                    task.getTimer().cancel();
+                    TaskManager.this.stepTimerService.stop(task.getId());
                     TaskManager.this.requestTtlTimers.remove(this.conversation);
 
                     // Remove task from precision-queue

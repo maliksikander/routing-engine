@@ -134,7 +134,6 @@ class CancelResourceServiceImplTest {
         spy.endQueuedTask(task, precisionQueue, closeReasonCode);
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(task, times(1)).removePropertyChangeListener(captor.capture(), any());
         assertEquals(Enums.EventName.STEP_TIMEOUT.name(), captor.getValue());
     }
 

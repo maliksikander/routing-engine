@@ -9,26 +9,14 @@ import com.ef.cim.objectmodel.TaskQueue;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
 import com.ef.cim.objectmodel.dto.TaskDto;
-import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The type Task.
  */
 public class Task {
-    /**
-     * The constant LOGGER.
-     */
-    private static final Logger logger = LoggerFactory.getLogger(Task.class);
     /**
      * The ID.
      */
@@ -42,10 +30,6 @@ public class Task {
      */
     private final TaskQueue queue;
     /**
-     * The Change support.
-     */
-    private final PropertyChangeSupport changeSupport;
-    /**
      * The Mark for deletion.
      */
     private AtomicBoolean markForDeletion = new AtomicBoolean(false);
@@ -53,10 +37,6 @@ public class Task {
      * The Channel session.
      */
     private ChannelSession channelSession;
-    /**
-     * The Timer.
-     */
-    private Timer timer;
     /**
      * The Priority.
      */
@@ -106,9 +86,7 @@ public class Task {
         this.queue = queue;
         this.priority = priority;
         this.enqueueTime = System.currentTimeMillis();
-        this.timer = new Timer();
         this.handlingTime = 0L;
-        this.changeSupport = new PropertyChangeSupport(this);
         this.type = type;
     }
 
@@ -159,9 +137,8 @@ public class Task {
      */
     public static Task getInstanceFrom(Task oldTask) {
         TaskState newTaskState = new TaskState(Enums.TaskStateName.QUEUED, null);
-        Task task = getInstanceFrom(oldTask.channelSession, oldTask.mrd, oldTask.queue, newTaskState,
+        return getInstanceFrom(oldTask.channelSession, oldTask.mrd, oldTask.queue, newTaskState,
                 oldTask.getType(), 11);
-        return task;
     }
 
     /**
@@ -349,15 +326,6 @@ public class Task {
     }
 
     /**
-     * Gets timer.
-     *
-     * @return the timer
-     */
-    public Timer getTimer() {
-        return this.timer;
-    }
-
-    /**
      * Gets current step.
      *
      * @return the current step
@@ -386,17 +354,6 @@ public class Task {
     }
 
     /**
-     * Sets up step from.
-     *
-     * @param precisionQueue    the precision queue
-     * @param stepStartingIndex the step starting index
-     */
-    public void setUpStepFrom(PrecisionQueue precisionQueue, int stepStartingIndex) {
-        this.currentStep = precisionQueue.getNextStep(stepStartingIndex);
-        this.startStepTimer();
-    }
-
-    /**
      * Gets topic id.
      *
      * @return the topic id
@@ -422,49 +379,6 @@ public class Task {
 // TODO: Implement it correctly
     public String getLastAssignedAgentId() {
         return null;
-    }
-
-    /**
-     * Add property change listener.
-     *
-     * @param property the property
-     * @param listener the listener
-     */
-    public void addPropertyChangeListener(String property, PropertyChangeListener listener) {
-        this.changeSupport.addPropertyChangeListener(property, listener);
-    }
-
-    /**
-     * Remove property change listener.
-     *
-     * @param property the property
-     * @param listener the listener
-     */
-    public void removePropertyChangeListener(String property, PropertyChangeListener listener) {
-        this.changeSupport.removePropertyChangeListener(property, listener);
-    }
-
-    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-    /**
-     * Start timer.
-     */
-    private void startStepTimer() {
-        try {
-            if (this.currentStep != null && !this.currentStep.isLastStep()) {
-                timer = new Timer();
-                timer.schedule(new TaskTimer(), this.currentStep.getStep().getTimeout() * 1000L);
-                logger.debug("Step: {} timer started for task: {}", currentStep.getStep().getId(), this.id);
-            }
-        } catch (IllegalArgumentException ex) {
-            if (!"Negative delay.".equalsIgnoreCase(ExceptionUtils.getRootCause(ex).getMessage())) {
-                logger.error(ExceptionUtils.getMessage(ex));
-                logger.error(ExceptionUtils.getStackTrace(ex));
-            }
-        } catch (Exception ex) {
-            logger.error(ExceptionUtils.getMessage(ex));
-            logger.error(ExceptionUtils.getStackTrace(ex));
-        }
     }
 
     /**
@@ -504,23 +418,4 @@ public class Task {
     public String toString() {
         return "TaskId: " + this.id + ", MRD: " + this.mrd + ", Priority: " + this.getPriority();
     }
-
-    /**
-     * The type Task timer.
-     */
-// +++++++++++++++++++++++++++++++ TaskTimer class ++++++++++++++++++++++++++++++++++++++++++++
-    private class TaskTimer extends TimerTask {
-
-        public void run() {
-            logger.debug("Time up for step: {}, Task id: {}, MRD: {}", Task.this.currentStep.getStep().getId(),
-                    Task.this.getId(), Task.this.getMrd());
-            try {
-                Task.this.getTimer().cancel();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-            Task.this.changeSupport.firePropertyChange(Enums.EventName.STEP_TIMEOUT.name(), null, Task.this);
-        }
-    }
-    // +++++++++++++++++++++++++++++++************************++++++++++++++++++++++++++++++++++++++++++++*
 }

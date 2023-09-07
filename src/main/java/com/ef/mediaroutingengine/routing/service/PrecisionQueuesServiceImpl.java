@@ -9,6 +9,7 @@ import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
+import com.ef.mediaroutingengine.routing.StepTimerService;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.AssociatedAgentEntity;
 import com.ef.mediaroutingengine.routing.dto.AssociatedAgentsResponse;
@@ -63,6 +64,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     private final TaskManager taskManager;
 
     private final JmsCommunicator jmsCommunicator;
+    private final StepTimerService stepTimerService;
 
     /**
      * Default constructor.
@@ -75,13 +77,14 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     public PrecisionQueuesServiceImpl(PrecisionQueueRepository repository,
                                       PrecisionQueuesPool precisionQueuesPool,
                                       MrdPool mrdPool, TasksPool tasksPool, TaskManager taskManager,
-                                      JmsCommunicator jmsCommunicator) {
+                                      JmsCommunicator jmsCommunicator, StepTimerService stepTimerService) {
         this.repository = repository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.mrdPool = mrdPool;
         this.tasksPool = tasksPool;
         this.taskManager = taskManager;
         this.jmsCommunicator = jmsCommunicator;
+        this.stepTimerService = stepTimerService;
     }
 
     @Override
@@ -277,19 +280,16 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
             queue.getTasks().stream()
                     .filter(task -> this.isTaskEnqueuedSince(enqueuedSince, task))
                     .forEach(task -> {
-                        task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(),
-                                queue.getTaskScheduler());
+                        this.stepTimerService.stop(task.getId());
+                        taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
+                        taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
+
                         queue.getServiceQueue().remove(task);
                         removedTasks.add(task);
                     });
         }
 
         removedTasks.forEach(task -> {
-            task.getTimer().cancel();
-            taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
-            taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
-
-
             task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.FORCE_CLOSED));
             this.taskManager.removeFromPoolAndRepository(task);
             this.jmsCommunicator.publishTaskStateChangeForReporting(task);
