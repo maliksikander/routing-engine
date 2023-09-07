@@ -4,6 +4,7 @@ import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
+import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
@@ -36,6 +37,7 @@ public class TaskStateActive implements TaskStateModifier {
      * The JMS Communicator.
      */
     private final JmsCommunicator jmsCommunicator;
+    private final AgentRequestTimerService agentRequestTimerService;
 
     /**
      * Default Constructor. Loads the dependencies.
@@ -44,11 +46,13 @@ public class TaskStateActive implements TaskStateModifier {
      * @param agentsPool  pool of all agents
      */
     public TaskStateActive(TaskManager taskManager, AgentsPool agentsPool,
-                           TasksRepository tasksRepository, JmsCommunicator jmsCommunicator) {
+                           TasksRepository tasksRepository, JmsCommunicator jmsCommunicator,
+                           AgentRequestTimerService agentRequestTimerService) {
         this.taskManager = taskManager;
         this.agentsPool = agentsPool;
         this.tasksRepository = tasksRepository;
         this.jmsCommunicator = jmsCommunicator;
+        this.agentRequestTimerService = agentRequestTimerService;
     }
 
     @Override
@@ -73,8 +77,7 @@ public class TaskStateActive implements TaskStateModifier {
 
         if (!currentState.getName().equals(Enums.TaskStateName.WRAP_UP)) {
             if (task.getType().getMode().equals(Enums.TaskTypeMode.QUEUE)) {
-                this.taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
-                this.taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
+                this.agentRequestTimerService.stop(task.getTopicId());
 
                 agent.removeReservedTask();
                 agent.addActiveTask(task);

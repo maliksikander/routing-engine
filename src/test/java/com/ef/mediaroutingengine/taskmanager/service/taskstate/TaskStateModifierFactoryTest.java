@@ -4,11 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
-import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
-import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
+import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
+import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
+import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,11 +31,13 @@ class TaskStateModifierFactoryTest {
     private TaskManager taskManager;
     @Mock
     private JmsCommunicator jmsCommunicator;
+    @Mock
+    private AgentRequestTimerService agentRequestTimerService;
 
     @BeforeEach
     void setUp() {
         this.factory = new TaskStateModifierFactory(tasksRepository, precisionQueuesPool, agentsPool, tasksPool,
-                taskManager, jmsCommunicator);
+                taskManager, jmsCommunicator, agentRequestTimerService);
     }
 
     @Test

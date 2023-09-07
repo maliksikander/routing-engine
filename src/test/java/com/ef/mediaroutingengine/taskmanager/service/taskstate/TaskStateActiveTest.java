@@ -15,6 +15,7 @@ import com.ef.cim.objectmodel.TaskAgent;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
@@ -38,10 +39,13 @@ class TaskStateActiveTest {
     private TasksRepository tasksRepository;
     @Mock
     private JmsCommunicator jmsCommunicator;
+    @Mock
+    private AgentRequestTimerService agentRequestTimerService;
 
     @BeforeEach
     void setUp() {
-        this.taskStateActive = new TaskStateActive(taskManager, agentsPool, tasksRepository, jmsCommunicator);
+        this.taskStateActive = new TaskStateActive(taskManager, agentsPool, tasksRepository, jmsCommunicator,
+                agentRequestTimerService);
     }
 
     @Test
@@ -84,8 +88,6 @@ class TaskStateActiveTest {
         verify(task, times(1)).setStartTime(anyLong());
         verify(tasksRepository, times(1)).save(any(), any());
         verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
-        verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(topicId);
-        verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(topicId);
         verify(agent, times(1)).removeReservedTask();
         verify(agent, times(1)).addActiveTask(task);
         verify(taskManager, times(1)).updateAgentMrdState(agent, mrd.getId());

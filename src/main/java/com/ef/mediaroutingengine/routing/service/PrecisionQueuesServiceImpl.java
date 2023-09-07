@@ -9,6 +9,7 @@ import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
+import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
 import com.ef.mediaroutingengine.routing.StepTimerService;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.AssociatedAgentEntity;
@@ -65,6 +66,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
 
     private final JmsCommunicator jmsCommunicator;
     private final StepTimerService stepTimerService;
+    private final AgentRequestTimerService agentRequestTimerService;
 
     /**
      * Default constructor.
@@ -77,7 +79,8 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     public PrecisionQueuesServiceImpl(PrecisionQueueRepository repository,
                                       PrecisionQueuesPool precisionQueuesPool,
                                       MrdPool mrdPool, TasksPool tasksPool, TaskManager taskManager,
-                                      JmsCommunicator jmsCommunicator, StepTimerService stepTimerService) {
+                                      JmsCommunicator jmsCommunicator, StepTimerService stepTimerService,
+                                      AgentRequestTimerService agentRequestTimerService) {
         this.repository = repository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.mrdPool = mrdPool;
@@ -85,6 +88,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         this.taskManager = taskManager;
         this.jmsCommunicator = jmsCommunicator;
         this.stepTimerService = stepTimerService;
+        this.agentRequestTimerService = agentRequestTimerService;
     }
 
     @Override
@@ -281,9 +285,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
                     .filter(task -> this.isTaskEnqueuedSince(enqueuedSince, task))
                     .forEach(task -> {
                         this.stepTimerService.stop(task.getId());
-                        taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
-                        taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
-
+                        this.agentRequestTimerService.stop(task.getTopicId());
                         queue.getServiceQueue().remove(task);
                         removedTasks.add(task);
                     });

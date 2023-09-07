@@ -19,6 +19,8 @@ import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
+import com.ef.mediaroutingengine.routing.StepTimerService;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
@@ -53,28 +55,27 @@ class PrecisionQueuesServiceImplTest {
 
     @Mock
     private PrecisionQueueRepository repository;
-
     @Mock
     private PrecisionQueuesPool precisionQueuesPool;
-
     @Mock
     private TasksPool tasksPool;
-
     @Mock
     private MrdPool mrdPool;
-
     @Mock
     private TaskManager taskManager;
-
     @Mock
     private JmsCommunicator jmsCommunicator;
+    @Mock
+    private StepTimerService stepTimerService;
+    @Mock
+    private AgentRequestTimerService agentRequestTimerService;
 
     private PrecisionQueuesServiceImpl precisionQueuesService;
 
     @BeforeEach
     void setUp() {
         this.precisionQueuesService = new PrecisionQueuesServiceImpl(repository, precisionQueuesPool, mrdPool, tasksPool
-                , taskManager, jmsCommunicator);
+                , taskManager, jmsCommunicator, stepTimerService, agentRequestTimerService);
     }
 
     @Test
@@ -160,8 +161,6 @@ class PrecisionQueuesServiceImplTest {
             precisionQueuesService.flushQueue(precisionQueue, 0);
 
             verify(serviceQueue, times(1)).remove(task);
-            verify(taskManager).cancelAgentRequestTtlTimerTask(task.getTopicId());
-            verify(taskManager).removeAgentRequestTtlTimerTask(task.getTopicId());
 
             assertEquals(Enums.TaskStateName.CLOSED, task.getTaskState().getName());
             assertEquals(Enums.TaskStateReasonCode.FORCE_CLOSED, task.getTaskState().getReasonCode());

@@ -12,6 +12,7 @@ import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate.Age
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
+import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
 import com.ef.mediaroutingengine.routing.StepTimerService;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
@@ -25,11 +26,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -72,10 +69,6 @@ public class TaskManager {
      */
     private final PrecisionQueuesPool precisionQueuesPool;
     /**
-     * The Request ttl timers.
-     */
-    private final Map<String, TaskManager.RequestTtlTimer> requestTtlTimers;
-    /**
      * The Change support.
      */
     private final PropertyChangeSupport changeSupport;
@@ -84,6 +77,7 @@ public class TaskManager {
      */
     private final JmsCommunicator jmsCommunicator;
     private final StepTimerService stepTimerService;
+    private final AgentRequestTimerService agentRequestTimerService;
 
     /**
      * Default Constructor. Loads the dependencies.
@@ -98,17 +92,18 @@ public class TaskManager {
     public TaskManager(AgentsPool agentsPool, ApplicationContext applicationContext,
                        TasksPool tasksPool, MrdTypePool mrdTypePool, TasksRepository tasksRepository,
                        PrecisionQueuesPool precisionQueuesPool,
-                       JmsCommunicator jmsCommunicator, StepTimerService stepTimerService) {
+                       JmsCommunicator jmsCommunicator, StepTimerService stepTimerService,
+                       AgentRequestTimerService agentRequestTimerService) {
         this.applicationContext = applicationContext;
         this.agentsPool = agentsPool;
         this.tasksPool = tasksPool;
         this.mrdTypePool = mrdTypePool;
         this.tasksRepository = tasksRepository;
         this.precisionQueuesPool = precisionQueuesPool;
-        this.requestTtlTimers = new ConcurrentHashMap<>();
         this.changeSupport = new PropertyChangeSupport(this);
         this.jmsCommunicator = jmsCommunicator;
         this.stepTimerService = stepTimerService;
+        this.agentRequestTimerService = agentRequestTimerService;
     }
 
     /**
@@ -226,57 +221,6 @@ public class TaskManager {
     }
 
     /**
-     * Gets delay.
-     *
-     * @param channelSession the channel session
-     * @return the delay
-     */
-    private long getDelay(ChannelSession channelSession) {
-        int ttl = channelSession.getChannel().getChannelConfig().getRoutingPolicy().getAgentRequestTtl();
-        return ttl * 1000L;
-    }
-
-    /**
-     * Schedule agent request timeout task.
-     *
-     * @param channelSession the channel session
-     */
-    private void scheduleAgentRequestTimeoutTask(ChannelSession channelSession) {
-        String topicId = channelSession.getConversationId();
-        long delay = getDelay(channelSession);
-        // If a previous Agent request Ttl timer task exist cancel and remove it.
-        this.cancelAgentRequestTtlTimerTask(topicId);
-        this.removeAgentRequestTtlTimerTask(topicId);
-
-        // Schedule a new timeout task
-        Timer timer = new Timer();
-        TaskManager.RequestTtlTimer newTimerTask = new TaskManager.RequestTtlTimer(topicId);
-        timer.schedule(newTimerTask, delay);
-        // Put the new task in the map.
-        this.requestTtlTimers.put(topicId, newTimerTask);
-    }
-
-    private void scheduleAgentRequestTimeoutTaskOnFailover(Task task) {
-        String conversation = task.getTopicId();
-
-        long ttlValue = getDelay(task.getChannelSession());
-        long timeAlreadySpent = System.currentTimeMillis() - task.getEnqueueTime();
-
-        long delay = ttlValue - timeAlreadySpent;
-
-        // If a previous Agent request Ttl timer task exist cancel and remove it.
-        this.cancelAgentRequestTtlTimerTask(conversation);
-        this.removeAgentRequestTtlTimerTask(conversation);
-
-        // Schedule a new timeout task
-        Timer timer = new Timer();
-        TaskManager.RequestTtlTimer newTimerTask = new TaskManager.RequestTtlTimer(conversation);
-        timer.schedule(newTimerTask, delay);
-        // Put the new task in the map.
-        this.requestTtlTimers.put(conversation, newTimerTask);
-    }
-
-    /**
      * Insert in pool and repository.
      *
      * @param task the task
@@ -299,12 +243,16 @@ public class TaskManager {
     public void enqueueTask(ChannelSession channelSession, PrecisionQueue queue, MediaRoutingDomain mrd,
                             TaskType requestType, int priority) {
         logger.debug(Constants.METHOD_STARTED);
+
         TaskState taskState = new TaskState(Enums.TaskStateName.QUEUED, null);
         Task task = Task.getInstanceFrom(channelSession, mrd, queue.toTaskQueue(), taskState, requestType, priority);
+
         this.insertInPoolAndRepository(task);
         this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-        this.scheduleAgentRequestTimeoutTask(task.getChannelSession());
+
+        this.agentRequestTimerService.start(task, queue);
         logger.debug("Agent-Request-Ttl timer task scheduled");
+
         this.changeSupport.firePropertyChange(Enums.EventName.NEW_TASK.name(), null, task);
 
         logger.debug(Constants.METHOD_ENDED);
@@ -317,7 +265,6 @@ public class TaskManager {
         List<Task> queuedTasks = this.tasksPool.findAllQueuedTasks();
 
         for (Task task : queuedTasks) {
-            this.scheduleAgentRequestTimeoutTaskOnFailover(task);
 
             PrecisionQueue queue = this.precisionQueuesPool.findById(task.getQueue().getId());
             if (queue == null) {
@@ -325,8 +272,11 @@ public class TaskManager {
                 continue;
             }
 
+            this.agentRequestTimerService.startOnFailover(task, queue);
+
             queue.enqueue(task);
             logger.debug("Task: {} enqueued in Precision-Queue: {}", task.getId(), queue.getId());
+
             this.stepTimerService.startNext(task, queue, 0);
         }
 
@@ -341,7 +291,7 @@ public class TaskManager {
     public void rerouteReservedTask(Task currentTask) {
         // If Agent request Ttl has ended.
         if (currentTask.isMarkedForDeletion()) {
-            this.requestTtlTimers.remove(currentTask.getTopicId());
+            this.agentRequestTimerService.stop(currentTask.getTopicId());
             this.jmsCommunicator.publishNoAgentAvailable(currentTask);
             return;
         }
@@ -359,23 +309,6 @@ public class TaskManager {
     }
 
     /**
-     * Cancels the Agent-Request-Ttl-Task for the topicId in the parameter if the timer is running.
-     *
-     * @param topicId timer task for this topicId is cancelled.
-     */
-    public void cancelAgentRequestTtlTimerTask(String topicId) {
-        TaskManager.RequestTtlTimer requestTtlTimer = this.requestTtlTimers.get(topicId);
-        if (requestTtlTimer == null) {
-            return;
-        }
-        try {
-            requestTtlTimer.cancel();
-        } catch (IllegalStateException e) {
-            logger.warn("Agent Request Ttl timer on topic: {} is already cancelled", topicId);
-        }
-    }
-
-    /**
      * Remove old task for reroute.
      *
      * @param task the task
@@ -383,15 +316,6 @@ public class TaskManager {
     public void removeFromPoolAndRepository(Task task) {
         this.tasksRepository.deleteById(task.getId());
         this.tasksPool.remove(task);
-    }
-
-    /**
-     * Remove agent request ttl timer task.
-     *
-     * @param topicId the topic id
-     */
-    public void removeAgentRequestTtlTimerTask(String topicId) {
-        this.requestTtlTimers.remove(topicId);
     }
 
     /**
@@ -421,67 +345,4 @@ public class TaskManager {
     private AgentMrdStateListener agentMrdStateListener() {
         return this.applicationContext.getBean(AgentMrdStateListener.class);
     }
-
-// +++++++++++++++++++++++++++++++ RequestTtlTimer class ++++++++++++++++++++++++++++++++++++++++++++
-
-    /**
-     * The type Request ttl timer.
-     */
-    private class RequestTtlTimer extends TimerTask {
-        /**
-         * The Topic id.
-         */
-        private final String conversation;
-
-        /**
-         * Instantiates a new Request ttl timer.
-         *
-         * @param conversation the topic id
-         */
-        public RequestTtlTimer(String conversation) {
-            this.conversation = conversation;
-        }
-
-        public void run() {
-            logger.info("Agent Request Ttl expired for request on conversation: {}", this.conversation);
-
-            synchronized (TaskManager.this.tasksPool) {
-
-                Task task = TaskManager.this.tasksPool.findInProcessTaskFor(this.conversation);
-
-                if (task == null) {
-                    logger.error("No In-Process Task found for this conversation, method returning...");
-                    return;
-                }
-
-                PrecisionQueue queue = TaskManager.this.precisionQueuesPool.findById(task.getQueue().getId());
-                synchronized (queue.getServiceQueue()) {
-                    task.markForDeletion();
-                }
-
-                if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
-                    logger.info("In process task: {} found in QUEUED state, removing task..", task.getId());
-
-                    TaskManager.this.stepTimerService.stop(task.getId());
-                    TaskManager.this.requestTtlTimers.remove(this.conversation);
-
-                    // Remove task from precision-queue
-                    queue.removeTask(task);
-
-                    task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED,
-                            Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE));
-
-                    TaskManager.this.removeFromPoolAndRepository(task);
-                    TaskManager.this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-                    TaskManager.this.jmsCommunicator.publishNoAgentAvailable(task);
-
-                    logger.info("Queued task: {} removed successfully", task.getId());
-                } else if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
-                    logger.info("In process task: {} found in Reserved state, task is marked for deletion",
-                            task.getId());
-                }
-            }
-        }
-    }
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 }

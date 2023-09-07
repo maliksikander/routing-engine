@@ -4,6 +4,7 @@ import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
 import com.ef.mediaroutingengine.routing.StepTimerService;
 import com.ef.mediaroutingengine.routing.dto.CancelResourceRequest;
 import com.ef.mediaroutingengine.routing.model.Agent;
@@ -56,6 +57,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
      */
     private final JmsCommunicator jmsCommunicator;
     private final StepTimerService stepTimerService;
+    private final AgentRequestTimerService agentRequestTimerService;
 
     /**
      * Instantiates a new End task service.
@@ -70,7 +72,8 @@ public class CancelResourceServiceImpl implements CancelResourceService {
     public CancelResourceServiceImpl(TasksPool tasksPool, TaskManager taskManager,
                                      PrecisionQueuesPool precisionQueuesPool,
                                      AgentsPool agentsPool, RestRequest restRequest,
-                                     JmsCommunicator jmsCommunicator, StepTimerService stepTimerService) {
+                                     JmsCommunicator jmsCommunicator, StepTimerService stepTimerService,
+                                     AgentRequestTimerService agentRequestTimerService) {
         this.tasksPool = tasksPool;
         this.taskManager = taskManager;
         this.precisionQueuesPool = precisionQueuesPool;
@@ -78,6 +81,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
         this.restRequest = restRequest;
         this.jmsCommunicator = jmsCommunicator;
         this.stepTimerService = stepTimerService;
+        this.agentRequestTimerService = agentRequestTimerService;
     }
 
     @Override
@@ -94,8 +98,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
             }
 
             this.stepTimerService.stop(task.getId());
-            taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
-            taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
+            this.agentRequestTimerService.stop(task.getTopicId());
             logger.debug("Agent-Request-Ttl-timer and Task step timers cancelled | Task: {}", task.getId());
 
             PrecisionQueue queue = precisionQueuesPool.findById(task.getQueue().getId());
@@ -104,7 +107,7 @@ public class CancelResourceServiceImpl implements CancelResourceService {
                 task.markForDeletion();
             }
 
-            if (task.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)) {
+            if (task.getTaskState().getName().name().equals("QUEUED")) {
                 this.endQueuedTask(task, queue, request.getReasonCode());
                 logger.info("Queued task {} cancelled successfully on topic: {}", task.getId(), request.getTopicId());
             } else if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {

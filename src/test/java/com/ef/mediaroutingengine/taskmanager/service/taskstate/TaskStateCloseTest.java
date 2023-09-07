@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
@@ -31,10 +32,13 @@ class TaskStateCloseTest {
     private TaskManager taskManager;
     @Mock
     private JmsCommunicator jmsCommunicator;
+    @Mock
+    private AgentRequestTimerService agentRequestTimerService;
 
     @BeforeEach
     void setUp() {
-        this.taskStateClose = new TaskStateClose(precisionQueuesPool, tasksPool, taskManager, jmsCommunicator);
+        this.taskStateClose = new TaskStateClose(precisionQueuesPool, tasksPool, taskManager, jmsCommunicator,
+                agentRequestTimerService);
     }
 
     @Test
@@ -71,9 +75,6 @@ class TaskStateCloseTest {
         verify(precisionQueuesPool, times(1)).endTask(task);
         verify(taskManager, times(1)).removeFromPoolAndRepository(task);
         verify(jmsCommunicator, times(1)).publishTaskStateChangeForReporting(task);
-
-        verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(conversationId);
-        verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(conversationId);
 
         verify(taskManager, times(1)).endTaskFromAssignedAgent(task);
 

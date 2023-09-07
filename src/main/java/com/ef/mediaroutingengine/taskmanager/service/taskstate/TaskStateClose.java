@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
@@ -28,6 +29,7 @@ public class TaskStateClose implements TaskStateModifier {
      * The JMS Communicator.
      */
     private final JmsCommunicator jmsCommunicator;
+    private final AgentRequestTimerService agentRequestTimerService;
 
     /**
      * Default constructor. Loads the dependencies.
@@ -36,11 +38,12 @@ public class TaskStateClose implements TaskStateModifier {
      * @param taskManager         handles tasks closing.
      */
     public TaskStateClose(PrecisionQueuesPool precisionQueuesPool, TasksPool tasksPool, TaskManager taskManager,
-                          JmsCommunicator jmsCommunicator) {
+                          JmsCommunicator jmsCommunicator, AgentRequestTimerService agentRequestTimerService) {
         this.precisionQueuesPool = precisionQueuesPool;
         this.tasksPool = tasksPool;
         this.taskManager = taskManager;
         this.jmsCommunicator = jmsCommunicator;
+        this.agentRequestTimerService = agentRequestTimerService;
     }
 
 
@@ -58,11 +61,8 @@ public class TaskStateClose implements TaskStateModifier {
             return true;
         }
 
-        String conversationId = task.getTopicId();
-
-        if (tasksPool.findInProcessTaskFor(conversationId) == null) {
-            this.taskManager.cancelAgentRequestTtlTimerTask(conversationId);
-            this.taskManager.removeAgentRequestTtlTimerTask(conversationId);
+        if (tasksPool.findInProcessTaskFor(task.getTopicId()) == null) {
+            this.agentRequestTimerService.stop(task.getTopicId());
         }
 
         this.taskManager.endTaskFromAssignedAgent(task);

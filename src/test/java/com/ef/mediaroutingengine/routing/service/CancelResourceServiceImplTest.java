@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.routing.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -17,6 +16,8 @@ import com.ef.cim.objectmodel.TaskQueue;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
+import com.ef.mediaroutingengine.routing.StepTimerService;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.CancelResourceRequest;
 import com.ef.mediaroutingengine.routing.model.Agent;
@@ -28,9 +29,7 @@ import com.ef.mediaroutingengine.routing.utility.RestRequest;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
-
 import java.util.UUID;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -55,12 +54,17 @@ class CancelResourceServiceImplTest {
     private RestRequest restRequest;
     @Mock
     private JmsCommunicator jmsCommunicator;
+    @Mock
+    private StepTimerService stepTimerService;
+    @Mock
+    private AgentRequestTimerService agentRequestTimerService;
+
     private CancelResourceServiceImpl cancelResourceService;
 
     @BeforeEach
     void setUp() {
         this.cancelResourceService = new CancelResourceServiceImpl(tasksPool, taskManager, precisionQueuesPool,
-                agentsPool, restRequest, jmsCommunicator);
+                agentsPool, restRequest, jmsCommunicator, stepTimerService, agentRequestTimerService);
     }
 
     @Nested
@@ -95,9 +99,6 @@ class CancelResourceServiceImplTest {
             doNothing().when(spy).endQueuedTask(task, precisionQueue, request.getReasonCode());
 
             spy.cancelResource(request);
-
-            verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(request.getTopicId());
-            verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(request.getTopicId());
         }
 
         @Test
@@ -115,9 +116,6 @@ class CancelResourceServiceImplTest {
             doNothing().when(spy).endReservedTask(task, request.getReasonCode());
 
             spy.cancelResource(request);
-
-            verify(taskManager, times(1)).cancelAgentRequestTtlTimerTask(request.getTopicId());
-            verify(taskManager, times(1)).removeAgentRequestTtlTimerTask(request.getTopicId());
         }
     }
 

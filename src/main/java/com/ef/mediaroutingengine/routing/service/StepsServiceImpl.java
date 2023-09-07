@@ -56,7 +56,10 @@ public class StepsServiceImpl implements StepsService {
      * The Tasks pool.
      */
     private final TasksPool tasksPool;
-    private StepTimerService stepTimerService;
+    /**
+     * The Step timer service.
+     */
+    private final StepTimerService stepTimerService;
 
     /**
      * Instantiates a new Steps service.

@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 
 import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
@@ -39,6 +40,7 @@ public class TaskStateModifierFactory {
      * The JMS Communicator.
      */
     private final JmsCommunicator jmsCommunicator;
+    private final AgentRequestTimerService agentRequestTimerService;
 
     /**
      * Default constructor. Loads the dependencies.
@@ -51,13 +53,15 @@ public class TaskStateModifierFactory {
     @Autowired
     public TaskStateModifierFactory(TasksRepository tasksRepository, PrecisionQueuesPool precisionQueuesPool,
                                     AgentsPool agentsPool, TasksPool tasksPool,
-                                    TaskManager taskManager, JmsCommunicator jmsCommunicator) {
+                                    TaskManager taskManager, JmsCommunicator jmsCommunicator,
+                                    AgentRequestTimerService agentRequestTimerService) {
         this.tasksRepository = tasksRepository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.agentsPool = agentsPool;
         this.tasksPool = tasksPool;
         this.taskManager = taskManager;
         this.jmsCommunicator = jmsCommunicator;
+        this.agentRequestTimerService = agentRequestTimerService;
     }
 
     /**
@@ -68,9 +72,11 @@ public class TaskStateModifierFactory {
      */
     public TaskStateModifier getModifier(Enums.TaskStateName state) {
         if (state.equals(Enums.TaskStateName.CLOSED)) {
-            return new TaskStateClose(precisionQueuesPool, tasksPool, taskManager, jmsCommunicator);
+            return new TaskStateClose(precisionQueuesPool, tasksPool, taskManager, jmsCommunicator,
+                    agentRequestTimerService);
         } else if (state.equals(Enums.TaskStateName.ACTIVE)) {
-            return new TaskStateActive(taskManager, agentsPool, tasksRepository, jmsCommunicator);
+            return new TaskStateActive(taskManager, agentsPool, tasksRepository, jmsCommunicator,
+                    agentRequestTimerService);
         } else if (state.equals(Enums.TaskStateName.WRAP_UP)) {
             return new TaskStateWrapUp(tasksRepository, jmsCommunicator);
         } else {
