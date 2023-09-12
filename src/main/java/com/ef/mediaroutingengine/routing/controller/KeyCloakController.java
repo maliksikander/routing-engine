@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class KeyCloakController {
 
-
     private  final KeyCloakService keyCloakService;
 
     public KeyCloakController(KeyCloakService keyCloakService) {
@@ -25,7 +24,7 @@ public class KeyCloakController {
     }
 
     /**
-     * Return the keycloak token
+     * Return the keycloak token.
      *
      * @return token 200.
      */

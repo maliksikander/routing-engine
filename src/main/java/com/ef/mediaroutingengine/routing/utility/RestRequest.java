@@ -153,6 +153,13 @@ public class RestRequest {
     }
 
 
+    /**
+     * Makes Post request to keycloak.
+     *
+     * @param map  Request Body.
+     * @param uri  Request URL.
+     * @return     AccessTokenResponse Object.
+     */
     public ResponseEntity<AccessTokenResponse>  getToken(MultiValueMap<String, String> map, String uri) {
 
         HttpHeaders headers = new HttpHeaders();
@@ -164,7 +171,7 @@ public class RestRequest {
         restTemplate.getMessageConverters().add(new ObjectToUrlEncodedConverter(new ObjectMapper()));
 
         try {
-           return restTemplate.postForEntity(uri,
+            return restTemplate.postForEntity(uri,
                     requestBodyFormUrlEncoded, AccessTokenResponse.class);
         } catch (ResourceAccessException resourceAccessException) {
             logger.error(ExceptionUtils.getMessage(resourceAccessException));

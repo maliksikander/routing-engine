@@ -15,6 +15,9 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 
+/**
+ *  Utility Class for URL encoding.
+ */
 public class ObjectToUrlEncodedConverter implements HttpMessageConverter {
     private static final String Encoding = "UTF-8";
 
