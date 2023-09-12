@@ -6,12 +6,17 @@ import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.config.AssignResourceProperties;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
+import com.ef.mediaroutingengine.global.utilities.ObjectToUrlEncodedConverter;
 import com.ef.mediaroutingengine.routing.dto.AssignTaskRequest;
 import com.ef.mediaroutingengine.routing.dto.RevokeTaskRequest;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.keycloak.representations.AccessTokenResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -24,6 +29,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -145,4 +151,29 @@ public class RestRequest {
 
         return null;
     }
+
+
+    public ResponseEntity<AccessTokenResponse>  getToken(MultiValueMap<String, String> map, String uri) {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        HttpEntity<MultiValueMap<String, String>> requestBodyFormUrlEncoded = new HttpEntity<>(map, headers);
+        RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
+        Duration duration = Duration.ofSeconds(5);
+        RestTemplate restTemplate = restTemplateBuilder.setConnectTimeout(duration).build();
+        restTemplate.getMessageConverters().add(new ObjectToUrlEncodedConverter(new ObjectMapper()));
+
+        try {
+           return restTemplate.postForEntity(uri,
+                    requestBodyFormUrlEncoded, AccessTokenResponse.class);
+        } catch (ResourceAccessException resourceAccessException) {
+            logger.error(ExceptionUtils.getMessage(resourceAccessException));
+            logger.error(ExceptionUtils.getStackTrace(resourceAccessException));
+        }
+
+
+        return null;
+    }
+
+
 }
