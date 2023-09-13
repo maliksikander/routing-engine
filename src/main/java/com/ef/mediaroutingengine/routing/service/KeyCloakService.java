@@ -39,7 +39,7 @@ public class KeyCloakService {
         Map<String, String> response = new HashMap<>();
         logger.info("Get KeyCloak token request initiated");
         String realm  = System.getenv("KEYCLOAK_REALM");
-        String host  = System.getenv("KEYCLOAK_AUTH_HOST");
+        String host  = System.getenv("KEYCLOAK_HOST");
         String url =  host + "realms/" + realm + "/protocol/openid-connect/token";
         logger.info("Request URL {} ",  url);
         MultiValueMap<String, String> body = this.getRequestBody();
