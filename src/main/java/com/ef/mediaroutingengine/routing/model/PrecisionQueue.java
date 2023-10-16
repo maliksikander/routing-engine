@@ -367,6 +367,10 @@ public class PrecisionQueue implements Queue {
         return this.serviceQueue.getEnqueuedTasksList();
     }
 
+    public int getPosition(Task task) {
+        return this.serviceQueue.getPosition(task);
+    }
+
     /**
      * Gets task scheduler.
      *

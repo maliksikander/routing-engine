@@ -21,5 +21,6 @@ public class QueuesWithAvailableAgentsResponse {
     private String queueId;
     private String queueName;
     private int totalAvailableAgents;
+    private String mrdId;
     private List<KeycloakUser> availableAgents = new ArrayList<>();
 }

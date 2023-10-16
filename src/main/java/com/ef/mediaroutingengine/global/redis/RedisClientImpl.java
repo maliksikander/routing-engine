@@ -18,6 +18,7 @@ import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.commands.ProtocolCommand;
+import redis.clients.jedis.util.Pool;
 import redis.clients.jedis.util.SafeEncoder;
 
 /**
@@ -37,7 +38,7 @@ public class RedisClientImpl implements RedisClient {
     /**
      * The Jedis pool.
      */
-    private final JedisPool jedisPool;
+    private final Pool<Jedis> jedisPool;
 
 
     /**
@@ -46,7 +47,7 @@ public class RedisClientImpl implements RedisClient {
      * @param jedisPool the jedis pool
      */
     @Autowired
-    public RedisClientImpl(JedisPool jedisPool) {
+    public RedisClientImpl(Pool<Jedis> jedisPool) {
         this.jedisPool = jedisPool;
         objectMapper.registerModule(new JavaTimeModule());
     }

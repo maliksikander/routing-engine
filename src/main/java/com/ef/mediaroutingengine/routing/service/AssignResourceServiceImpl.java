@@ -61,12 +61,11 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     }
 
     @Override
-    public String assign(AssignResourceRequest request, boolean useQueueName, boolean offerToAgent) {
+    public String assign(AssignResourceRequest request, boolean useQueueName, boolean offerToAgent, int priority) {
         String conversationId = request.getChannelSession().getConversationId();
         logger.info("Assign resource request initiated | Conversation: {}", conversationId);
 
         this.throwExceptionIfRequestExistsFor(conversationId);
-
         if (request.getRequestType() == null) {
             TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
             request.setRequestType(type);
@@ -94,7 +93,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             // putting same correlation id and topic id from the caller thread into this thread
             MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
             MDC.put(Constants.MDC_TOPIC_ID, channelSession.getConversationId());
-            this.taskManager.enqueueTask(channelSession, queue, mrd, request.getRequestType());
+            this.taskManager.enqueueTask(channelSession, queue, mrd, request.getRequestType(), priority);
             MDC.clear();
         });
 
