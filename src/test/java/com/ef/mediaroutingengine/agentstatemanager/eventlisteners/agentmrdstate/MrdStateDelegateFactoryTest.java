@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.ef.cim.objectmodel.Enums;
-import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
+import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,13 +14,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class MrdStateDelegateFactoryTest {
     @Mock
-    private MrdTypePool mrdTypePool;
+    private MrdPool mrdPool;
 
     MrdStateDelegateFactory factory;
 
     @BeforeEach
     void setUp() {
-        this.factory = new MrdStateDelegateFactory(this.mrdTypePool);
+        this.factory = new MrdStateDelegateFactory(this.mrdPool);
     }
 
     @Test

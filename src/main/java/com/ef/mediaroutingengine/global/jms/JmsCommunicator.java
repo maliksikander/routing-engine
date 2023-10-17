@@ -1,10 +1,11 @@
 package com.ef.mediaroutingengine.global.jms;
 
 import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.dto.RevokeResourceDto;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.Serializable;
 import javax.jms.ExceptionListener;
@@ -54,36 +55,42 @@ public interface JmsCommunicator extends ExceptionListener {
     /**
      * Publish task state change for reporting.
      *
-     * @param task the task
+     * @param task           the task
+     * @param channelSession the channel session
      */
-    void publishTaskStateChangeForReporting(Task task);
+    void publishTaskStateChanged(Task task, ChannelSession channelSession);
+
+    /**
+     * Publish task media state changed.
+     *
+     * @param conversationId the conversation id
+     * @param media          the media
+     */
+    void publishTaskMediaStateChanged(String conversationId, TaskMedia media);
 
     /**
      * Publish NoAgentAvailable event.
      *
-     * @param task the task
+     * @param conversationId the conversation id
+     * @param media          the media
      */
-    void publishNoAgentAvailable(Task task);
+    void publishNoAgentAvailable(String conversationId, TaskMedia media);
 
     /**
      * Publish Task enqueue event.
      *
-     * @param task the task
+     * @param task  the task
+     * @param media the media
      * @param queue precision queue
      */
-    void publishTaskEnqueued(Task task, PrecisionQueue queue);
+    void publishTaskEnqueued(Task task, TaskMedia media, PrecisionQueue queue);
 
     /**
      * Publish Agent Reserved event.
      *
-     * @param task the task object
+     * @param task  the task object
+     * @param media the media
+     * @param agent the agent
      */
-    void publishAgentReserved(Task task, CCUser agent);
-
-    /**
-     * Revoke task event.
-     *
-     * @param task the task object.
-     */
-    void publishRevokeTask(Task task, RevokeResourceDto revokeResourceDto);
+    void publishAgentReserved(Task task, TaskMedia media, CCUser agent);
 }

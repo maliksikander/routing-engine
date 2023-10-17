@@ -4,7 +4,6 @@ import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.service.PrecisionQueuesService;
 import java.util.Optional;
-import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
@@ -153,7 +152,7 @@ public class PrecisionQueuesController {
     @GetMapping(value = "precision-queues/associated-agents")
     public ResponseEntity<Object> getAssociatedAgents(@RequestParam(value = "queueId") Optional<String> queueId) {
         return queueId.<ResponseEntity<Object>>map(id ->
-                ResponseEntity.ok().body(this.service.getAssociatedAgentsOf(id)))
+                        ResponseEntity.ok().body(this.service.getAssociatedAgentsOf(id)))
                 .orElseGet(() -> ResponseEntity.ok().body(this.service.getAllAssociatedAgents()));
     }
 }

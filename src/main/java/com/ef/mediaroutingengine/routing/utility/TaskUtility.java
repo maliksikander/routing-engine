@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.routing.utility;
 
-import com.ef.mediaroutingengine.taskmanager.model.Task;
+import com.ef.cim.objectmodel.task.TaskMedia;
 import java.util.Map;
 
 /**
@@ -17,11 +17,11 @@ public final class TaskUtility {
     /**
      * Gets offer to agent.
      *
-     * @param task the task
+     * @param media the media
      * @return the offer to agent
      */
-    public static boolean getOfferToAgent(Task task) {
-        Map<String, Object> metadata = task.getType().getMetadata();
+    public static boolean getOfferToAgent(TaskMedia media) {
+        Map<String, Object> metadata = media.getType().getMetadata();
         if (metadata == null || metadata.get("offerToAgent") == null) {
             return true;
         }

@@ -20,7 +20,7 @@ import com.ef.cim.objectmodel.ReasonCode;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.routing.model.Agent;
-import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
+import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -36,13 +36,13 @@ class AgentStateNotReadyTest {
     @Mock
     private AgentPresenceRepository agentPresenceRepository;
     @Mock
-    private MrdTypePool mrdTypePool;
+    private MrdPool mrdPool;
 
     private AgentStateNotReady agentStateNotReady;
 
     @BeforeEach
     void setUp() {
-        this.agentStateNotReady = new AgentStateNotReady(agentPresenceRepository, mrdTypePool);
+        this.agentStateNotReady = new AgentStateNotReady(agentPresenceRepository, mrdPool);
     }
 
     @Test

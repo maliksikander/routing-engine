@@ -3,9 +3,7 @@ package com.ef.mediaroutingengine.global.utilities;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.Sender;
 import com.ef.cim.objectmodel.SenderType;
-import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
 
 /**
  * The type Adapter utility.
@@ -16,31 +14,6 @@ public final class AdapterUtility {
      */
     private AdapterUtility() {
 
-    }
-
-    /**
-     * Task to task dto task dto.
-     *
-     * @param task the task
-     * @return the task dto
-     */
-    public static TaskDto createTaskDtoFrom(Task task) {
-        TaskDto taskDto = new TaskDto();
-        taskDto.setId(task.getId());
-
-        taskDto.setChannelSession(task.getChannelSession());
-        taskDto.setMrd(task.getMrd());
-        taskDto.setQueue(task.getQueue());
-
-        taskDto.setPriority(task.getPriority());
-        taskDto.setState(task.getTaskState());
-        taskDto.setAssignedTo(task.getAssignedTo());
-
-        taskDto.setEnqueueTime(task.getEnqueueTime());
-        taskDto.setAnswerTime(task.getStartTime());
-        taskDto.setHandleTime(task.getHandlingTime());
-        taskDto.setType(task.getType());
-        return taskDto;
     }
 
     /**

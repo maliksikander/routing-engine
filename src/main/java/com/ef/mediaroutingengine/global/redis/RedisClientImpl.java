@@ -9,15 +9,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.util.Pool;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -26,7 +25,6 @@ import redis.clients.jedis.util.SafeEncoder;
  */
 @Service
 public class RedisClientImpl implements RedisClient {
-
     /**
      * The constant objectMapper.
      */
@@ -76,6 +74,25 @@ public class RedisClientImpl implements RedisClient {
     }
 
     @Override
+    public void setTransaction(Predicate<Transaction> function) {
+        Transaction transaction = null;
+        try (Jedis conn = getConnection()) {
+
+            transaction = conn.multi();
+            boolean isApplied = function.test(transaction);
+
+            if (isApplied) {
+                transaction.exec();
+            }
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.discard();
+            }
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public boolean setJson(String key, Object object) {
         return this.setJson(key, JSON_ROOT_PATH, object);
     }
@@ -83,8 +100,7 @@ public class RedisClientImpl implements RedisClient {
     @Override
     public boolean setJson(String key, String path, Object object) {
         try (Jedis conn = getConnection()) {
-            String value = objectMapper.writeValueAsString(object);
-            conn.getClient().sendCommand(Command.SET, SafeEncoder.encodeMany(key, path, value));
+            conn.getClient().sendCommand(RedisJson.Command.SET, RedisJson.encode(key, path, object));
             String status = conn.getClient().getStatusCodeReply();
             assertReplyOk(status);
             return true;
@@ -100,8 +116,7 @@ public class RedisClientImpl implements RedisClient {
         try (Jedis conn = getConnection()) {
             transaction = conn.multi();
             transaction.sadd(type, id);
-            String value = objectMapper.writeValueAsString(object);
-            transaction.sendCommand(Command.SET, SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH, value));
+            transaction.sendCommand(RedisJson.Command.SET, RedisJson.encode(getKey(type, id), JSON_ROOT_PATH, object));
             transaction.exec();
             return true;
         } catch (Exception e) {
@@ -123,8 +138,8 @@ public class RedisClientImpl implements RedisClient {
                 Object object = objectList.get(i);
 
                 transaction.sadd(type, id);
-                String value = objectMapper.writeValueAsString(object);
-                transaction.sendCommand(Command.SET, SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH, value));
+                transaction.sendCommand(RedisJson.Command.SET,
+                        RedisJson.encode(getKey(type, id), JSON_ROOT_PATH, object));
             }
             transaction.exec();
             return true;
@@ -151,8 +166,8 @@ public class RedisClientImpl implements RedisClient {
             for (Map.Entry<UUID, Object> entry : jsonObjects.entrySet()) {
                 String id = entry.getKey().toString();
                 transaction.sadd(type, id);
-                String value = objectMapper.writeValueAsString(entry.getValue());
-                transaction.sendCommand(Command.SET, SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH, value));
+                transaction.sendCommand(RedisJson.Command.SET,
+                        RedisJson.encode(getKey(type, id), JSON_ROOT_PATH, entry.getValue()));
             }
             transaction.exec();
             return true;
@@ -167,8 +182,13 @@ public class RedisClientImpl implements RedisClient {
 
     @Override
     public <T> T getJson(String key, Class<T> clazz) {
+        return this.getJson(key, JSON_ROOT_PATH, clazz);
+    }
+
+    @Override
+    public <T> T getJson(String key, String path, Class<T> clazz) {
         try (Jedis conn = getConnection()) {
-            conn.getClient().sendCommand(Command.GET, SafeEncoder.encodeMany(key, JSON_ROOT_PATH));
+            conn.getClient().sendCommand(RedisJson.Command.GET, SafeEncoder.encodeMany(key, path));
             String response = conn.getClient().getBulkReply();
             if (response != null) {
                 assertReplyNotError(response);
@@ -181,23 +201,33 @@ public class RedisClientImpl implements RedisClient {
     }
 
     @Override
-    public <T> List<T> getJsonArray(String key, Class<T> clazz) throws JsonProcessingException {
+    public <T> List<T> getJsonArray(String key, Class<T> clazz) {
+        return this.getJsonArray(key, JSON_ROOT_PATH, clazz);
+    }
+
+    @Override
+    public <T> List<T> getJsonArray(String key, String path, Class<T> clazz) {
         String response;
         try (Jedis conn = getConnection()) {
-            conn.getClient().sendCommand(Command.GET, SafeEncoder.encodeMany(key, JSON_ROOT_PATH));
+            conn.getClient().sendCommand(RedisJson.Command.GET, SafeEncoder.encodeMany(key, path));
             response = conn.getClient().getBulkReply();
+            if (response != null) {
+                assertReplyNotError(response);
+                JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, clazz);
+                return objectMapper.readValue(response, type);
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
-        if (response != null) {
-            assertReplyNotError(response);
-            JavaType type = objectMapper.getTypeFactory().constructCollectionType(List.class, clazz);
-            return objectMapper.readValue(response, type);
-        } else {
-            return new ArrayList<>();
-        }
+        return new ArrayList<>();
     }
 
     @Override
     public <T> List<T> multiGetJson(Class<T> clazz, String... keys) {
+        if (keys.length == 0) {
+            return new ArrayList<>();
+        }
+
         List<T> responseList = new ArrayList<>();
         String[] args = Stream
                 .of(keys, new String[] {JSON_ROOT_PATH})
@@ -206,7 +236,7 @@ public class RedisClientImpl implements RedisClient {
 
         try (Jedis conn = getConnection()) {
             List<String> rep;
-            conn.getClient().sendCommand(Command.MGET, args);
+            conn.getClient().sendCommand(RedisJson.Command.MGET, args);
             rep = conn.getClient().getMultiBulkReply();
             if (rep != null) {
                 for (String object : rep) {
@@ -222,7 +252,7 @@ public class RedisClientImpl implements RedisClient {
     @Override
     public Long delJson(String key) {
         try (Jedis conn = getConnection()) {
-            conn.getClient().sendCommand(Command.DEL, SafeEncoder.encodeMany(key, JSON_ROOT_PATH));
+            conn.getClient().sendCommand(RedisJson.Command.DEL, SafeEncoder.encodeMany(key, JSON_ROOT_PATH));
             return conn.getClient().getIntegerReply();
         }
     }
@@ -232,7 +262,7 @@ public class RedisClientImpl implements RedisClient {
         Transaction transaction = null;
         try (Jedis conn = getConnection()) {
             transaction = conn.multi();
-            transaction.sendCommand(Command.DEL, SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH));
+            transaction.sendCommand(RedisJson.Command.DEL, SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH));
             transaction.srem(type, id);
             transaction.exec();
             return true;
@@ -255,7 +285,8 @@ public class RedisClientImpl implements RedisClient {
             }
             transaction = conn.multi();
             for (String id : idList) {
-                transaction.sendCommand(Command.DEL, SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH));
+                transaction.sendCommand(RedisJson.Command.DEL,
+                        SafeEncoder.encodeMany(getKey(type, id), JSON_ROOT_PATH));
             }
             transaction.del(type);
             transaction.exec();
@@ -324,9 +355,7 @@ public class RedisClientImpl implements RedisClient {
     @Override
     public ScanResult<String> scan(String cursor, ScanParams params) {
         try (Jedis conn = getConnection()) {
-            ScanResult<String> result = conn.scan(cursor, params);
-            conn.close();
-            return result;
+            return conn.scan(cursor, params);
         }
     }
 
@@ -348,48 +377,5 @@ public class RedisClientImpl implements RedisClient {
      */
     private String getKey(String type, String id) {
         return type + ":" + id;
-    }
-
-    /**
-     * The enum Command.
-     */
-    private enum Command implements ProtocolCommand {
-        /**
-         * Del command.
-         */
-        DEL("JSON.DEL"),
-        /**
-         * Get command.
-         */
-        GET("JSON.GET"),
-        /**
-         * Set command.
-         */
-        SET("JSON.SET"),
-        /**
-         * Multiple get command.
-         */
-        MGET("JSON.MGET"),
-        /**
-         * Type command.
-         */
-        TYPE("JSON.TYPE");
-        /**
-         * The Raw.
-         */
-        private final byte[] raw;
-
-        /**
-         * Instantiates a new Command.
-         *
-         * @param alt the alt
-         */
-        Command(String alt) {
-            raw = SafeEncoder.encode(alt);
-        }
-
-        public byte[] getRaw() {
-            return raw;
-        }
     }
 }

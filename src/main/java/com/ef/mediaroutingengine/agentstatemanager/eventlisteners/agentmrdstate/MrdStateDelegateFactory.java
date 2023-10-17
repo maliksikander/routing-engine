@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate;
 
 import com.ef.cim.objectmodel.Enums;
-import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
+import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,11 +10,11 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class MrdStateDelegateFactory {
-    private final MrdTypePool mrdTypePool;
+    private final MrdPool mrdPool;
 
     @Autowired
-    public MrdStateDelegateFactory(MrdTypePool mrdTypePool) {
-        this.mrdTypePool = mrdTypePool;
+    public MrdStateDelegateFactory(MrdPool mrdPool) {
+        this.mrdPool = mrdPool;
     }
 
     /**
@@ -29,7 +29,7 @@ public class MrdStateDelegateFactory {
         }
 
         return switch (state) {
-            case NOT_READY -> new MrdStateNotReady(this.mrdTypePool);
+            case NOT_READY -> new MrdStateNotReady(this.mrdPool);
             case READY -> new MrdStateReady();
             case ACTIVE -> new MrdStateActive();
             case BUSY -> new MrdStateBusy();

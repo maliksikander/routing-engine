@@ -1,15 +1,14 @@
 package com.ef.mediaroutingengine.routing.utility;
 
 import com.ef.cim.objectmodel.CCUser;
-import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.dto.QueueHistoricalStatsDto;
-import com.ef.cim.objectmodel.dto.TaskDto;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskMedia;
+import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.mediaroutingengine.config.ExternalServiceConfig;
 import com.ef.mediaroutingengine.global.commons.Constants;
-import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.dto.AssignTaskRequest;
 import com.ef.mediaroutingengine.routing.dto.RevokeTaskRequest;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -59,32 +58,41 @@ public class RestRequest {
         this.config = config;
     }
 
+    public boolean postAssignTask(Task task, TaskMedia media, TaskMediaState state, CCUser agent, boolean async) {
+        return this.postAssignTask(task.getConversationId(), task.getId(), media, state, agent, async);
+    }
+
     /**
-     * Calls the Agent-manager's Assign-Task API.
+     * Post assign task boolean.
      *
-     * @param task  the task dto
-     * @param agent the agent to assign task to
-     * @return true if request successful, false otherwise.
+     * @param conversationId the conversation id
+     * @param taskId         the task id
+     * @param media          the media
+     * @param state          the task media state
+     * @param agent          the agent
+     * @param async          the async
+     * @return the boolean
      */
-    public boolean postAssignTask(Task task, CCUser agent, TaskState taskState, boolean async) {
+    public boolean postAssignTask(String conversationId, String taskId, TaskMedia media, TaskMediaState state,
+                                  CCUser agent, boolean async) {
         if (async) {
             String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
             CompletableFuture.runAsync(() -> {
                 MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
-                MDC.put(Constants.MDC_TOPIC_ID, task.getTopicId());
-                this.postAssignTask(task, agent, taskState);
+                MDC.put(Constants.MDC_TOPIC_ID, conversationId);
+                this.postAssignTask(conversationId, taskId, media, state, agent);
                 MDC.clear();
             });
             return true;
         }
 
-        return postAssignTask(task, agent, taskState);
+        return postAssignTask(conversationId, taskId, media, state, agent);
     }
 
-    private boolean postAssignTask(Task task, CCUser agent, TaskState taskState) {
-        TaskDto taskDto = AdapterUtility.createTaskDtoFrom(task);
-        taskDto.setState(taskState);
-        AssignTaskRequest request = new AssignTaskRequest(taskDto, agent);
+    private boolean postAssignTask(String conversationId, String taskId, TaskMedia media, TaskMediaState state,
+                                   CCUser agent) {
+        media.setState(state);
+        AssignTaskRequest request = new AssignTaskRequest(taskId, conversationId, media, agent);
 
         try {
             this.httpRequest(request, this.config.getAssignTaskUri(), HttpMethod.POST);
@@ -97,21 +105,35 @@ public class RestRequest {
     }
 
     /**
-     * Calls the agent manager's Revoke task API.
+     * Post revoke task.
      *
-     * @param task the task.
-     * @return true if request is successful
+     * @param task  the task
+     * @param async the async
      */
-    public boolean postRevokeTask(Task task) {
+    public void postRevokeTask(Task task, boolean async) {
+        if (!async) {
+            this.postRevokeTask(task);
+            return;
+        }
+
+        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+        CompletableFuture.runAsync(() -> {
+            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+            MDC.put(Constants.MDC_TOPIC_ID, task.getConversationId());
+            this.postRevokeTask(task);
+            MDC.clear();
+        });
+
+    }
+
+    private void postRevokeTask(Task task) {
         RevokeTaskRequest requestBody = new RevokeTaskRequest(task.getId(), task.getAssignedTo().getId(),
-                task.getTopicId());
+                task.getConversationId());
         try {
             this.httpRequest(requestBody, this.config.getRevokeTaskUri(), HttpMethod.POST);
-            return true;
         } catch (Exception e) {
             logger.error(ExceptionUtils.getMessage(e));
             logger.error(ExceptionUtils.getStackTrace(e));
-            return false;
         }
     }
 

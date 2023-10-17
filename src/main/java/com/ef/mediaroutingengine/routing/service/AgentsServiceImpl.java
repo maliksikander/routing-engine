@@ -8,24 +8,20 @@ import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.cim.objectmodel.MrdType;
 import com.ef.cim.objectmodel.RoutingAttribute;
-import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.ConflictException;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.dto.AssociatedMrdUpdateConflictResponse;
 import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.model.AgentTask;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
-import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.pool.RoutingAttributesPool;
 import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -60,10 +56,6 @@ public class AgentsServiceImpl implements AgentsService {
      */
     private final MrdPool mrdPool;
     /**
-     * The Mrd type pool.
-     */
-    private final MrdTypePool mrdTypePool;
-    /**
      * The Precision queues pool.
      */
     private final PrecisionQueuesPool precisionQueuesPool;
@@ -87,14 +79,13 @@ public class AgentsServiceImpl implements AgentsService {
     @Autowired
     public AgentsServiceImpl(AgentsRepository repository,
                              RoutingAttributesPool routingAttributesPool, AgentsPool agentsPool,
-                             MrdPool mrdPool, MrdTypePool mrdTypePool, PrecisionQueuesPool precisionQueuesPool,
+                             MrdPool mrdPool, PrecisionQueuesPool precisionQueuesPool,
                              AgentPresenceRepository agentPresenceRepository,
                              AgentMrdStateListener agentMrdStateListener) {
         this.repository = repository;
         this.routingAttributesPool = routingAttributesPool;
         this.agentsPool = agentsPool;
         this.mrdPool = mrdPool;
-        this.mrdTypePool = mrdTypePool;
         this.precisionQueuesPool = precisionQueuesPool;
         this.agentPresenceRepository = agentPresenceRepository;
         this.agentMrdStateListener = agentMrdStateListener;
@@ -292,12 +283,10 @@ public class AgentsServiceImpl implements AgentsService {
 
         Agent agent = this.agentsPool.findBy(id);
 
-        List<Task> tasks = agent.getAllTasks();
-        if (!tasks.isEmpty()) {
+        List<AgentTask> agentTasks = agent.getAllTasks();
+        if (!agentTasks.isEmpty()) {
             logger.error("Could not delete agent, there are tasks associated to the agent | Agent: {}", id);
-            List<TaskDto> taskDtoList = new ArrayList<>();
-            tasks.forEach(task -> taskDtoList.add(AdapterUtility.createTaskDtoFrom(task)));
-            return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
+            return new ResponseEntity<>(agentTasks, HttpStatus.CONFLICT);
         }
 
         CCUser ccUser = optionalCcUser.get();
@@ -392,10 +381,7 @@ public class AgentsServiceImpl implements AgentsService {
      */
     private void putAgentMrdStateChangeRequest(Agent agent, String mrdId,
                                                Enums.AgentMrdStateName agentMrdStateName) {
-        AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
-        MrdType mrdType = this.mrdTypePool.getById(agentMrdState.getMrd().getType());
-
-        if (mrdType.isManagedByRe()) {
+        if (this.mrdPool.getType(mrdId).isManagedByRe()) {
             this.agentMrdStateListener.propertyChange(agent, mrdId, agentMrdStateName, true);
         }
     }

@@ -3,12 +3,14 @@ package com.ef.mediaroutingengine.routing.model;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.StepEntity;
-import com.ef.cim.objectmodel.TaskQueue;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskMedia;
+import com.ef.cim.objectmodel.task.TaskMediaState;
+import com.ef.cim.objectmodel.task.TaskQueue;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.queue.PriorityQueue;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.model.TaskStep;
 import java.util.ArrayList;
 import java.util.List;
@@ -363,12 +365,22 @@ public class PrecisionQueue implements Queue {
      *
      * @return the tasks
      */
-    public List<Task> getTasks() {
+    public List<QueueTask> getTasks() {
         return this.serviceQueue.getEnqueuedTasksList();
     }
 
+    /**
+     * Gets position.
+     *
+     * @param task the task
+     * @return the position
+     */
     public int getPosition(Task task) {
-        return this.serviceQueue.getPosition(task);
+        TaskMedia media = task.findMediaByState(TaskMediaState.QUEUED);
+        if (media != null) {
+            return this.serviceQueue.getPosition(task.getId(), media.getPriority());
+        }
+        return -1;
     }
 
     /**
@@ -468,7 +480,7 @@ public class PrecisionQueue implements Queue {
     }
 
     @Override
-    public boolean enqueue(Task task) {
+    public boolean enqueue(QueueTask task) {
         if (task == null || this.serviceQueue.taskExists(task.getId())) {
             return false;
         }
@@ -478,8 +490,8 @@ public class PrecisionQueue implements Queue {
     }
 
     @Override
-    public Task dequeue() {
-        Task task = this.serviceQueue.dequeue(true); //serviceQueue.poll
+    public QueueTask dequeue() {
+        QueueTask task = this.serviceQueue.dequeue(true); //serviceQueue.poll
         logger.debug("Removed Task: {}", task != null ? task.getId() : "task not found" + " from queue: "
                 + this.getName());
         printQueue();
@@ -504,8 +516,8 @@ public class PrecisionQueue implements Queue {
      *
      * @return the task at the queue's head.
      */
-    public Task peek() {
-        Task task = this.serviceQueue.dequeue(false); // serviceQueue.peek
+    public QueueTask peek() {
+        QueueTask task = this.serviceQueue.dequeue(false); // serviceQueue.peek
         logger.debug("peek task: {}", task != null ? task.getId() : "Task not found");
         return task;
     }
@@ -516,11 +528,23 @@ public class PrecisionQueue implements Queue {
      * @param task the task to be removed.
      * @return true if found and removed, false otherwise
      */
-    public boolean removeTask(Task task) {
+    public boolean removeTask(QueueTask task) {
         if (task == null) {
             return false;
         }
         return this.serviceQueue.remove(task);
+    }
+
+    /**
+     * Remove by task id boolean.
+     *
+     * @param taskId the task id
+     * @return the boolean
+     */
+    public boolean removeByTaskId(String taskId) {
+        synchronized (this.serviceQueue) {
+            return this.serviceQueue.removeByTaskId(taskId);
+        }
     }
 
     /**

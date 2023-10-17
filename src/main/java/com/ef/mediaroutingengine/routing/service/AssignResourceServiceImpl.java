@@ -1,23 +1,16 @@
 package com.ef.mediaroutingengine.routing.service;
 
-import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.cim.objectmodel.RoutingMode;
-import com.ef.cim.objectmodel.TaskType;
-import com.ef.mediaroutingengine.global.commons.Constants;
-import com.ef.mediaroutingengine.routing.dto.AssignResourceRequest;
+import com.ef.cim.objectmodel.dto.AssignResourceRequest;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
-import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
+import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
-import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
-import java.util.HashMap;
+import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -39,151 +32,77 @@ public class AssignResourceServiceImpl implements AssignResourceService {
      * The Task manager.
      */
     private final TaskManager taskManager;
-
-    private final TasksPool tasksPool;
-    /**
-     * The Precision queues pool.
-     */
-    private final PrecisionQueuesPool precisionQueuesPool;
+    private final TasksRepository tasksRepository;
+    private final MrdPool mrdPool;
 
     /**
      * Default constructor. Loads the dependencies.
      *
-     * @param taskManager         the task manager
-     * @param precisionQueuesPool the precision queues pool
+     * @param taskManager     the task manager
+     * @param tasksRepository the tasks repository
+     * @param mrdPool         the mrd pool
      */
     @Autowired
-    public AssignResourceServiceImpl(TaskManager taskManager, TasksPool tasksPool,
-                                     PrecisionQueuesPool precisionQueuesPool) {
+    public AssignResourceServiceImpl(TaskManager taskManager, TasksRepository tasksRepository, MrdPool mrdPool) {
         this.taskManager = taskManager;
-        this.tasksPool = tasksPool;
-        this.precisionQueuesPool = precisionQueuesPool;
+        this.tasksRepository = tasksRepository;
+        this.mrdPool = mrdPool;
     }
 
     @Override
-    public String assign(AssignResourceRequest request, boolean useQueueName, boolean offerToAgent, int priority) {
-        String conversationId = request.getChannelSession().getConversationId();
+    public void assign(AssignResourceRequest request, PrecisionQueue queue) {
+        String conversationId = request.getRequestSession().getConversationId();
         logger.info("Assign resource request initiated | Conversation: {}", conversationId);
 
-        this.throwExceptionIfRequestExistsFor(conversationId);
-        if (request.getRequestType() == null) {
-            TaskType type = new TaskType(Enums.TaskTypeDirection.INBOUND, Enums.TaskTypeMode.QUEUE, null);
-            request.setRequestType(type);
+        List<Task> tasks = this.tasksRepository.findAllByConversation(conversationId);
+        String mrdId = request.getRequestSession().getChannel().getChannelType().getMediaRoutingDomain();
+
+        if (request.getType().getDirection().equals(Enums.TaskTypeDirection.DIRECT_TRANSFER)
+                || request.getType().getDirection().equals(Enums.TaskTypeDirection.DIRECT_CONFERENCE)) {
+            handleTransferConference(request, queue, tasks, mrdId);
+        } else {
+            this.handleInboundOutbound(request, queue, tasks, mrdId);
         }
-        validateRequestTypeMode(request.getRequestType());
 
-
-        if (request.getRequestType().getMetadata() == null) {
-            request.getRequestType().setMetadata(new HashMap<>());
-        }
-        request.getRequestType().putMetadata("offerToAgent", offerToAgent);
-
-        ChannelSession channelSession = request.getChannelSession();
-        validateChannelSession(channelSession, request.getRequestType());
-        logger.debug("ChannelSession validated in Assign-Resource API request");
-
-        PrecisionQueue queue = this.validateAndGetQueue(channelSession, request.getQueue(), useQueueName);
-        logger.debug("PrecisionQueue validated in Assign-Resource API request");
-
-        MediaRoutingDomain mrd = queue.getMrd();
-
-        // TODO: Executor service .. don't use completableFuture!
-        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
-        CompletableFuture.runAsync(() -> {
-            // putting same correlation id and topic id from the caller thread into this thread
-            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
-            MDC.put(Constants.MDC_TOPIC_ID, channelSession.getConversationId());
-            this.taskManager.enqueueTask(channelSession, queue, mrd, request.getRequestType(), priority);
-            MDC.clear();
-        });
-
-        logger.info("Assign resource request handled gracefully | Topic: {}",
-                request.getChannelSession().getConversationId());
-        return "The request is received Successfully";
     }
 
-    void throwExceptionIfRequestExistsFor(String conversationId) {
-        List<Task> existingTasks = this.tasksPool.findByConversationId(conversationId);
+    private void handleInboundOutbound(AssignResourceRequest req, PrecisionQueue queue, List<Task> tasks,
+                                       String mrdId) {
+        if (!tasks.isEmpty()) {
+            if (this.mrdPool.getType(mrdId).isAutoJoin()) {
+                return;
+            }
 
-        for (Task task : existingTasks) {
-            Enums.TaskStateName stateName = task.getTaskState().getName();
+            tasks.removeIf(this.taskManager::revokeInProcessTask);
+            boolean isAssigned = this.taskManager.reserveCurrentAvailable(req, tasks, mrdId, queue.toTaskQueue());
 
-            if (stateName.equals(Enums.TaskStateName.QUEUED) || stateName.equals(Enums.TaskStateName.RESERVED)) {
-                String error = "A previous request is still in process of finding agent on this conversation";
-                logger.error(error);
-                throw new IllegalStateException(error);
+            if (isAssigned) {
+                return;
             }
         }
+
+        this.taskManager.enqueueTask(req, queue);
+
     }
 
-    /**
-     * Validates Mode of request.
-     *
-     * @param type Type of the Task
-     */
-    public void validateRequestTypeMode(TaskType type) {
-        if (type.getMode() == null || type.getMode() != Enums.TaskTypeMode.QUEUE) {
-            throw new IllegalArgumentException("Invalid request mode, it should be QUEUE");
+    private void handleTransferConference(AssignResourceRequest req, PrecisionQueue queue, List<Task> tasks,
+                                          String mrdId) {
+        if (!tasks.isEmpty()) {
+            if (this.mrdPool.getType(mrdId).isAutoJoin() && inProcessNonAutoJoinAbleExists(tasks)) {
+                return;
+            }
+
+            tasks.removeIf(this.taskManager::revokeInProcessTask);
         }
+
+        this.taskManager.enqueueTask(req, queue);
     }
 
-    /**
-     * Validate channel session.
-     *
-     * @param channelSession the channel session
-     */
-    void validateChannelSession(ChannelSession channelSession, TaskType type) {
-        RoutingMode mode = channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingMode();
-
-        if (type.getDirection().equals(Enums.TaskTypeDirection.INBOUND) && !mode.equals(RoutingMode.PUSH)) {
-            throw new IllegalArgumentException("Routing mode must be PUSH for an INBOUND request");
-        }
-    }
-
-    /**
-     * Validate and get queue precision queue.
-     *
-     * @param channelSession the channel session
-     * @param requestQueue   the request queue
-     * @return the precision queue
-     */
-    PrecisionQueue validateAndGetQueue(ChannelSession channelSession, String requestQueue,
-                                       boolean useQueueName) {
-        String defaultQueue = channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingObjectId();
-        if (defaultQueue == null && requestQueue == null) {
-            throw new IllegalArgumentException("DefaultQueue and RequestedQueue both are null");
-        }
-        PrecisionQueue queue = getPrecisionQueueFrom(requestQueue, defaultQueue, useQueueName);
-        if (queue == null) {
-            throw new IllegalArgumentException("Could not find PrecisionQueue for this request");
-        }
-        if (queue.getSteps().isEmpty()) {
-            throw new IllegalStateException("Cannot process request, Queue: " + queue.getId()
-                    + " has no steps configured");
-        }
-        return queue;
-    }
-
-    /**
-     * Gets precision queue from.
-     *
-     * @param requestedQueue the requested queue
-     * @param defaultQueue   the default queue
-     * @return the precision queue from
-     */
-    PrecisionQueue getPrecisionQueueFrom(String requestedQueue, String defaultQueue, boolean useQueueName) {
-        PrecisionQueue queue;
-
-        if (useQueueName) {
-            queue = this.precisionQueuesPool.findByName(requestedQueue);
-        } else {
-            queue = this.precisionQueuesPool.findById(requestedQueue);
-        }
-
-        // If requested queue not found, use default queue
-        if (queue == null) {
-            queue = this.precisionQueuesPool.findById(defaultQueue);
-        }
-        return queue;
+    private boolean inProcessNonAutoJoinAbleExists(List<Task> tasks) {
+        return tasks.stream().anyMatch(t -> t.getActiveMedia().stream()
+                .anyMatch(m -> !mrdPool.getType(m.getMrdId()).isAutoJoin()
+                        && (m.getState().equals(TaskMediaState.QUEUED)
+                        || m.getState().equals(TaskMediaState.RESERVED))
+                ));
     }
 }

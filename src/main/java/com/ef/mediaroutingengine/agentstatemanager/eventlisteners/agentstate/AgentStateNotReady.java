@@ -7,7 +7,7 @@ import com.ef.cim.objectmodel.MrdType;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.routing.model.Agent;
-import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
+import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -24,16 +24,16 @@ public class AgentStateNotReady implements AgentStateDelegate {
      * The Agent presence repository.
      */
     private final AgentPresenceRepository agentPresenceRepository;
-    private final MrdTypePool mrdTypePool;
+    private final MrdPool mrdPool;
 
     /**
      * Instantiates a new Agent state not ready.
      *
      * @param agentPresenceRepository the agent presence repository
      */
-    public AgentStateNotReady(AgentPresenceRepository agentPresenceRepository, MrdTypePool mrdTypePool) {
+    public AgentStateNotReady(AgentPresenceRepository agentPresenceRepository, MrdPool mrdPool) {
         this.agentPresenceRepository = agentPresenceRepository;
-        this.mrdTypePool = mrdTypePool;
+        this.mrdPool = mrdPool;
     }
 
     @Override
@@ -48,7 +48,7 @@ public class AgentStateNotReady implements AgentStateDelegate {
 
         if (currentState.equals(Enums.AgentStateName.READY)) {
             if (agent.getReservedTask() != null) {
-                String exceptThisMrd = agent.getReservedTask().getMrd().getId();
+                String exceptThisMrd = agent.getReservedTask().getMrdId();
                 List<String> mrdStateChanges = this.updateAgentMrdStates(agent, exceptThisMrd, isChangedInternally);
                 return new AgentStateChangedResponse(null, false, mrdStateChanges);
             }
@@ -84,7 +84,7 @@ public class AgentStateNotReady implements AgentStateDelegate {
 
         for (AgentMrdState agentMrdState : agentMrdStates) {
             String mrdId = agentMrdState.getMrd().getId();
-            MrdType mrdType = this.mrdTypePool.getById(agentMrdState.getMrd().getType());
+            MrdType mrdType = this.mrdPool.getType(mrdId);
 
             if (mrdId.equals(except) || (isChangedInternally && !mrdType.isManagedByRe())) {
                 continue;

@@ -2,7 +2,7 @@ package com.ef.mediaroutingengine.taskmanager.dto;
 
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.RoutingMode;
-import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.task.TaskState;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

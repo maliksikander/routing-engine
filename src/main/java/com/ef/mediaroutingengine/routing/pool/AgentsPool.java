@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.routing.pool;
 
 import com.ef.cim.objectmodel.CCUser;
-import com.ef.cim.objectmodel.TaskAgent;
+import com.ef.cim.objectmodel.task.TaskAgent;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import java.util.ArrayList;
 import java.util.List;

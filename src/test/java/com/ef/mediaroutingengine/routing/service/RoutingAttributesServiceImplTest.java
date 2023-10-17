@@ -143,7 +143,7 @@ class RoutingAttributesServiceImplTest {
             precisionQueueEntities.add(entity);
 
             RoutingAttributeDeleteConflictResponse response = new RoutingAttributeDeleteConflictResponse();
-            response.setPrecisionQueues(precisionQueueEntities);
+            response.setPrecisionQueueEntities(precisionQueueEntities);
 
             RoutingAttributesServiceImpl spy = Mockito.spy(routingAttributesService);
 
@@ -152,7 +152,7 @@ class RoutingAttributesServiceImplTest {
 
             RoutingAttributeDeleteConflictResponse responseReturned = spy.delete(id);
 
-            assertEquals(response.getPrecisionQueues(), responseReturned.getPrecisionQueues());
+            assertEquals(response.getPrecisionQueueEntities(), responseReturned.getPrecisionQueueEntities());
         }
 
     }

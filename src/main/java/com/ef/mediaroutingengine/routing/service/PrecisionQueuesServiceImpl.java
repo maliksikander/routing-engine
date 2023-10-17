@@ -3,27 +3,23 @@ package com.ef.mediaroutingengine.routing.service;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
-import com.ef.cim.objectmodel.TaskState;
-import com.ef.cim.objectmodel.dto.TaskDto;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskState;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
-import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
-import com.ef.mediaroutingengine.routing.StepTimerService;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.AssociatedAgentEntity;
 import com.ef.mediaroutingengine.routing.dto.AssociatedAgentsResponse;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.dto.QueuesWithAvailableAgentsResponse;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
+import com.ef.mediaroutingengine.routing.model.QueueTask;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
-import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
-import java.beans.PropertyChangeListener;
+import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -43,14 +39,14 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
+    /**
+     * The constant logger.
+     */
     private static final Logger logger = LoggerFactory.getLogger(PrecisionQueuesServiceImpl.class);
     /**
      * The Repository.
      */
     private final PrecisionQueueRepository repository;
-
-    private final TasksPool tasksPool;
-
     /**
      * The Precision queues pool.
      */
@@ -63,10 +59,10 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * The Task manager.
      */
     private final TaskManager taskManager;
-
-    private final JmsCommunicator jmsCommunicator;
-    private final StepTimerService stepTimerService;
-    private final AgentRequestTimerService agentRequestTimerService;
+    /**
+     * The Tasks repository.
+     */
+    private final TasksRepository tasksRepository;
 
     /**
      * Default constructor.
@@ -74,21 +70,18 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * @param repository          precision queue repository
      * @param precisionQueuesPool the precision queues pool
      * @param mrdPool             the mrd pool
+     * @param taskManager         the task manager
+     * @param tasksRepository     the tasks repository
      */
     @Autowired
     public PrecisionQueuesServiceImpl(PrecisionQueueRepository repository,
-                                      PrecisionQueuesPool precisionQueuesPool,
-                                      MrdPool mrdPool, TasksPool tasksPool, TaskManager taskManager,
-                                      JmsCommunicator jmsCommunicator, StepTimerService stepTimerService,
-                                      AgentRequestTimerService agentRequestTimerService) {
+                                      PrecisionQueuesPool precisionQueuesPool, MrdPool mrdPool,
+                                      TaskManager taskManager, TasksRepository tasksRepository) {
         this.repository = repository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.mrdPool = mrdPool;
-        this.tasksPool = tasksPool;
         this.taskManager = taskManager;
-        this.jmsCommunicator = jmsCommunicator;
-        this.stepTimerService = stepTimerService;
-        this.agentRequestTimerService = agentRequestTimerService;
+        this.tasksRepository = tasksRepository;
     }
 
     @Override
@@ -176,12 +169,8 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
             throw new NotFoundException(errorMessage);
         }
 
-        List<Task> tasks = this.tasksPool.findByQueueId(id);
+        List<Task> tasks = this.tasksRepository.findAllByQueueId(id);
         if (tasks.isEmpty()) {
-            PropertyChangeListener listener = this.precisionQueuesPool.findById(id).getTaskScheduler();
-            this.taskManager.removePropertyChangeListener(Enums.EventName.NEW_TASK.name(), listener);
-            logger.debug("PrecisionQueue's TaskRouter removed from the TaskManager's PropertyChangeListener list");
-
             this.precisionQueuesPool.deleteById(id);
             logger.debug("PrecisionQueue deleted from the in-memory PrecisionQueue pool | Queue: {}", id);
 
@@ -193,9 +182,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         }
 
         logger.info("Could not delete PrecisionQueue, there are tasks associated to it | Queue: {}", id);
-        List<TaskDto> taskDtoList = new ArrayList<>();
-        tasks.forEach(task -> taskDtoList.add(AdapterUtility.createTaskDtoFrom(task)));
-        return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
+        return new ResponseEntity<>(tasks, HttpStatus.CONFLICT);
     }
 
     /**
@@ -278,28 +265,26 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * @param enqueuedSince enqueue time.
      */
     void flushQueue(@NotNull PrecisionQueue queue, int enqueuedSince) {
-        List<Task> removedTasks = new ArrayList<>();
-
         synchronized (queue.getServiceQueue()) {
             queue.getTasks().stream()
-                    .filter(task -> this.isTaskEnqueuedSince(enqueuedSince, task))
-                    .forEach(task -> {
-                        this.stepTimerService.stop(task.getId());
-                        this.agentRequestTimerService.stop(task.getTopicId());
-                        queue.getServiceQueue().remove(task);
-                        removedTasks.add(task);
+                    .filter(queueTask -> this.isTaskEnqueuedSince(enqueuedSince, queueTask))
+                    .forEach(queueTask -> {
+                        Task task = this.tasksRepository.find(queueTask.getTaskId());
+                        TaskState state =
+                                new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.FORCE_CLOSED);
+                        this.taskManager.closeTask(task, state);
                     });
         }
-
-        removedTasks.forEach(task -> {
-            task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.FORCE_CLOSED));
-            this.taskManager.removeFromPoolAndRepository(task);
-            this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-        });
-
     }
 
-    boolean isTaskEnqueuedSince(int value, Task task) {
+    /**
+     * Is task enqueued since boolean.
+     *
+     * @param value the value
+     * @param task  the task
+     * @return the boolean
+     */
+    boolean isTaskEnqueuedSince(int value, QueueTask task) {
         return (System.currentTimeMillis() - task.getEnqueueTime()) >= (value * 1000L);
     }
 
@@ -346,6 +331,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * Method to add all the agents in the provided list.
      *
      * @param queue the queue.
+     * @return the list
      */
     public List<AssociatedAgentEntity> createAssociatedAgents(PrecisionQueue queue) {
         return queue.getAssociatedAgents().stream()
@@ -353,6 +339,12 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
                 .toList();
     }
 
+    /**
+     * Throw exception if queue name is not unique.
+     *
+     * @param requestBody the request body
+     * @param queueId     the queue id
+     */
     void throwExceptionIfQueueNameIsNotUnique(PrecisionQueueRequestBody requestBody, String queueId) {
         for (PrecisionQueue queue : this.precisionQueuesPool.toList()) {
             if (!queue.getId().equals(queueId) && queue.getName().equals(requestBody.getName())) {

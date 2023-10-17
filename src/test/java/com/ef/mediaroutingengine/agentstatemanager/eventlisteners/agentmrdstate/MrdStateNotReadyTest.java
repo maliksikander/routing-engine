@@ -13,7 +13,7 @@ import com.ef.cim.objectmodel.MrdType;
 import com.ef.cim.objectmodel.enums.MrdTypeName;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.routing.model.Agent;
-import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
+import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,13 +26,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class MrdStateNotReadyTest {
     @Mock
-    private MrdTypePool mrdTypePool;
+    private MrdPool mrdPool;
 
     private MrdStateNotReady mrdStateNotReady;
 
     @BeforeEach
     void setUp() {
-        this.mrdStateNotReady = new MrdStateNotReady(this.mrdTypePool);
+        this.mrdStateNotReady = new MrdStateNotReady(this.mrdPool);
     }
 
     @Nested
@@ -41,28 +41,28 @@ class MrdStateNotReadyTest {
         @Test
         void returnsCurrentMrdState_when_currentMrdStateIsLogout() {
             AgentMrdState currentState = createAgentMrdState(Enums.AgentMrdStateName.LOGOUT);
-            when(mrdTypePool.getById(Constants.CHAT_MRD_TYPE_ID)).thenReturn(getMrdType());
+            when(mrdPool.getType(Constants.CHAT_MRD_ID)).thenReturn(getMrdType());
             assertEquals(currentState.getState(), mrdStateNotReady.getNewState(getNewAgent(), currentState));
         }
 
         @Test
         void returnsCurrentMrdState_when_currentMrdStateIsLogin() {
             AgentMrdState currentState = createAgentMrdState(Enums.AgentMrdStateName.LOGIN);
-            when(mrdTypePool.getById(Constants.CHAT_MRD_TYPE_ID)).thenReturn(getMrdType());
+            when(mrdPool.getType(Constants.CHAT_MRD_ID)).thenReturn(getMrdType());
             assertEquals(currentState.getState(), mrdStateNotReady.getNewState(getNewAgent(), currentState));
         }
 
         @Test
         void returnsCurrentMrdState_when_currentMrdStateIsNotReady() {
             AgentMrdState currentState = createAgentMrdState(Enums.AgentMrdStateName.NOT_READY);
-            when(mrdTypePool.getById(Constants.CHAT_MRD_TYPE_ID)).thenReturn(getMrdType());
+            when(mrdPool.getType(Constants.CHAT_MRD_ID)).thenReturn(getMrdType());
             assertEquals(currentState.getState(), mrdStateNotReady.getNewState(getNewAgent(), currentState));
         }
 
         @Test
         void returnsCurrentMrdState_when_currentMrdStateIsInterrupted() {
             AgentMrdState currentState = createAgentMrdState(Enums.AgentMrdStateName.INTERRUPTED);
-            when(mrdTypePool.getById(Constants.CHAT_MRD_TYPE_ID)).thenReturn(getMrdType());
+            when(mrdPool.getType(Constants.CHAT_MRD_ID)).thenReturn(getMrdType());
             assertEquals(currentState.getState(), mrdStateNotReady.getNewState(getNewAgent(), currentState));
         }
 
@@ -71,7 +71,7 @@ class MrdStateNotReadyTest {
             Agent agentSpy = spy(getNewAgent());
             AgentMrdState currentState = createAgentMrdState(Enums.AgentMrdStateName.PENDING_NOT_READY);
 
-            when(mrdTypePool.getById(Constants.CHAT_MRD_TYPE_ID)).thenReturn(getMrdType());
+            when(mrdPool.getType(Constants.CHAT_MRD_ID)).thenReturn(getMrdType());
             when(agentSpy.getNoOfActiveQueueTasks(currentState.getMrd().getId())).thenReturn(1);
 
             assertEquals(currentState.getState(), mrdStateNotReady.getNewState(agentSpy, currentState));
@@ -84,7 +84,7 @@ class MrdStateNotReadyTest {
         @Test
         void returnsMrdStateNotReady_when_currentMrdStateIsReady() {
             AgentMrdState currentState = createAgentMrdState(Enums.AgentMrdStateName.READY);
-            when(mrdTypePool.getById(Constants.CHAT_MRD_TYPE_ID)).thenReturn(getMrdType());
+            when(mrdPool.getType(Constants.CHAT_MRD_ID)).thenReturn(getMrdType());
             assertEquals(Enums.AgentMrdStateName.NOT_READY, mrdStateNotReady.getNewState(getNewAgent(), currentState));
         }
 
@@ -93,7 +93,7 @@ class MrdStateNotReadyTest {
             Agent agentSpy = spy(getNewAgent());
             AgentMrdState currentState = createAgentMrdState(Enums.AgentMrdStateName.PENDING_NOT_READY);
 
-            when(mrdTypePool.getById(Constants.CHAT_MRD_TYPE_ID)).thenReturn(getMrdType());
+            when(mrdPool.getType(Constants.CHAT_MRD_ID)).thenReturn(getMrdType());
             when(agentSpy.getNoOfActiveQueueTasks(currentState.getMrd().getId())).thenReturn(0);
 
             assertEquals(Enums.AgentMrdStateName.NOT_READY, mrdStateNotReady.getNewState(agentSpy, currentState));
@@ -102,7 +102,7 @@ class MrdStateNotReadyTest {
         @Test
         void returnsMrdStatePendingNotReady_when_currentMrdStateIsActive() {
             AgentMrdState currentState = createAgentMrdState(Enums.AgentMrdStateName.ACTIVE);
-            when(mrdTypePool.getById(Constants.CHAT_MRD_TYPE_ID)).thenReturn(getMrdType());
+            when(mrdPool.getType(Constants.CHAT_MRD_ID)).thenReturn(getMrdType());
             assertEquals(Enums.AgentMrdStateName.PENDING_NOT_READY,
                     mrdStateNotReady.getNewState(getNewAgent(), currentState));
         }
@@ -110,7 +110,7 @@ class MrdStateNotReadyTest {
         @Test
         void returnsMrdStatePendingNotReady_when_currentMrdStateIsBusy() {
             AgentMrdState currentState = createAgentMrdState(Enums.AgentMrdStateName.BUSY);
-            when(mrdTypePool.getById(Constants.CHAT_MRD_TYPE_ID)).thenReturn(getMrdType());
+            when(mrdPool.getType(Constants.CHAT_MRD_ID)).thenReturn(getMrdType());
             assertEquals(Enums.AgentMrdStateName.PENDING_NOT_READY,
                     mrdStateNotReady.getNewState(getNewAgent(), currentState));
         }
@@ -125,7 +125,8 @@ class MrdStateNotReadyTest {
     }
 
     private AgentMrdState createAgentMrdState(Enums.AgentMrdStateName state) {
-        MediaRoutingDomain mrd = new MediaRoutingDomain(UUID.randomUUID().toString(), Constants.CHAT_MRD_TYPE_ID, "", "", 5);
+        MediaRoutingDomain mrd =
+                new MediaRoutingDomain(Constants.CHAT_MRD_ID, Constants.CHAT_MRD_TYPE_ID, "", "", 5);
         return new AgentMrdState(mrd, state);
     }
 

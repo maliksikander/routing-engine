@@ -3,14 +3,16 @@ package com.ef.mediaroutingengine.global.redis;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
+import redis.clients.jedis.Transaction;
 
 /**
  * The interface Redis client.
  */
 public interface RedisClient {
-
+    void setTransaction(Predicate<Transaction> function);
 
     /**
      * Associate Object as JSON value to key.
@@ -63,6 +65,8 @@ public interface RedisClient {
      */
     <T> T getJson(String key, Class<T> clazz);
 
+    <T> T getJson(String key, String path, Class<T> clazz);
+
     /**
      * Gets json array.
      *
@@ -72,7 +76,9 @@ public interface RedisClient {
      * @return the json array
      * @throws JsonProcessingException the json processing exception
      */
-    <T> List<T> getJsonArray(String key, Class<T> clazz) throws JsonProcessingException;
+    <T> List<T> getJsonArray(String key, Class<T> clazz);
+
+    <T> List<T> getJsonArray(String key, String path, Class<T> clazz);
 
     /**
      * Get the list Objects associated with the keys.  If any key does not exist, the special value

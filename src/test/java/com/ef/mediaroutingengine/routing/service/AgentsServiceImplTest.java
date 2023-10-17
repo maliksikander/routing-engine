@@ -23,17 +23,16 @@ import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.RoutingAttributeType;
 import com.ef.cim.objectmodel.enums.MrdTypeName;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
+import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.routing.model.Agent;
-import com.ef.mediaroutingengine.routing.pool.MrdTypePool;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
-import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
-import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
+import com.ef.mediaroutingengine.routing.model.AgentTask;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.pool.RoutingAttributesPool;
+import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -66,8 +65,6 @@ class AgentsServiceImplTest {
     @Mock
     private MrdPool mrdPool;
     @Mock
-    private MrdTypePool mrdTypePool;
-    @Mock
     private PrecisionQueuesPool precisionQueuesPool;
     @Mock
     private AgentPresenceRepository agentPresenceRepository;
@@ -77,7 +74,7 @@ class AgentsServiceImplTest {
     @BeforeEach
     void setUp() {
         this.agentsService = new AgentsServiceImpl(repository, routingAttributesPool, agentsPool, mrdPool,
-                mrdTypePool, precisionQueuesPool, agentPresenceRepository, agentMrdStateListener);
+                precisionQueuesPool, agentPresenceRepository, agentMrdStateListener);
     }
 
 
@@ -129,7 +126,7 @@ class AgentsServiceImplTest {
             Agent agent = mock(Agent.class);
             when(agentsPool.findBy(id)).thenReturn(agent);
             when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.BUSY));
-            when(mrdTypePool.getById(Constants.CHAT_MRD_TYPE_ID)).thenReturn(getMrdType());
+            when(mrdPool.getType(mrdId)).thenReturn(getMrdType());
 
             spy.update(ccUser, id);
 
@@ -158,14 +155,14 @@ class AgentsServiceImplTest {
             String id = UUID.randomUUID().toString();
             Agent agent = mock(Agent.class);
 
-            List<Task> taskList = new ArrayList<>();
-            taskList.add(mock(Task.class));
+            List<AgentTask> agentTasks = new ArrayList<>();
+            agentTasks.add(mock(AgentTask.class));
 
             Optional<CCUser> optionalCCUser = Optional.of(getNewCcUser());
 
             when(repository.findById(id)).thenReturn(optionalCCUser);
             when(agentsPool.findBy(id)).thenReturn(agent);
-            when(agent.getAllTasks()).thenReturn(taskList);
+            when(agent.getAllTasks()).thenReturn(agentTasks);
 
             ResponseEntity<Object> response = agentsService.delete(id);
             assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
@@ -253,7 +250,7 @@ class AgentsServiceImplTest {
         when(agentsPool.findBy(ccUser.getId())).thenReturn(agent);
         when(agent.getNoOfActiveQueueTasks(mrdId)).thenReturn(12);
         when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.ACTIVE));
-        when(mrdTypePool.getById(Constants.CHAT_MRD_TYPE_ID)).thenReturn(getMrdType());
+        when(mrdPool.getType(mrdId)).thenReturn(getMrdType());
 
         agentsService.updateAgentMrdState(ccUser);
         Assertions.assertThat(output).contains("MRD state has been changed from ACTIVE to BUSY.");
@@ -268,7 +265,7 @@ class AgentsServiceImplTest {
         when(agentsPool.findBy(ccUser.getId())).thenReturn(agent);
         when(agent.getNoOfActiveQueueTasks(mrdId)).thenReturn(3);
         when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.BUSY));
-        when(mrdTypePool.getById(Constants.CHAT_MRD_TYPE_ID)).thenReturn(getMrdType());
+        when(mrdPool.getType(mrdId)).thenReturn(getMrdType());
 
         agentsService.updateAgentMrdState(ccUser);
         Assertions.assertThat(output).contains("MRD state has been changed from BUSY to ACTIVE.");
@@ -314,7 +311,8 @@ class AgentsServiceImplTest {
     }
 
     private AgentMrdState getAgentMrdState(Enums.AgentMrdStateName state) {
-        MediaRoutingDomain mrd = new MediaRoutingDomain(UUID.randomUUID().toString(), Constants.CHAT_MRD_TYPE_ID, "", "", 5);
+        MediaRoutingDomain mrd =
+                new MediaRoutingDomain(UUID.randomUUID().toString(), Constants.CHAT_MRD_TYPE_ID, "", "", 5);
         return new AgentMrdState(mrd, state);
     }
 

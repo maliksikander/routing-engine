@@ -1,8 +1,8 @@
 package com.ef.mediaroutingengine.routing;
 
-import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
+import com.ef.mediaroutingengine.routing.model.QueueEventName;
+import com.ef.mediaroutingengine.routing.model.QueueTask;
 import java.beans.PropertyChangeEvent;
 import java.util.Map;
 import java.util.Timer;
@@ -35,8 +35,8 @@ public class StepTimerService {
      * @param queue     the queue
      * @param stepIndex the step index
      */
-    public void startNext(Task task, PrecisionQueue queue, int stepIndex) {
-        if (this.timers.get(task.getId()) != null) {
+    public void startNext(QueueTask task, PrecisionQueue queue, int stepIndex) {
+        if (this.timers.get(task.getMediaId()) != null) {
             return;
         }
 
@@ -47,7 +47,7 @@ public class StepTimerService {
                 long delay = task.getCurrentStep().getStep().getTimeout() * 1000L;
                 Timer timer = new Timer();
 
-                this.timers.put(task.getId(), timer);
+                this.timers.put(task.getMediaId(), timer);
                 timer.schedule(new StepTimerTask(task, queue), delay);
 
                 logger.debug("Step: {} timer started for task: {}", task.getCurrentStep().getStep().getId(), task);
@@ -80,7 +80,7 @@ public class StepTimerService {
      * The type Step timer task.
      */
     private class StepTimerTask extends TimerTask {
-        private final Task task;
+        private final QueueTask task;
         private final PrecisionQueue queue;
 
         /**
@@ -89,20 +89,20 @@ public class StepTimerService {
          * @param task  the task
          * @param queue the queue
          */
-        public StepTimerTask(Task task, PrecisionQueue queue) {
+        public StepTimerTask(QueueTask task, PrecisionQueue queue) {
             super();
             this.task = task;
             this.queue = queue;
         }
 
         public void run() {
-            logger.debug("Time expired for step: {}, Task id: {}", task.getCurrentStep().getStep().getId(), this.task);
-            StepTimerService.this.stop(this.task.getId());
+            logger.debug("Time expired for step: {}, Task: {}", task.getCurrentStep().getStep().getId(), this.task);
+            StepTimerService.this.stop(this.task.getMediaId());
 
             int currentStepIndex = this.queue.getStepIndex(task.getCurrentStep().getStep());
             StepTimerService.this.startNext(task, queue, currentStepIndex + 1);
 
-            PropertyChangeEvent evt = new PropertyChangeEvent(this, Enums.EventName.STEP_TIMEOUT.name(), null, null);
+            PropertyChangeEvent evt = new PropertyChangeEvent(this, QueueEventName.STEP_TIMEOUT, null, null);
             this.queue.getTaskScheduler().propertyChange(evt);
         }
     }

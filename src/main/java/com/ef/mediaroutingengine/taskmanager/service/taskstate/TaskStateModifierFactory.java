@@ -1,12 +1,10 @@
 package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 
 import com.ef.cim.objectmodel.Enums;
+import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate.AgentStateListener;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
-import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
-import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
-import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,47 +19,40 @@ public class TaskStateModifierFactory {
      */
     private final TasksRepository tasksRepository;
     /**
-     * The Precision queues pool.
-     */
-    private final PrecisionQueuesPool precisionQueuesPool;
-    /**
      * The Agents pool.
      */
     private final AgentsPool agentsPool;
     /**
-     * The Tasks pool.
+     * The JMS Communicator.
      */
-    private final TasksPool tasksPool;
+    private final JmsCommunicator jmsCommunicator;
+    /**
+     * The Agent state listener.
+     */
+    private final AgentStateListener agentStateListener;
     /**
      * The Task manager.
      */
     private final TaskManager taskManager;
-    /**
-     * The JMS Communicator.
-     */
-    private final JmsCommunicator jmsCommunicator;
-    private final AgentRequestTimerService agentRequestTimerService;
 
     /**
-     * Default constructor. Loads the dependencies.
+     * Instantiates a new Task state modifier factory.
      *
-     * @param tasksRepository     Tasks Repository DAO
-     * @param precisionQueuesPool pool of all precision queues
-     * @param agentsPool          the agents pool
-     * @param taskManager         Manages the Agent/Agent-MRD state changes on task state changes.
+     * @param tasksRepository    the tasks repository
+     * @param agentsPool         the agents pool
+     * @param jmsCommunicator    the jms communicator
+     * @param agentStateListener the agent state listener
+     * @param taskManager        the task manager
      */
     @Autowired
-    public TaskStateModifierFactory(TasksRepository tasksRepository, PrecisionQueuesPool precisionQueuesPool,
-                                    AgentsPool agentsPool, TasksPool tasksPool,
-                                    TaskManager taskManager, JmsCommunicator jmsCommunicator,
-                                    AgentRequestTimerService agentRequestTimerService) {
+    public TaskStateModifierFactory(TasksRepository tasksRepository, AgentsPool agentsPool,
+                                    JmsCommunicator jmsCommunicator, AgentStateListener agentStateListener,
+                                    TaskManager taskManager) {
         this.tasksRepository = tasksRepository;
-        this.precisionQueuesPool = precisionQueuesPool;
         this.agentsPool = agentsPool;
-        this.tasksPool = tasksPool;
-        this.taskManager = taskManager;
         this.jmsCommunicator = jmsCommunicator;
-        this.agentRequestTimerService = agentRequestTimerService;
+        this.agentStateListener = agentStateListener;
+        this.taskManager = taskManager;
     }
 
     /**
@@ -72,15 +63,11 @@ public class TaskStateModifierFactory {
      */
     public TaskStateModifier getModifier(Enums.TaskStateName state) {
         if (state.equals(Enums.TaskStateName.CLOSED)) {
-            return new TaskStateClose(precisionQueuesPool, tasksPool, taskManager, jmsCommunicator,
-                    agentRequestTimerService);
-        } else if (state.equals(Enums.TaskStateName.ACTIVE)) {
-            return new TaskStateActive(taskManager, agentsPool, tasksRepository, jmsCommunicator,
-                    agentRequestTimerService);
+            return new TaskStateClose(agentsPool, agentStateListener, taskManager);
         } else if (state.equals(Enums.TaskStateName.WRAP_UP)) {
             return new TaskStateWrapUp(tasksRepository, jmsCommunicator);
         } else {
-            return new TaskStateOther();
+            return null;
         }
     }
 }

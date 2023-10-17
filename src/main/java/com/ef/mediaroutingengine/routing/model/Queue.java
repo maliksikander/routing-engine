@@ -1,7 +1,5 @@
 package com.ef.mediaroutingengine.routing.model;
 
-import com.ef.mediaroutingengine.taskmanager.model.Task;
-
 /**
  * The interface Queue.
  */
@@ -12,14 +10,14 @@ public interface Queue {
      * @param task the task
      * @return the boolean
      */
-    boolean enqueue(Task task);
+    boolean enqueue(QueueTask task);
 
     /**
      * Dequeue task.
      *
      * @return the task
      */
-    Task dequeue();
+    QueueTask dequeue();
 
     /**
      * Print queue.

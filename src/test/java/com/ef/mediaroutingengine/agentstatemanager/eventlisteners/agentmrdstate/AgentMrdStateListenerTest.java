@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+
 import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.AgentPresence;
 import com.ef.cim.objectmodel.CCUser;
@@ -24,6 +25,7 @@ import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
@@ -48,11 +50,13 @@ class AgentMrdStateListenerTest {
     private JmsCommunicator jmsCommunicator;
     @Mock
     private MrdStateDelegateFactory factory;
+    @Mock
+    private MrdPool mrdPool;
 
     @BeforeEach
     void setUp() {
         this.listener = new AgentMrdStateListener(precisionQueuesPool, agentPresenceRepository,
-                jmsCommunicator, factory);
+                jmsCommunicator, mrdPool, factory);
     }
 
     @Test
@@ -129,7 +133,6 @@ class AgentMrdStateListenerTest {
 
         verify(listenerSpy, times(0)).updateState(any(), any(), any());
         verify(listenerSpy, times(0)).isStateReadyOrActive(any());
-        verify(listenerSpy, times(0)).fireStateChangeToTaskSchedulers(any());
     }
 
     @Test
@@ -151,7 +154,6 @@ class AgentMrdStateListenerTest {
 
         verify(listenerSpy, times(1)).updateState(any(), any(), any());
         verify(listenerSpy, times(1)).isStateReadyOrActive(any());
-        verify(listenerSpy, times(1)).fireStateChangeToTaskSchedulers(any());
     }
 
     @Test
@@ -173,7 +175,6 @@ class AgentMrdStateListenerTest {
 
         verify(listenerSpy, times(1)).updateState(any(), any(), any());
         verify(listenerSpy, times(1)).isStateReadyOrActive(any());
-        verify(listenerSpy, times(1)).fireStateChangeToTaskSchedulers(any());
     }
 
     @Test
@@ -195,7 +196,6 @@ class AgentMrdStateListenerTest {
 
         verify(listenerSpy, times(1)).updateState(any(), any(), any());
         verify(listenerSpy, times(1)).isStateReadyOrActive(any());
-        verify(listenerSpy, times(0)).fireStateChangeToTaskSchedulers(any());
     }
 
     private Agent getNewAgent() {
