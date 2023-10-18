@@ -304,7 +304,7 @@ public class TaskManager {
      */
     public void activateMedia(Task task, TaskMedia media) {
         Agent agent = this.agentsPool.findBy(task.getAssignedTo());
-        this.changeCurrentActiveToAutoJoin(agent, task, media);
+        this.closeCurrentActive(agent, task, media);
 
         media.setState(TaskMediaState.ACTIVE);
         this.jmsCommunicator.publishTaskMediaStateChanged(task.getConversationId(), media);
@@ -336,11 +336,16 @@ public class TaskManager {
      * @param task            the task
      * @param activatingMedia the activating media
      */
-    private void changeCurrentActiveToAutoJoin(Agent agent, Task task, TaskMedia activatingMedia) {
-        for (TaskMedia media : task.getActiveMedia()) {
+    private void closeCurrentActive(Agent agent, Task task, TaskMedia activatingMedia) {
+        ListIterator<TaskMedia> itr = task.getActiveMedia().listIterator();
+
+        while (itr.hasNext()) {
+            TaskMedia media = itr.next();
             if (!media.getId().equals(activatingMedia.getId()) && media.getState().equals(TaskMediaState.ACTIVE)) {
-                media.setState(TaskMediaState.AUTO_JOINED);
+                media.setState(TaskMediaState.CLOSED);
                 this.jmsCommunicator.publishTaskMediaStateChanged(task.getConversationId(), media);
+
+                itr.remove();
 
                 agent.removeTask(task.getId(), media.getMrdId());
                 this.agentMrdStateListener.changeStateOnMediaClose(agent, media);

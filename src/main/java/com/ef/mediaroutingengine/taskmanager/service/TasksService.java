@@ -1,15 +1,12 @@
 package com.ef.mediaroutingengine.taskmanager.service;
 
 import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.cim.objectmodel.Direction;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.RoutingMode;
 import com.ef.cim.objectmodel.dto.QueueHistoricalStatsDto;
 import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.cim.objectmodel.task.TaskState;
-import com.ef.cim.objectmodel.task.TaskType;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
@@ -152,34 +149,10 @@ public class TasksService {
         for (Task task : tasks) {
             TaskMedia media = task.findMediaByMrdId(mrdId);
 
-            if (media == null) {
-                media = this.createMedia(mrdId, task.getId(), channelSession);
-                task.getActiveMedia().add(media);
-            } else {
+            if (media != null) {
                 media.addChannelSession(channelSession);
             }
         }
-    }
-
-    /**
-     * Create media task media.
-     *
-     * @param channelSession the channel session
-     * @param mrdId          the mrd id
-     * @return the task media
-     */
-    private TaskMedia createMedia(String mrdId, String taskId, ChannelSession channelSession) {
-        List<ChannelSession> channelSessions = new ArrayList<>();
-        channelSessions.add(channelSession);
-
-        Enums.TaskTypeDirection direction = channelSession.getChannelSessionDirection().equals(Direction.INBOUND)
-                ? Enums.TaskTypeDirection.INBOUND : Enums.TaskTypeDirection.OUTBOUND;
-        Enums.TaskTypeMode mode = channelSession.getChannel().getChannelConfig().getRoutingPolicy().getRoutingMode()
-                .equals(RoutingMode.PUSH) ? Enums.TaskTypeMode.QUEUE : Enums.TaskTypeMode.AGENT;
-        TaskType taskType = new TaskType(direction, mode, null);
-
-        TaskMediaState state = TaskMediaState.AUTO_JOINED;
-        return new TaskMedia(mrdId, taskId, null, taskType, 1, state, channelSession, channelSessions);
     }
 
     /**
