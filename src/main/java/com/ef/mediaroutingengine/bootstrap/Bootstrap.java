@@ -296,7 +296,7 @@ public class Bootstrap {
         if (!idList.contains(Constants.CX_VOICE_MRD_TYPE_ID)) {
             mrdTypeList.add(new MrdType(Constants.CX_VOICE_MRD_TYPE_ID, MrdTypeName.CX_VOICE, true, false, false));
         }
-        if (idList.contains(Constants.CISCO_CC_MRD_TYPE_ID)) {
+        if (!idList.contains(Constants.CISCO_CC_MRD_TYPE_ID)) {
             mrdTypeList.add(new MrdType(Constants.CISCO_CC_MRD_TYPE_ID, MrdTypeName.CISCO_CC, false, false, false));
         }
 
