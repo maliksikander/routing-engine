@@ -64,8 +64,8 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     @Override
     public String assign(AssignResourceRequest request, boolean useQueueName, boolean offerToAgent, int priority) {
         String conversationId = request.getChannelSession().getConversationId();
-        logger.info("Assign resource request initiated | Conversation: {} Offer to Agent {} " +
-                "Priority {}, Last Agent {}", conversationId, offerToAgent, priority,
+        logger.info("Assign resource request initiated | Conversation: {} Offer to Agent {} "
+                        + "Priority {}, Last Agent {}", conversationId, offerToAgent, priority,
                 request.getCcUser().getDisplayName());
 
         this.throwExceptionIfRequestExistsFor(conversationId);
@@ -80,7 +80,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             request.getRequestType().setMetadata(new HashMap<>());
         }
         request.getRequestType().putMetadata("offerToAgent", offerToAgent);
-        if(offerToAgent) {
+        if (offerToAgent) {
             TaskAgent taskAgent = new TaskAgent();
             taskAgent.setId(request.getCcUser().getId());
             taskAgent.setName(request.getCcUser().getDisplayName());
