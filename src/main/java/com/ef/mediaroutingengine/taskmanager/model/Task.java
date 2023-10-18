@@ -136,7 +136,10 @@ public class Task {
         }
 
         if (type.getMetadata() != null && type.getMetadata().get("taskAgent") != null) {
+
+            logger.info("Adding agent Task");
             TaskAgent taskAgent = (TaskAgent) type.getMetadata().get("taskAgent");
+            logger.info("Adding agent {}", taskAgent.getId());
             task.setAssignedTo(taskAgent);
         }
         return task;
