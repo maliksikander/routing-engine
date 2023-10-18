@@ -80,12 +80,8 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         }
         request.getRequestType().putMetadata("offerToAgent", offerToAgent);
         if (offerToAgent && request.getCcUser() != null) {
-            logger.info("Adding agent in Assign Resource Request");
-
-            TaskAgent taskAgent = new TaskAgent();
-            taskAgent.setId(request.getCcUser().getKeycloakUser().getId());
-            taskAgent.setName(request.getCcUser().getKeycloakUser().displayName());
-            request.getRequestType().putMetadata("taskAgent", taskAgent);
+            logger.info("Assign To LastAssignedAgent {}", request.getCcUser().getKeycloakUser().getId());
+            request.getRequestType().putMetadata("offeredAgentId", request.getCcUser().getKeycloakUser().getId());
 
         }
         ChannelSession channelSession = request.getChannelSession();

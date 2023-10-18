@@ -48,7 +48,7 @@ public class Task {
     /**
      * The Mark for deletion.
      */
-    private AtomicBoolean markForDeletion = new AtomicBoolean(false);
+    private final AtomicBoolean markForDeletion = new AtomicBoolean(false);
     /**
      * The Channel session.
      */
@@ -133,14 +133,6 @@ public class Task {
         }
         if (state.getName().equals(Enums.TaskStateName.ACTIVE)) {
             task.setStartTime(System.currentTimeMillis());
-        }
-
-        if (type.getMetadata() != null && type.getMetadata().get("taskAgent") != null) {
-
-            logger.info("Adding agent Task");
-            TaskAgent taskAgent = (TaskAgent) type.getMetadata().get("taskAgent");
-            logger.info("Adding agent {}", taskAgent.getId());
-            task.setAssignedTo(taskAgent);
         }
         return task;
     }
@@ -430,6 +422,10 @@ public class Task {
      */
 // TODO: Implement it correctly
     public String getLastAssignedAgentId() {
+        if (this.getType().getMetadata() != null
+                && this.getType().getMetadata().get("offeredAgentId") != null) {
+            return (String) this.getType().getMetadata().get("offeredAgentId");
+        }
         return null;
     }
 
