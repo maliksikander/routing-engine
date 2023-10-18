@@ -135,7 +135,7 @@ public class Task {
             task.setStartTime(System.currentTimeMillis());
         }
 
-        if (type.getMetadata().get("taskAgent") != null) {
+        if (type.getMetadata() != null && type.getMetadata().get("taskAgent") != null) {
             TaskAgent taskAgent = (TaskAgent) type.getMetadata().get("taskAgent");
             task.setAssignedTo(taskAgent);
         }
