@@ -1,7 +1,5 @@
 package com.ef.mediaroutingengine.taskmanager;
 
-import static java.util.stream.Collectors.groupingBy;
-
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MrdType;
@@ -27,7 +25,6 @@ import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,30 +127,14 @@ public class TaskManager {
         this.precisionQueuesPool.publishNewRequest(task, queuedMedia);
     }
 
-    /**
-     * Create task to enqueue task dto.
-     *
-     * @param request   the request
-     * @param taskQueue the task queue
-     * @return the task dto
-     */
-    private Task createTaskToEnqueue(AssignResourceRequest request, TaskQueue taskQueue) {
-        Map<String, List<ChannelSession>> mrdWiseSessions = request.getChannelSessions().stream()
-                .collect(groupingBy(c -> c.getChannel().getChannelType().getMediaRoutingDomain()));
-
-        String requestingMrdId = request.getRequestSession().getChannel().getChannelType().getMediaRoutingDomain();
-        String conversationId = request.getRequestSession().getConversationId();
+    private Task createTaskToEnqueue(AssignResourceRequest req, TaskQueue taskQueue) {
+        String mrdId = req.getRequestSession().getChannel().getChannelType().getMediaRoutingDomain();
+        String conversationId = req.getRequestSession().getConversationId();
         String taskId = UUID.randomUUID().toString();
 
+        TaskMedia queuedMedia = createMedia(req, taskId, mrdId, TaskMediaState.QUEUED, taskQueue);
         List<TaskMedia> medias = new ArrayList<>();
-
-        mrdWiseSessions.forEach((k, v) -> {
-            if (k.equals(requestingMrdId)) {
-                medias.add(createQueueMedia(request, k, taskId, taskQueue, v));
-            } else if (this.mrdPool.getType(k).isAutoJoin()) {
-                medias.add(createAutoJoinMedia(request, k, taskId, v));
-            }
-        });
+        medias.add(queuedMedia);
 
         TaskState state = new TaskState(Enums.TaskStateName.ACTIVE, null);
         String requestTimerId = UUID.randomUUID().toString();
@@ -163,13 +144,13 @@ public class TaskManager {
     /**
      * Reserve current available boolean.
      *
-     * @param request the request
-     * @param tasks   the tasks
-     * @param mrdId   the mrd id
-     * @param queue   the queue
+     * @param req   the request
+     * @param tasks the tasks
+     * @param mrdId the mrd id
+     * @param queue the queue
      * @return the boolean
      */
-    public boolean reserveCurrentAvailable(AssignResourceRequest request, List<Task> tasks, String mrdId,
+    public boolean reserveCurrentAvailable(AssignResourceRequest req, List<Task> tasks, String mrdId,
                                            TaskQueue queue) {
         for (Task task : tasks) {
             Agent agent = this.agentsPool.findBy(task.getAssignedTo());
@@ -179,12 +160,12 @@ public class TaskManager {
             }
 
             if (agent.isAvailableForReservation(mrdId)) {
-                TaskMedia media = this.createReservedMedia(request, mrdId, task.getId(), queue);
+                TaskMedia media = this.createMedia(req, task.getId(), mrdId, TaskMediaState.RESERVED, queue);
 
                 task.addMedia(media);
                 agent.reserveTask(task, media);
 
-                if (request.isOfferToAgent()) {
+                if (req.isOfferToAgent()) {
                     this.restRequest.postAssignTask(task, media, media.getState(), agent.toCcUser(), true);
                 }
 
@@ -196,50 +177,13 @@ public class TaskManager {
         return false;
     }
 
-    /**
-     * Create queue media task media.
-     *
-     * @param request         the request
-     * @param taskQueue       the task queue
-     * @param mrdId           the mrd id
-     * @param channelSessions the channel sessions
-     * @return the task media
-     */
-    private TaskMedia createQueueMedia(AssignResourceRequest request, String mrdId, String taskId,
-                                       TaskQueue taskQueue, List<ChannelSession> channelSessions) {
-        return new TaskMedia(mrdId, taskId, taskQueue, request.getType(), request.getPriority(),
-                TaskMediaState.QUEUED, request.getRequestSession(), channelSessions);
-    }
+    private TaskMedia createMedia(AssignResourceRequest req, String taskId, String mrdId, TaskMediaState state,
+                                  TaskQueue queue) {
+        List<ChannelSession> sessions = req.getChannelSessions().stream()
+                .filter(c -> c.getChannel().getChannelType().getMediaRoutingDomain().equals(mrdId)).toList();
 
-    /**
-     * Create auto join media task media.
-     *
-     * @param request         the request
-     * @param mrdId           the mrd id
-     * @param channelSessions the channel sessions
-     * @return the task media
-     */
-    private TaskMedia createAutoJoinMedia(AssignResourceRequest request, String mrdId, String taskId,
-                                          List<ChannelSession> channelSessions) {
-        return new TaskMedia(mrdId, taskId, null, request.getType(), request.getPriority(),
-                TaskMediaState.AUTO_JOINED, channelSessions.get(0), channelSessions);
-    }
-
-    /**
-     * Create reserved media task media.
-     *
-     * @param request the request
-     * @param mrdId   the mrd id
-     * @param queue   the queue
-     * @return the task media
-     */
-    private TaskMedia createReservedMedia(AssignResourceRequest request, String mrdId, String taskId, TaskQueue queue) {
-        List<ChannelSession> sessions = request.getChannelSessions().stream()
-                .filter(c -> c.getChannel().getChannelType().getMediaRoutingDomain().equals(mrdId))
-                .toList();
-
-        return new TaskMedia(mrdId, taskId, queue, request.getType(), request.getPriority(),
-                TaskMediaState.RESERVED, request.getRequestSession(), sessions);
+        return new TaskMedia(mrdId, taskId, queue, req.getType(), req.getPriority(), state,
+                req.getRequestSession(), sessions);
     }
 
     /**
