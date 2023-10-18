@@ -80,7 +80,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             request.getRequestType().setMetadata(new HashMap<>());
         }
         request.getRequestType().putMetadata("offerToAgent", offerToAgent);
-        if (offerToAgent) {
+        if (offerToAgent && request.getCcUser() != null) {
             TaskAgent taskAgent = new TaskAgent();
             taskAgent.setId(request.getCcUser().getId());
             taskAgent.setName(request.getCcUser().getDisplayName());
