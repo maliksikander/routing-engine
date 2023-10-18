@@ -124,6 +124,8 @@ public class Task {
     public static Task getInstanceFrom(ChannelSession channelSession, MediaRoutingDomain mrd,
                                        TaskQueue queue, TaskState state, TaskType type, int priority) {
         Task task = new Task(UUID.randomUUID().toString(), channelSession, mrd, queue, type, priority);
+
+
         task.setTaskState(state);
         if (Enums.TaskTypeDirection.DIRECT_TRANSFER.equals(task.getType().getDirection())
                 || Enums.TaskTypeDirection.DIRECT_CONFERENCE.equals(task.getType().getDirection())) {
@@ -133,6 +135,10 @@ public class Task {
             task.setStartTime(System.currentTimeMillis());
         }
 
+        if (type.getMetadata().get("taskAgent") != null) {
+            TaskAgent taskAgent = (TaskAgent) type.getMetadata().get("taskAgent");
+            task.setAssignedTo(taskAgent);
+        }
         return task;
     }
 

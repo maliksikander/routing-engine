@@ -50,7 +50,8 @@ class AssignResourceServiceImplTest {
         ChannelSession channelSession = getChannelSessionInstance();
         String requestedQueue = UUID.randomUUID().toString();
         TaskType taskType = new TaskType(Enums.TaskTypeDirection.INBOUND,Enums.TaskTypeMode.QUEUE,null);
-        AssignResourceRequest request = new AssignResourceRequest(requestedQueue, channelSession, taskType);
+        CCUser ccUser = new CCUser();
+        AssignResourceRequest request = new AssignResourceRequest(requestedQueue, channelSession, taskType, ccUser);
 
         MediaRoutingDomain mrd = mock(MediaRoutingDomain.class);
         PrecisionQueue queue = mock(PrecisionQueue.class);
