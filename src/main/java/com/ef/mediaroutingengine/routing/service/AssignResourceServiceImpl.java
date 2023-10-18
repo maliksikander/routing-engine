@@ -65,8 +65,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     public String assign(AssignResourceRequest request, boolean useQueueName, boolean offerToAgent, int priority) {
         String conversationId = request.getChannelSession().getConversationId();
         logger.info("Assign resource request initiated | Conversation: {} Offer to Agent {} "
-                        + "Priority {}, Last Agent {}", conversationId, offerToAgent, priority,
-                request.getCcUser().getDisplayName());
+                        + "Priority {}", conversationId, offerToAgent, priority);
 
         this.throwExceptionIfRequestExistsFor(conversationId);
         if (request.getRequestType() == null) {
