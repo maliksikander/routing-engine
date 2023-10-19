@@ -40,7 +40,7 @@ class TaskStateWrapUpTest {
     void test_updateState_returnsFalse_whenCurrentStateIsNotActive() {
         TaskState currentState = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.DONE);
         MediaRoutingDomain mrd = getMrdInstance(UUID.randomUUID().toString());
-        Task task = Task.getInstanceFrom(null, mrd, null, currentState, getTaskType());
+        Task task = Task.getInstanceFrom(null, mrd, null, currentState, getTaskType(), 1);
 
         assertFalse(taskStateWrapUp.updateState(task, new TaskState(Enums.TaskStateName.WRAP_UP, null)));
 
