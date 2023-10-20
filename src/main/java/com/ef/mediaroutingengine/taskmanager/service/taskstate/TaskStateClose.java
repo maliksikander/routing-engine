@@ -51,6 +51,8 @@ public class TaskStateClose implements TaskStateModifier {
 
     private void handleRona(Task task, TaskState state) {
         Agent agent = this.agentsPool.findBy(task.getAssignedTo());
+        agent.removeReservedTask();
+
         AgentState agentState = new AgentState(Enums.AgentStateName.NOT_READY, null);
         this.agentStateListener.propertyChange(agent, agentState, true);
 

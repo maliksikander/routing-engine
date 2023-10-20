@@ -5,6 +5,7 @@ import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.cim.objectmodel.task.TaskType;
 import java.util.List;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,7 +26,7 @@ public class AssignAgentRequest {
     private String agent;
     @NotNull
     private ChannelSession requestSession;
-    @NotBlank
+    @NotEmpty
     private List<ChannelSession> channelSessions;
     @NotNull
     private TaskMediaState state;

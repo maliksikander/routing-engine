@@ -145,6 +145,7 @@ public class TaskRouter implements PropertyChangeListener {
 
         if (queueTask.getQueueId().equals(this.precisionQueue.getId())) {
             this.precisionQueue.enqueue(queueTask);
+
             jmsCommunicator.publishTaskEnqueued(task, media, this.precisionQueue);
             logger.debug("Task: {} enqueued in Precision-Queue: {}", queueTask.getId(), precisionQueue.getId());
             this.stepTimerService.startNext(queueTask, this.precisionQueue, 0);
@@ -232,8 +233,9 @@ public class TaskRouter implements PropertyChangeListener {
             TaskMedia media = task.findMediaBy(queueTask.getMediaId());
 
             if (this.offerToAgent(queueTask, media, agent)) {
+                task.setAssignedTo(agent.toTaskAgent());
                 media.setState(TaskMediaState.RESERVED);
-                this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
+                this.tasksRepository.save(task.getId(), task);
 
                 agent.reserveTask(task, media);
 

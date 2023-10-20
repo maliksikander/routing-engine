@@ -151,6 +151,7 @@ public class TasksService {
 
             if (media != null) {
                 media.addChannelSession(channelSession);
+                this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
             }
         }
     }
@@ -162,8 +163,8 @@ public class TasksService {
      */
     public void removeSession(ChannelSession channelSession) {
         String mrdId = channelSession.getChannel().getChannelType().getMediaRoutingDomain();
-
         String conversationId = channelSession.getConversationId();
+
         List<Task> tasks = this.tasksRepository.findAllByConversation(conversationId).stream()
                 .filter(t -> t.getState().getName().equals(Enums.TaskStateName.ACTIVE))
                 .toList();
@@ -175,16 +176,21 @@ public class TasksService {
                 continue;
             }
 
-            media.removeChannelSession(channelSession.getId());
+            boolean isRemoved = media.removeChannelSession(channelSession.getId());
+
+            if (isRemoved) {
+                this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
+            }
+
             if (media.getChannelSessions().isEmpty() && !media.getState().equals(TaskMediaState.ACTIVE)) {
                 this.revokeMedia(task, media);
                 task.removeMedia(media.getId());
-            }
 
-            if (task.isRemovable()) {
-                this.tasksRepository.deleteById(task.getId());
-                task.setState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.CANCELLED));
-                this.jmsCommunicator.publishTaskStateChanged(task, media.getRequestSession());
+                if (task.isRemovable()) {
+                    this.tasksRepository.deleteById(task.getId());
+                    task.setState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.CANCELLED));
+                    this.jmsCommunicator.publishTaskStateChanged(task, media.getRequestSession());
+                }
             }
         }
     }

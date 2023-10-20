@@ -46,6 +46,7 @@ public class QueueTask {
     /**
      * The Current step.
      */
+    @JsonIgnore
     private TaskStep currentStep;
 
     /**

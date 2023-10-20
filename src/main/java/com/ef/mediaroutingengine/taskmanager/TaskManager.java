@@ -192,6 +192,7 @@ public class TaskManager {
      * @param tasks the tasks
      */
     public void enqueueQueuedTasksOnFailover(List<Task> tasks) {
+        long queuedTasks = 0L;
         for (Task task : tasks) {
 
             TaskMedia queuedMedia = task.findMediaByState(TaskMediaState.QUEUED);
@@ -209,10 +210,13 @@ public class TaskManager {
                 logger.debug("Task: {} enqueued in Precision-Queue: {}", task.getId(), queue.getId());
 
                 this.stepTimerService.startNext(queueTask, queue, 0);
+                queuedTasks++;
             }
         }
 
-        this.precisionQueuesPool.publishOnFailover();
+        if (queuedTasks > 0) {
+            this.precisionQueuesPool.publishOnFailover();
+        }
     }
 
     /**
@@ -289,10 +293,12 @@ public class TaskManager {
             this.closeTask(task, state);
 
             this.tasksRepository.save(newTask.getId(), newTask);
+
             newTask.getActiveMedia().forEach(m -> jmsCommunicator.publishTaskMediaStateChanged(conversationId, m));
             this.jmsCommunicator.publishTaskStateChanged(newTask, reservedMedia.getRequestSession());
 
-            this.precisionQueuesPool.publishNewRequest(task, reservedMedia);
+            TaskMedia queuedMedia = newTask.findMediaByState(TaskMediaState.QUEUED);
+            this.precisionQueuesPool.publishNewRequest(newTask, queuedMedia);
         }
     }
 

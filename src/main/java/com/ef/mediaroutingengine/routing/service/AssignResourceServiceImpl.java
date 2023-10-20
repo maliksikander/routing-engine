@@ -9,6 +9,7 @@ import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.List;
+import java.util.ListIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,7 +74,15 @@ public class AssignResourceServiceImpl implements AssignResourceService {
                 return;
             }
 
-            tasks.removeIf(this.taskManager::revokeInProcessTask);
+            ListIterator<Task> itr = tasks.listIterator();
+            while (itr.hasNext()) {
+                Task task = itr.next();
+                boolean isRevoked = this.taskManager.revokeInProcessTask(task);
+                if (isRevoked) {
+                    itr.remove();
+                }
+            }
+
             boolean isAssigned = this.taskManager.reserveCurrentAvailable(req, tasks, mrdId, queue.toTaskQueue());
 
             if (isAssigned) {
@@ -92,7 +101,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
                 return;
             }
 
-            tasks.removeIf(this.taskManager::revokeInProcessTask);
+            tasks.forEach(this.taskManager::revokeInProcessTask);
         }
 
         this.taskManager.enqueueTask(req, queue);
