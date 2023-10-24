@@ -1,32 +1,33 @@
 package com.ef.mediaroutingengine.bootstrap;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.commons.Constants;
-import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
-import com.ef.mediaroutingengine.routing.repository.MediaRoutingDomainRepository;
-import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
-import com.ef.mediaroutingengine.routing.repository.RoutingAttributeRepository;
-import com.ef.mediaroutingengine.routing.utility.RestRequest;
-import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.pool.RoutingAttributesPool;
-import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
+import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
+import com.ef.mediaroutingengine.routing.repository.MediaRoutingDomainRepository;
+import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
+import com.ef.mediaroutingengine.routing.repository.RoutingAttributeRepository;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
-
+import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
+import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -65,14 +66,12 @@ class BootstrapTest {
     private TasksPool tasksPool;
     @Mock
     private TaskManager taskManager;
-    @Mock
-    private RestRequest restRequest;
 
     @BeforeEach
     void setUp() {
         bootstrap = new Bootstrap(agentsRepository, mediaRoutingDomainRepository, precisionQueueRepository,
                 tasksRepository, agentPresenceRepository, routingAttributeRepository, agentsPool, mrdPool,
-                precisionQueuesPool, routingAttributesPool, tasksPool, taskManager, jmsCommunicator, restRequest);
+                precisionQueuesPool, routingAttributesPool, tasksPool, taskManager, jmsCommunicator);
     }
 
     @Test
@@ -113,7 +112,7 @@ class BootstrapTest {
             bootstrap.getMrdFromConfigDb();
 
             // verify(bootstrap, times(1)).createChatMrd();
-            assertNotEquals(mediaRoutingDomainList.size(),passedList.size());
+            assertNotEquals(mediaRoutingDomainList.size(), passedList.size());
             verify(mediaRoutingDomainRepository, times(1)).save(any());
         }
 
@@ -132,7 +131,7 @@ class BootstrapTest {
             bootstrap.getMrdFromConfigDb();
 
             // verify(bootstrap, times(1)).createChatMrd();
-            assertNotEquals(mediaRoutingDomainList.size(),passedList.size());
+            assertNotEquals(mediaRoutingDomainList.size(), passedList.size());
             verify(mediaRoutingDomainRepository, times(1)).save(any());
         }
 
@@ -151,7 +150,7 @@ class BootstrapTest {
             bootstrap.getMrdFromConfigDb();
 
             // verify(bootstrap, times(1)).createChatMrd();
-            assertNotEquals(mediaRoutingDomainList.size(),passedList.size());
+            assertNotEquals(mediaRoutingDomainList.size(), passedList.size());
             verify(mediaRoutingDomainRepository, times(1)).save(any());
         }
     }
