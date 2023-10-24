@@ -19,9 +19,9 @@ public class MrdStateReady implements MrdStateDelegate {
                 return Enums.AgentMrdStateName.BUSY;
             } else if (agentMrdState.getMaxAgentTasks() == 0) {
                 return Enums.AgentMrdStateName.NOT_READY;
-            } else if (currentState.equals(Enums.AgentMrdStateName.NOT_READY)
+            } else if ((currentState.equals(Enums.AgentMrdStateName.NOT_READY)
                     || currentState.equals(Enums.AgentMrdStateName.BUSY)
-                    || (currentState.equals(Enums.AgentMrdStateName.ACTIVE)
+                    || (currentState.equals(Enums.AgentMrdStateName.ACTIVE))
                     && agent.getNoOfActiveQueueTasks(agentMrdState.getMrd().getId()) < 1)) {
                 return Enums.AgentMrdStateName.READY;
             } else if (currentState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY)) {
