@@ -13,8 +13,6 @@ import com.ef.mediaroutingengine.routing.dto.RevokeTaskRequest;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.keycloak.representations.AccessTokenResponse;
@@ -161,6 +159,17 @@ public class RestRequest {
     }
 
     /**
+     * Get request to fetch Historical stats from Real-Time-Reports.
+     *
+     * @param queueId the queue for which the stats are required.
+     * @return returns the QueueHistoricalStats DTO.
+     */
+    public QueueHistoricalStatsDto getQueueHistoricalStats(String queueId) {
+        String url = config.getRealTimeReportsUri() + "/queue/" + queueId + "/historical-stats";
+        return this.restTemplate.getForEntity(url, QueueHistoricalStatsDto.class).getBody();
+    }
+
+    /**
      * Makes Post request to keycloak.
      *
      * @param map  Request Body.
@@ -189,14 +198,4 @@ public class RestRequest {
         return null;
     }
 
-    /**
-     * Get request to fetch Historical stats from Real-Time-Reports.
-     *
-     * @param queueId the queue for which the stats are required.
-     * @return returns the QueueHistoricalStats DTO.
-     */
-    public QueueHistoricalStatsDto getQueueHistoricalStats(String queueId) {
-        String url = config.getRealTimeReportsUri() + "/queue/" + queueId + "/historical-stats";
-        return this.restTemplate.getForEntity(url, QueueHistoricalStatsDto.class).getBody();
-    }
 }
