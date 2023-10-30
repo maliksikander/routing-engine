@@ -163,13 +163,17 @@ public class TaskManager {
                 TaskMedia media = this.createMedia(req, task.getId(), mrdId, TaskMediaState.RESERVED, queue);
 
                 task.addMedia(media);
+                this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
+
                 agent.reserveTask(task, media);
 
                 if (req.isOfferToAgent()) {
-                    this.restRequest.postAssignTask(task, media, media.getState(), agent.toCcUser(), true);
+                    restRequest.postAssignTask(task, media, media.getState(), agent.toCcUser(), true);
                 }
 
+                this.jmsCommunicator.publishTaskMediaStateChanged(task.getConversationId(), media);
                 this.jmsCommunicator.publishAgentReserved(task, media, agent.toCcUser());
+
                 return true;
             }
         }
