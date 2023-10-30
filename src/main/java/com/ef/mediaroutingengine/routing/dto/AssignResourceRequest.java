@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.routing.dto;
 
+import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.TaskType;
 import lombok.AllArgsConstructor;
@@ -30,4 +31,6 @@ public class AssignResourceRequest {
      * Information regarding the type of the Task.
      */
     private TaskType requestType;
+
+    private CCUser ccUser;
 }

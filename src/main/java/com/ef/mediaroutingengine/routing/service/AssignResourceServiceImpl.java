@@ -4,6 +4,7 @@ import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.RoutingMode;
+import com.ef.cim.objectmodel.TaskAgent;
 import com.ef.cim.objectmodel.TaskType;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.routing.dto.AssignResourceRequest;
@@ -63,7 +64,8 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     @Override
     public String assign(AssignResourceRequest request, boolean useQueueName, boolean offerToAgent, int priority) {
         String conversationId = request.getChannelSession().getConversationId();
-        logger.info("Assign resource request initiated | Conversation: {}", conversationId);
+        logger.info("Assign resource request initiated | Conversation: {} Offer to Agent {} "
+                        + "Priority {}", conversationId, offerToAgent, priority);
 
         this.throwExceptionIfRequestExistsFor(conversationId);
         if (request.getRequestType() == null) {
@@ -77,7 +79,11 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             request.getRequestType().setMetadata(new HashMap<>());
         }
         request.getRequestType().putMetadata("offerToAgent", offerToAgent);
+        if (offerToAgent && request.getCcUser() != null) {
+            logger.info("Assign To LastAssignedAgent {}", request.getCcUser().getKeycloakUser().getId());
+            request.getRequestType().putMetadata("offeredAgentId", request.getCcUser().getKeycloakUser().getId());
 
+        }
         ChannelSession channelSession = request.getChannelSession();
         validateChannelSession(channelSession, request.getRequestType());
         logger.debug("ChannelSession validated in Assign-Resource API request");

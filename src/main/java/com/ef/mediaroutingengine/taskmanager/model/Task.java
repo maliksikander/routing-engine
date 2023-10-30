@@ -48,7 +48,7 @@ public class Task {
     /**
      * The Mark for deletion.
      */
-    private AtomicBoolean markForDeletion = new AtomicBoolean(false);
+    private final AtomicBoolean markForDeletion = new AtomicBoolean(false);
     /**
      * The Channel session.
      */
@@ -124,6 +124,8 @@ public class Task {
     public static Task getInstanceFrom(ChannelSession channelSession, MediaRoutingDomain mrd,
                                        TaskQueue queue, TaskState state, TaskType type, int priority) {
         Task task = new Task(UUID.randomUUID().toString(), channelSession, mrd, queue, type, priority);
+
+
         task.setTaskState(state);
         if (Enums.TaskTypeDirection.DIRECT_TRANSFER.equals(task.getType().getDirection())
                 || Enums.TaskTypeDirection.DIRECT_CONFERENCE.equals(task.getType().getDirection())) {
@@ -132,7 +134,6 @@ public class Task {
         if (state.getName().equals(Enums.TaskStateName.ACTIVE)) {
             task.setStartTime(System.currentTimeMillis());
         }
-
         return task;
     }
 
@@ -421,6 +422,10 @@ public class Task {
      */
 // TODO: Implement it correctly
     public String getLastAssignedAgentId() {
+        if (this.getType().getMetadata() != null
+                && this.getType().getMetadata().get("offeredAgentId") != null) {
+            return (String) this.getType().getMetadata().get("offeredAgentId");
+        }
         return null;
     }
 
