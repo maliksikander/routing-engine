@@ -174,25 +174,25 @@ public class AgentRequestTimerService {
 
             logger.info("Agent Request Timer Entity: {}", entity);
 
-            PrecisionQueue queue = AgentRequestTimerService.this.precisionQueuesPool.findById(entity.queueId());
+            PrecisionQueue queue = AgentRequestTimerService.this.precisionQueuesPool.findById(entity.getQueueId());
 
             if (queue == null) {
-                logger.warn("Precision Queue not found for queueId: {}, returning...", entity.queueId());
+                logger.warn("Precision Queue not found for queueId: {}, returning...", entity.getQueueId());
                 return;
             }
 
             synchronized (queue.getServiceQueue()) {
-                Task task = AgentRequestTimerService.this.tasksRepository.find(entity.taskId());
+                Task task = AgentRequestTimerService.this.tasksRepository.find(entity.getTaskId());
 
                 if (task == null) {
-                    logger.error("Task not found for taskId: {}, returning...", entity.taskId());
+                    logger.error("Task not found for taskId: {}, returning...", entity.getTaskId());
                     return;
                 }
 
-                TaskMedia media = task.findMediaBy(entity.mediaId());
+                TaskMedia media = task.findMediaBy(entity.getMediaId());
 
                 if (media == null) {
-                    logger.error("Task Media not found for mediaId: {}, returning...", entity.mediaId());
+                    logger.error("Task Media not found for mediaId: {}, returning...", entity.getMediaId());
                     return;
                 }
 

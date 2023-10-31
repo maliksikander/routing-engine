@@ -1,7 +1,6 @@
 package com.ef.mediaroutingengine.taskmanager.repository;
 
 import com.ef.cim.objectmodel.task.Task;
-import com.ef.cim.objectmodel.task.TaskAgent;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.mediaroutingengine.global.redis.RedisClient;
@@ -89,32 +88,6 @@ public class TasksRepository extends RedisJsonDao<Task> {
     }
 
     /**
-     * Find media by task media.
-     *
-     * @param taskId  the task id
-     * @param mediaId the media id
-     * @return the task media
-     */
-    public TaskMedia findMedia(String taskId, String mediaId) {
-        for (TaskMedia media : this.findAllMedia(taskId)) {
-            if (media.getId().equals(mediaId)) {
-                return media;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Find all media list.
-     *
-     * @param taskId the task id
-     * @return the list
-     */
-    public List<TaskMedia> findAllMedia(String taskId) {
-        return this.findArrayField(taskId, ".activeMedia", TaskMedia.class);
-    }
-
-    /**
      * Find queued grouped by queue id list.
      *
      * @param conversationId the conversation id
@@ -134,59 +107,8 @@ public class TasksRepository extends RedisJsonDao<Task> {
         return result;
     }
 
-    /**
-     * Update media state.
-     *
-     * @param taskId  the task id
-     * @param mediaId the media id
-     * @param state   the state
-     */
-    public void updateMediaState(String taskId, String mediaId, TaskMediaState state) {
-        List<TaskMedia> medias = this.findAllMedia(taskId);
-
-        for (TaskMedia media : medias) {
-            if (media.getId().equals(mediaId)) {
-                media.setState(state);
-                this.updateField(taskId, ".activeMedia", medias);
-                break;
-            }
-        }
-    }
-
-    /**
-     * Reserve task.
-     *
-     * @param taskId  the task id
-     * @param mediaId the media id
-     * @param agent   the agent
-     */
-    public void reserve(String taskId, String mediaId, TaskAgent agent) {
-        Task task = this.find(taskId);
-
-        if (task != null) {
-            TaskMedia taskMedia = task.findMediaBy(mediaId);
-
-            if (taskMedia != null) {
-                task.setAssignedTo(agent);
-                taskMedia.setState(TaskMediaState.RESERVED);
-                this.save(taskId, task);
-            }
-        }
-    }
-
-    /**
-     * Update assigned to boolean.
-     *
-     * @param taskId     the task id
-     * @param assignedTo the assigned to
-     * @return the boolean
-     */
-    public boolean updateAssignedTo(String taskId, TaskAgent assignedTo) {
-        return this.updateField(taskId, ".assignedTo", assignedTo);
-    }
-
-    public boolean updateActiveMedias(String taskId, List<TaskMedia> activeMedias) {
-        return this.updateField(taskId, ".activeMedia", activeMedias);
+    public void updateActiveMedias(String taskId, List<TaskMedia> activeMedias) {
+        this.updateField(taskId, ".activeMedia", activeMedias);
     }
 
     public void saveAgentReqTimerEntity(String timerId, AgentReqTimerEntity entity) {
@@ -198,7 +120,7 @@ public class TasksRepository extends RedisJsonDao<Task> {
     }
 
     public void deleteAgentReqTimerEntity(String timerId) {
-        this.redisClient.delJson(timerId);
+        this.redisClient.delJson(this.getAgentReqTimerKey(timerId));
     }
 
     private String getAgentReqTimerKey(String timerId) {
