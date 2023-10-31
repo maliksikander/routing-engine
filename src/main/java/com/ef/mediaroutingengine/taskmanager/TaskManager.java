@@ -234,8 +234,8 @@ public class TaskManager {
         task.setState(state);
 
         Agent agent = this.agentsPool.findBy(task.getAssignedTo());
-        ChannelSession session = task.getActiveMedia().get(0).getRequestSession();
-        this.closeTaskMedias(task, agent);
+        ChannelSession session = task.getActiveMedia().get(task.getActiveMedia().size() - 1).getRequestSession();
+        this.closeTaskMedias(task, state, agent);
 
         this.jmsCommunicator.publishTaskStateChanged(task, session);
     }
@@ -246,7 +246,7 @@ public class TaskManager {
      * @param task  the task
      * @param agent the agent
      */
-    private void closeTaskMedias(Task task, Agent agent) {
+    private void closeTaskMedias(Task task, TaskState state, Agent agent) {
         ListIterator<TaskMedia> itr = task.getActiveMedia().listIterator();
 
         while (itr.hasNext()) {
@@ -258,7 +258,9 @@ public class TaskManager {
                 this.precisionQueuesPool.findById(media.getQueue().getId()).removeByTaskId(task.getId());
 
             } else if (media.getState().equals(TaskMediaState.RESERVED)) {
-                this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
+                if (!Enums.TaskStateReasonCode.RONA.equals(state.getReasonCode())) {
+                    this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
+                }
                 agent.removeReservedTask();
 
             } else if (media.getState().equals(TaskMediaState.ACTIVE)) {
