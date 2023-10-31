@@ -7,7 +7,9 @@ import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.cim.objectmodel.task.TaskState;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.routing.model.AgentReqTimerEntity;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
+import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.Map;
 import java.util.Timer;
@@ -45,56 +47,75 @@ public class AgentRequestTimerService {
     private final TasksRepository tasksRepository;
 
     /**
+     * The Precision queues pool.
+     */
+    private final PrecisionQueuesPool precisionQueuesPool;
+
+    /**
      * Instantiates a new Agent request timer service.
      *
-     * @param stepTimerService the step timer service
-     * @param jmsCommunicator  the jms communicator
-     * @param tasksRepository  the tasks repository
+     * @param stepTimerService    the step timer service
+     * @param jmsCommunicator     the jms communicator
+     * @param tasksRepository     the tasks repository
+     * @param precisionQueuesPool the precision queues pool
      */
     @Autowired
     public AgentRequestTimerService(StepTimerService stepTimerService, JmsCommunicator jmsCommunicator,
-                                    TasksRepository tasksRepository) {
+                                    TasksRepository tasksRepository, PrecisionQueuesPool precisionQueuesPool) {
         this.stepTimerService = stepTimerService;
         this.jmsCommunicator = jmsCommunicator;
         this.tasksRepository = tasksRepository;
+        this.precisionQueuesPool = precisionQueuesPool;
     }
 
     /**
      * Start.
      *
-     * @param task  the task
-     * @param queue the queue
+     * @param task    the task
+     * @param media   the media
+     * @param queueId the queue id
      */
-    public void start(Task task, TaskMedia media, PrecisionQueue queue) {
-        this.stop(task.getAgentRequestTtlTimerId());
-        this.schedule(task.getAgentRequestTtlTimerId(), task.getId(), media.getId(),
-                getDelay(media.getRequestSession()), queue);
+    public void start(Task task, TaskMedia media, String queueId) {
+        AgentReqTimerEntity entity = new AgentReqTimerEntity(task.getId(), media.getId(), queueId);
+        this.schedule(task.getAgentRequestTtlTimerId(), entity, this.getDelay(media.getRequestSession()));
     }
 
     /**
      * Start on failover.
      *
-     * @param task  the task
-     * @param queue the queue
+     * @param task    the task
+     * @param media   the media
+     * @param queueId the queue id
      */
-    public void startOnFailover(Task task, TaskMedia media, PrecisionQueue queue) {
-        this.stop(task.getAgentRequestTtlTimerId());
-
+    public void startOnFailover(Task task, TaskMedia media, String queueId) {
         long delay = getDelay(media.getRequestSession()) - (System.currentTimeMillis() - media.getEnqueueTime());
-        this.schedule(task.getAgentRequestTtlTimerId(), task.getId(), media.getId(), delay, queue);
+        AgentReqTimerEntity entity = new AgentReqTimerEntity(task.getId(), media.getId(), queueId);
+
+        this.schedule(task.getAgentRequestTtlTimerId(), entity, delay);
     }
 
     /**
      * Schedule.
      *
      * @param timerId the task id
+     * @param entity  the entity
      * @param delay   the delay
-     * @param queue   the queue
      */
-    private void schedule(String timerId, String taskId, String mediaId, long delay, PrecisionQueue queue) {
-        Timer timer = new Timer();
+    private void schedule(String timerId, AgentReqTimerEntity entity, long delay) {
+        logger.info("Request to schedule Agent Request Ttl timer initiated for timerId: {}", timerId);
+
+        Timer timer = this.timers.get(timerId);
+        if (timer != null) {
+            logger.warn("Timer already running, returning...");
+            return;
+        }
+
+        this.tasksRepository.saveAgentReqTimerEntity(timerId, entity);
+        timer = new Timer();
         this.timers.put(timerId, timer);
-        timer.schedule(new AgentRequestTimerService.RequestTimerTask(timerId, taskId, mediaId, queue), delay);
+        timer.schedule(new AgentRequestTimerService.RequestTimerTask(timerId), delay);
+
+        logger.info("Agent Request Ttl timer scheduled for {} ms, timerId: {}", delay, timerId);
     }
 
     /**
@@ -119,6 +140,7 @@ public class AgentRequestTimerService {
         if (timer != null) {
             timer.cancel();
             this.timers.remove(timerId);
+            this.tasksRepository.deleteAgentReqTimerEntity(timerId);
         }
     }
 
@@ -126,58 +148,78 @@ public class AgentRequestTimerService {
      * The type Request timer task.
      */
     private class RequestTimerTask extends TimerTask {
+        /**
+         * The Timer id.
+         */
         private final String timerId;
-        private final String taskId;
-        private final String mediaId;
-        private final PrecisionQueue queue;
 
         /**
          * Instantiates a new Request ttl timer.
          *
-         * @param taskId the task id
-         * @param queue  the queue
+         * @param timerId the timer id
          */
-        public RequestTimerTask(String timerId, String taskId, String mediaId, PrecisionQueue queue) {
+        public RequestTimerTask(String timerId) {
             this.timerId = timerId;
-            this.taskId = taskId;
-            this.mediaId = mediaId;
-            this.queue = queue;
         }
 
         public void run() {
-            logger.info("Agent Request TTL expired for request on task: {}", this.taskId);
+            logger.info("Agent Request TTL expired for timerId: {}, fetching timer entity...", this.timerId);
+
+            AgentReqTimerEntity entity = AgentRequestTimerService.this.tasksRepository.getAgentReqTimerEntity(timerId);
+
+            if (entity == null) {
+                logger.warn("Timer entity is null for timerId: {}, returning...", this.timerId);
+                return;
+            }
+
+            logger.info("Agent Request Timer Entity: {}", entity);
+
+            PrecisionQueue queue = AgentRequestTimerService.this.precisionQueuesPool.findById(entity.queueId());
+
+            if (queue == null) {
+                logger.warn("Precision Queue not found for queueId: {}, returning...", entity.queueId());
+                return;
+            }
 
             synchronized (queue.getServiceQueue()) {
-                Task task = AgentRequestTimerService.this.tasksRepository.find(this.taskId);
+                Task task = AgentRequestTimerService.this.tasksRepository.find(entity.taskId());
 
                 if (task == null) {
-                    logger.error("Task not found, method returning...");
+                    logger.error("Task not found for taskId: {}, returning...", entity.taskId());
                     return;
                 }
 
-                TaskMedia media = task.findMediaBy(this.mediaId);
+                TaskMedia media = task.findMediaBy(entity.mediaId());
 
                 if (media == null) {
-                    logger.error("Task Media not found, method returning...");
+                    logger.error("Task Media not found for mediaId: {}, returning...", entity.mediaId());
                     return;
                 }
 
                 if (media.getState().equals(TaskMediaState.QUEUED)) {
-                    handleQueued(task, media);
+                    handleQueued(task, media, queue);
                 } else if (media.getState().equals(TaskMediaState.RESERVED)) {
                     this.handleReserved(task, media);
                 }
             }
+
+            AgentRequestTimerService.this.stop(this.timerId);
         }
 
-        private void handleQueued(Task task, TaskMedia media) {
+        /**
+         * Handle queued.
+         *
+         * @param task  the task
+         * @param media the media
+         * @param queue the queue
+         */
+        private void handleQueued(Task task, TaskMedia media, PrecisionQueue queue) {
             logger.info("In process task media: {} found in QUEUED state, removing task..", media.getId());
 
-            AgentRequestTimerService.this.stepTimerService.stop(taskId);
-            AgentRequestTimerService.this.stop(timerId);
+            AgentRequestTimerService.this.stepTimerService.stop(task.getId());
 
-            queue.removeByTaskId(taskId);
-            AgentRequestTimerService.this.tasksRepository.deleteById(taskId);
+            queue.removeByTaskId(task.getId());
+            AgentRequestTimerService.this.tasksRepository.deleteById(task.getId());
 
             String conversationId = task.getConversationId();
 
@@ -195,10 +237,16 @@ public class AgentRequestTimerService {
 
         }
 
+        /**
+         * Handle reserved.
+         *
+         * @param task  the task
+         * @param media the media
+         */
         private void handleReserved(Task task, TaskMedia media) {
             media.setMarkedForDeletion(true);
-            AgentRequestTimerService.this.tasksRepository.updateActiveMedias(taskId, task.getActiveMedia());
-            logger.info("In process task media: {} found in Reserved state, task is marked for deletion", mediaId);
+            AgentRequestTimerService.this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
+            logger.info("In process task media: {} in Reserved state, task is marked for deletion", media.getId());
         }
     }
 }

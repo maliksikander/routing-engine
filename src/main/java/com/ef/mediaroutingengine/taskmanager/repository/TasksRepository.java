@@ -6,6 +6,7 @@ import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.mediaroutingengine.global.redis.RedisClient;
 import com.ef.mediaroutingengine.global.redis.RedisJsonDao;
+import com.ef.mediaroutingengine.routing.model.AgentReqTimerEntity;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -186,5 +187,21 @@ public class TasksRepository extends RedisJsonDao<Task> {
 
     public boolean updateActiveMedias(String taskId, List<TaskMedia> activeMedias) {
         return this.updateField(taskId, ".activeMedia", activeMedias);
+    }
+
+    public void saveAgentReqTimerEntity(String timerId, AgentReqTimerEntity entity) {
+        this.redisClient.setJson(this.getAgentReqTimerKey(timerId), entity);
+    }
+
+    public AgentReqTimerEntity getAgentReqTimerEntity(String timerId) {
+        return this.redisClient.getJson(this.getAgentReqTimerKey(timerId), AgentReqTimerEntity.class);
+    }
+
+    public void deleteAgentReqTimerEntity(String timerId) {
+        this.redisClient.delJson(timerId);
+    }
+
+    private String getAgentReqTimerKey(String timerId) {
+        return "agentRequestTimer:" + timerId;
     }
 }

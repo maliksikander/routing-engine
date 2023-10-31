@@ -14,6 +14,7 @@ import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
 import com.ef.mediaroutingengine.routing.StepTimerService;
 import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.model.AgentReqTimerEntity;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.model.QueueTask;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
@@ -121,7 +122,7 @@ public class TaskManager {
 
         TaskMedia queuedMedia = task.findMediaByState(TaskMediaState.QUEUED);
 
-        this.agentRequestTimerService.start(task, queuedMedia, queue);
+        this.agentRequestTimerService.start(task, queuedMedia, queue.getId());
         logger.debug("Agent-Request-Ttl timer task scheduled");
 
         this.precisionQueuesPool.publishNewRequest(task, queuedMedia);
@@ -207,7 +208,7 @@ public class TaskManager {
 
             PrecisionQueue queue = this.precisionQueuesPool.findById(queuedMedia.getQueue().getId());
             if (queue != null) {
-                this.agentRequestTimerService.startOnFailover(task, queuedMedia, queue);
+                this.agentRequestTimerService.startOnFailover(task, queuedMedia, queue.getId());
 
                 QueueTask queueTask = new QueueTask(task.getConversationId(), queuedMedia);
                 queue.enqueue(queueTask);
@@ -300,10 +301,15 @@ public class TaskManager {
 
             this.tasksRepository.save(newTask.getId(), newTask);
 
+            TaskMedia queuedMedia = newTask.findMediaByState(TaskMediaState.QUEUED);
+
+            AgentReqTimerEntity entity =
+                    new AgentReqTimerEntity(newTask.getId(), queuedMedia.getId(), queuedMedia.getQueue().getId());
+            this.tasksRepository.saveAgentReqTimerEntity(newTask.getAgentRequestTtlTimerId(), entity);
+
             newTask.getActiveMedia().forEach(m -> jmsCommunicator.publishTaskMediaStateChanged(conversationId, m));
             this.jmsCommunicator.publishTaskStateChanged(newTask, reservedMedia.getRequestSession());
 
-            TaskMedia queuedMedia = newTask.findMediaByState(TaskMediaState.QUEUED);
             this.precisionQueuesPool.publishNewRequest(newTask, queuedMedia);
         }
     }
