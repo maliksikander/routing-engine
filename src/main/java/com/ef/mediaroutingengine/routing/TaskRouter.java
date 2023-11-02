@@ -156,9 +156,12 @@ public class TaskRouter implements PropertyChangeListener {
      * Reserve.
      *
      * @param queueTask the queue task
+     * @param task      the task
      */
     private void reserve(QueueTask queueTask, Task task) {
-        boolean assignedToLastAssignedAgent = this.assignToLastAssignedAgent(queueTask, task);
+        TaskMedia media = task.findMediaBy(queueTask.getMediaId());
+
+        boolean assignedToLastAssignedAgent = this.assignToLastAssignedAgent(task, media);
 
         if (!assignedToLastAssignedAgent) {
             int currentStepIndex = precisionQueue.getStepIndex(queueTask.getCurrentStep().getStep());
@@ -169,7 +172,7 @@ public class TaskRouter implements PropertyChangeListener {
                 Agent agent = this.getAvailableAgentWithLeastActiveTasks(step, queueTask.getConversationId());
                 if (agent != null) {
                     logger.debug("Agent: {} is available to schedule queueTask: {}", agent.getId(), queueTask.getId());
-                    this.assignTaskTo(agent, queueTask, task);
+                    this.assignTaskTo(agent, task, media);
                     return;
                 }
             }
@@ -181,19 +184,23 @@ public class TaskRouter implements PropertyChangeListener {
     /**
      * Assign to last assigned agent boolean.
      *
-     * @param queueTask the queueTask
+     * @param task  the task
+     * @param media the media
      * @return the boolean
      */
-    private boolean assignToLastAssignedAgent(QueueTask queueTask, Task task) {
-        String lastAssignedAgentId = queueTask.getLastAssignedAgentId();
+    private boolean assignToLastAssignedAgent(Task task, TaskMedia media) {
+        String lastAssignedAgentId = TaskUtility.getLastAssignedAgentId(media);
+        logger.info("Last assigned agent-id {} ", lastAssignedAgentId);
+
         if (lastAssignedAgentId != null) {
             Agent agent = this.agentsPool.findBy(lastAssignedAgentId);
-            String mrdId = this.precisionQueue.getMrd().getId();
-            if (agent != null && agent.isAvailableForRouting(mrdId, queueTask.getConversationId())) {
-                assignTaskTo(agent, queueTask, task);
+
+            if (agent != null && agent.isAvailableForRouting(media.getMrdId(), task.getConversationId())) {
+                assignTaskTo(agent, task, media);
                 return true;
             }
         }
+
         return false;
     }
 
@@ -225,21 +232,20 @@ public class TaskRouter implements PropertyChangeListener {
     /**
      * Assign queueTask to.
      *
-     * @param agent     the agent
-     * @param queueTask the queueTask
+     * @param agent the agent
+     * @param task  the task
+     * @param media the media
      */
-    private void assignTaskTo(Agent agent, QueueTask queueTask, Task task) {
+    private void assignTaskTo(Agent agent, Task task, TaskMedia media) {
         try {
-            TaskMedia media = task.findMediaBy(queueTask.getMediaId());
-
-            if (this.offerToAgent(queueTask, media, agent)) {
+            if (this.offerToAgent(task, media, agent)) {
                 task.setAssignedTo(agent.toTaskAgent());
                 media.setState(TaskMediaState.RESERVED);
                 this.tasksRepository.save(task.getId(), task);
 
                 agent.reserveTask(task, media);
 
-                this.stepTimerService.stop(queueTask.getMediaId());
+                this.stepTimerService.stop(task.getId());
                 this.precisionQueue.dequeue();
 
                 this.jmsCommunicator.publishTaskStateChanged(task, media.getRequestSession(), false, media.getId());
@@ -259,9 +265,9 @@ public class TaskRouter implements PropertyChangeListener {
      * @param agent the agent
      * @return the boolean
      */
-    private boolean offerToAgent(QueueTask task, TaskMedia media, Agent agent) {
+    private boolean offerToAgent(Task task, TaskMedia media, Agent agent) {
         if (TaskUtility.getOfferToAgent(media)) {
-            return this.restRequest.postAssignTask(task.getConversationId(), task.getTaskId(), media,
+            return this.restRequest.postAssignTask(task.getConversationId(), task.getId(), media,
                     TaskMediaState.RESERVED, agent.toCcUser(), false);
         }
         return true;

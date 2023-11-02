@@ -38,6 +38,21 @@ public final class TaskUtility {
     }
 
     /**
+     * Gets last assigned agent id.
+     *
+     * @param media the media
+     * @return the last assigned agent id
+     */
+    public static String getLastAssignedAgentId(TaskMedia media) {
+        Map<String, Object> metadata = media.getType().getMetadata();
+        if (metadata == null || metadata.get("lastAssignedAgentId") == null) {
+            return null;
+        }
+        return (String) metadata.get("lastAssignedAgentId");
+    }
+
+
+    /**
      * Create new task task.
      *
      * @param conversationId the conversation id

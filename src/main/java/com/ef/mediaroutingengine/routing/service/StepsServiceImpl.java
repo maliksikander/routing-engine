@@ -230,10 +230,10 @@ public class StepsServiceImpl implements StepsService {
 
     private void notLastStep(PrecisionQueue precisionQueue, int stepIndex, String id) {
         synchronized (precisionQueue.getServiceQueue()) {
-            for (QueueTask task : precisionQueue.getTasks()) {
-                if (task.getCurrentStep() != null && task.getCurrentStep().getStep().getId().equals(id)) {
-                    this.stepTimerService.stop(task.getId());
-                    this.stepTimerService.startNext(task, precisionQueue, stepIndex + 1);
+            for (QueueTask queueTask : precisionQueue.getTasks()) {
+                if (queueTask.getCurrentStep() != null && queueTask.getCurrentStep().getStep().getId().equals(id)) {
+                    this.stepTimerService.stop(queueTask.getTaskId());
+                    this.stepTimerService.startNext(queueTask, precisionQueue, stepIndex + 1);
                 }
             }
         }

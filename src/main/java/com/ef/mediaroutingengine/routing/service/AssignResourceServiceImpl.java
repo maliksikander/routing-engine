@@ -64,10 +64,15 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         } else {
             this.handleInboundOutbound(request, queue, tasks, mrdId);
         }
+
     }
 
     private void handleInboundOutbound(AssignResourceRequest req, PrecisionQueue queue, List<Task> tasks,
                                        String mrdId) {
+        if (req.getLastAssignedAgentId() != null) {
+            req.getType().putMetadata("lastAssignedAgentId", req.getLastAssignedAgentId());
+        }
+
         if (!tasks.isEmpty()) {
             if (this.mrdPool.getType(mrdId).isAutoJoin()) {
                 return;

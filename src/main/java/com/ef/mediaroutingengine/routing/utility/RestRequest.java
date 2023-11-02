@@ -7,11 +7,14 @@ import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.mediaroutingengine.config.ExternalServiceConfig;
 import com.ef.mediaroutingengine.global.commons.Constants;
+import com.ef.mediaroutingengine.global.utilities.ObjectToUrlEncodedConverter;
 import com.ef.mediaroutingengine.routing.dto.AssignTaskRequest;
 import com.ef.mediaroutingengine.routing.dto.RevokeTaskRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.keycloak.representations.AccessTokenResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -24,6 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -58,8 +62,8 @@ public class RestRequest {
         this.config = config;
     }
 
-    public boolean postAssignTask(Task task, TaskMedia media, TaskMediaState state, CCUser agent, boolean async) {
-        return this.postAssignTask(task.getConversationId(), task.getId(), media, state, agent, async);
+    public void postAssignTask(Task task, TaskMedia media, TaskMediaState state, CCUser agent, boolean async) {
+        this.postAssignTask(task.getConversationId(), task.getId(), media, state, agent, async);
     }
 
     /**
@@ -153,10 +157,6 @@ public class RestRequest {
 
         HttpEntity<Object> httpRequest = new HttpEntity<>(requestBody, headers);
 
-        RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
-        Duration duration = Duration.ofSeconds(5);
-        RestTemplate restTemplate = restTemplateBuilder.setConnectTimeout(duration).build();
-
         try {
             switch (httpMethod) {
                 case POST:
@@ -186,4 +186,29 @@ public class RestRequest {
         String url = config.getRealTimeReportsUri() + "/queue/" + queueId + "/historical-stats";
         return this.restTemplate.getForEntity(url, QueueHistoricalStatsDto.class).getBody();
     }
+
+    /**
+     * Makes Post request to keycloak.
+     *
+     * @param map Request Body.
+     * @param uri Request URL.
+     * @return AccessTokenResponse Object.
+     */
+    public ResponseEntity<AccessTokenResponse> getToken(MultiValueMap<String, String> map, String uri) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        HttpEntity<MultiValueMap<String, String>> requestBodyFormUrlEncoded = new HttpEntity<>(map, headers);
+
+        restTemplate.getMessageConverters().add(new ObjectToUrlEncodedConverter(new ObjectMapper()));
+
+        try {
+            return restTemplate.postForEntity(uri, requestBodyFormUrlEncoded, AccessTokenResponse.class);
+        } catch (ResourceAccessException resourceAccessException) {
+            logger.error(ExceptionUtils.getMessage(resourceAccessException));
+            logger.error(ExceptionUtils.getStackTrace(resourceAccessException));
+        }
+
+        return null;
+    }
+
 }
