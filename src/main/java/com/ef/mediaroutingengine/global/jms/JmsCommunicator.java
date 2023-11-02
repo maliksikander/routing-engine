@@ -53,20 +53,15 @@ public interface JmsCommunicator extends ExceptionListener {
     void publish(Serializable message, Enums.JmsEventName eventName) throws JMSException, JsonProcessingException;
 
     /**
-     * Publish task state change for reporting.
+     * Publish task state changed.
      *
-     * @param task           the task
-     * @param channelSession the channel session
+     * @param task              the task
+     * @param channelSession    the channel session
+     * @param taskStateChanged  the task state changed
+     * @param mediaStateChanges the media state changes
      */
-    void publishTaskStateChanged(Task task, ChannelSession channelSession);
-
-    /**
-     * Publish task media state changed.
-     *
-     * @param conversationId the conversation id
-     * @param media          the media
-     */
-    void publishTaskMediaStateChanged(String conversationId, TaskMedia media);
+    void publishTaskStateChanged(Task task, ChannelSession channelSession, boolean taskStateChanged,
+                                 String... mediaStateChanges);
 
     /**
      * Publish NoAgentAvailable event.

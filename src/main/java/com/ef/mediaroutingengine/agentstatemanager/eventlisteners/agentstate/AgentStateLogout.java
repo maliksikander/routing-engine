@@ -95,7 +95,7 @@ public class AgentStateLogout implements AgentStateDelegate {
             Task task = this.tasksRepository.find(reservedTask.getTaskId());
 
             TaskState taskState = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.AGENT_LOGOUT);
-            this.taskManager.reroute(task, taskState);
+            this.taskManager.rerouteReserved(task, taskState);
         }
     }
 

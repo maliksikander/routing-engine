@@ -242,7 +242,7 @@ public class TaskRouter implements PropertyChangeListener {
                 this.stepTimerService.stop(queueTask.getMediaId());
                 this.precisionQueue.dequeue();
 
-                this.jmsCommunicator.publishTaskMediaStateChanged(task.getConversationId(), media);
+                this.jmsCommunicator.publishTaskStateChanged(task, media.getRequestSession(), false, media.getId());
                 this.jmsCommunicator.publishAgentReserved(task, media, agent.toCcUser());
             }
         } catch (Exception e) {

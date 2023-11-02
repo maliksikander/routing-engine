@@ -56,6 +56,6 @@ public class TaskStateClose implements TaskStateModifier {
         AgentState agentState = new AgentState(Enums.AgentStateName.NOT_READY, null);
         this.agentStateListener.propertyChange(agent, agentState, true);
 
-        this.taskManager.reroute(task, state);
+        this.taskManager.rerouteReserved(task, state);
     }
 }

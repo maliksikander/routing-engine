@@ -25,7 +25,6 @@ import com.ef.mediaroutingengine.routing.utility.TaskUtility;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,34 +111,23 @@ public class TaskManager {
     /**
      * Enqueue task.
      *
-     * @param request the request
+     * @param req the request
      * @param queue   the queue
      */
-    public void enqueueTask(AssignResourceRequest request, PrecisionQueue queue) {
-        Task task = this.createTaskToEnqueue(request, queue.toTaskQueue());
+    public void enqueueTask(AssignResourceRequest req, String mrdId, PrecisionQueue queue) {
+        String conversationId = req.getRequestSession().getConversationId();
+
+        TaskMediaState mediaState = TaskMediaState.QUEUED;
+        TaskMedia media = this.createMedia(req, UUID.randomUUID().toString(), mrdId, mediaState, queue.toTaskQueue());
+
+        Task task = TaskUtility.createNewTask(conversationId, media, null);
         this.tasksRepository.save(task.getId(), task);
         // Publish Task State Changed event.
 
-        TaskMedia queuedMedia = task.findMediaByState(TaskMediaState.QUEUED);
-
-        this.agentRequestTimerService.start(task, queuedMedia, queue.getId());
+        this.agentRequestTimerService.start(task, media, queue.getId());
         logger.debug("Agent-Request-Ttl timer task scheduled");
 
-        this.precisionQueuesPool.publishNewRequest(task, queuedMedia);
-    }
-
-    private Task createTaskToEnqueue(AssignResourceRequest req, TaskQueue taskQueue) {
-        String mrdId = req.getRequestSession().getChannel().getChannelType().getMediaRoutingDomain();
-        String conversationId = req.getRequestSession().getConversationId();
-        String taskId = UUID.randomUUID().toString();
-
-        TaskMedia queuedMedia = createMedia(req, taskId, mrdId, TaskMediaState.QUEUED, taskQueue);
-        List<TaskMedia> medias = new ArrayList<>();
-        medias.add(queuedMedia);
-
-        TaskState state = new TaskState(Enums.TaskStateName.ACTIVE, null);
-        String requestTimerId = UUID.randomUUID().toString();
-        return new Task(taskId, conversationId, state, null, requestTimerId, medias);
+        this.precisionQueuesPool.publishNewRequest(task, media);
     }
 
     /**
@@ -172,7 +160,7 @@ public class TaskManager {
                     restRequest.postAssignTask(task, media, media.getState(), agent.toCcUser(), true);
                 }
 
-                this.jmsCommunicator.publishTaskMediaStateChanged(task.getConversationId(), media);
+                this.jmsCommunicator.publishTaskStateChanged(task, media.getRequestSession(), false, media.getId());
                 this.jmsCommunicator.publishAgentReserved(task, media, agent.toCcUser());
 
                 return true;
@@ -184,11 +172,11 @@ public class TaskManager {
 
     private TaskMedia createMedia(AssignResourceRequest req, String taskId, String mrdId, TaskMediaState state,
                                   TaskQueue queue) {
-        List<ChannelSession> sessions = req.getChannelSessions().stream()
-                .filter(c -> c.getChannel().getChannelType().getMediaRoutingDomain().equals(mrdId)).toList();
+        ChannelSession reqSession = req.getRequestSession();
+        MrdType mrdType = this.mrdPool.getType(mrdId);
+        List<ChannelSession> sessions = TaskUtility.getSessions(req.getChannelSessions(), reqSession, mrdId, mrdType);
 
-        return new TaskMedia(mrdId, taskId, queue, req.getType(), req.getPriority(), state,
-                req.getRequestSession(), sessions);
+        return new TaskMedia(mrdId, taskId, queue, req.getType(), req.getPriority(), state, reqSession, sessions);
     }
 
     /**
@@ -235,10 +223,10 @@ public class TaskManager {
         task.setState(state);
 
         Agent agent = this.agentsPool.findBy(task.getAssignedTo());
-        ChannelSession session = task.getActiveMedia().get(task.getActiveMedia().size() - 1).getRequestSession();
-        this.closeTaskMedias(task, state, agent);
+        String[] mediaStateChanges = this.closeTaskMedias(task, state, agent);
 
-        this.jmsCommunicator.publishTaskStateChanged(task, session);
+        ChannelSession session = task.getActiveMedia().get(task.getActiveMedia().size() - 1).getRequestSession();
+        this.jmsCommunicator.publishTaskStateChanged(task, session, true, mediaStateChanges);
     }
 
     /**
@@ -247,23 +235,20 @@ public class TaskManager {
      * @param task  the task
      * @param agent the agent
      */
-    private void closeTaskMedias(Task task, TaskState state, Agent agent) {
-        ListIterator<TaskMedia> itr = task.getActiveMedia().listIterator();
+    private String[] closeTaskMedias(Task task, TaskState state, Agent agent) {
+        String[] mediaStateChanges = new String[task.getActiveMedia().size()];
+        int counter = 0;
 
-        while (itr.hasNext()) {
-            TaskMedia media = itr.next();
-
+        for (TaskMedia media : task.getActiveMedia()) {
             if (media.getState().equals(TaskMediaState.QUEUED)) {
                 this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
                 this.stepTimerService.stop(task.getId());
                 this.precisionQueuesPool.findById(media.getQueue().getId()).removeByTaskId(task.getId());
-
             } else if (media.getState().equals(TaskMediaState.RESERVED)) {
                 if (!Enums.TaskStateReasonCode.RONA.equals(state.getReasonCode())) {
                     this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
                 }
                 agent.removeReservedTask();
-
             } else if (media.getState().equals(TaskMediaState.ACTIVE)) {
                 agent.removeTask(task.getId(), media.getMrdId());
 
@@ -276,9 +261,12 @@ public class TaskManager {
             }
 
             media.setState(TaskMediaState.CLOSED);
-            this.jmsCommunicator.publishTaskMediaStateChanged(task.getConversationId(), media);
-            itr.remove();
+
+            mediaStateChanges[counter] = media.getId();
+            counter++;
         }
+
+        return mediaStateChanges;
     }
 
     /**
@@ -287,31 +275,33 @@ public class TaskManager {
      * @param task  the task
      * @param state the state
      */
-    public void reroute(Task task, TaskState state) {
+    public void rerouteReserved(Task task, TaskState state) {
         String conversationId = task.getConversationId();
         TaskMedia reservedMedia = task.findMediaByState(TaskMediaState.RESERVED);
 
         if (reservedMedia.isMarkedForDeletion()) {
-            this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
             this.closeTask(task, state);
             this.jmsCommunicator.publishNoAgentAvailable(conversationId, reservedMedia);
         } else {
             Task newTask = Task.instanceOnReroute(task);
             this.closeTask(task, state);
-
-            this.tasksRepository.save(newTask.getId(), newTask);
-
-            TaskMedia queuedMedia = newTask.findMediaByState(TaskMediaState.QUEUED);
-
-            AgentReqTimerEntity entity =
-                    new AgentReqTimerEntity(newTask.getId(), queuedMedia.getId(), queuedMedia.getQueue().getId());
-            this.tasksRepository.saveAgentReqTimerEntity(newTask.getAgentRequestTtlTimerId(), entity);
-
-            newTask.getActiveMedia().forEach(m -> jmsCommunicator.publishTaskMediaStateChanged(conversationId, m));
-            this.jmsCommunicator.publishTaskStateChanged(newTask, reservedMedia.getRequestSession());
-
-            this.precisionQueuesPool.publishNewRequest(newTask, queuedMedia);
+            this.enqueueTaskOnReRoute(newTask);
         }
+    }
+
+    private void enqueueTaskOnReRoute(Task task) {
+        this.tasksRepository.save(task.getId(), task);
+
+        TaskMedia media = task.findMediaByState(TaskMediaState.QUEUED);
+
+        AgentReqTimerEntity entity = new AgentReqTimerEntity(task.getId(), media.getId(), media.getQueue().getId());
+        this.tasksRepository.saveAgentReqTimerEntity(task.getAgentRequestTtlTimerId(), entity);
+
+        String[] mediaStateChanges = task.getActiveMedia().stream().map(TaskMedia::getId).toArray(String[]::new);
+        ChannelSession session = media.getRequestSession();
+
+        this.jmsCommunicator.publishTaskStateChanged(task, session, true, mediaStateChanges);
+        this.precisionQueuesPool.publishNewRequest(task, media);
     }
 
     /**
@@ -322,11 +312,16 @@ public class TaskManager {
      */
     public void activateMedia(Task task, TaskMedia media) {
         Agent agent = this.agentsPool.findBy(task.getAssignedTo());
-        this.closeCurrentActive(agent, task, media);
+
+        List<String> mediaStateChanges = this.closeCurrentActive(agent, task, media);
 
         media.setState(TaskMediaState.ACTIVE);
-        this.jmsCommunicator.publishTaskMediaStateChanged(task.getConversationId(), media);
+        mediaStateChanges.add(media.getId());
 
+        ChannelSession session = media.getRequestSession();
+        this.jmsCommunicator.publishTaskStateChanged(task, session, false, mediaStateChanges.toArray(new String[0]));
+
+        task.getActiveMedia().removeIf(m -> m.getState().equals(TaskMediaState.CLOSED));
         this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
 
         if (!this.mrdPool.getType(media.getMrdId()).isInterruptible()) {
@@ -354,21 +349,20 @@ public class TaskManager {
      * @param task            the task
      * @param activatingMedia the activating media
      */
-    private void closeCurrentActive(Agent agent, Task task, TaskMedia activatingMedia) {
-        ListIterator<TaskMedia> itr = task.getActiveMedia().listIterator();
+    private List<String> closeCurrentActive(Agent agent, Task task, TaskMedia activatingMedia) {
+        List<String> mediaStateChanges = new ArrayList<>();
 
-        while (itr.hasNext()) {
-            TaskMedia media = itr.next();
+        for (TaskMedia media : task.getActiveMedia()) {
             if (!media.getId().equals(activatingMedia.getId()) && media.getState().equals(TaskMediaState.ACTIVE)) {
                 media.setState(TaskMediaState.CLOSED);
-                this.jmsCommunicator.publishTaskMediaStateChanged(task.getConversationId(), media);
-
-                itr.remove();
+                mediaStateChanges.add(media.getId());
 
                 agent.removeTask(task.getId(), media.getMrdId());
                 this.agentMrdStateListener.changeStateOnMediaClose(agent, media);
             }
         }
+
+        return mediaStateChanges;
     }
 
     /**
@@ -377,64 +371,51 @@ public class TaskManager {
      * @param task the task
      * @return the boolean
      */
-    public boolean revokeInProcessTask(Task task) {
-        ListIterator<TaskMedia> itr = task.getActiveMedia().listIterator();
+    public boolean revokeInProcessTask(Task task, boolean autoJoinAble) {
+        TaskMedia media = task.findInProcessMedia();
 
-        ChannelSession channelSession = null;
-        while (itr.hasNext()) {
-            TaskMedia media = itr.next();
-
-            if (this.mrdPool.getType(media.getMrdId()).isAutoJoin()) {
-                if (media.getState().equals(TaskMediaState.QUEUED)) {
-                    this.revokeQueuedMedia(task, media);
-                    itr.remove();
-                    channelSession = media.getRequestSession();
-                } else if (media.getState().equals(TaskMediaState.RESERVED)) {
-                    this.revokeReservedMedia(task, media);
-                    itr.remove();
-                    channelSession = media.getRequestSession();
-                }
-            }
+        if (media == null) {
+            return false;
         }
 
-        if (task.isRemovable()) {
-            this.tasksRepository.deleteById(task.getId());
-            task.setState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.CANCELLED));
-            this.jmsCommunicator.publishTaskStateChanged(task, channelSession);
-            return true;
+        if (!autoJoinAble || this.mrdPool.getType(media.getMrdId()).isAutoJoin()) {
+            this.revokeInProcessMedia(task, media);
+            media.setState(TaskMediaState.CLOSED);
+
+            ChannelSession session = media.getRequestSession();
+
+            if (task.isRemovable()) {
+                this.tasksRepository.deleteById(task.getId());
+                task.setState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.CANCELLED));
+                jmsCommunicator.publishTaskStateChanged(task, session, true, media.getId());
+                return true;
+            } else {
+                jmsCommunicator.publishTaskStateChanged(task, session, false, media.getId());
+                task.removeMedia(media.getId());
+                tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
+            }
+
         }
 
         return false;
     }
 
-    /**
-     * Revoke queued media.
-     *
-     * @param task  the task
-     * @param media the media
-     */
-    public void revokeQueuedMedia(Task task, TaskMedia media) {
-        this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
-        this.stepTimerService.stop(task.getId());
-        this.precisionQueuesPool.findById(media.getQueue().getId()).removeByTaskId(task.getId());
-        media.setState(TaskMediaState.CLOSED);
-        this.jmsCommunicator.publishTaskMediaStateChanged(task.getConversationId(), media);
-    }
+    private void revokeInProcessMedia(Task task, TaskMedia media) {
+        if (media.getState().equals(TaskMediaState.QUEUED)) {
+            PrecisionQueue queue = this.precisionQueuesPool.findById(media.getQueue().getId());
 
-    /**
-     * Revoke reserved media.
-     *
-     * @param task  the task
-     * @param media the media
-     */
-    public void revokeReservedMedia(Task task, TaskMedia media) {
-        this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
-        Agent agent = this.agentsPool.findBy(task.getAssignedTo());
-        agent.removeReservedTask();
-        if (TaskUtility.getOfferToAgent(media)) {
-            this.restRequest.postRevokeTask(task, true);
+            synchronized (queue.getServiceQueue()) {
+                this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
+                this.stepTimerService.stop(task.getId());
+                queue.removeByTaskId(task.getId());
+            }
+        } else if (media.getState().equals(TaskMediaState.RESERVED)) {
+            this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
+            this.agentsPool.findBy(task.getAssignedTo()).removeReservedTask();
+
+            if (TaskUtility.getOfferToAgent(media)) {
+                this.restRequest.postRevokeTask(task, true);
+            }
         }
-        media.setState(TaskMediaState.CLOSED);
-        this.jmsCommunicator.publishTaskMediaStateChanged(task.getConversationId(), media);
     }
 }

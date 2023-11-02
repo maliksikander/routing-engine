@@ -56,18 +56,20 @@ public class QueueTask {
      * @param mediaId  the media id
      * @param priority the priority
      */
-    public QueueTask(String conversationId, String taskId, String mediaId, String queueId, int priority) {
+    public QueueTask(String conversationId, String taskId, String mediaId, String queueId, int priority,
+                     long enqueueTime) {
         this.id = UUID.randomUUID().toString();
         this.conversationId = conversationId;
         this.taskId = taskId;
         this.mediaId = mediaId;
         this.queueId = queueId;
         this.priority = priority;
-        this.enqueueTime = System.currentTimeMillis();
+        this.enqueueTime = enqueueTime;
     }
 
     public QueueTask(String conversationId, TaskMedia media) {
-        this(conversationId, media.getTaskId(), media.getId(), media.getQueue().getId(), media.getPriority());
+        this(conversationId, media.getTaskId(), media.getId(), media.getQueue().getId(), media.getPriority(),
+                media.getEnqueueTime());
     }
 
     @JsonIgnore

@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 
+import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskState;
@@ -31,8 +32,10 @@ public class TaskStateWrapUp implements TaskStateModifier {
         }
 
         task.setState(state);
-        tasksRepository.save(task.getId(), task);
-        //jmsCommunicator.publishTaskStateChangeForReporting(task);
+        this.tasksRepository.updateState(task.getId(), state);
+
+        ChannelSession session = task.getActiveMedia().get(task.getActiveMedia().size() - 1).getRequestSession();
+        this.jmsCommunicator.publishTaskStateChanged(task, session, true);
 
         return true;
     }

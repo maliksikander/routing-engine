@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.taskmanager.repository;
 import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
+import com.ef.cim.objectmodel.task.TaskState;
 import com.ef.mediaroutingengine.global.redis.RedisClient;
 import com.ef.mediaroutingengine.global.redis.RedisJsonDao;
 import com.ef.mediaroutingengine.routing.model.AgentReqTimerEntity;
@@ -109,6 +110,10 @@ public class TasksRepository extends RedisJsonDao<Task> {
 
     public void updateActiveMedias(String taskId, List<TaskMedia> activeMedias) {
         this.updateField(taskId, ".activeMedia", activeMedias);
+    }
+
+    public void updateState(String taskId, TaskState state) {
+        this.updateField(taskId, ".state", state);
     }
 
     public void saveAgentReqTimerEntity(String timerId, AgentReqTimerEntity entity) {

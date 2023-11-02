@@ -12,6 +12,7 @@ import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskEnqueuedDto;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskQueue;
+import com.ef.cim.objectmodel.task.TaskStateChangedDto;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.dto.StateChangeEvent;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
@@ -140,15 +141,11 @@ public class ActivemqCommunicator implements JmsCommunicator {
     }
 
     @Override
-    public void publishTaskStateChanged(Task task, ChannelSession channelSession) {
+    public void publishTaskStateChanged(Task task, ChannelSession channelSession, boolean taskStateChanged,
+                                        String... mediaStateChanges) {
         CimEventName event = CimEventName.TASK_STATE_CHANGED;
-        this.publishConversationEvent(event, task, task.getConversationId(), channelSession);
-    }
-
-    @Override
-    public void publishTaskMediaStateChanged(String conversationId, TaskMedia media) {
-        CimEventName event = CimEventName.TASK_MEDIA_STATE_CHANGED;
-        this.publishConversationEvent(event, media, conversationId, media.getRequestSession());
+        TaskStateChangedDto dto = new TaskStateChangedDto(task, taskStateChanged, mediaStateChanges);
+        this.publishConversationEvent(event, dto, task.getConversationId(), channelSession);
     }
 
     @Override

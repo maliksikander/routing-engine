@@ -6,9 +6,7 @@ import com.ef.cim.objectmodel.dto.QueueHistoricalStatsDto;
 import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
-import com.ef.cim.objectmodel.task.TaskState;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
@@ -40,7 +38,6 @@ public class TasksService {
     private final MrdPool mrdPool;
     private final RestRequest restRequest;
     private final TaskManager taskManager;
-    private final JmsCommunicator jmsCommunicator;
 
     /**
      * Instantiates a new Tasks service.
@@ -51,13 +48,12 @@ public class TasksService {
      */
     @Autowired
     public TasksService(PrecisionQueuesPool precisionQueuesCache, TasksRepository tasksRepository, MrdPool mrdPool,
-                        RestRequest restRequest, TaskManager taskManager, JmsCommunicator jmsCommunicator) {
+                        RestRequest restRequest, TaskManager taskManager) {
         this.precisionQueuesCache = precisionQueuesCache;
         this.tasksRepository = tasksRepository;
         this.mrdPool = mrdPool;
         this.restRequest = restRequest;
         this.taskManager = taskManager;
-        this.jmsCommunicator = jmsCommunicator;
     }
 
     /**
@@ -180,32 +176,11 @@ public class TasksService {
 
             if (isRemoved) {
                 this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
-            }
 
-            if (media.getChannelSessions().isEmpty() && !media.getState().equals(TaskMediaState.ACTIVE)) {
-                this.revokeMedia(task, media);
-                task.removeMedia(media.getId());
-
-                if (task.isRemovable()) {
-                    this.tasksRepository.deleteById(task.getId());
-                    task.setState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.CANCELLED));
-                    this.jmsCommunicator.publishTaskStateChanged(task, media.getRequestSession());
+                if (media.getChannelSessions().isEmpty() && !media.getState().equals(TaskMediaState.ACTIVE)) {
+                    this.taskManager.revokeInProcessTask(task, false);
                 }
             }
-        }
-    }
-
-    /**
-     * Close media.
-     *
-     * @param task      the task
-     * @param taskMedia the task media
-     */
-    private void revokeMedia(Task task, TaskMedia taskMedia) {
-        if (taskMedia.getState().equals(TaskMediaState.QUEUED)) {
-            this.taskManager.revokeQueuedMedia(task, taskMedia);
-        } else if (taskMedia.getState().equals(TaskMediaState.RESERVED)) {
-            this.taskManager.revokeReservedMedia(task, taskMedia);
         }
     }
 }

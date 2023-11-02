@@ -64,7 +64,6 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         } else {
             this.handleInboundOutbound(request, queue, tasks, mrdId);
         }
-
     }
 
     private void handleInboundOutbound(AssignResourceRequest req, PrecisionQueue queue, List<Task> tasks,
@@ -77,7 +76,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             ListIterator<Task> itr = tasks.listIterator();
             while (itr.hasNext()) {
                 Task task = itr.next();
-                boolean isRevoked = this.taskManager.revokeInProcessTask(task);
+                boolean isRevoked = this.taskManager.revokeInProcessTask(task, true);
                 if (isRevoked) {
                     itr.remove();
                 }
@@ -90,7 +89,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             }
         }
 
-        this.taskManager.enqueueTask(req, queue);
+        this.taskManager.enqueueTask(req, mrdId, queue);
 
     }
 
@@ -101,10 +100,10 @@ public class AssignResourceServiceImpl implements AssignResourceService {
                 return;
             }
 
-            tasks.forEach(this.taskManager::revokeInProcessTask);
+            tasks.forEach(t -> this.taskManager.revokeInProcessTask(t, true));
         }
 
-        this.taskManager.enqueueTask(req, queue);
+        this.taskManager.enqueueTask(req, mrdId, queue);
     }
 
     private boolean inProcessNonAutoJoinAbleExists(List<Task> tasks) {

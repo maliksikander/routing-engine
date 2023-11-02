@@ -44,6 +44,6 @@ public class CancelResourceServiceImpl implements CancelResourceService {
     public void cancelResource(CancelResourceRequest request) {
         logger.info("Cancel resource request initiated for conversation: {}", request.getTopicId());
         List<Task> tasks = this.tasksRepository.findAllByConversation(request.getTopicId());
-        tasks.forEach(this.taskManager::revokeInProcessTask);
+        tasks.forEach(t -> this.taskManager.revokeInProcessTask(t, true));
     }
 }

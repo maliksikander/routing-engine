@@ -216,25 +216,20 @@ public class AgentRequestTimerService {
         private void handleQueued(Task task, TaskMedia media, PrecisionQueue queue) {
             logger.info("In process task media: {} found in QUEUED state, removing task..", media.getId());
 
-            AgentRequestTimerService.this.stepTimerService.stop(task.getId());
-
-            queue.removeByTaskId(task.getId());
             AgentRequestTimerService.this.tasksRepository.deleteById(task.getId());
-
-            String conversationId = task.getConversationId();
-
-            task.getActiveMedia().forEach(m -> {
-                m.setState(TaskMediaState.CLOSED);
-                AgentRequestTimerService.this.jmsCommunicator.publishTaskMediaStateChanged(conversationId, m);
-            });
+            AgentRequestTimerService.this.stepTimerService.stop(task.getId());
+            queue.removeByTaskId(task.getId());
 
             task.setState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE));
+            task.getActiveMedia().forEach(m -> m.setState(TaskMediaState.CLOSED));
 
-            AgentRequestTimerService.this.jmsCommunicator.publishTaskStateChanged(task, media.getRequestSession());
-            AgentRequestTimerService.this.jmsCommunicator.publishNoAgentAvailable(conversationId, media);
+            String[] mediaChanges = task.getActiveMedia().stream().map(TaskMedia::getId).toArray(String[]::new);
+            ChannelSession session = media.getRequestSession();
+
+            AgentRequestTimerService.this.jmsCommunicator.publishTaskStateChanged(task, session, true, mediaChanges);
+            AgentRequestTimerService.this.jmsCommunicator.publishNoAgentAvailable(session.getConversationId(), media);
 
             logger.info("Queued task: {} removed successfully", task.getId());
-
         }
 
         /**
