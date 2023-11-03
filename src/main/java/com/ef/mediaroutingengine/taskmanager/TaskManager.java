@@ -111,8 +111,8 @@ public class TaskManager {
     /**
      * Enqueue task.
      *
-     * @param req the request
-     * @param queue   the queue
+     * @param req   the request
+     * @param queue the queue
      */
     public void enqueueTask(AssignResourceRequest req, String mrdId, PrecisionQueue queue) {
         String conversationId = req.getRequestSession().getConversationId();
@@ -122,7 +122,7 @@ public class TaskManager {
 
         Task task = TaskUtility.createNewTask(conversationId, media, null);
         this.tasksRepository.save(task.getId(), task);
-        // Publish Task State Changed event.
+        this.jmsCommunicator.publishTaskStateChanged(task, req.getRequestSession(), true, media.getId());
 
         this.agentRequestTimerService.start(task, media, queue.getId());
         logger.debug("Agent-Request-Ttl timer task scheduled");
