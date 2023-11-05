@@ -280,6 +280,7 @@ public class TaskManager {
         TaskMedia reservedMedia = task.findMediaByState(TaskMediaState.RESERVED);
 
         if (reservedMedia.isMarkedForDeletion()) {
+            state.setReasonCode(Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE);
             this.closeTask(task, state);
             this.jmsCommunicator.publishNoAgentAvailable(conversationId, reservedMedia);
         } else {
