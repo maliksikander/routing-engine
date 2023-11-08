@@ -30,7 +30,19 @@ public class ExternalServiceConfig {
      *  The real-time reports uri.
      */
     private String realTimeReportsUri;
+    /**
+     *  Conversation Manager uri.
+     */
+    private String conversationManagerBaseUri;
 
+
+    public String getConversationManagerBaseUri() {
+        return conversationManagerBaseUri;
+    }
+
+    public void setConversationManagerBaseUri(String conversationManagerBaseUri) {
+        this.conversationManagerBaseUri = conversationManagerBaseUri;
+    }
 
     /**
      * Gets retries.

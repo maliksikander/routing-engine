@@ -123,6 +123,7 @@ public class TaskManager {
         Task task = TaskUtility.createNewTask(conversationId, media, null);
         this.tasksRepository.save(task.getId(), task);
         this.jmsCommunicator.publishTaskStateChanged(task, req.getRequestSession(), true, media.getId());
+        this.restRequest.postSetAgentSla(conversationId, queue.getAgentSlaDuration());
 
         this.agentRequestTimerService.start(task, media, queue.getId());
         logger.debug("Agent-Request-Ttl timer task scheduled");

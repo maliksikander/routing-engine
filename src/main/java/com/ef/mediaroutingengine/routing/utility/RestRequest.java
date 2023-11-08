@@ -211,4 +211,22 @@ public class RestRequest {
         return null;
     }
 
+    /**
+     * Makes a POST request to conversation-manager.
+     *
+     * @param conversationId the conversation id.
+     * @param agentSlaDuration the agent sla duration.
+     */
+    public void postSetAgentSla(String conversationId, int agentSlaDuration) {
+        String queryParam = "?agentSlaDuration=" + agentSlaDuration;
+        String uri = config.getConversationManagerBaseUri() + "/customer-topics/" + conversationId
+                + "/agent-sla-duration" + queryParam;
+        try {
+            this.httpRequest(null, uri, HttpMethod.POST);
+        } catch (Exception e) {
+            logger.error(ExceptionUtils.getMessage(e));
+            logger.error(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
 }

@@ -28,6 +28,7 @@ public final class AdapterUtility {
         entity.setMrd(requestBody.getMrd());
         entity.setServiceLevelType(requestBody.getServiceLevelType());
         entity.setServiceLevelThreshold(requestBody.getServiceLevelThreshold());
+        entity.setAgentSlaDuration(requestBody.getAgentSlaDuration());
         return entity;
     }
 
@@ -42,6 +43,7 @@ public final class AdapterUtility {
         entity.setMrd(requestBody.getMrd());
         entity.setServiceLevelType(requestBody.getServiceLevelType());
         entity.setServiceLevelThreshold(requestBody.getServiceLevelThreshold());
+        entity.setAgentSlaDuration(requestBody.getAgentSlaDuration());
     }
 
     public static Sender getSender() {

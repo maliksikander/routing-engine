@@ -60,6 +60,10 @@ public class PrecisionQueue implements Queue {
      */
     private int serviceLevelThreshold;
     /**
+     * The Agent service level duration.
+     */
+    private int agentSlaDuration;
+    /**
      * The Average talk time.
      */
     private Long averageTalkTime;
@@ -81,6 +85,7 @@ public class PrecisionQueue implements Queue {
         this.mrd = pqEntity.getMrd();
         this.serviceLevelType = pqEntity.getServiceLevelType();
         this.serviceLevelThreshold = pqEntity.getServiceLevelThreshold();
+        this.agentSlaDuration = pqEntity.getAgentSlaDuration();
         this.steps = toSteps(pqEntity.getSteps());
         this.evaluateAgentsAssociatedWithSteps(agentsPool.findAll());
 
@@ -104,6 +109,7 @@ public class PrecisionQueue implements Queue {
         this.mrd = entity.getMrd();
         this.serviceLevelType = entity.getServiceLevelType();
         this.serviceLevelThreshold = entity.getServiceLevelThreshold();
+        this.agentSlaDuration = entity.getAgentSlaDuration();
         this.steps = new ArrayList<>();
 
         this.serviceQueue = new PriorityQueue();
@@ -221,6 +227,25 @@ public class PrecisionQueue implements Queue {
      */
     public void setServiceLevelThreshold(int serviceLevelThreshold) {
         this.serviceLevelThreshold = serviceLevelThreshold;
+    }
+
+
+    /**
+     * Sets agent sla duration.
+     *
+     * @param agentSlaDuration the agent sla duration.
+     */
+    public void setAgentSlaDuration(int agentSlaDuration) {
+        this.agentSlaDuration = agentSlaDuration;
+    }
+
+    /**
+     * Gets agent sla duration.
+     *
+     * @return the agent sla duration.
+     */
+    public int getAgentSlaDuration() {
+        return agentSlaDuration;
     }
 
     /**

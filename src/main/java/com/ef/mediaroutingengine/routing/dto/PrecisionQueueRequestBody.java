@@ -46,4 +46,9 @@ public class PrecisionQueueRequestBody {
      */
     @NotNull
     private int serviceLevelThreshold;
+    /**
+     * The Agent service level duration.
+     */
+    @Min(0)
+    private int agentSlaDuration;
 }
