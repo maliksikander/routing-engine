@@ -31,12 +31,30 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class TasksService {
+    /**
+     * The constant logger.
+     */
     private static final Logger logger = LoggerFactory.getLogger(TasksService.class);
 
+    /**
+     * The Precision queues cache.
+     */
     private final PrecisionQueuesPool precisionQueuesCache;
+    /**
+     * The Tasks repository.
+     */
     private final TasksRepository tasksRepository;
+    /**
+     * The Mrd pool.
+     */
     private final MrdPool mrdPool;
+    /**
+     * The Rest request.
+     */
     private final RestRequest restRequest;
+    /**
+     * The Task manager.
+     */
     private final TaskManager taskManager;
 
     /**
@@ -44,7 +62,9 @@ public class TasksService {
      *
      * @param precisionQueuesCache the queues pool
      * @param tasksRepository      the tasks repository
+     * @param mrdPool              the mrd pool
      * @param restRequest          the rest request
+     * @param taskManager          the task manager
      */
     @Autowired
     public TasksService(PrecisionQueuesPool precisionQueuesCache, TasksRepository tasksRepository, MrdPool mrdPool,
@@ -86,6 +106,27 @@ public class TasksService {
     }
 
     /**
+     * Cancel resource by direction.
+     *
+     * @param conversationId the conversation id
+     * @param direction      the direction
+     */
+    public void revokeResourceByDirection(String conversationId, Enums.TaskTypeDirection direction) {
+        if (!direction.equals(Enums.TaskTypeDirection.DIRECT_CONFERENCE)) {
+            logger.error("Direction: {} is not supported in this API yet", direction);
+            return;
+        }
+
+        List<Task> tasks = this.tasksRepository.findAllByConversation(conversationId).stream()
+                .filter(t -> {
+                    TaskMedia media = t.findInProcessMedia();
+                    return media != null && media.getType().getDirection().equals(direction);
+                }).toList();
+
+        tasks.forEach(t -> this.taskManager.revokeInProcessTask(t, true));
+    }
+
+    /**
      * Calls the required methods for EWT and position.
      *
      * @param conversationId The conversation id.
@@ -121,6 +162,14 @@ public class TasksService {
         return new ResponseEntity<>(responses, HttpStatus.OK);
     }
 
+    /**
+     * Calculate ewt int.
+     *
+     * @param taskPosition      the task position
+     * @param totalAgents       the total agents
+     * @param averageHandleTime the average handle time
+     * @return the int
+     */
     private int calculateEwt(int taskPosition, int totalAgents, int averageHandleTime) {
         return totalAgents == 0 ? Integer.MAX_VALUE : taskPosition * averageHandleTime / totalAgents;
     }
