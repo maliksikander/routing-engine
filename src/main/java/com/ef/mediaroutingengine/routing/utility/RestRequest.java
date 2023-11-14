@@ -221,6 +221,8 @@ public class RestRequest {
         String queryParam = "?agentSlaDuration=" + agentSlaDuration;
         String uri = config.getConversationManagerBaseUri() + "/customer-topics/" + conversationId
                 + "/agent-sla-duration" + queryParam;
+        logger.info("Calling the setAgentSla with uri {}", uri);
+
         try {
             this.httpRequest(null, uri, HttpMethod.POST);
         } catch (Exception e) {

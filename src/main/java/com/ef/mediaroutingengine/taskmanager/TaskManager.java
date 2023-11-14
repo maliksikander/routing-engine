@@ -123,6 +123,7 @@ public class TaskManager {
         Task task = TaskUtility.createNewTask(conversationId, media, null);
         this.tasksRepository.save(task.getId(), task);
         this.jmsCommunicator.publishTaskStateChanged(task, req.getRequestSession(), true, media.getId());
+        logger.info("Calling setAgentSla API of Conversation-manager");
         this.restRequest.postSetAgentSla(conversationId, queue.getAgentSlaDuration());
 
         this.agentRequestTimerService.start(task, media, queue.getId());
