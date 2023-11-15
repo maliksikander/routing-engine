@@ -78,10 +78,15 @@ public class StepCriteriaBuilder {
      * @return the string
      */
     private static String convertLogicalOperator(String s) {
-        return switch (s) {
-            case "AND", "and" -> "&&";
-            case "OR", "or" -> "||";
-            default -> null;
-        };
+        switch (s) {
+            case "AND":
+            case "and":
+                return "&&";
+            case "OR":
+            case "or":
+                return "||";
+            default:
+                return null;
+        }
     }
 }

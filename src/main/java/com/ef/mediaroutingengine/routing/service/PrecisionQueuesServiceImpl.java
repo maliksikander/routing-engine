@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -337,7 +338,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
                     List<AssociatedAgentEntity> agents = createAssociatedAgents(queue);
                     return new AssociatedAgentsResponse(queue.getId(), queue.getName(), agents);
                 })
-                .toList();
+                .collect(Collectors.toList());
     }
 
     /**
@@ -348,7 +349,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     public List<AssociatedAgentEntity> createAssociatedAgents(PrecisionQueue queue) {
         return queue.getAssociatedAgents().stream()
                 .map(agent -> new AssociatedAgentEntity(agent, queue.getId()))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     void throwExceptionIfQueueNameIsNotUnique(PrecisionQueueRequestBody requestBody, String queueId) {

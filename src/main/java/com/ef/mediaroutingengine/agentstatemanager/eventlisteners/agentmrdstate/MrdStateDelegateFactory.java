@@ -20,12 +20,17 @@ public class MrdStateDelegateFactory {
             return null;
         }
 
-        return switch (state) {
-            case NOT_READY -> new MrdStateNotReady();
-            case READY -> new MrdStateReady();
-            case ACTIVE -> new MrdStateActive();
-            case BUSY -> new MrdStateBusy();
-            default -> null;
-        };
+        switch (state) {
+            case NOT_READY:
+                return new MrdStateNotReady();
+            case READY:
+                return new MrdStateReady();
+            case ACTIVE:
+                return new MrdStateActive();
+            case BUSY:
+                return new MrdStateBusy();
+            default:
+                return null;
+        }
     }
 }

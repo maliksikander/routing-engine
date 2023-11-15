@@ -12,10 +12,8 @@ import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
-import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.ConflictException;
-import com.ef.mediaroutingengine.global.exceptions.ForbiddenException;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.dto.AssociatedMrdUpdateConflictResponse;
@@ -30,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -197,7 +196,7 @@ public class AgentsServiceImpl implements AgentsService {
     private List<AssociatedMrd> getAssociatedMrdList() {
         return this.mrdPool.findAll().stream()
                 .map(mrd -> new AssociatedMrd(mrd.getId(), mrd.getMaxRequests()))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override

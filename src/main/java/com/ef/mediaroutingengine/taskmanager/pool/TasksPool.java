@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 /**
@@ -176,7 +177,7 @@ public class TasksPool {
         return this.pool.stream()
                 .filter(t -> t.getType().getMode().equals(Enums.TaskTypeMode.QUEUE)
                         && t.getTaskState().getName().equals(Enums.TaskStateName.QUEUED))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     /**

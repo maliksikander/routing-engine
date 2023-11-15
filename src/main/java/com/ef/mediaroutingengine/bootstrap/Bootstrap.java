@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.jms.JMSException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -247,7 +248,7 @@ public class Bootstrap {
         return this.tasksPool.findAll().stream()
                 .filter(t -> t.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)
                         || t.getTaskState().getName().equals(Enums.TaskStateName.RESERVED))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private List<TaskDto> getTasksFromRepository() {

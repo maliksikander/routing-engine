@@ -15,7 +15,7 @@
     <description>Expertflow CIM media routing engine</description>
 
     <properties>
-        <java.version>16</java.version>
+        <java.version>11</java.version>
         <keycloak.version>19.0.2</keycloak.version>
     </properties>
 
@@ -247,7 +247,7 @@
                             <target>${java.version}</target>
                         </configuration>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <version>3.10.0</version>
+                        <version>3.8.1</version>
                     </plugin>
                 </plugins>
             </build>

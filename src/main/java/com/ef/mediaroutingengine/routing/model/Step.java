@@ -225,10 +225,15 @@ public class Step {
      * @return the sorted or ordered associated agents list.
      */
     public List<Agent> orderAgentsBy(AgentSelectionCriteria agentSelectionCriteria, String mrdId) {
-        return switch (agentSelectionCriteria) {
-            case LONGEST_AVAILABLE -> sortAsLongestAvailable(mrdId);
-            case MOST_SKILLED, LEAST_SKILLED, DEFAULT -> this.associatedAgents;
-        };
+        switch (agentSelectionCriteria) {
+            case LONGEST_AVAILABLE:
+                return sortAsLongestAvailable(mrdId);
+            case MOST_SKILLED:
+            case LEAST_SKILLED:
+                return this.associatedAgents;
+            default:
+                return this.associatedAgents;
+        }
     }
 
     /**
