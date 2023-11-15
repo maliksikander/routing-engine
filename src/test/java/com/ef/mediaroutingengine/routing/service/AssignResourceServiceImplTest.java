@@ -63,7 +63,7 @@ class AssignResourceServiceImplTest {
             PrecisionQueue queue = mock(PrecisionQueue.class);
 
             when(tasksRepository.findAllByConversation(conversationId)).thenReturn(new ArrayList<>());
-            assignResourceService.assign(request, queue);
+            assignResourceService.assign(conversationId, request, queue);
 
             verifyNoInteractions(mrdPool);
             verify(taskManager, times(1)).enqueueTask(request, mrdId, queue);
@@ -88,7 +88,7 @@ class AssignResourceServiceImplTest {
             when(tasksRepository.findAllByConversation(conversationId)).thenReturn(existingTasks);
             when(mrdPool.getType(mrdId)).thenReturn(new MrdType("", MrdTypeName.CHAT, true, true, true));
 
-            assignResourceService.assign(request, queue);
+            assignResourceService.assign(conversationId, request, queue);
 
             verifyNoMoreInteractions(mrdPool);
             verifyNoInteractions(taskManager);
@@ -112,7 +112,7 @@ class AssignResourceServiceImplTest {
             when(tasksRepository.findAllByConversation(conversationId)).thenReturn(existingTasks);
             when(mrdPool.getType(mrdId)).thenReturn(new MrdType("", MrdTypeName.CHAT, true, true, true));
 
-            assignResourceService.assign(request, queue);
+            assignResourceService.assign(conversationId, request, queue);
 
             verifyNoMoreInteractions(mrdPool);
             verifyNoInteractions(taskManager);

@@ -3,7 +3,6 @@ package com.ef.mediaroutingengine.routing.service;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.dto.AssignResourceRequest;
 import com.ef.cim.objectmodel.task.Task;
-import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
@@ -23,7 +22,6 @@ import org.springframework.stereotype.Service;
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AssignResourceServiceImpl implements AssignResourceService {
-
     /**
      * The constant LOGGER.
      */
@@ -51,12 +49,11 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     }
 
     @Override
-    public void assign(AssignResourceRequest request, PrecisionQueue queue) {
-        String conversationId = request.getRequestSession().getConversationId();
-        logger.info("Assign resource request initiated | Conversation: {}", conversationId);
-
+    public void assign(String conversationId, AssignResourceRequest request, PrecisionQueue queue) {
         List<Task> tasks = this.tasksRepository.findAllByConversation(conversationId);
         String mrdId = request.getRequestSession().getChannel().getChannelType().getMediaRoutingDomain();
+
+        logger.info("{} tasks exist on conversation: {}", tasks.size(), conversationId);
 
         if (request.getType().getDirection().equals(Enums.TaskTypeDirection.DIRECT_TRANSFER)
                 || request.getType().getDirection().equals(Enums.TaskTypeDirection.DIRECT_CONFERENCE)) {
@@ -64,7 +61,6 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         } else {
             this.handleInboundOutbound(request, queue, tasks, mrdId);
         }
-
     }
 
     private void handleInboundOutbound(AssignResourceRequest req, PrecisionQueue queue, List<Task> tasks,
@@ -75,6 +71,14 @@ public class AssignResourceServiceImpl implements AssignResourceService {
 
         if (!tasks.isEmpty()) {
             if (this.mrdPool.getType(mrdId).isAutoJoin()) {
+                logger.info("Request is autoJoinAble, returning...");
+                return;
+            }
+
+            String customerIdentifier = req.getRequestSession().getChannelData().getChannelCustomerIdentifier();
+
+            if (this.taskExistByCustomerIdentifier(tasks, customerIdentifier)) {
+                logger.info("Tasks exist for customer identifier: {}, returning...", customerIdentifier);
                 return;
             }
 
@@ -101,21 +105,26 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     private void handleTransferConference(AssignResourceRequest req, PrecisionQueue queue, List<Task> tasks,
                                           String mrdId) {
         if (!tasks.isEmpty()) {
-            if (this.mrdPool.getType(mrdId).isAutoJoin() && inProcessNonAutoJoinAbleExists(tasks)) {
-                return;
+            if (this.mrdPool.getType(mrdId).isAutoJoin() && anyInProcessTaskExists(tasks)) {
+                String error = "A previous request is in process of finding an agent on this conversation"
+                        + ", cannot process this request.";
+                logger.error(error);
+                throw new IllegalStateException(error);
+            } else if (!this.mrdPool.getType(mrdId).isAutoJoin()) {
+                tasks.forEach(t -> this.taskManager.revokeInProcessTask(t, true));
             }
-
-            tasks.forEach(t -> this.taskManager.revokeInProcessTask(t, true));
         }
 
         this.taskManager.enqueueTask(req, mrdId, queue);
     }
 
-    private boolean inProcessNonAutoJoinAbleExists(List<Task> tasks) {
+    private boolean anyInProcessTaskExists(List<Task> tasks) {
+        return tasks.stream().anyMatch(t -> t.findInProcessMedia() != null);
+    }
+
+    private boolean taskExistByCustomerIdentifier(List<Task> tasks, String customerIdentifier) {
         return tasks.stream().anyMatch(t -> t.getActiveMedia().stream()
-                .anyMatch(m -> !mrdPool.getType(m.getMrdId()).isAutoJoin()
-                        && (m.getState().equals(TaskMediaState.QUEUED)
-                        || m.getState().equals(TaskMediaState.RESERVED))
-                ));
+                .anyMatch(m -> m.getRequestSession().getChannelData().getChannelCustomerIdentifier()
+                        .equals(customerIdentifier)));
     }
 }
