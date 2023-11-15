@@ -407,6 +407,15 @@ public class Task {
     }
 
     /**
+     * Gets room id.
+     *
+     * @return the room id
+     */
+    public String getRoomId() {
+        return this.channelSession.getRoomId();
+    }
+
+    /**
      * Gets routing mode.
      *
      * @return the routing mode

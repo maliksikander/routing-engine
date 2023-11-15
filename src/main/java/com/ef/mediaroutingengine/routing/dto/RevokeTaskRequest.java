@@ -28,4 +28,8 @@ public class RevokeTaskRequest {
      * The Conversation id.
      */
     private String conversationId;
+    /**
+     * The Room id.
+     */
+    private String roomId;
 }

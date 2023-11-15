@@ -56,6 +56,9 @@ maven-compile:
   extends: .maven_compile
   stage: compile
   when: on_success
+  script:
+    - mvn compiler:compile -s settings.xml
+    - mvn compiler:testCompile -s settings.xml
   only:
     - /^.+_f-.+$/
     - /^.+_b-.+$/
@@ -70,6 +73,9 @@ maven-test:
   stage: test
   when: on_success
   extends: .maven_test
+
+  script:
+    - mvn verify -s settings.xml
   only:
     - /^.+_f-.+$/
     - /^.+_b-.+$/
@@ -93,7 +99,7 @@ maven-format:
 
 mvn_artifacts:
   stage: artifacts
-  image: maven:3.6.3
+  image: maven:3.6.0
   when: on_success
   script:
     - mvn clean
@@ -144,7 +150,7 @@ time_build:
 #+==================Runs on merge requests only========================+
 mvn_build:
   stage: build
-  image: maven:3.6.3
+  image: maven:3.6.0
   when: on_success
   script:
     - export TIME_TOKEN="$(cat .ci_status/ci_time)"
@@ -288,7 +294,7 @@ grype_scan_merge:
 mvn_build_tag:
   stage: mvn_build_tag
   extends: .mvn_tag
-  image: maven:3.6.3
+  image: maven:3.6.0
   only:
     - tags
 

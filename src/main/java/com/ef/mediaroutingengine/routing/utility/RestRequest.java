@@ -108,7 +108,7 @@ public class RestRequest {
      */
     public boolean postRevokeTask(Task task) {
         RevokeTaskRequest requestBody = new RevokeTaskRequest(task.getId(), task.getAssignedTo().getId(),
-                task.getTopicId());
+                task.getTopicId(), task.getRoomId());
         try {
             this.httpRequest(requestBody, this.config.getRevokeTaskUri(), HttpMethod.POST);
             return true;
