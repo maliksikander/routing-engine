@@ -248,7 +248,7 @@ public class Bootstrap {
         return this.tasksPool.findAll().stream()
                 .filter(t -> t.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)
                         || t.getTaskState().getName().equals(Enums.TaskStateName.RESERVED))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<TaskDto> getTasksFromRepository() {

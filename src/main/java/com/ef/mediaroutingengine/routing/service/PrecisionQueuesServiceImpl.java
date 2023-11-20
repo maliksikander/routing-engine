@@ -338,7 +338,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
                     List<AssociatedAgentEntity> agents = createAssociatedAgents(queue);
                     return new AssociatedAgentsResponse(queue.getId(), queue.getName(), agents);
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

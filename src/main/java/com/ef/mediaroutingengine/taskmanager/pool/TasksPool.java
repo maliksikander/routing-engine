@@ -177,7 +177,7 @@ public class TasksPool {
         return this.pool.stream()
                 .filter(t -> t.getType().getMode().equals(Enums.TaskTypeMode.QUEUE)
                         && t.getTaskState().getName().equals(Enums.TaskStateName.QUEUED))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

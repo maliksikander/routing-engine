@@ -196,7 +196,7 @@ public class AgentsServiceImpl implements AgentsService {
     private List<AssociatedMrd> getAssociatedMrdList() {
         return this.mrdPool.findAll().stream()
                 .map(mrd -> new AssociatedMrd(mrd.getId(), mrd.getMaxRequests()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
