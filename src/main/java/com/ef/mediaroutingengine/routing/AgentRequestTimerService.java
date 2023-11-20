@@ -216,7 +216,7 @@ public class AgentRequestTimerService {
         private void handleQueued(Task task, TaskMedia media, PrecisionQueue queue) {
             logger.info("In process task media: {} found in QUEUED state, removing task..", media.getId());
 
-            AgentRequestTimerService.this.tasksRepository.deleteById(task.getId());
+            AgentRequestTimerService.this.tasksRepository.delete(task);
             AgentRequestTimerService.this.stepTimerService.stop(task.getId());
             queue.removeByTaskId(task.getId());
 

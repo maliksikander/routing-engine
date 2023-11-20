@@ -241,7 +241,7 @@ public class TaskRouter implements PropertyChangeListener {
             if (this.offerToAgent(task, media, agent)) {
                 task.setAssignedTo(agent.toTaskAgent());
                 media.setState(TaskMediaState.RESERVED);
-                this.tasksRepository.save(task.getId(), task);
+                this.tasksRepository.update(task);
 
                 agent.reserveTask(task, media);
 

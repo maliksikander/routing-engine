@@ -121,7 +121,7 @@ public class TaskManager {
         TaskMedia media = this.createMedia(req, UUID.randomUUID().toString(), mrdId, mediaState, queue.toTaskQueue());
 
         Task task = TaskUtility.createNewTask(conversationId, media, null);
-        this.tasksRepository.save(task.getId(), task);
+        this.tasksRepository.insert(task);
         this.jmsCommunicator.publishTaskStateChanged(task, req.getRequestSession(), true, media.getId());
 
         this.agentRequestTimerService.start(task, media, queue.getId());
@@ -219,7 +219,7 @@ public class TaskManager {
      * @param state the state
      */
     public void closeTask(Task task, TaskState state) {
-        this.tasksRepository.deleteById(task.getId());
+        this.tasksRepository.delete(task);
         task.setState(state);
 
         Agent agent = this.agentsPool.findBy(task.getAssignedTo());
@@ -291,7 +291,7 @@ public class TaskManager {
     }
 
     private void enqueueTaskOnReRoute(Task task) {
-        this.tasksRepository.save(task.getId(), task);
+        this.tasksRepository.insert(task);
 
         TaskMedia media = task.findMediaByState(TaskMediaState.QUEUED);
 
@@ -386,7 +386,7 @@ public class TaskManager {
             ChannelSession session = media.getRequestSession();
 
             if (task.isRemovable()) {
-                this.tasksRepository.deleteById(task.getId());
+                this.tasksRepository.delete(task);
                 task.setState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.CANCELLED));
                 jmsCommunicator.publishTaskStateChanged(task, session, true, media.getId());
                 return true;

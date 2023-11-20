@@ -50,7 +50,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
 
     @Override
     public void assign(String conversationId, AssignResourceRequest request, PrecisionQueue queue) {
-        List<Task> tasks = this.tasksRepository.findAllByConversation(conversationId);
+        List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId);
         String mrdId = request.getRequestSession().getChannel().getChannelType().getMediaRoutingDomain();
 
         logger.info("{} tasks exist on conversation: {}", tasks.size(), conversationId);

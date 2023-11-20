@@ -364,7 +364,8 @@ public class RedisClientImpl implements RedisClient {
      *
      * @return the connection
      */
-    private Jedis getConnection() {
+    @Override
+    public Jedis getConnection() {
         return this.jedisPool.getResource();
     }
 

@@ -117,7 +117,7 @@ public class TasksService {
             return;
         }
 
-        List<Task> tasks = this.tasksRepository.findAllByConversation(conversationId).stream()
+        List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId).stream()
                 .filter(t -> {
                     TaskMedia media = t.findInProcessMedia();
                     return media != null && media.getType().getDirection().equals(direction);
@@ -187,7 +187,7 @@ public class TasksService {
         }
 
         String conversationId = channelSession.getConversationId();
-        List<Task> tasks = this.tasksRepository.findAllByConversation(conversationId).stream()
+        List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId).stream()
                 .filter(t -> t.getState().getName().equals(Enums.TaskStateName.ACTIVE))
                 .toList();
 
@@ -210,7 +210,7 @@ public class TasksService {
         String mrdId = channelSession.getChannel().getChannelType().getMediaRoutingDomain();
         String conversationId = channelSession.getConversationId();
 
-        List<Task> tasks = this.tasksRepository.findAllByConversation(conversationId).stream()
+        List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId).stream()
                 .filter(t -> t.getState().getName().equals(Enums.TaskStateName.ACTIVE))
                 .toList();
 

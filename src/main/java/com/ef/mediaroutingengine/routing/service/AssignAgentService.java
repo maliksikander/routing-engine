@@ -125,7 +125,7 @@ public class AssignAgentService {
         TaskMedia media = this.createMedia(req, UUID.randomUUID().toString(), mrdId);
 
         Task task = TaskUtility.createNewTask(conversationId, media, agent.toTaskAgent());
-        this.tasksRepository.save(task.getId(), task);
+        this.tasksRepository.insert(task);
 
         String[] mediaStateChanged = task.getActiveMedia().stream().map(TaskMedia::getId).toArray(String[]::new);
         this.jmsCommunicator.publishTaskStateChanged(task, req.getRequestSession(), true, mediaStateChanged);
