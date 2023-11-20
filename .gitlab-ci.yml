@@ -99,7 +99,7 @@ maven-format:
 
 mvn_artifacts:
   stage: artifacts
-  image: maven:3.6.0
+  image: maven:3.6.3
   when: on_success
   script:
     - mvn clean
@@ -150,7 +150,7 @@ time_build:
 #+==================Runs on merge requests only========================+
 mvn_build:
   stage: build
-  image: maven:3.6.0
+  image: maven:3.6.3
   when: on_success
   script:
     - export TIME_TOKEN="$(cat .ci_status/ci_time)"
@@ -294,7 +294,7 @@ grype_scan_merge:
 mvn_build_tag:
   stage: mvn_build_tag
   extends: .mvn_tag
-  image: maven:3.6.0
+  image: maven:3.6.3
   only:
     - tags
 
