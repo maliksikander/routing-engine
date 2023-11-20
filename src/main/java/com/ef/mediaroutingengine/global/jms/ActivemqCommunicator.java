@@ -275,7 +275,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
                                          ChannelSession channelSession)
             throws JsonProcessingException {
         CimEvent cimEvent = new CimEvent(message, eventName, CimEventType.NOTIFICATION,
-                conversationId, AdapterUtility.getSender(), channelSession);
+                conversationId, AdapterUtility.getSender(), channelSession, channelSession.getRoomId());
         return this.objectMapper.writeValueAsString(cimEvent);
     }
 
