@@ -124,11 +124,11 @@ public class TaskManager {
         this.tasksRepository.save(task.getId(), task);
         this.jmsCommunicator.publishTaskStateChanged(task, req.getRequestSession(), true, media.getId());
 
-        logger.info("Calling setAgentSla API of Conversation-manager");
-
-        if (queue.getAgentSlaDuration() != null) {
-            this.restRequest.postSetAgentSla(conversationId, queue.getAgentSlaDuration());
-        }
+//        logger.info("Calling setAgentSla API of Conversation-manager");
+//
+//        if (queue.getAgentSlaDuration() != null) {
+//            this.restRequest.postSetAgentSla(conversationId, queue.getAgentSlaDuration());
+//        }
 
         this.agentRequestTimerService.start(task, media, queue.getId());
         logger.debug("Agent-Request-Ttl timer task scheduled");
