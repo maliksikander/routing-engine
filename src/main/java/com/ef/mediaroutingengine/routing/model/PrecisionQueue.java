@@ -374,6 +374,7 @@ public class PrecisionQueue implements Queue {
         this.setMrd(requestBody.getMrd());
         this.setServiceLevelType(requestBody.getServiceLevelType());
         this.setServiceLevelThreshold(requestBody.getServiceLevelThreshold());
+        this.setAgentSlaDuration(requestBody.getAgentSlaDuration());
     }
 
     /**

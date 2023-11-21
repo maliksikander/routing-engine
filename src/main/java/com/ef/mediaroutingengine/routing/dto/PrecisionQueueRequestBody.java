@@ -49,6 +49,5 @@ public class PrecisionQueueRequestBody {
     /**
      * The Agent service level duration.
      */
-    @Min(0)
-    private int agentSlaDuration;
+    private Integer agentSlaDuration;
 }
