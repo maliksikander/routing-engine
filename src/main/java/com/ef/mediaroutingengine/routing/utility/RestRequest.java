@@ -217,7 +217,7 @@ public class RestRequest {
      * @param conversationId the conversation id.
      * @param agentSlaDuration the agent sla duration.
      */
-    public void postSetAgentSla(String conversationId, Integer agentSlaDuration) {
+    public void postSetAgentSla(String conversationId, int agentSlaDuration) {
         String queryParam = "?agentSlaDuration=" + agentSlaDuration;
         String uri = config.getConversationManagerBaseUri() + "/customer-topics/" + conversationId
                 + "/agent-sla-duration" + queryParam;
