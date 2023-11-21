@@ -62,7 +62,7 @@ public class PrecisionQueue implements Queue {
     /**
      * The Agent service level duration.
      */
-    private int agentSlaDuration;
+    private Integer agentSlaDuration;
     /**
      * The Average talk time.
      */
@@ -235,7 +235,7 @@ public class PrecisionQueue implements Queue {
      *
      * @param agentSlaDuration the agent sla duration.
      */
-    public void setAgentSlaDuration(int agentSlaDuration) {
+    public void setAgentSlaDuration(Integer agentSlaDuration) {
         this.agentSlaDuration = agentSlaDuration;
     }
 
@@ -244,7 +244,7 @@ public class PrecisionQueue implements Queue {
      *
      * @return the agent sla duration.
      */
-    public int getAgentSlaDuration() {
+    public Integer getAgentSlaDuration() {
         return agentSlaDuration;
     }
 
