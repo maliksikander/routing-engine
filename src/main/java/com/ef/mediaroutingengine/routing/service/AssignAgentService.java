@@ -8,7 +8,6 @@ import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.dto.AssignAgentRequest;
 import com.ef.mediaroutingengine.routing.model.Agent;
-import com.ef.mediaroutingengine.routing.model.AgentTask;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.utility.RestRequest;
 import com.ef.mediaroutingengine.routing.utility.TaskUtility;
@@ -73,21 +72,17 @@ public class AssignAgentService {
     public Task assign(AssignAgentRequest req, Agent agent) {
         String mrdId = req.getRequestSession().getChannel().getChannelType().getMediaRoutingDomain();
         String conversationId = req.getRequestSession().getConversationId();
-        AgentTask agentTask = agent.getTaskByConversationId(conversationId);
 
-        if (agentTask == null) {
+        List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId);
+        tasks.forEach(t -> this.taskManager.revokeInProcessTask(t, true));
+        Task task = this.getTaskOfAgent(agent, tasks);
+
+        if (task == null) {
             return handleNewTask(req, agent, mrdId, conversationId);
         }
-
-        Task task = this.tasksRepository.find(agentTask.getTaskId());
 
         if (this.mrdPool.getType(mrdId).isAutoJoin()) {
             return task;
-        }
-
-        boolean isTaskRevoked = this.taskManager.revokeInProcessTask(task, true);
-        if (isTaskRevoked) {
-            return handleNewTask(req, agent, mrdId, conversationId);
         }
 
         TaskMedia taskMedia = task.findMediaByMrdId(mrdId);
@@ -123,12 +118,10 @@ public class AssignAgentService {
      */
     private Task handleNewTask(AssignAgentRequest req, Agent agent, String mrdId, String conversationId) {
         TaskMedia media = this.createMedia(req, UUID.randomUUID().toString(), mrdId);
-
         Task task = TaskUtility.createNewTask(conversationId, media, agent.toTaskAgent());
-        this.tasksRepository.insert(task);
 
-        String[] mediaStateChanged = task.getActiveMedia().stream().map(TaskMedia::getId).toArray(String[]::new);
-        this.jmsCommunicator.publishTaskStateChanged(task, req.getRequestSession(), true, mediaStateChanged);
+        this.tasksRepository.insert(task);
+        this.jmsCommunicator.publishTaskStateChanged(task, req.getRequestSession(), true, media.getId());
 
         if (req.getState().equals(TaskMediaState.ACTIVE) && !this.mrdPool.getType(mrdId).isInterruptible()) {
             agent.setNonInterruptible(true);
@@ -147,5 +140,15 @@ public class AssignAgentService {
         List<ChannelSession> sessions = TaskUtility.getSessions(req.getChannelSessions(), reqSession, mrdId, mrdType);
 
         return new TaskMedia(mrdId, taskId, null, req.getType(), 1, req.getState(), reqSession, sessions);
+    }
+
+    private Task getTaskOfAgent(Agent agent, List<Task> tasks) {
+        for (Task task : tasks) {
+            if (task.getAssignedTo() != null && task.getAssignedTo().getId().equals(agent.getId())) {
+                return task;
+            }
+        }
+
+        return null;
     }
 }
