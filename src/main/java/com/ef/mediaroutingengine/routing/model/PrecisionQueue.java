@@ -12,21 +12,34 @@ import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.queue.PriorityQueue;
 import com.ef.mediaroutingengine.taskmanager.model.TaskStep;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * The type Precision queue.
  */
+@Getter
+@Setter
 public class PrecisionQueue implements Queue {
     /**
      * The constant LOGGER.
      */
     private static final Logger logger = LoggerFactory.getLogger(PrecisionQueue.class);
+    /**
+     * The ID.
+     */
+    private String id;
+    /**
+     * The Name.
+     */
+    private String name;
     /**
      * The Service queue.
      */
@@ -40,14 +53,6 @@ public class PrecisionQueue implements Queue {
      */
     private final List<Step> steps;
     /**
-     * The ID.
-     */
-    private String id;
-    /**
-     * The Name.
-     */
-    private String name;
-    /**
      * The Mrd.
      */
     private MediaRoutingDomain mrd;
@@ -59,14 +64,6 @@ public class PrecisionQueue implements Queue {
      * The Service level threshold.
      */
     private int serviceLevelThreshold;
-    /**
-     * The Average talk time.
-     */
-    private Long averageTalkTime;
-    /**
-     * The No of task.
-     */
-    private Long noOfTask;
 
     /**
      * Parametrized constructor. Constructs a PrecisionQueue object with a PrecisionQueueEntity object.
@@ -87,9 +84,6 @@ public class PrecisionQueue implements Queue {
         this.serviceQueue = new PriorityQueue();
         this.taskRouter = taskRouter;
         this.taskRouter.init(this);
-
-        this.averageTalkTime = 0L;
-        this.noOfTask = 0L;
     }
 
     /**
@@ -109,9 +103,6 @@ public class PrecisionQueue implements Queue {
         this.serviceQueue = new PriorityQueue();
         this.taskRouter = taskRouter;
         this.taskRouter.init(this);
-
-        this.averageTalkTime = 0L;
-        this.noOfTask = 0L;
     }
 
     /**
@@ -129,107 +120,6 @@ public class PrecisionQueue implements Queue {
             elements.add(new Step(stepEntity));
         }
         return elements;
-    }
-
-    /**
-     * Gets id.
-     *
-     * @return the id
-     */
-    public String getId() {
-        return id;
-    }
-
-    /**
-     * Sets the id only if it is null.
-     *
-     * @param id unique id to set
-     */
-    public void setId(String id) {
-        if (this.id == null) {
-            this.id = id;
-        }
-    }
-
-    /**
-     * Gets name.
-     *
-     * @return the name
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Sets name.
-     *
-     * @param name the name
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * Gets mrd.
-     *
-     * @return the mrd
-     */
-    public MediaRoutingDomain getMrd() {
-        return mrd;
-    }
-
-    /**
-     * Sets mrd.
-     *
-     * @param mrd the mrd
-     */
-    public void setMrd(MediaRoutingDomain mrd) {
-        this.mrd = mrd;
-    }
-
-    /**
-     * Gets service level type.
-     *
-     * @return the service level type
-     */
-    public int getServiceLevelType() {
-        return serviceLevelType;
-    }
-
-    /**
-     * Sets service level type.
-     *
-     * @param serviceLevelType the service level type
-     */
-    public void setServiceLevelType(int serviceLevelType) {
-        this.serviceLevelType = serviceLevelType;
-    }
-
-    /**
-     * Gets service level threshold.
-     *
-     * @return the service level threshold
-     */
-    public int getServiceLevelThreshold() {
-        return serviceLevelThreshold;
-    }
-
-    /**
-     * Sets service level threshold.
-     *
-     * @param serviceLevelThreshold the service level threshold
-     */
-    public void setServiceLevelThreshold(int serviceLevelThreshold) {
-        this.serviceLevelThreshold = serviceLevelThreshold;
-    }
-
-    /**
-     * Gets steps.
-     *
-     * @return the steps
-     */
-    public List<Step> getSteps() {
-        return steps;
     }
 
     /**
@@ -352,21 +242,13 @@ public class PrecisionQueue implements Queue {
     }
 
     /**
-     * Gets service queue.
-     *
-     * @return the service queue
-     */
-    public PriorityQueue getServiceQueue() {
-        return serviceQueue;
-    }
-
-    /**
      * Gets tasks.
      *
      * @return the tasks
      */
+    @JsonIgnore
     public List<QueueTask> getTasks() {
-        return this.serviceQueue.getEnqueuedTasksList();
+        return this.serviceQueue.getAll();
     }
 
     /**
@@ -381,53 +263,6 @@ public class PrecisionQueue implements Queue {
             return this.serviceQueue.getPosition(task.getId(), media.getPriority());
         }
         return -1;
-    }
-
-    /**
-     * Gets task scheduler.
-     *
-     * @return the task scheduler
-     */
-    public TaskRouter getTaskScheduler() {
-        return taskRouter;
-    }
-
-    /**
-     * Gets average talk time.
-     *
-     * @return the average talk time
-     */
-    public Long getAverageTalkTime() {
-        return averageTalkTime;
-    }
-
-    /**
-     * Sets average talk time.
-     *
-     * @param averageTalkTime the average talk time
-     */
-    public void setAverageTalkTime(Long averageTalkTime) {
-        this.averageTalkTime = averageTalkTime;
-    }
-
-    /**
-     * Gets no of task.
-     *
-     * @return the no of task
-     */
-    public Long getNoOfTask() {
-        return noOfTask;
-    }
-
-    /**
-     * Increments the number of tasks.
-     */
-    public void incrNoOfTask() {
-        if (this.noOfTask == null) {
-            this.noOfTask = 1L;
-        } else {
-            this.noOfTask += 1L;
-        }
     }
 
     /**
@@ -481,7 +316,7 @@ public class PrecisionQueue implements Queue {
 
     @Override
     public boolean enqueue(QueueTask task) {
-        if (task == null || this.serviceQueue.taskExists(task.getId())) {
+        if (task == null || this.serviceQueue.exists(task.getId())) {
             return false;
         }
         boolean isEnqueued = serviceQueue.enqueue(task);
@@ -523,28 +358,12 @@ public class PrecisionQueue implements Queue {
     }
 
     /**
-     * Removes the task from the service-queue.
-     *
-     * @param task the task to be removed.
-     * @return true if found and removed, false otherwise
-     */
-    public boolean removeTask(QueueTask task) {
-        if (task == null) {
-            return false;
-        }
-        return this.serviceQueue.remove(task);
-    }
-
-    /**
      * Remove by task id boolean.
      *
      * @param taskId the task id
-     * @return the boolean
      */
-    public boolean removeByTaskId(String taskId) {
-        synchronized (this.serviceQueue) {
-            return this.serviceQueue.removeByTaskId(taskId);
-        }
+    public void removeTask(String taskId) {
+        this.serviceQueue.remove(taskId);
     }
 
     /**

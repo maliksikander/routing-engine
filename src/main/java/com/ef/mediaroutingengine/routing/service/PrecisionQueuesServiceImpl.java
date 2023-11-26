@@ -7,6 +7,7 @@ import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskState;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
+import com.ef.mediaroutingengine.global.locks.ConversationLock;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.AssociatedAgentEntity;
@@ -63,6 +64,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * The Tasks repository.
      */
     private final TasksRepository tasksRepository;
+    private final ConversationLock conversationLock = new ConversationLock();
 
     /**
      * Default constructor.
@@ -266,14 +268,25 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      */
     void flushQueue(@NotNull PrecisionQueue queue, int enqueuedSince) {
         synchronized (queue.getServiceQueue()) {
-            queue.getTasks().stream()
-                    .filter(queueTask -> this.isTaskEnqueuedSince(enqueuedSince, queueTask))
-                    .forEach(queueTask -> {
-                        Task task = this.tasksRepository.find(queueTask.getTaskId());
-                        TaskState state =
-                                new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.FORCE_CLOSED);
+            for (QueueTask queueTask : queue.getTasks()) {
+
+                if (!this.isTaskEnqueuedSince(enqueuedSince, queueTask)) {
+                    continue;
+                }
+
+                try {
+                    conversationLock.lock(queueTask.getConversationId());
+
+                    Task task = this.tasksRepository.find(queueTask.getTaskId());
+                    TaskState state = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.FORCE_CLOSED);
+
+                    if (task != null) {
                         this.taskManager.closeTask(task, state);
-                    });
+                    }
+                } finally {
+                    conversationLock.unlock(queueTask.getConversationId());
+                }
+            }
         }
     }
 

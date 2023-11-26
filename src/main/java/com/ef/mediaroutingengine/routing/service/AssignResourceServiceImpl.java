@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.routing.service;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.dto.AssignResourceRequest;
 import com.ef.cim.objectmodel.task.Task;
+import com.ef.mediaroutingengine.global.locks.ConversationLock;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
@@ -33,6 +34,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
     private final TaskManager taskManager;
     private final TasksRepository tasksRepository;
     private final MrdPool mrdPool;
+    private final ConversationLock conversationLock = new ConversationLock();
 
     /**
      * Default constructor. Loads the dependencies.
@@ -50,16 +52,22 @@ public class AssignResourceServiceImpl implements AssignResourceService {
 
     @Override
     public void assign(String conversationId, AssignResourceRequest request, PrecisionQueue queue) {
-        List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId);
-        String mrdId = request.getRequestSession().getChannel().getChannelType().getMediaRoutingDomain();
+        try {
+            conversationLock.lock(conversationId);
 
-        logger.info("{} tasks exist on conversation: {}", tasks.size(), conversationId);
+            List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId);
+            String mrdId = request.getRequestSession().getChannel().getChannelType().getMediaRoutingDomain();
 
-        if (request.getType().getDirection().equals(Enums.TaskTypeDirection.DIRECT_TRANSFER)
-                || request.getType().getDirection().equals(Enums.TaskTypeDirection.DIRECT_CONFERENCE)) {
-            handleTransferConference(request, queue, tasks, mrdId);
-        } else {
-            this.handleInboundOutbound(request, queue, tasks, mrdId);
+            logger.info("{} tasks exist on conversation: {}", tasks.size(), conversationId);
+
+            if (request.getType().getDirection().equals(Enums.TaskTypeDirection.DIRECT_TRANSFER)
+                    || request.getType().getDirection().equals(Enums.TaskTypeDirection.DIRECT_CONFERENCE)) {
+                this.handleTransferConference(request, queue, tasks, mrdId);
+            } else {
+                this.handleInboundOutbound(request, queue, tasks, mrdId);
+            }
+        } finally {
+            conversationLock.unlock(conversationId);
         }
     }
 

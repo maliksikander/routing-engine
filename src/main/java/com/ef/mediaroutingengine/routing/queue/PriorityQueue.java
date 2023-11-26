@@ -4,7 +4,6 @@ import com.ef.mediaroutingengine.routing.model.QueueTask;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.validation.constraints.NotNull;
@@ -61,6 +60,17 @@ public class PriorityQueue {
     }
 
     /**
+     * Remove by task id boolean.
+     *
+     * @param taskId the task id
+     */
+    public void remove(@NotNull String taskId) {
+        for (Map.Entry<Integer, ConcurrentLinkedQueue<QueueTask>> entry : this.multiLevelQueueMap.entrySet()) {
+            entry.getValue().removeIf(t -> t.getTaskId().equals(taskId));
+        }
+    }
+
+    /**
      * Size int.
      *
      * @return the int size of the Priority queue
@@ -74,63 +84,12 @@ public class PriorityQueue {
     }
 
     /**
-     * Index of int.
-     *
-     * @param taskId the task id
-     * @return the int
-     */
-    public int indexOf(String taskId) {
-        int index = -1;
-        int previousQueuesSize = 0;
-        for (int i = NO_OF_QUEUE_LEVELS; i >= 1; i--) {
-            Queue<QueueTask> queue = this.multiLevelQueueMap.get(i);
-            int k = 0;
-            for (QueueTask task : queue) {
-                if (task.getId().equals(taskId)) {
-                    index = previousQueuesSize + k;
-                    return index;
-                }
-                k++;
-            }
-            previousQueuesSize = previousQueuesSize + queue.size();
-        }
-        return index;
-    }
-
-    /**
-     * Get task service.
-     *
-     * @param taskId the task id
-     * @return the task service
-     */
-    public QueueTask getTask(String taskId) {
-        for (Map.Entry<Integer, ConcurrentLinkedQueue<QueueTask>> entry : this.multiLevelQueueMap.entrySet()) {
-            for (QueueTask task : entry.getValue()) {
-                if (task.getId().equals(taskId)) {
-                    return task;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Task exists boolean.
-     *
-     * @param task the task service
-     * @return the boolean
-     */
-    public boolean taskExists(@NotNull QueueTask task) {
-        return taskExists(task.getId());
-    }
-
-    /**
      * Task exists boolean.
      *
      * @param taskId the task id
      * @return the boolean
      */
-    public boolean taskExists(String taskId) {
+    public boolean exists(String taskId) {
         for (Map.Entry<Integer, ConcurrentLinkedQueue<QueueTask>> entry : this.multiLevelQueueMap.entrySet()) {
             for (QueueTask task1 : entry.getValue()) {
                 if (taskId.equals(task1.getId())) {
@@ -141,40 +100,14 @@ public class PriorityQueue {
         return false;
     }
 
-    /**
-     * Remove boolean.
-     *
-     * @param task the task service
-     * @return the boolean
-     */
-    public boolean remove(@NotNull QueueTask task) {
-        return this.removeByTaskId(task.getTaskId());
-    }
 
-    /**
-     * Remove by task id boolean.
-     *
-     * @param taskId the task id
-     * @return the boolean
-     */
-    public boolean removeByTaskId(@NotNull String taskId) {
-        for (Map.Entry<Integer, ConcurrentLinkedQueue<QueueTask>> entry : this.multiLevelQueueMap.entrySet()) {
-            for (QueueTask t : entry.getValue()) {
-                if (t.getTaskId().equals(taskId)) {
-                    entry.getValue().remove(t);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 
     /**
      * Returns the list of enqueued tasks.
      *
      * @return list of enqueued tasks
      */
-    public List<QueueTask> getEnqueuedTasksList() {
+    public List<QueueTask> getAll() {
         List<QueueTask> taskList = new LinkedList<>();
         for (Map.Entry<Integer, ConcurrentLinkedQueue<QueueTask>> entry : this.multiLevelQueueMap.entrySet()) {
             taskList.addAll(entry.getValue());

@@ -3,8 +3,8 @@ package com.ef.mediaroutingengine.routing;
 import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
-import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.global.locks.ConversationLock;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.AgentSelectionCriteria;
 import com.ef.mediaroutingengine.routing.model.NewTaskPayload;
@@ -65,6 +65,7 @@ public class TaskRouter implements PropertyChangeListener {
      * The Tasks repository.
      */
     private final TasksRepository tasksRepository;
+    private final ConversationLock conversationLock = new ConversationLock();
 
     /**
      * Constructor.
@@ -99,10 +100,10 @@ public class TaskRouter implements PropertyChangeListener {
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        logger.debug("TaskRouter for queue: [{}] invoked on event [{}]",
-                precisionQueue.getName(), evt.getPropertyName());
+        String evtName = evt.getPropertyName();
+        logger.debug("TaskRouter for queue: [{}] invoked on event [{}]", precisionQueue.getName(), evtName);
 
-        if (evt.getPropertyName().equals(QueueEventName.NEW_REQUEST)) {
+        if (QueueEventName.NEW_REQUEST.equals(evtName)) {
             this.onNewRequest(evt);
         }
 
@@ -117,18 +118,24 @@ public class TaskRouter implements PropertyChangeListener {
 
                 logger.debug("Queue [{}] is not empty", this.precisionQueue.getName());
 
-                Task task = this.tasksRepository.find(queueTask.getTaskId());
-                if (task == null || task.findMediaBy(queueTask.getMediaId()) == null) {
-                    precisionQueue.dequeue();
-                    return;
-                }
+                try {
+                    conversationLock.lock(queueTask.getConversationId());
 
-                reserve(queueTask, task);
+                    Task task = this.tasksRepository.find(queueTask.getTaskId());
+                    if (task == null || task.findMediaBy(queueTask.getMediaId()) == null) {
+                        precisionQueue.dequeue();
+                        return;
+                    }
+
+                    reserve(queueTask, task);
+                } finally {
+                    conversationLock.unlock(queueTask.getConversationId());
+                }
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logger.error(ExceptionUtils.getMessage(ex));
+            logger.error(ExceptionUtils.getStackTrace(ex));
         }
-        logger.debug(Constants.METHOD_ENDED);
     }
 
     /**

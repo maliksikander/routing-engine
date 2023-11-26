@@ -6,6 +6,7 @@ import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.global.locks.ConversationLock;
 import com.ef.mediaroutingengine.routing.dto.AssignAgentRequest;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
@@ -42,6 +43,7 @@ public class AssignAgentService {
      * The Mrd pool.
      */
     private final MrdPool mrdPool;
+    private final ConversationLock conversationLock = new ConversationLock();
 
     /**
      * Instantiates a new Assign agent service.
@@ -73,39 +75,46 @@ public class AssignAgentService {
         String mrdId = req.getRequestSession().getChannel().getChannelType().getMediaRoutingDomain();
         String conversationId = req.getRequestSession().getConversationId();
 
-        List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId);
-        tasks.forEach(t -> this.taskManager.revokeInProcessTask(t, true));
-        Task task = this.getTaskOfAgent(agent, tasks);
+        try {
+            conversationLock.lock(conversationId);
 
-        if (task == null) {
-            return handleNewTask(req, agent, mrdId, conversationId);
-        }
+            List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId);
+            tasks.forEach(t -> this.taskManager.revokeInProcessTask(t, true));
+            Task task = this.getTaskOfAgent(agent, tasks);
 
-        if (this.mrdPool.getType(mrdId).isAutoJoin()) {
+            if (task == null) {
+                return handleNewTask(req, agent, mrdId, conversationId);
+            }
+
+            if (this.mrdPool.getType(mrdId).isAutoJoin()) {
+                return task;
+            }
+
+            TaskMedia taskMedia = task.findMediaByMrdId(mrdId);
+
+            if (taskMedia == null) {
+                taskMedia = this.createMedia(req, task.getId(), mrdId);
+                task.addMedia(taskMedia);
+                this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
+            } else {
+                taskMedia.setState(req.getState());
+            }
+
+            if (req.getState().equals(TaskMediaState.ACTIVE)) {
+                this.taskManager.activateMedia(task, taskMedia);
+            } else {
+                this.jmsCommunicator.publishTaskStateChanged(task, taskMedia.getRequestSession(), false,
+                        taskMedia.getId());
+            }
+
+            if (req.isOfferToAgent()) {
+                restRequest.postAssignTask(task, taskMedia, req.getState(), agent.toCcUser(), true);
+            }
+
             return task;
+        } finally {
+            conversationLock.unlock(conversationId);
         }
-
-        TaskMedia taskMedia = task.findMediaByMrdId(mrdId);
-
-        if (taskMedia == null) {
-            taskMedia = this.createMedia(req, task.getId(), mrdId);
-            task.addMedia(taskMedia);
-            this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
-        } else {
-            taskMedia.setState(req.getState());
-        }
-
-        if (req.getState().equals(TaskMediaState.ACTIVE)) {
-            this.taskManager.activateMedia(task, taskMedia);
-        } else {
-            this.jmsCommunicator.publishTaskStateChanged(task, taskMedia.getRequestSession(), false, taskMedia.getId());
-        }
-
-        if (req.isOfferToAgent()) {
-            restRequest.postAssignTask(task, taskMedia, req.getState(), agent.toCcUser(), true);
-        }
-
-        return task;
     }
 
     /**

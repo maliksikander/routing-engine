@@ -7,6 +7,7 @@ import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
+import com.ef.mediaroutingengine.global.locks.ConversationLock;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
@@ -56,6 +57,7 @@ public class TasksService {
      * The Task manager.
      */
     private final TaskManager taskManager;
+    private final ConversationLock conversationLock = new ConversationLock();
 
     /**
      * Instantiates a new Tasks service.
@@ -117,13 +119,19 @@ public class TasksService {
             return;
         }
 
-        List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId).stream()
-                .filter(t -> {
-                    TaskMedia media = t.findInProcessMedia();
-                    return media != null && media.getType().getDirection().equals(direction);
-                }).toList();
+        try {
+            conversationLock.lock(conversationId);
 
-        tasks.forEach(t -> this.taskManager.revokeInProcessTask(t, true));
+            List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId).stream()
+                    .filter(t -> {
+                        TaskMedia media = t.findInProcessMedia();
+                        return media != null && media.getType().getDirection().equals(direction);
+                    }).toList();
+
+            tasks.forEach(t -> this.taskManager.revokeInProcessTask(t, true));
+        } finally {
+            conversationLock.unlock(conversationId);
+        }
     }
 
     /**
@@ -135,16 +143,18 @@ public class TasksService {
     public ResponseEntity<Object> getEwtAndPosition(String conversationId) {
         logger.info("Request received to fetch the EWT and position for conversation id: {}", conversationId);
 
-        List<TaskEwtResponse> responses = new ArrayList<>();
-        Map<String, List<Task>> queuedTasks = this.tasksRepository.findQueuedGroupedByQueueId(conversationId);
+        try {
+            conversationLock.lock(conversationId);
 
-        for (Map.Entry<String, List<Task>> entry : queuedTasks.entrySet()) {
-            QueueHistoricalStatsDto queueStats = this.restRequest.getQueueHistoricalStats(entry.getKey());
+            List<TaskEwtResponse> responses = new ArrayList<>();
+            Map<String, List<Task>> queuedTasks = this.tasksRepository.findQueuedGroupedByQueueId(conversationId);
 
-            PrecisionQueue precisionQueue = precisionQueuesCache.findById(entry.getKey());
-            int totalAgents = precisionQueue.getAssociatedAgents().size();
+            for (Map.Entry<String, List<Task>> entry : queuedTasks.entrySet()) {
+                QueueHistoricalStatsDto queueStats = this.restRequest.getQueueHistoricalStats(entry.getKey());
 
-            synchronized (precisionQueue.getServiceQueue()) {
+                PrecisionQueue precisionQueue = precisionQueuesCache.findById(entry.getKey());
+                int totalAgents = precisionQueue.getAssociatedAgents().size();
+
                 for (Task task : entry.getValue()) {
                     int position = precisionQueue.getPosition(task);
 
@@ -156,10 +166,14 @@ public class TasksService {
                     responses.add(new TaskEwtResponse(task, ewt, position));
                 }
             }
-        }
 
-        logger.info("Request to fetch the EWT and position for conversation id: {} handled", conversationId);
-        return new ResponseEntity<>(responses, HttpStatus.OK);
+
+            logger.info("Request to fetch the EWT and position for conversation id: {} handled", conversationId);
+            return new ResponseEntity<>(responses, HttpStatus.OK);
+
+        } finally {
+            conversationLock.unlock(conversationId);
+        }
     }
 
     /**
@@ -210,26 +224,32 @@ public class TasksService {
         String mrdId = channelSession.getChannel().getChannelType().getMediaRoutingDomain();
         String conversationId = channelSession.getConversationId();
 
-        List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId).stream()
-                .filter(t -> t.getState().getName().equals(Enums.TaskStateName.ACTIVE))
-                .toList();
+        try {
+            conversationLock.lock(conversationId);
 
-        for (Task task : tasks) {
-            TaskMedia media = task.findMediaByMrdId(mrdId);
+            List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId).stream()
+                    .filter(t -> t.getState().getName().equals(Enums.TaskStateName.ACTIVE))
+                    .toList();
 
-            if (media == null) {
-                continue;
-            }
+            for (Task task : tasks) {
+                TaskMedia media = task.findMediaByMrdId(mrdId);
 
-            boolean isRemoved = media.removeChannelSession(channelSession.getId());
+                if (media == null) {
+                    continue;
+                }
 
-            if (isRemoved) {
-                this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
+                boolean isRemoved = media.removeChannelSession(channelSession.getId());
 
-                if (media.getChannelSessions().isEmpty() && !media.getState().equals(TaskMediaState.ACTIVE)) {
-                    this.taskManager.revokeInProcessTask(task, false);
+                if (isRemoved) {
+                    this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
+
+                    if (media.getChannelSessions().isEmpty() && !media.getState().equals(TaskMediaState.ACTIVE)) {
+                        this.taskManager.revokeInProcessTask(task, false);
+                    }
                 }
             }
+        } finally {
+            conversationLock.unlock(conversationId);
         }
     }
 }

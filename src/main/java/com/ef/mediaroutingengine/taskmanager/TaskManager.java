@@ -243,7 +243,7 @@ public class TaskManager {
             if (media.getState().equals(TaskMediaState.QUEUED)) {
                 this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
                 this.stepTimerService.stop(task.getId());
-                this.precisionQueuesPool.findById(media.getQueue().getId()).removeByTaskId(task.getId());
+                this.precisionQueuesPool.findById(media.getQueue().getId()).removeTask(task.getId());
             } else if (media.getState().equals(TaskMediaState.RESERVED)) {
                 if (!Enums.TaskStateReasonCode.RONA.equals(state.getReasonCode())) {
                     this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
@@ -405,11 +405,9 @@ public class TaskManager {
         if (media.getState().equals(TaskMediaState.QUEUED)) {
             PrecisionQueue queue = this.precisionQueuesPool.findById(media.getQueue().getId());
 
-            synchronized (queue.getServiceQueue()) {
-                this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
-                this.stepTimerService.stop(task.getId());
-                queue.removeByTaskId(task.getId());
-            }
+            this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
+            this.stepTimerService.stop(task.getId());
+            queue.removeTask(task.getId());
         } else if (media.getState().equals(TaskMediaState.RESERVED)) {
             this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
             this.agentsPool.findBy(task.getAssignedTo()).removeReservedTask();

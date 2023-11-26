@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.taskmanager.dto;
 
-import com.ef.cim.objectmodel.task.TaskMediaState;
+import com.ef.cim.objectmodel.task.TaskState;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -10,22 +10,22 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * The type Media state change req.
+ * The type Task state change req.
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class MediaStateChangeReq {
+public class TaskStateChangeReq {
     /**
      * The Conversation id.
      */
     @NotBlank
-    private String conversationId;
+    String conversationId;
     /**
      * The State.
      */
     @NotNull
-    private TaskMediaState state;
+    TaskState state;
 }

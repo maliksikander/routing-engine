@@ -2,10 +2,10 @@ package com.ef.mediaroutingengine.taskmanager.controller;
 
 import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.task.TaskState;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.taskmanager.dto.MediaStateChangeReq;
+import com.ef.mediaroutingengine.taskmanager.dto.TaskStateChangeReq;
 import com.ef.mediaroutingengine.taskmanager.service.TasksService;
 import com.ef.mediaroutingengine.taskmanager.service.taskmediastate.TaskMediaStateService;
 import com.ef.mediaroutingengine.taskmanager.service.taskstate.TaskStateListener;
@@ -94,7 +94,7 @@ public class TasksController {
     @CrossOrigin(origins = "*")
     @PostMapping("/{taskId}/change-state")
     public ResponseEntity<Object> changeTaskState(@PathVariable String taskId,
-                                                  @Valid @RequestBody TaskState request) {
+                                                  @Valid @RequestBody TaskStateChangeReq request) {
         return ResponseEntity.ok().body(taskStateListener.propertyChange(taskId, request));
     }
 
@@ -110,7 +110,7 @@ public class TasksController {
     public ResponseEntity<Object> changeTaskMediaState(@PathVariable String taskId,
                                                        @PathVariable String mediaId,
                                                        @Valid @RequestBody MediaStateChangeReq request) {
-        return ResponseEntity.ok().body(this.taskMediaStateService.changeState(taskId, mediaId, request.getState()));
+        return ResponseEntity.ok().body(this.taskMediaStateService.changeState(taskId, mediaId, request));
     }
 
     /**
