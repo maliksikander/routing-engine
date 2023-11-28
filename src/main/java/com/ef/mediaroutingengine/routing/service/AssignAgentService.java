@@ -78,8 +78,11 @@ public class AssignAgentService {
         try {
             conversationLock.lock(conversationId);
 
-            List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId);
-            tasks.forEach(t -> this.taskManager.revokeInProcessTask(t, true));
+            // Get Conversation Tasks | Revoke Auto-JoinAble, InProcess Tasks | Collect the tasks which are not revoked.
+            List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId).stream()
+                    .filter(t -> !taskManager.revokeInProcessTask(t, true))
+                    .toList();
+
             Task task = this.getTaskOfAgent(agent, tasks);
 
             if (task == null) {
