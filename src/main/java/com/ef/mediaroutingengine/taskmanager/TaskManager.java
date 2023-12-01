@@ -373,6 +373,8 @@ public class TaskManager {
         List<String> mediaStateChanges = this.closeCurrentActive(agent, task, media);
 
         media.setState(TaskMediaState.ACTIVE);
+        media.setAnswerTime(System.currentTimeMillis());
+
         mediaStateChanges.add(media.getId());
 
         ChannelSession session = media.getRequestSession();

@@ -93,25 +93,24 @@ public class AssignAgentService {
                 return task;
             }
 
-            TaskMedia taskMedia = task.findMediaByMrdId(mrdId);
+            TaskMedia media = task.findMediaByMrdId(mrdId);
 
-            if (taskMedia == null) {
-                taskMedia = this.createMedia(req, task.getId(), mrdId);
-                task.addMedia(taskMedia);
-                this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
+            if (media == null) {
+                media = this.createMedia(req, task.getId(), mrdId);
+                task.addMedia(media);
             } else {
-                taskMedia.setState(req.getState());
+                media.setState(req.getState());
             }
 
             if (req.getState().equals(TaskMediaState.ACTIVE)) {
-                this.taskManager.activateMedia(task, taskMedia);
+                taskManager.activateMedia(task, media);
             } else {
-                this.jmsCommunicator.publishTaskStateChanged(task, taskMedia.getRequestSession(), false,
-                        taskMedia.getId());
+                tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
+                jmsCommunicator.publishTaskStateChanged(task, media.getRequestSession(), false, media.getId());
             }
 
             if (req.isOfferToAgent()) {
-                restRequest.postAssignTask(task, taskMedia, req.getState(), agent.toCcUser(), true);
+                restRequest.postAssignTask(task, media, req.getState(), agent.toCcUser(), true);
             }
 
             return task;
@@ -151,7 +150,13 @@ public class AssignAgentService {
         MrdType mrdType = this.mrdPool.getType(mrdId);
         List<ChannelSession> sessions = TaskUtility.getSessions(req.getChannelSessions(), reqSession, mrdId, mrdType);
 
-        return new TaskMedia(mrdId, taskId, null, req.getType(), 1, req.getState(), reqSession, sessions);
+        TaskMedia media = new TaskMedia(mrdId, taskId, null, req.getType(), 1, req.getState(), reqSession, sessions);
+
+        if (req.getState().equals(TaskMediaState.ACTIVE)) {
+            media.setAnswerTime(System.currentTimeMillis());
+        }
+
+        return media;
     }
 
     private Task getTaskOfAgent(Agent agent, List<Task> tasks) {
