@@ -1,10 +1,13 @@
 package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.cim.objectmodel.ChannelSession;
+import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MrdType;
 import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
+import com.ef.cim.objectmodel.task.TaskType;
+import com.ef.mediaroutingengine.global.exceptions.ConflictException;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.locks.ConversationLock;
 import com.ef.mediaroutingengine.routing.dto.AssignAgentRequest;
@@ -78,6 +81,10 @@ public class AssignAgentService {
         try {
             conversationLock.lock(conversationId);
 
+            if (isNamedAgentTransfer(req.getType())) {
+                return handleNamedAgentTransfer(req, agent, mrdId, conversationId);
+            }
+
             // Get Conversation Tasks | Revoke Auto-JoinAble, InProcess Tasks | Collect the tasks which are not revoked.
             List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId).stream()
                     .filter(t -> !taskManager.revokeInProcessTask(t, true))
@@ -145,6 +152,27 @@ public class AssignAgentService {
         return task;
     }
 
+    private Task handleNamedAgentTransfer(AssignAgentRequest req, Agent agent, String mrdId, String conversationId) {
+        if (!agent.isAvailableForRouting(mrdId, conversationId)) {
+            throw new ConflictException("Agent is not in an available state");
+        }
+
+        // In case client has provided wrong state in the request
+        req.setState(TaskMediaState.RESERVED);
+
+        TaskMedia media = this.createMedia(req, UUID.randomUUID().toString(), mrdId);
+        Task task = TaskUtility.createNewTask(conversationId, media, agent.toTaskAgent());
+        agent.reserveTask(task, media);
+
+        this.jmsCommunicator.publishTaskStateChanged(task, req.getRequestSession(), true, media.getId());
+
+        if (req.isOfferToAgent()) {
+            this.restRequest.postAssignTask(task, media, req.getState(), agent.toCcUser(), true);
+        }
+
+        return task;
+    }
+
     private TaskMedia createMedia(AssignAgentRequest req, String taskId, String mrdId) {
         ChannelSession reqSession = req.getRequestSession();
         MrdType mrdType = this.mrdPool.getType(mrdId);
@@ -167,5 +195,10 @@ public class AssignAgentService {
         }
 
         return null;
+    }
+
+    private boolean isNamedAgentTransfer(TaskType type) {
+        return type.getDirection().equals(Enums.TaskTypeDirection.DIRECT_TRANSFER)
+                && type.getMode().equals(Enums.TaskTypeMode.AGENT);
     }
 }

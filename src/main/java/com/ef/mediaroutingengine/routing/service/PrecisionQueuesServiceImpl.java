@@ -123,11 +123,12 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
             throw new NotFoundException(errorMessage);
         }
 
-        if (queueId != null && repository.existsById(queueId)) {
-            PrecisionQueueEntity precisionQueue = this.repository.findById(queueId).get();
+        if (queueId != null && this.repository.existsById(queueId)) {
+            PrecisionQueueEntity precisionQueue = this.repository.findById(queueId).orElse(null);
             logger.debug("PrecisionQueue existed in DB. | PrecisionQueue:  {}", precisionQueue);
             return new ResponseEntity<>(precisionQueue, HttpStatus.OK);
         }
+
         return new ResponseEntity<>(repository.findAll(), HttpStatus.OK);
     }
 
@@ -194,14 +195,20 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      */
     @Override
     public List<QueuesWithAvailableAgentsRes> getQueuesWithAvailableAgents(String conversationId, Agent agent) {
-        String mrdId = agent.getTaskByConversationId(conversationId).getMrdId();
+        try {
+            conversationLock.lock(conversationId);
 
-        return this.precisionQueuesPool.toList().stream()
-                .filter(p -> p.getMrd().getId().equals(mrdId))
-                .map(p -> new QueuesWithAvailableAgentsRes(p, p.getAssociatedAgents().stream()
-                        .filter(a -> a.isAvailableForRouting(mrdId, conversationId))
-                        .map(a -> new QueueAvailableAgent(a, mrdId)).toList())
-                ).toList();
+            String mrdId = agent.getTaskByConversationId(conversationId).getMrdId();
+            return this.precisionQueuesPool.toList().stream()
+                    .filter(p -> p.getMrd().getId().equals(mrdId))
+                    .map(p -> new QueuesWithAvailableAgentsRes(p, p.getAssociatedAgents().stream()
+                            .filter(a -> a.isAvailableForRouting(mrdId, conversationId))
+                            .map(a -> new QueueAvailableAgent(a, mrdId)).toList())
+                    ).toList();
+
+        } finally {
+            conversationLock.unlock(conversationId);
+        }
     }
 
     /**
