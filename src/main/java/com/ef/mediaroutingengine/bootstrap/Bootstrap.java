@@ -15,9 +15,6 @@ import com.ef.cim.objectmodel.StepEntity;
 import com.ef.cim.objectmodel.TermEntity;
 import com.ef.cim.objectmodel.enums.MrdTypeName;
 import com.ef.cim.objectmodel.task.Task;
-import com.ef.cim.objectmodel.task.TaskMedia;
-import com.ef.cim.objectmodel.task.TaskMediaState;
-import com.ef.cim.objectmodel.task.TaskState;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
@@ -36,7 +33,6 @@ import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import javax.jms.JMSException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -187,11 +183,8 @@ public class Bootstrap {
         logger.debug("Precision-Queues pool loaded from DB");
 
         // Load tasks from Tasks Repository
-
         List<Task> tasks = this.tasksRepository.findAll();
-        this.handleTasksWithExpiredAgentRequestTtl(tasks);
-        this.associateTaskWithAgents(tasks);
-        this.taskManager.enqueueQueuedTasksOnFailover(tasks);
+        this.taskManager.loadTasksOnStartup(tasks);
 
         logger.info("Routing Attributes: {}", this.routingAttributesPool.size());
         logger.info("Agents: {}", this.agentsPool.size());
@@ -200,31 +193,6 @@ public class Bootstrap {
         logger.info("Tasks: {}", tasks.size());
 
         logger.debug(Constants.METHOD_ENDED);
-    }
-
-    private void handleTasksWithExpiredAgentRequestTtl(List<Task> tasks) {
-        ListIterator<Task> taskItr = tasks.listIterator();
-        while (taskItr.hasNext()) {
-            Task task = taskItr.next();
-
-            for (TaskMedia media : task.getActiveMedia()) {
-                if (media.getState().equals(TaskMediaState.QUEUED) && isAgentRequestTtlExpired(media)) {
-                    TaskState state = new TaskState(Enums.TaskStateName.CLOSED,
-                            Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE);
-                    this.taskManager.closeTask(task, state);
-                    taskItr.remove();
-                } else if (media.getState().equals(TaskMediaState.RESERVED) && isAgentRequestTtlExpired(media)) {
-                    media.setMarkedForDeletion(true);
-                    this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
-                }
-            }
-        }
-    }
-
-    private boolean isAgentRequestTtlExpired(TaskMedia media) {
-        int ttl = media.getRequestSession().getChannel().getChannelConfig().getRoutingPolicy().getAgentRequestTtl();
-        long delay = ttl * 1000L;
-        return System.currentTimeMillis() - media.getEnqueueTime() >= delay;
     }
 
     private List<PrecisionQueueEntity> getQueuesFromConfigDb() {
@@ -316,24 +284,6 @@ public class Bootstrap {
         }
 
         return ccUsers;
-    }
-
-    /**
-     * Associate task with agent.
-     */
-    private void associateTaskWithAgents(List<Task> tasks) {
-        for (Task task : tasks) {
-            Agent agent = this.agentsPool.findBy(task.getAssignedTo());
-            for (TaskMedia media : task.getActiveMedia()) {
-                if (agent != null) {
-                    if (media.getState().equals(TaskMediaState.RESERVED)) {
-                        agent.reserveTask(task, media);
-                    } else if (media.getState().equals(TaskMediaState.ACTIVE)) {
-                        agent.addActiveTask(task, media);
-                    }
-                }
-            }
-        }
     }
 
     /**

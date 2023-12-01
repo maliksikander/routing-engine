@@ -25,6 +25,7 @@ import com.ef.mediaroutingengine.routing.utility.TaskUtility;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,6 +113,7 @@ public class TaskManager {
      * Enqueue task.
      *
      * @param req   the request
+     * @param mrdId the mrd id
      * @param queue the queue
      */
     public void enqueueTask(AssignResourceRequest req, String mrdId, PrecisionQueue queue) {
@@ -170,6 +172,16 @@ public class TaskManager {
         return false;
     }
 
+    /**
+     * Create media task media.
+     *
+     * @param req    the req
+     * @param taskId the task id
+     * @param mrdId  the mrd id
+     * @param state  the state
+     * @param queue  the queue
+     * @return the task media
+     */
     private TaskMedia createMedia(AssignResourceRequest req, String taskId, String mrdId, TaskMediaState state,
                                   TaskQueue queue) {
         ChannelSession reqSession = req.getRequestSession();
@@ -180,36 +192,73 @@ public class TaskManager {
     }
 
     /**
-     * Enqueues task all present in the redis DB at start of application.
+     * Load tasks on startup.
      *
      * @param tasks the tasks
      */
-    public void enqueueQueuedTasksOnFailover(List<Task> tasks) {
+    public void loadTasksOnStartup(List<Task> tasks) {
         long queuedTasks = 0L;
-        for (Task task : tasks) {
+        ListIterator<Task> itr = tasks.listIterator();
 
-            TaskMedia queuedMedia = task.findMediaByState(TaskMediaState.QUEUED);
+        while (itr.hasNext()) {
+            Task task = itr.next();
+            Agent agent = this.agentsPool.findBy(task.getAssignedTo());
 
-            if (queuedMedia == null) {
-                continue;
-            }
+            for (TaskMedia media : task.getActiveMedia()) {
+                PrecisionQueue queue = this.precisionQueuesPool.findById(media.getQueue().getId());
 
-            PrecisionQueue queue = this.precisionQueuesPool.findById(queuedMedia.getQueue().getId());
-            if (queue != null) {
-                this.agentRequestTimerService.startOnFailover(task, queuedMedia, queue.getId());
+                if (media.getState().equals(TaskMediaState.QUEUED)) {
+                    if (this.enqueueTaskOnStartup(task, media, queue)) {
+                        queuedTasks++;
+                    } else {
+                        itr.remove();
+                    }
 
-                QueueTask queueTask = new QueueTask(task.getConversationId(), queuedMedia);
-                queue.enqueue(queueTask);
-                logger.debug("Task: {} enqueued in Precision-Queue: {}", task.getId(), queue.getId());
-
-                this.stepTimerService.startNext(queueTask, queue, 0);
-                queuedTasks++;
+                    break;
+                } else if (media.getState().equals(TaskMediaState.RESERVED)) {
+                    this.agentRequestTimerService.startOnFailover(task, media, queue.getId());
+                    agent.reserveTask(task, media);
+                } else if (media.getState().equals(TaskMediaState.ACTIVE)) {
+                    agent.addActiveTask(task, media);
+                }
             }
         }
 
         if (queuedTasks > 0) {
             this.precisionQueuesPool.publishOnFailover();
         }
+    }
+
+    /**
+     * Enqueue task on startup boolean.
+     *
+     * @param task  the task
+     * @param media the media
+     * @param queue the queue
+     * @return the boolean
+     */
+    private boolean enqueueTaskOnStartup(Task task, TaskMedia media, PrecisionQueue queue) {
+        if (this.agentRequestTimerService.startOnFailover(task, media, queue.getId())) {
+            QueueTask queueTask = new QueueTask(task.getConversationId(), media);
+            queue.enqueue(queueTask);
+            this.stepTimerService.startNext(queueTask, queue, 0);
+
+            logger.debug("Task: {} enqueued in Queue: {} on startup", task.getId(), queue.getId());
+            return true;
+        }
+
+        this.closeTask(task, Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE);
+        return false;
+    }
+
+    /**
+     * Close task.
+     *
+     * @param task       the task
+     * @param reasonCode the reason code
+     */
+    public void closeTask(Task task, Enums.TaskStateReasonCode reasonCode) {
+        this.closeTask(task, new TaskState(Enums.TaskStateName.CLOSED, reasonCode));
     }
 
     /**
@@ -233,7 +282,9 @@ public class TaskManager {
      * Close task medias.
      *
      * @param task  the task
+     * @param state the state
      * @param agent the agent
+     * @return the string [ ]
      */
     private String[] closeTaskMedias(Task task, TaskState state, Agent agent) {
         String[] mediaStateChanges = new String[task.getActiveMedia().size()];
@@ -279,7 +330,7 @@ public class TaskManager {
         String conversationId = task.getConversationId();
         TaskMedia reservedMedia = task.findMediaByState(TaskMediaState.RESERVED);
 
-        if (reservedMedia.isMarkedForDeletion()) {
+        if (!agentRequestTimerService.isRunning(task.getAgentRequestTtlTimerId())) {
             state.setReasonCode(Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE);
             this.closeTask(task, state);
             this.jmsCommunicator.publishNoAgentAvailable(conversationId, reservedMedia);
@@ -290,6 +341,11 @@ public class TaskManager {
         }
     }
 
+    /**
+     * Enqueue task on re route.
+     *
+     * @param task the task
+     */
     private void enqueueTaskOnReRoute(Task task) {
         this.tasksRepository.insert(task);
 
@@ -349,6 +405,7 @@ public class TaskManager {
      * @param agent           the agent
      * @param task            the task
      * @param activatingMedia the activating media
+     * @return the list
      */
     private List<String> closeCurrentActive(Agent agent, Task task, TaskMedia activatingMedia) {
         List<String> mediaStateChanges = new ArrayList<>();
@@ -369,7 +426,8 @@ public class TaskManager {
     /**
      * Revoke in process task boolean.
      *
-     * @param task the task
+     * @param task         the task
+     * @param autoJoinAble the auto join able
      * @return the boolean
      */
     public boolean revokeInProcessTask(Task task, boolean autoJoinAble) {
@@ -401,6 +459,12 @@ public class TaskManager {
         return false;
     }
 
+    /**
+     * Revoke in process media.
+     *
+     * @param task  the task
+     * @param media the media
+     */
     private void revokeInProcessMedia(Task task, TaskMedia media) {
         if (media.getState().equals(TaskMediaState.QUEUED)) {
             PrecisionQueue queue = this.precisionQueuesPool.findById(media.getQueue().getId());

@@ -90,11 +90,17 @@ public class AgentRequestTimerService {
      * @param media   the media
      * @param queueId the queue id
      */
-    public void startOnFailover(Task task, TaskMedia media, String queueId) {
+    public boolean startOnFailover(Task task, TaskMedia media, String queueId) {
         long delay = getDelay(media.getRequestSession()) - (System.currentTimeMillis() - media.getEnqueueTime());
-        AgentReqTimerEntity entity = new AgentReqTimerEntity(task.getId(), media.getId(), queueId);
 
+        if (delay < 1L) {
+            return false;
+        }
+
+        AgentReqTimerEntity entity = new AgentReqTimerEntity(task.getId(), media.getId(), queueId);
         this.schedule(task.getAgentRequestTtlTimerId(), task.getConversationId(), entity, delay);
+
+        return true;
     }
 
     /**
@@ -145,6 +151,10 @@ public class AgentRequestTimerService {
             this.timers.remove(timerId);
             this.tasksRepository.deleteAgentReqTimerEntity(timerId);
         }
+    }
+
+    public boolean isRunning(String timerId) {
+        return timers.get(timerId) != null;
     }
 
     /**
@@ -206,8 +216,6 @@ public class AgentRequestTimerService {
 
                 if (media.getState().equals(TaskMediaState.QUEUED)) {
                     handleQueued(task, media, queue);
-                } else if (media.getState().equals(TaskMediaState.RESERVED)) {
-                    this.handleReserved(task, media);
                 }
 
                 AgentRequestTimerService.this.stop(this.timerId);
@@ -240,18 +248,6 @@ public class AgentRequestTimerService {
             AgentRequestTimerService.this.jmsCommunicator.publishNoAgentAvailable(session.getConversationId(), media);
 
             logger.info("Queued task: {} removed successfully", task.getId());
-        }
-
-        /**
-         * Handle reserved.
-         *
-         * @param task  the task
-         * @param media the media
-         */
-        private void handleReserved(Task task, TaskMedia media) {
-            media.setMarkedForDeletion(true);
-            AgentRequestTimerService.this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
-            logger.info("In process task media: {} in Reserved state, task is marked for deletion", media.getId());
         }
     }
 }
