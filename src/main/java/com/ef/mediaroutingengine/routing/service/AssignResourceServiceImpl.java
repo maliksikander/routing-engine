@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.routing.service;
 
+import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.dto.AssignResourceRequest;
 import com.ef.cim.objectmodel.task.Task;
@@ -83,10 +84,8 @@ public class AssignResourceServiceImpl implements AssignResourceService {
                 return;
             }
 
-            String customerIdentifier = req.getRequestSession().getChannelData().getChannelCustomerIdentifier();
-
-            if (this.taskExistByCustomerIdentifier(tasks, customerIdentifier)) {
-                logger.info("Tasks exist for customer identifier: {}, returning...", customerIdentifier);
+            if (this.taskExistsForChannelSession(tasks, req.getRequestSession())) {
+                logger.info("Task(s) exist for channelSession: {}, returning...", req.getRequestSession().getId());
                 return;
             }
 
@@ -130,9 +129,8 @@ public class AssignResourceServiceImpl implements AssignResourceService {
         return tasks.stream().anyMatch(t -> t.findInProcessMedia() != null);
     }
 
-    private boolean taskExistByCustomerIdentifier(List<Task> tasks, String customerIdentifier) {
+    private boolean taskExistsForChannelSession(List<Task> tasks, ChannelSession channelSession) {
         return tasks.stream().anyMatch(t -> t.getActiveMedia().stream()
-                .anyMatch(m -> m.getRequestSession().getChannelData().getChannelCustomerIdentifier()
-                        .equals(customerIdentifier)));
+                .anyMatch(m -> m.getRequestSession().getId().equals(channelSession.getId())));
     }
 }
