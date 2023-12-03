@@ -145,18 +145,11 @@ public class TaskManager {
                                            TaskQueue queue) {
         for (Task task : tasks) {
             Agent agent = this.agentsPool.findBy(task.getAssignedTo());
+            TaskMedia media = this.createMedia(req, task.getId(), mrdId, TaskMediaState.RESERVED, queue);
 
-            if (agent == null) {
-                continue;
-            }
-
-            if (agent.isAvailableForReservation(mrdId)) {
-                TaskMedia media = this.createMedia(req, task.getId(), mrdId, TaskMediaState.RESERVED, queue);
-
+            if (agent.isAvailableForReservation(mrdId) && agent.reserveTask(task, media)) {
                 task.addMedia(media);
                 this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
-
-                agent.reserveTask(task, media);
 
                 if (req.isOfferToAgent()) {
                     restRequest.postAssignTask(task, media, media.getState(), agent.toCcUser(), true);

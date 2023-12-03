@@ -202,7 +202,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
             return this.precisionQueuesPool.toList().stream()
                     .filter(p -> p.getMrd().getId().equals(mrdId))
                     .map(p -> new QueuesWithAvailableAgentsRes(p, p.getAssociatedAgents().stream()
-                            .filter(a -> a.isAvailableForRouting(mrdId, conversationId))
+                            .filter(a -> a.isAvailableForReservation(mrdId, conversationId))
                             .map(a -> new QueueAvailableAgent(a, mrdId)).toList())
                     ).toList();
 
