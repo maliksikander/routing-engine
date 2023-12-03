@@ -153,24 +153,24 @@ public class AssignAgentService {
     }
 
     private Task handleNamedAgentTransfer(AssignAgentRequest req, Agent agent, String mrdId, String conversationId) {
-        if (!agent.isAvailableForRouting(mrdId, conversationId)) {
-            throw new ConflictException("Agent is not in an available state");
-        }
-
         // In case client has provided wrong state in the request
         req.setState(TaskMediaState.RESERVED);
 
         TaskMedia media = this.createMedia(req, UUID.randomUUID().toString(), mrdId);
         Task task = TaskUtility.createNewTask(conversationId, media, agent.toTaskAgent());
-        agent.reserveTask(task, media);
 
-        this.jmsCommunicator.publishTaskStateChanged(task, req.getRequestSession(), true, media.getId());
+        if (agent.isAvailableForReservation(mrdId, conversationId) && agent.reserveTask(task, media)) {
+            this.tasksRepository.insert(task);
+            this.jmsCommunicator.publishTaskStateChanged(task, req.getRequestSession(), true, media.getId());
 
-        if (req.isOfferToAgent()) {
-            this.restRequest.postAssignTask(task, media, req.getState(), agent.toCcUser(), true);
+            if (req.isOfferToAgent()) {
+                this.restRequest.postAssignTask(task, media, req.getState(), agent.toCcUser(), true);
+            }
+
+            return task;
         }
 
-        return task;
+        throw new ConflictException("Agent is not in an available state");
     }
 
     private TaskMedia createMedia(AssignAgentRequest req, String taskId, String mrdId) {
