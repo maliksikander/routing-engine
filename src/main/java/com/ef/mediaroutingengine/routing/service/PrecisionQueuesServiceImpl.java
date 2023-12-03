@@ -201,7 +201,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
             AtomicInteger totalAvailableAgents = new AtomicInteger(0);
 
             pq.getSteps().forEach(step -> step.getAssociatedAgents().forEach(agent -> {
-                if (agent != null && agent.isAvailableForRouting(mrdId, conversationId)) {
+                if (agent != null && agent.isAvailableForReservation(mrdId, conversationId)) {
                     totalAvailableAgents.getAndIncrement();
                 }
             }));

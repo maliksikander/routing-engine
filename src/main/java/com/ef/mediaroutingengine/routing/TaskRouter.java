@@ -202,7 +202,7 @@ public class TaskRouter implements PropertyChangeListener {
         if (lastAssignedAgentId != null) {
             Agent agent = this.agentsPool.findBy(lastAssignedAgentId);
 
-            if (agent != null && agent.isAvailableForRouting(media.getMrdId(), task.getConversationId())) {
+            if (agent != null && agent.isAvailableForReservation(media.getMrdId(), task.getConversationId())) {
                 assignTaskTo(agent, task, media);
                 return true;
             }
@@ -219,16 +219,15 @@ public class TaskRouter implements PropertyChangeListener {
      * @return the available agent with the least number of active tasks
      */
     Agent getAvailableAgentWithLeastActiveTasks(Step step, String conversationId) {
-        List<Agent> sortedAgentList = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE,
-                this.precisionQueue.getMrd().getId());
+        String mrdId = this.precisionQueue.getMrd().getId();
+        List<Agent> sortedAgentList = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE, mrdId);
         int lowestNumberOfTasks = Integer.MAX_VALUE;
         Agent result = null;
-        for (Agent agent : sortedAgentList) {
 
-            String mrdId = this.precisionQueue.getMrd().getId();
+        for (Agent agent : sortedAgentList) {
             int noOfTasksOnMrd = agent.getNoOfActiveQueueTasks(mrdId);
 
-            if (agent.isAvailableForRouting(mrdId, conversationId) && noOfTasksOnMrd < lowestNumberOfTasks) {
+            if (agent.isAvailableForReservation(mrdId, conversationId) && noOfTasksOnMrd < lowestNumberOfTasks) {
                 lowestNumberOfTasks = noOfTasksOnMrd;
                 result = agent;
             }
@@ -245,18 +244,24 @@ public class TaskRouter implements PropertyChangeListener {
      */
     private void assignTaskTo(Agent agent, Task task, TaskMedia media) {
         try {
+            boolean isReserved = agent.reserveTask(task, media);
+
+            if (!isReserved) {
+                return;
+            }
+
             if (this.offerToAgent(task, media, agent)) {
                 task.setAssignedTo(agent.toTaskAgent());
                 media.setState(TaskMediaState.RESERVED);
                 this.tasksRepository.update(task);
-
-                agent.reserveTask(task, media);
 
                 this.stepTimerService.stop(task.getId());
                 this.precisionQueue.dequeue();
 
                 this.jmsCommunicator.publishTaskStateChanged(task, media.getRequestSession(), false, media.getId());
                 this.jmsCommunicator.publishAgentReserved(task, media, agent.toCcUser());
+            } else {
+                agent.removeReservedTask();
             }
         } catch (Exception e) {
             logger.error(ExceptionUtils.getMessage(e));
