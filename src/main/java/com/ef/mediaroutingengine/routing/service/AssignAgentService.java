@@ -1,12 +1,10 @@
 package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MrdType;
 import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
-import com.ef.cim.objectmodel.task.TaskType;
 import com.ef.mediaroutingengine.global.exceptions.ConflictException;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.global.locks.ConversationLock;
@@ -81,7 +79,7 @@ public class AssignAgentService {
         try {
             conversationLock.lock(conversationId);
 
-            if (isNamedAgentTransfer(req.getType())) {
+            if (TaskUtility.isNamedAgentTransfer(req.getType())) {
                 return handleNamedAgentTransfer(req, agent, mrdId, conversationId);
             }
 
@@ -195,10 +193,5 @@ public class AssignAgentService {
         }
 
         return null;
-    }
-
-    private boolean isNamedAgentTransfer(TaskType type) {
-        return type.getDirection().equals(Enums.TaskTypeDirection.DIRECT_TRANSFER)
-                && type.getMode().equals(Enums.TaskTypeMode.AGENT);
     }
 }

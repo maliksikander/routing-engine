@@ -9,6 +9,7 @@ import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.cim.objectmodel.task.TaskQueue;
 import com.ef.cim.objectmodel.task.TaskState;
+import com.ef.cim.objectmodel.task.TaskType;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.AgentRequestTimerService;
@@ -382,7 +383,8 @@ public class TaskManager {
 
         agent.addActiveTask(task, media);
 
-        if (media.getType().getMode().equals(Enums.TaskTypeMode.QUEUE)) {
+        TaskType taskType = media.getType();
+        if (taskType.getMode().equals(Enums.TaskTypeMode.QUEUE) || TaskUtility.isNamedAgentTransfer(taskType)) {
             this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
             agent.removeReservedTask();
 

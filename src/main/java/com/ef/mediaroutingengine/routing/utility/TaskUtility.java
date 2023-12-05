@@ -7,6 +7,7 @@ import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskAgent;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskState;
+import com.ef.cim.objectmodel.task.TaskType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -87,5 +88,10 @@ public final class TaskUtility {
         List<ChannelSession> channelSessions = new ArrayList<>();
         channelSessions.add(requestSession);
         return channelSessions;
+    }
+
+    public static boolean isNamedAgentTransfer(TaskType type) {
+        return Enums.TaskTypeMode.AGENT.equals(type.getMode())
+                && Enums.TaskTypeDirection.DIRECT_TRANSFER.equals(type.getDirection());
     }
 }
