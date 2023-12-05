@@ -11,6 +11,7 @@ import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskAgent;
 import com.ef.cim.objectmodel.task.TaskMedia;
+import com.ef.mediaroutingengine.routing.utility.TaskUtility;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -186,7 +187,8 @@ public class Agent {
         }
 
         return (int) agentTasks.stream()
-                .filter(t -> t.getMode().equals(Enums.TaskTypeMode.QUEUE))
+                .filter(t -> t.getTaskType().getMode().equals(Enums.TaskTypeMode.QUEUE)
+                        || TaskUtility.isNamedAgentTransfer(t.getTaskType()))
                 .count();
     }
 

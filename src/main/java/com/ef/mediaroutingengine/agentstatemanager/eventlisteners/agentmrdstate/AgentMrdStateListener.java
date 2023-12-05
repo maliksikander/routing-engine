@@ -159,7 +159,7 @@ public class AgentMrdStateListener {
         agentMrdState.setState(state);
         logger.debug("agent {} MRDs state after updating in memory agent object {} ",
                 agent.getKeycloakUser().getUsername(),
-                agent.getAgentMrdStates().toString());
+                agent.getAgentMrdStates());
 
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
     }
@@ -221,8 +221,12 @@ public class AgentMrdStateListener {
      * @param media the media
      */
     public void changeStateOnMediaActive(Agent agent, TaskMedia media) {
+        logger.debug("method started");
+
         String mrdId = media.getMrdId();
         MrdType mrdType = this.mrdPool.getType(mrdId);
+
+        logger.debug("MrdType: {}", mrdType);
 
         if (!mrdType.isManagedByRe()) {
             return;
@@ -231,10 +235,14 @@ public class AgentMrdStateListener {
         int noOfTasks = agent.getNoOfActiveQueueTasks(mrdId);
         int maxAllowedTasks = agent.getAgentMrdState(mrdId).getMaxAgentTasks();
 
+        logger.debug("noOfTasks: {}, maxAllowedTasks: {}", noOfTasks, maxAllowedTasks);
+
         if (noOfTasks >= maxAllowedTasks) {
             this.propertyChange(agent, mrdId, Enums.AgentMrdStateName.BUSY, false);
         } else if (noOfTasks == 1) {
             this.propertyChange(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, false);
         }
+
+        logger.debug("method ended");
     }
 }

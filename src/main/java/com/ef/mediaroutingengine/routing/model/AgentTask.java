@@ -1,9 +1,9 @@
 package com.ef.mediaroutingengine.routing.model;
 
-import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskQueue;
+import com.ef.cim.objectmodel.task.TaskType;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,7 +24,7 @@ public class AgentTask {
     private String taskMediaId;
     private String conversationId;
     private String mrdId;
-    private Enums.TaskTypeMode mode;
+    private TaskType taskType;
     private TaskQueue queue;
 
     /**
@@ -38,7 +38,7 @@ public class AgentTask {
         this.taskMediaId = taskMedia.getId();
         this.conversationId = task.getConversationId();
         this.mrdId = taskMedia.getMrdId();
-        this.mode = taskMedia.getType().getMode();
+        this.taskType = taskMedia.getType();
         this.queue = taskMedia.getQueue();
     }
 
