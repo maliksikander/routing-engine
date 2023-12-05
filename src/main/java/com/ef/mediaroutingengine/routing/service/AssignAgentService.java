@@ -168,7 +168,7 @@ public class AssignAgentService {
             return task;
         }
 
-        throw new ConflictException("Agent is not in an available state");
+        throw new ConflictException("Requested agent is not available");
     }
 
     private TaskMedia createMedia(AssignAgentRequest req, String taskId, String mrdId) {
