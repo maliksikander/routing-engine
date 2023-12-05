@@ -362,6 +362,7 @@ public class TaskManager {
      * @param media the media
      */
     public void activateMedia(Task task, TaskMedia media) {
+        logger.debug("method started");
         Agent agent = this.agentsPool.findBy(task.getAssignedTo());
 
         List<String> mediaStateChanges = this.closeCurrentActive(agent, task, media);
@@ -382,18 +383,27 @@ public class TaskManager {
         }
 
         agent.addActiveTask(task, media);
+        logger.debug("Agent Task added in agent's active tasks");
 
         TaskType taskType = media.getType();
+        logger.debug("Task type: {}", taskType);
+
         if (taskType.getMode().equals(Enums.TaskTypeMode.QUEUE) || TaskUtility.isNamedAgentTransfer(taskType)) {
             this.agentRequestTimerService.stop(task.getAgentRequestTtlTimerId());
+            logger.debug("Agent Request Time stopped");
+
             agent.removeReservedTask();
+            logger.debug("Agent reserved task removed");
 
             this.agentMrdStateListener.changeStateOnMediaActive(agent, media);
+            logger.debug("Agent MRD State updated");
 
             if (agent.getNoOfActiveQueueTasks(media.getMrdId()) > 1) {
                 this.precisionQueuesPool.publishRequestAccepted(media.getMrdId());
             }
         }
+
+        logger.debug("method ended");
     }
 
     /**
