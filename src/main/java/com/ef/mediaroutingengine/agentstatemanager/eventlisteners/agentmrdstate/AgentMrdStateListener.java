@@ -224,7 +224,7 @@ public class AgentMrdStateListener {
         String mrdId = media.getMrdId();
         MrdType mrdType = this.mrdPool.getType(mrdId);
 
-        if (!media.getType().getMode().equals(Enums.TaskTypeMode.QUEUE) || !mrdType.isManagedByRe()) {
+        if (!mrdType.isManagedByRe()) {
             return;
         }
 
