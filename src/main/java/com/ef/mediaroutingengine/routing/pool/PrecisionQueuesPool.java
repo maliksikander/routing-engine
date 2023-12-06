@@ -218,7 +218,7 @@ public class PrecisionQueuesPool {
         CompletableFuture.runAsync(() -> {
             MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
             for (PrecisionQueue queue : queues) {
-                queue.getTaskScheduler().propertyChange(evt);
+                queue.getTaskRouter().propertyChange(evt);
             }
             MDC.clear();
         });

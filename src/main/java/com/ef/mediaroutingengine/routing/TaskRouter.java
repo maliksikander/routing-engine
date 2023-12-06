@@ -3,8 +3,8 @@ package com.ef.mediaroutingengine.routing;
 import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskMedia;
 import com.ef.cim.objectmodel.task.TaskMediaState;
-import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.global.locks.ConversationLock;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.AgentSelectionCriteria;
 import com.ef.mediaroutingengine.routing.model.NewTaskPayload;
@@ -65,6 +65,7 @@ public class TaskRouter implements PropertyChangeListener {
      * The Tasks repository.
      */
     private final TasksRepository tasksRepository;
+    private final ConversationLock conversationLock = new ConversationLock();
 
     /**
      * Constructor.
@@ -99,10 +100,10 @@ public class TaskRouter implements PropertyChangeListener {
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        logger.debug("TaskRouter for queue: [{}] invoked on event [{}]",
-                precisionQueue.getName(), evt.getPropertyName());
+        String evtName = evt.getPropertyName();
+        logger.debug("TaskRouter for queue: [{}] invoked on event [{}]", precisionQueue.getName(), evtName);
 
-        if (evt.getPropertyName().equals(QueueEventName.NEW_REQUEST)) {
+        if (QueueEventName.NEW_REQUEST.equals(evtName)) {
             this.onNewRequest(evt);
         }
 
@@ -117,18 +118,24 @@ public class TaskRouter implements PropertyChangeListener {
 
                 logger.debug("Queue [{}] is not empty", this.precisionQueue.getName());
 
-                Task task = this.tasksRepository.find(queueTask.getTaskId());
-                if (task == null || task.findMediaBy(queueTask.getMediaId()) == null) {
-                    precisionQueue.dequeue();
-                    return;
-                }
+                try {
+                    conversationLock.lock(queueTask.getConversationId());
 
-                reserve(queueTask, task);
+                    Task task = this.tasksRepository.find(queueTask.getTaskId());
+                    if (task == null || task.findMediaBy(queueTask.getMediaId()) == null) {
+                        precisionQueue.dequeue();
+                        return;
+                    }
+
+                    reserve(queueTask, task);
+                } finally {
+                    conversationLock.unlock(queueTask.getConversationId());
+                }
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logger.error(ExceptionUtils.getMessage(ex));
+            logger.error(ExceptionUtils.getStackTrace(ex));
         }
-        logger.debug(Constants.METHOD_ENDED);
     }
 
     /**
@@ -195,7 +202,7 @@ public class TaskRouter implements PropertyChangeListener {
         if (lastAssignedAgentId != null) {
             Agent agent = this.agentsPool.findBy(lastAssignedAgentId);
 
-            if (agent != null && agent.isAvailableForRouting(media.getMrdId(), task.getConversationId())) {
+            if (agent != null && agent.isAvailableForReservation(media.getMrdId(), task.getConversationId())) {
                 assignTaskTo(agent, task, media);
                 return true;
             }
@@ -212,16 +219,15 @@ public class TaskRouter implements PropertyChangeListener {
      * @return the available agent with the least number of active tasks
      */
     Agent getAvailableAgentWithLeastActiveTasks(Step step, String conversationId) {
-        List<Agent> sortedAgentList = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE,
-                this.precisionQueue.getMrd().getId());
+        String mrdId = this.precisionQueue.getMrd().getId();
+        List<Agent> sortedAgentList = step.orderAgentsBy(AgentSelectionCriteria.LONGEST_AVAILABLE, mrdId);
         int lowestNumberOfTasks = Integer.MAX_VALUE;
         Agent result = null;
-        for (Agent agent : sortedAgentList) {
 
-            String mrdId = this.precisionQueue.getMrd().getId();
+        for (Agent agent : sortedAgentList) {
             int noOfTasksOnMrd = agent.getNoOfActiveQueueTasks(mrdId);
 
-            if (agent.isAvailableForRouting(mrdId, conversationId) && noOfTasksOnMrd < lowestNumberOfTasks) {
+            if (agent.isAvailableForReservation(mrdId, conversationId) && noOfTasksOnMrd < lowestNumberOfTasks) {
                 lowestNumberOfTasks = noOfTasksOnMrd;
                 result = agent;
             }
@@ -238,18 +244,24 @@ public class TaskRouter implements PropertyChangeListener {
      */
     private void assignTaskTo(Agent agent, Task task, TaskMedia media) {
         try {
+            boolean isReserved = agent.reserveTask(task, media);
+
+            if (!isReserved) {
+                return;
+            }
+
             if (this.offerToAgent(task, media, agent)) {
                 task.setAssignedTo(agent.toTaskAgent());
                 media.setState(TaskMediaState.RESERVED);
-                this.tasksRepository.save(task.getId(), task);
-
-                agent.reserveTask(task, media);
+                this.tasksRepository.update(task);
 
                 this.stepTimerService.stop(task.getId());
                 this.precisionQueue.dequeue();
 
                 this.jmsCommunicator.publishTaskStateChanged(task, media.getRequestSession(), false, media.getId());
                 this.jmsCommunicator.publishAgentReserved(task, media, agent.toCcUser());
+            } else {
+                agent.removeReservedTask();
             }
         } catch (Exception e) {
             logger.error(ExceptionUtils.getMessage(e));

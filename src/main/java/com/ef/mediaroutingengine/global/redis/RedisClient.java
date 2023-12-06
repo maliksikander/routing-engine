@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
@@ -183,4 +184,6 @@ public interface RedisClient {
      * @return the scan result.
      */
     ScanResult<String> scan(String cursor, ScanParams params);
+
+    Jedis getConnection();
 }

@@ -1,13 +1,18 @@
 package com.ef.mediaroutingengine.taskmanager.controller;
 
 import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.cim.objectmodel.task.TaskState;
+import com.ef.cim.objectmodel.Enums;
+import com.ef.mediaroutingengine.global.commons.Constants;
+import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.taskmanager.dto.MediaStateChangeReq;
+import com.ef.mediaroutingengine.taskmanager.dto.TaskStateChangeReq;
 import com.ef.mediaroutingengine.taskmanager.service.TasksService;
 import com.ef.mediaroutingengine.taskmanager.service.taskmediastate.TaskMediaStateService;
 import com.ef.mediaroutingengine.taskmanager.service.taskstate.TaskStateListener;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,12 +40,17 @@ public class TasksController {
      * The Task state listener.
      */
     private final TaskStateListener taskStateListener;
+    /**
+     * The Task media state service.
+     */
     private final TaskMediaStateService taskMediaStateService;
 
     /**
      * Instantiates a new Tasks controller.
      *
-     * @param service the service
+     * @param service               the service
+     * @param taskStateListener     the task state listener
+     * @param taskMediaStateService the task media state service
      */
     @Autowired
     public TasksController(TasksService service, TaskStateListener taskStateListener,
@@ -84,15 +94,23 @@ public class TasksController {
     @CrossOrigin(origins = "*")
     @PostMapping("/{taskId}/change-state")
     public ResponseEntity<Object> changeTaskState(@PathVariable String taskId,
-                                                  @Valid @RequestBody TaskState request) {
+                                                  @Valid @RequestBody TaskStateChangeReq request) {
         return ResponseEntity.ok().body(taskStateListener.propertyChange(taskId, request));
     }
 
+    /**
+     * Change task media state response entity.
+     *
+     * @param taskId  the task id
+     * @param mediaId the media id
+     * @param request the request
+     * @return the response entity
+     */
     @PostMapping("/{taskId}/{mediaId}/change-state")
     public ResponseEntity<Object> changeTaskMediaState(@PathVariable String taskId,
                                                        @PathVariable String mediaId,
                                                        @Valid @RequestBody MediaStateChangeReq request) {
-        return ResponseEntity.ok().body(this.taskMediaStateService.changeState(taskId, mediaId, request.getState()));
+        return ResponseEntity.ok().body(this.taskMediaStateService.changeState(taskId, mediaId, request));
     }
 
     /**
@@ -119,9 +137,36 @@ public class TasksController {
         return ResponseEntity.ok().body(null);
     }
 
+    /**
+     * Remove session response entity.
+     *
+     * @param channelSession the channel session
+     * @return the response entity
+     */
     @DeleteMapping("/medias/sessions")
     public ResponseEntity<Object> removeSession(@RequestBody ChannelSession channelSession) {
         this.service.removeSession(channelSession);
         return ResponseEntity.ok().body(null);
+    }
+
+    /**
+     * Cancel resource by direction response entity.
+     *
+     * @param conversationId the conversation id
+     * @param direction      the direction
+     * @return the response entity
+     */
+    @DeleteMapping("/conversation/{conversationId}/direction/{direction}")
+    public ResponseEntity<Object> revokeResourceByDirection(@PathVariable String conversationId,
+                                                            @PathVariable Enums.TaskTypeDirection direction) {
+        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+        CompletableFuture.runAsync(() -> {
+            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+            MDC.put(Constants.MDC_TOPIC_ID, conversationId);
+            this.service.revokeResourceByDirection(conversationId, direction);
+            MDC.clear();
+        });
+
+        return ResponseEntity.accepted().body(new SuccessResponseBody("Revoke resource by direction request accepted"));
     }
 }

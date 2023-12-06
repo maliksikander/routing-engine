@@ -335,19 +335,25 @@ public class Agent {
     }
 
     /**
-     * Reserve task.
+     * Reserve task boolean.
      *
      * @param task  the task
      * @param media the media
+     * @return the boolean
      */
-    public void reserveTask(Task task, TaskMedia media) {
-        this.reservedTask = new AgentTask(task, media);
+    public synchronized boolean reserveTask(Task task, TaskMedia media) {
+        if (reservedTask == null) {
+            this.reservedTask = new AgentTask(task, media);
+            return true;
+        }
+
+        return false;
     }
 
     /**
      * Remove reserved task.
      */
-    public void removeReservedTask() {
+    public synchronized void removeReservedTask() {
         this.reservedTask = null;
     }
 
@@ -444,7 +450,7 @@ public class Agent {
      * @param mrdId the mrd id
      * @return the boolean
      */
-    public boolean isAvailableForRouting(String mrdId, String conversationId) {
+    public boolean isAvailableForReservation(String mrdId, String conversationId) {
         // (Agent State is ready) AND (AgentMrdState is ready OR active) AND (No task is reserved for this agent)
         // Only one task can be *reserved* for an Agent at a time.
         return this.isAvailableForReservation(mrdId)

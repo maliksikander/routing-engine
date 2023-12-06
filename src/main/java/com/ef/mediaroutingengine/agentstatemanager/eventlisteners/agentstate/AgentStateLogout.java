@@ -7,6 +7,7 @@ import com.ef.cim.objectmodel.task.Task;
 import com.ef.cim.objectmodel.task.TaskState;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
+import com.ef.mediaroutingengine.global.locks.ConversationLock;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.AgentTask;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
@@ -37,6 +38,7 @@ public class AgentStateLogout implements AgentStateDelegate {
      * The Tasks repository.
      */
     private final TasksRepository tasksRepository;
+    private final ConversationLock conversationLock = new ConversationLock();
 
     /**
      * Instantiates a new Agent state logout.
@@ -90,12 +92,18 @@ public class AgentStateLogout implements AgentStateDelegate {
     void handleReservedTasks(Agent agent) {
         AgentTask reservedTask = agent.getReservedTask();
         if (reservedTask != null) {
-            agent.removeReservedTask();
+            try {
+                conversationLock.lock(reservedTask.getConversationId());
 
-            Task task = this.tasksRepository.find(reservedTask.getTaskId());
+                agent.removeReservedTask();
 
-            TaskState taskState = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.AGENT_LOGOUT);
-            this.taskManager.rerouteReserved(task, taskState);
+                Task task = this.tasksRepository.find(reservedTask.getTaskId());
+                TaskState taskState = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.AGENT_LOGOUT);
+
+                this.taskManager.rerouteReserved(task, taskState);
+            } finally {
+                conversationLock.unlock(reservedTask.getConversationId());
+            }
         }
     }
 

@@ -14,5 +14,5 @@ public interface AssignResourceService {
      * @param request the request
      * @param queue   the queue
      */
-    void assign(AssignResourceRequest request, PrecisionQueue queue);
+    void assign(String conversationId, AssignResourceRequest request, PrecisionQueue queue);
 }

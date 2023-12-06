@@ -107,7 +107,7 @@ public class StepTimerService {
             StepTimerService.this.startNext(queueTask, queue, currentStepIndex + 1);
 
             PropertyChangeEvent evt = new PropertyChangeEvent(this, QueueEventName.STEP_TIMEOUT, null, null);
-            this.queue.getTaskScheduler().propertyChange(evt);
+            this.queue.getTaskRouter().propertyChange(evt);
         }
     }
 }
