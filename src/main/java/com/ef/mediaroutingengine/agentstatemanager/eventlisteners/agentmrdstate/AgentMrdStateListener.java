@@ -5,6 +5,7 @@ import com.ef.cim.objectmodel.AgentPresence;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MrdType;
 import com.ef.cim.objectmodel.task.TaskMedia;
+import com.ef.cim.objectmodel.task.TaskType;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.commons.Constants;
@@ -12,6 +13,7 @@ import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
+import com.ef.mediaroutingengine.routing.utility.TaskUtility;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -189,7 +191,10 @@ public class AgentMrdStateListener {
         String mrdId = media.getMrdId();
         MrdType mrdType = this.mrdPool.getType(mrdId);
 
-        if (!media.getType().getMode().equals(Enums.TaskTypeMode.QUEUE) || !mrdType.isManagedByRe()) {
+        TaskType type = media.getType();
+
+        if (!(type.getMode().equals(Enums.TaskTypeMode.QUEUE) || TaskUtility.isNamedAgentTransfer(type))
+                || !mrdType.isManagedByRe()) {
             return;
         }
 
