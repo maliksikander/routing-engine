@@ -31,7 +31,6 @@ public class ExternalServiceConfig {
      */
     private String realTimeReportsUri;
 
-
     /**
      * Gets retries.
      *
