@@ -85,7 +85,6 @@
                     <artifactId>junit</artifactId>
                 </exclusion>
             </exclusions>
-
         </dependency>
         <dependency>
             <groupId>io.springfox</groupId>
