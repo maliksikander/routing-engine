@@ -4,8 +4,6 @@ import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.TaskState;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
-import com.ef.mediaroutingengine.routing.pool.AgentsPool;
-import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.taskmanager.dto.UpdateTaskRequest;
 import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.service.TasksService;
@@ -38,8 +36,6 @@ public class TasksController {
      * The Task state listener.
      */
     private final TaskStateListener taskStateListener;
-    private final AgentsPool agentsPool;
-    private final MrdPool mrdPool;
 
     /**
      * Instantiates a new Tasks controller.
@@ -47,12 +43,9 @@ public class TasksController {
      * @param service the service
      */
     @Autowired
-    public TasksController(TasksService service, TaskStateListener taskStateListener,
-                           AgentsPool agentsPool, MrdPool mrdPool) {
+    public TasksController(TasksService service, TaskStateListener taskStateListener) {
         this.service = service;
         this.taskStateListener = taskStateListener;
-        this.agentsPool = agentsPool;
-        this.mrdPool = mrdPool;
     }
 
     /**
@@ -99,10 +92,29 @@ public class TasksController {
         return ResponseEntity.ok().body(AdapterUtility.createTaskDtoFrom(updatedTask));
     }
 
+    /**
+     * Updates the existing task.
+     *
+     * @param taskId  The task to be updated.
+     * @param reqBody The request body.
+     * @return the task DTO.
+     */
     @CrossOrigin(origins = "*")
     @PostMapping("/{taskId}/update")
     public ResponseEntity<Object> updateTask(@PathVariable String taskId,
                                              @RequestBody UpdateTaskRequest reqBody) {
         return ResponseEntity.ok().body(this.service.updateTask(taskId, reqBody));
+    }
+
+    /**
+     * The endpoint retrieves the ewt and position of a task.
+     *
+     * @param conversationId The conversation for which the request is made.
+     * @return The ewt and position.
+     */
+    @CrossOrigin(origins = "*")
+    @GetMapping("/{conversationId}/ewt")
+    public ResponseEntity<Object> getEwtAndPosition(@PathVariable String conversationId) {
+        return this.service.getEwtAndPosition(conversationId);
     }
 }

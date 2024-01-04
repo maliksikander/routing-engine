@@ -124,7 +124,7 @@ class MediaRoutingDomainsServiceImplTest {
             List<PrecisionQueueEntity> precisionQueueEntityList = new ArrayList<>();
             MediaRoutingDomain mrd = getMrdInstance(mrdId);
             List<Task> tasks = new ArrayList<>();
-            Task task = Task.getInstanceFrom(null, mrd, null, getTaskState(), getTaskType());
+            Task task = Task.getInstanceFrom(null, mrd, null, getTaskState(), getTaskType(), 1);
             tasks.add(task);
 
             when(repository.existsById(mrdId)).thenReturn(true);

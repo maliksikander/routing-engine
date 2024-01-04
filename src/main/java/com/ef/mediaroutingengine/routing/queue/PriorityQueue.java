@@ -39,11 +39,6 @@ public class PriorityQueue {
      * @return the boolean
      */
     public boolean enqueue(@NotNull Task task) {
-        if (task.getPriority() > 10) {
-            task.setPriority(10);
-        } else if (task.getPriority() < 1) {
-            task.setPriority(1);
-        }
         return this.multiLevelQueueMap.get(task.getPriority()).offer(task);
     }
 
@@ -175,6 +170,39 @@ public class PriorityQueue {
             taskList.addAll(entry.getValue());
         }
         return taskList;
+    }
+
+    /**
+     * Gets position.
+     *
+     * @param task the task
+     * @return the position
+     */
+    public int getPosition(Task task) {
+        int positionInSamePriority = getPositionInSamePriority(task);
+
+        if (positionInSamePriority == -1) {
+            return -1;
+        }
+
+        int position = positionInSamePriority;
+
+        for (int i = task.getPriority() + 1; i <= NO_OF_QUEUE_LEVELS; i++) {
+            position += this.multiLevelQueueMap.get(i).size();
+        }
+
+        return position;
+    }
+
+    private int getPositionInSamePriority(Task task) {
+        int position = 1;
+        for (Task queuedTask : this.multiLevelQueueMap.get(task.getPriority())) {
+            if (queuedTask.getId().equals(task.getId())) {
+                return position;
+            }
+            position++;
+        }
+        return -1;
     }
 
     /**
