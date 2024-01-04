@@ -64,6 +64,10 @@ public class PrecisionQueue implements Queue {
      * The Service level threshold.
      */
     private int serviceLevelThreshold;
+    /**
+     * The Agent service level duration.
+     */
+    private Integer agentSlaDuration;
 
     /**
      * Parametrized constructor. Constructs a PrecisionQueue object with a PrecisionQueueEntity object.
@@ -78,6 +82,7 @@ public class PrecisionQueue implements Queue {
         this.mrd = pqEntity.getMrd();
         this.serviceLevelType = pqEntity.getServiceLevelType();
         this.serviceLevelThreshold = pqEntity.getServiceLevelThreshold();
+        this.agentSlaDuration = pqEntity.getAgentSlaDuration();
         this.steps = toSteps(pqEntity.getSteps());
         this.evaluateAgentsAssociatedWithSteps(agentsPool.findAll());
 
@@ -98,6 +103,7 @@ public class PrecisionQueue implements Queue {
         this.mrd = entity.getMrd();
         this.serviceLevelType = entity.getServiceLevelType();
         this.serviceLevelThreshold = entity.getServiceLevelThreshold();
+        this.agentSlaDuration = entity.getAgentSlaDuration();
         this.steps = new ArrayList<>();
 
         this.serviceQueue = new PriorityQueue();
@@ -120,6 +126,17 @@ public class PrecisionQueue implements Queue {
             elements.add(new Step(stepEntity));
         }
         return elements;
+    }
+
+    /**
+     * Sets the id only if it is null.
+     *
+     * @param id unique id to set
+     */
+    public void setId(String id) {
+        if (this.id == null) {
+            this.id = id;
+        }
     }
 
     /**
@@ -239,6 +256,7 @@ public class PrecisionQueue implements Queue {
         this.setMrd(requestBody.getMrd());
         this.setServiceLevelType(requestBody.getServiceLevelType());
         this.setServiceLevelThreshold(requestBody.getServiceLevelThreshold());
+        this.setAgentSlaDuration(requestBody.getAgentSlaDuration());
     }
 
     /**
