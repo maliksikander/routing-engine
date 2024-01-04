@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.bootstrap;
 import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.AgentPresence;
 import com.ef.cim.objectmodel.AgentState;
+import com.ef.cim.objectmodel.AssociatedMrd;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
@@ -174,9 +175,10 @@ public class Bootstrap {
         this.mrdPool.loadFrom(this.bootstrapMrdTypes(), this.getMrdFromConfigDb());
         logger.debug("MRDs pool loaded from DB");
 
-        this.agentsPool.loadFrom(this.getCcUsersFromConfigDb());
+        List<CCUser> ccUsers = this.getCcUsersFromConfigDb();
+        this.agentsPool.loadFrom(ccUsers);
         // Set Agent and AgentMRD states after MRD pool is loaded as it is required for agent-mrd states.
-        this.setAgentStates();
+        this.setAgentStates(ccUsers);
         logger.debug("Agents pool loaded DB");
 
         this.precisionQueuesPool.loadFrom(this.getQueuesFromConfigDb(), this.agentsPool);
@@ -293,12 +295,27 @@ public class Bootstrap {
      * @param mediaRoutingDomains list of MRDs for which the AgentMrdState is required.
      * @return List of AgentMrdStates which state set to an initial value (NOT_READY)
      */
-    private List<AgentMrdState> getInitialAgentMrdStates(List<MediaRoutingDomain> mediaRoutingDomains) {
+    private List<AgentMrdState> getInitialAgentMrdStates(CCUser ccUser, List<MediaRoutingDomain> mediaRoutingDomains) {
         List<AgentMrdState> agentMrdStates = new ArrayList<>();
         for (MediaRoutingDomain mrd : mediaRoutingDomains) {
-            agentMrdStates.add(new AgentMrdState(mrd, Enums.AgentMrdStateName.NOT_READY));
+            int maxAgentRequests = this.getMaxAgentRequests(mrd, ccUser);
+
+            AgentMrdState agentMrdState = new AgentMrdState(mrd, Enums.AgentMrdStateName.NOT_READY);
+            agentMrdState.setMaxAgentTasks(maxAgentRequests);
+
+            agentMrdStates.add(agentMrdState);
         }
         return agentMrdStates;
+    }
+
+    private int getMaxAgentRequests(MediaRoutingDomain mrd, CCUser ccUser) {
+        for (AssociatedMrd associatedMrd : ccUser.getAssociatedMrds()) {
+            if (associatedMrd.getMrdId().equals(mrd.getId())) {
+                return associatedMrd.getMaxAgentTasks();
+            }
+        }
+
+        return mrd.getMaxRequests();
     }
 
     /**
@@ -344,15 +361,18 @@ public class Bootstrap {
      * Agent-MRD states will be set for this agent. If the agent is already present in the AgentPresence
      * collection, the 'previous' states will be fetched from the Redis collection and set for this agent.
      */
-    private void setAgentStates() {
+    private void setAgentStates(List<CCUser> ccUsers) {
         Map<String, AgentPresence> currentAgentPresenceMap = this.getCurrentAgentPresenceMap();
         // AgentPresence Repository is flushed so that newly-updated, fresh Objects are added.
         this.agentPresenceRepository.deleteAll();
         logger.debug("AgentPresence Repository flushed successfully.");
         Map<String, AgentPresence> updatedAgentPresenceMap = new HashMap<>();
-        for (Agent agent : this.agentsPool.findAll()) {
+
+        for (CCUser ccUser : ccUsers) {
+            Agent agent = agentsPool.findBy(ccUser.getKeycloakUser().getId());
+
             AgentState agentState;
-            List<AgentMrdState> agentMrdStates = getInitialAgentMrdStates(this.mrdPool.findAll());
+            List<AgentMrdState> agentMrdStates = getInitialAgentMrdStates(ccUser, this.mrdPool.findAll());
             AgentPresence agentPresence = currentAgentPresenceMap.get(agent.getId());
 
             if (agentPresence != null) {
@@ -370,6 +390,7 @@ public class Bootstrap {
             agent.setAgentMrdStates(agentMrdStates);
             updatedAgentPresenceMap.put(agentPresence.getAgent().getId(), agentPresence);
         }
+
         logger.debug("Agent states for agents in in-memory pool set successfully");
         this.agentPresenceRepository.saveAllByKeyValueMap(updatedAgentPresenceMap, 2500);
         logger.debug("AgentPresence Repository loaded successfully");
