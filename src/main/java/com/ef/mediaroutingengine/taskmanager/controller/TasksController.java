@@ -1,19 +1,23 @@
 package com.ef.mediaroutingengine.taskmanager.controller;
 
+import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.TaskState;
-import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
-import com.ef.mediaroutingengine.taskmanager.dto.UpdateTaskRequest;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
+import com.ef.mediaroutingengine.global.commons.Constants;
+import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
+import com.ef.mediaroutingengine.taskmanager.dto.MediaStateChangeReq;
+import com.ef.mediaroutingengine.taskmanager.dto.TaskStateChangeReq;
 import com.ef.mediaroutingengine.taskmanager.service.TasksService;
+import com.ef.mediaroutingengine.taskmanager.service.taskmediastate.TaskMediaStateService;
 import com.ef.mediaroutingengine.taskmanager.service.taskstate.TaskStateListener;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,16 +40,24 @@ public class TasksController {
      * The Task state listener.
      */
     private final TaskStateListener taskStateListener;
+    /**
+     * The Task media state service.
+     */
+    private final TaskMediaStateService taskMediaStateService;
 
     /**
      * Instantiates a new Tasks controller.
      *
-     * @param service the service
+     * @param service               the service
+     * @param taskStateListener     the task state listener
+     * @param taskMediaStateService the task media state service
      */
     @Autowired
-    public TasksController(TasksService service, TaskStateListener taskStateListener) {
+    public TasksController(TasksService service, TaskStateListener taskStateListener,
+                           TaskMediaStateService taskMediaStateService) {
         this.service = service;
         this.taskStateListener = taskStateListener;
+        this.taskMediaStateService = taskMediaStateService;
     }
 
     /**
@@ -63,15 +75,13 @@ public class TasksController {
     /**
      * Retrieve response entity.
      *
-     * @param agentId   the agent id
-     * @param taskState the task state
+     * @param agentId the agent id
      * @return the response entity
      */
     @CrossOrigin(origins = "*")
     @GetMapping("")
-    public ResponseEntity<Object> retrieve(@RequestParam Optional<String> agentId,
-                                           @RequestParam Optional<Enums.TaskStateName> taskState) {
-        return new ResponseEntity<>(this.service.retrieve(agentId, taskState), HttpStatus.OK);
+    public ResponseEntity<Object> retrieve(@RequestParam Optional<String> agentId) {
+        return new ResponseEntity<>(this.service.retrieveAll(agentId), HttpStatus.OK);
     }
 
     /**
@@ -84,26 +94,23 @@ public class TasksController {
     @CrossOrigin(origins = "*")
     @PostMapping("/{taskId}/change-state")
     public ResponseEntity<Object> changeTaskState(@PathVariable String taskId,
-                                                  @Valid @RequestBody TaskState request) {
-        Task updatedTask = taskStateListener.propertyChange(taskId, request);
-        if (updatedTask == null) {
-            throw new NotFoundException("No task found for id: " + taskId);
-        }
-        return ResponseEntity.ok().body(AdapterUtility.createTaskDtoFrom(updatedTask));
+                                                  @Valid @RequestBody TaskStateChangeReq request) {
+        return ResponseEntity.ok().body(taskStateListener.propertyChange(taskId, request));
     }
 
     /**
-     * Updates the existing task.
+     * Change task media state response entity.
      *
-     * @param taskId  The task to be updated.
-     * @param reqBody The request body.
-     * @return the task DTO.
+     * @param taskId  the task id
+     * @param mediaId the media id
+     * @param request the request
+     * @return the response entity
      */
-    @CrossOrigin(origins = "*")
-    @PostMapping("/{taskId}/update")
-    public ResponseEntity<Object> updateTask(@PathVariable String taskId,
-                                             @RequestBody UpdateTaskRequest reqBody) {
-        return ResponseEntity.ok().body(this.service.updateTask(taskId, reqBody));
+    @PostMapping("/{taskId}/{mediaId}/change-state")
+    public ResponseEntity<Object> changeTaskMediaState(@PathVariable String taskId,
+                                                       @PathVariable String mediaId,
+                                                       @Valid @RequestBody MediaStateChangeReq request) {
+        return ResponseEntity.ok().body(this.taskMediaStateService.changeState(taskId, mediaId, request));
     }
 
     /**
@@ -116,5 +123,50 @@ public class TasksController {
     @GetMapping("/{conversationId}/ewt")
     public ResponseEntity<Object> getEwtAndPosition(@PathVariable String conversationId) {
         return this.service.getEwtAndPosition(conversationId);
+    }
+
+    /**
+     * Add session response entity.
+     *
+     * @param channelSession the channel session
+     * @return the response entity
+     */
+    @PostMapping("/medias/sessions")
+    public ResponseEntity<Object> addSession(@RequestBody ChannelSession channelSession) {
+        this.service.addSession(channelSession);
+        return ResponseEntity.ok().body(null);
+    }
+
+    /**
+     * Remove session response entity.
+     *
+     * @param channelSession the channel session
+     * @return the response entity
+     */
+    @DeleteMapping("/medias/sessions")
+    public ResponseEntity<Object> removeSession(@RequestBody ChannelSession channelSession) {
+        this.service.removeSession(channelSession);
+        return ResponseEntity.ok().body(null);
+    }
+
+    /**
+     * Cancel resource by direction response entity.
+     *
+     * @param conversationId the conversation id
+     * @param direction      the direction
+     * @return the response entity
+     */
+    @DeleteMapping("/conversation/{conversationId}/direction/{direction}")
+    public ResponseEntity<Object> revokeResourceByDirection(@PathVariable String conversationId,
+                                                            @PathVariable Enums.TaskTypeDirection direction) {
+        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+        CompletableFuture.runAsync(() -> {
+            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+            MDC.put(Constants.MDC_TOPIC_ID, conversationId);
+            this.service.revokeResourceByDirection(conversationId, direction);
+            MDC.clear();
+        });
+
+        return ResponseEntity.accepted().body(new SuccessResponseBody("Revoke resource by direction request accepted"));
     }
 }

@@ -3,13 +3,15 @@ package com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate;
 import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.TaskState;
-import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
+import com.ef.cim.objectmodel.dto.AgentStateChangedResponse;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskState;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
-import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.global.locks.ConversationLock;
 import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.model.AgentTask;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
+import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,22 +35,24 @@ public class AgentStateLogout implements AgentStateDelegate {
      */
     private final TaskManager taskManager;
     /**
-     * The JMS Communicator.
+     * The Tasks repository.
      */
-    private final JmsCommunicator jmsCommunicator;
+    private final TasksRepository tasksRepository;
+    private final ConversationLock conversationLock = new ConversationLock();
 
     /**
      * Instantiates a new Agent state logout.
      *
      * @param agentPresenceRepository the agent presence repository
      * @param taskManager             the task manager
+     * @param tasksRepository         the tasks repository
      */
     @Autowired
     public AgentStateLogout(AgentPresenceRepository agentPresenceRepository, TaskManager taskManager,
-                            JmsCommunicator jmsCommunicator) {
+                            TasksRepository tasksRepository) {
         this.agentPresenceRepository = agentPresenceRepository;
         this.taskManager = taskManager;
-        this.jmsCommunicator = jmsCommunicator;
+        this.tasksRepository = tasksRepository;
     }
 
     @Override
@@ -80,23 +84,45 @@ public class AgentStateLogout implements AgentStateDelegate {
         agent.clearAllTasks();
     }
 
+    /**
+     * Handle reserved tasks.
+     *
+     * @param agent the agent
+     */
     void handleReservedTasks(Agent agent) {
-        Task reservedTask = agent.getReservedTask();
+        AgentTask reservedTask = agent.getReservedTask();
         if (reservedTask != null) {
-            TaskState taskState = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.AGENT_LOGOUT);
-            reservedTask.setTaskState(taskState);
+            try {
+                conversationLock.lock(reservedTask.getConversationId());
 
-            this.taskManager.removeFromPoolAndRepository(reservedTask);
-            this.jmsCommunicator.publishTaskStateChangeForReporting(reservedTask);
-            this.taskManager.rerouteReservedTask(reservedTask);
+                agent.removeReservedTask();
+
+                Task task = this.tasksRepository.find(reservedTask.getTaskId());
+                TaskState taskState = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.AGENT_LOGOUT);
+
+                this.taskManager.rerouteReserved(task, taskState);
+            } finally {
+                conversationLock.unlock(reservedTask.getConversationId());
+            }
         }
     }
 
+    /**
+     * Handle active tasks.
+     *
+     * @param agent the agent
+     */
     void handleActiveTasks(Agent agent) {
-        for (Task task : agent.getActiveTasksList()) {
-            task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.AGENT_LOGOUT));
-            this.taskManager.removeFromPoolAndRepository(task);
-            this.jmsCommunicator.publishTaskStateChangeForReporting(task);
+        List<String> taskIds = agent.getActiveTasksList().stream()
+                .map(AgentTask::getTaskId)
+                .toList();
+
+        List<Task> activeTasks = this.tasksRepository.findAll(taskIds);
+
+
+        for (Task task : activeTasks) {
+            TaskState state = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.AGENT_LOGOUT);
+            this.taskManager.closeTask(task, state);
         }
     }
 }

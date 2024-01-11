@@ -1,21 +1,20 @@
 package com.ef.mediaroutingengine.taskmanager.service;
 
+import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.dto.QueueHistoricalStatsDto;
-import com.ef.cim.objectmodel.dto.TaskDto;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskMedia;
+import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
-import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
+import com.ef.mediaroutingengine.global.locks.ConversationLock;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
+import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.utility.RestRequest;
+import com.ef.mediaroutingengine.taskmanager.TaskManager;
 import com.ef.mediaroutingengine.taskmanager.dto.TaskEwtResponse;
-import com.ef.mediaroutingengine.taskmanager.dto.UpdateTaskRequest;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
-import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
-import com.ef.mediaroutingengine.taskmanager.service.taskservice.TasksRetriever;
-import com.ef.mediaroutingengine.taskmanager.service.taskservice.TasksRetrieverFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,42 +32,50 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class TasksService {
-    private static final Logger logger = LoggerFactory.getLogger(TasksService.class);
     /**
-     * The Tasks pool.
+     * The constant logger.
      */
-    private final TasksPool tasksPool;
-    private final PrecisionQueuesPool queuesPool;
-    private final RestRequest restRequest;
+    private static final Logger logger = LoggerFactory.getLogger(TasksService.class);
+
+    /**
+     * The Precision queues cache.
+     */
+    private final PrecisionQueuesPool precisionQueuesCache;
     /**
      * The Tasks repository.
      */
     private final TasksRepository tasksRepository;
     /**
-     * The Task retriever factory.
+     * The Mrd pool.
      */
-    private final TasksRetrieverFactory tasksRetrieverFactory;
+    private final MrdPool mrdPool;
     /**
-     * JMS Communicator.
+     * The Rest request.
      */
-    private final JmsCommunicator jmsCommunicator;
+    private final RestRequest restRequest;
+    /**
+     * The Task manager.
+     */
+    private final TaskManager taskManager;
+    private final ConversationLock conversationLock = new ConversationLock();
 
     /**
      * Instantiates a new Tasks service.
      *
-     * @param tasksPool             the tasks pool
-     * @param tasksRetrieverFactory the task retriever factory
+     * @param precisionQueuesCache the queues pool
+     * @param tasksRepository      the tasks repository
+     * @param mrdPool              the mrd pool
+     * @param restRequest          the rest request
+     * @param taskManager          the task manager
      */
     @Autowired
-    public TasksService(TasksPool tasksPool, PrecisionQueuesPool queuesPool, TasksRepository tasksRepository,
-                        TasksRetrieverFactory tasksRetrieverFactory, JmsCommunicator jmsCommunicator,
-                        RestRequest restRequest) {
-        this.tasksPool = tasksPool;
-        this.queuesPool = queuesPool;
+    public TasksService(PrecisionQueuesPool precisionQueuesCache, TasksRepository tasksRepository, MrdPool mrdPool,
+                        RestRequest restRequest, TaskManager taskManager) {
+        this.precisionQueuesCache = precisionQueuesCache;
         this.tasksRepository = tasksRepository;
-        this.tasksRetrieverFactory = tasksRetrieverFactory;
-        this.jmsCommunicator = jmsCommunicator;
+        this.mrdPool = mrdPool;
         this.restRequest = restRequest;
+        this.taskManager = taskManager;
     }
 
     /**
@@ -77,45 +84,54 @@ public class TasksService {
      * @param taskId the task id
      * @return the task dto
      */
-    public TaskDto retrieveById(String taskId) {
-        Task task = this.tasksPool.findById(taskId);
-        if (task != null) {
-            return AdapterUtility.createTaskDtoFrom(task);
-        } else {
+    public Task retrieveById(String taskId) {
+        Task task = this.tasksRepository.find(taskId);
+
+        if (task == null) {
             throw new NotFoundException("Task not found in Task pool");
         }
+
+        return task;
     }
 
     /**
      * Retrieve list.
      *
-     * @param agentId   the agent id
-     * @param taskState the task state
+     * @param agentId the agent id
      * @return the list
      */
-    public List<TaskDto> retrieve(Optional<String> agentId,
-                                  Optional<Enums.TaskStateName> taskState) {
-        TasksRetriever tasksRetriever = this.tasksRetrieverFactory.getRetriever(agentId, taskState);
-        return tasksRetriever.findTasks();
+    public List<Task> retrieveAll(Optional<String> agentId) {
+        if (agentId.isPresent()) {
+            return this.tasksRepository.findAllByAgent(agentId.get());
+        }
+        return this.tasksRepository.findAll();
     }
 
     /**
-     * Update task task dto.
+     * Cancel resource by direction.
      *
-     * @param taskId  the task id
-     * @param reqBody the req body
-     * @return the task dto
+     * @param conversationId the conversation id
+     * @param direction      the direction
      */
-    public TaskDto updateTask(String taskId, UpdateTaskRequest reqBody) {
-        Task task = this.tasksPool.findById(taskId);
-        if (task == null) {
-            throw new NotFoundException("Task not found in Task pool");
+    public void revokeResourceByDirection(String conversationId, Enums.TaskTypeDirection direction) {
+        if (!direction.equals(Enums.TaskTypeDirection.DIRECT_CONFERENCE)) {
+            logger.error("Direction: {} is not supported in this API yet", direction);
+            return;
         }
 
-        task.setChannelSession(reqBody.getChannelSession());
-        this.tasksRepository.updateChannelSession(taskId, reqBody.getChannelSession());
-        jmsCommunicator.publishTaskStateChangeForReporting(task);
-        return AdapterUtility.createTaskDtoFrom(task);
+        try {
+            conversationLock.lock(conversationId);
+
+            List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId).stream()
+                    .filter(t -> {
+                        TaskMedia media = t.findInProcessMedia();
+                        return media != null && media.getType().getDirection().equals(direction);
+                    }).toList();
+
+            tasks.forEach(t -> this.taskManager.revokeInProcessTask(t, true));
+        } finally {
+            conversationLock.unlock(conversationId);
+        }
     }
 
     /**
@@ -127,16 +143,18 @@ public class TasksService {
     public ResponseEntity<Object> getEwtAndPosition(String conversationId) {
         logger.info("Request received to fetch the EWT and position for conversation id: {}", conversationId);
 
-        List<TaskEwtResponse> responses = new ArrayList<>();
-        Map<String, List<Task>> queuedTasks = this.tasksPool.findQueuedGroupedByQueueId(conversationId);
+        try {
+            conversationLock.lock(conversationId);
 
-        for (Map.Entry<String, List<Task>> entry : queuedTasks.entrySet()) {
-            QueueHistoricalStatsDto queueStats = this.restRequest.getQueueHistoricalStats(entry.getKey());
+            List<TaskEwtResponse> responses = new ArrayList<>();
+            Map<String, List<Task>> queuedTasks = this.tasksRepository.findQueuedGroupedByQueueId(conversationId);
 
-            PrecisionQueue precisionQueue = queuesPool.findById(entry.getKey());
-            int totalAgents = precisionQueue.getAssociatedAgents().size();
+            for (Map.Entry<String, List<Task>> entry : queuedTasks.entrySet()) {
+                QueueHistoricalStatsDto queueStats = this.restRequest.getQueueHistoricalStats(entry.getKey());
 
-            synchronized (precisionQueue.getServiceQueue()) {
+                PrecisionQueue precisionQueue = precisionQueuesCache.findById(entry.getKey());
+                int totalAgents = precisionQueue.getAssociatedAgents().size();
+
                 for (Task task : entry.getValue()) {
                     int position = precisionQueue.getPosition(task);
 
@@ -145,16 +163,93 @@ public class TasksService {
                     }
 
                     int ewt = this.calculateEwt(position, totalAgents, queueStats.getAverageHandleTime());
-                    responses.add(new TaskEwtResponse(AdapterUtility.createTaskDtoFrom(task), ewt, position));
+                    responses.add(new TaskEwtResponse(task, ewt, position));
                 }
             }
-        }
 
-        logger.info("Request to fetch the EWT and position for conversation id: {} handled", conversationId);
-        return new ResponseEntity<>(responses, HttpStatus.OK);
+
+            logger.info("Request to fetch the EWT and position for conversation id: {} handled", conversationId);
+            return new ResponseEntity<>(responses, HttpStatus.OK);
+
+        } finally {
+            conversationLock.unlock(conversationId);
+        }
     }
 
+    /**
+     * Calculate ewt int.
+     *
+     * @param taskPosition      the task position
+     * @param totalAgents       the total agents
+     * @param averageHandleTime the average handle time
+     * @return the int
+     */
     private int calculateEwt(int taskPosition, int totalAgents, int averageHandleTime) {
         return totalAgents == 0 ? Integer.MAX_VALUE : taskPosition * averageHandleTime / totalAgents;
+    }
+
+    /**
+     * Add session.
+     *
+     * @param channelSession the channel session
+     */
+    public void addSession(ChannelSession channelSession) {
+        String mrdId = channelSession.getChannel().getChannelType().getMediaRoutingDomain();
+
+        if (!this.mrdPool.getType(mrdId).isAutoJoin()) {
+            return;
+        }
+
+        String conversationId = channelSession.getConversationId();
+        List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId).stream()
+                .filter(t -> t.getState().getName().equals(Enums.TaskStateName.ACTIVE))
+                .toList();
+
+        for (Task task : tasks) {
+            TaskMedia media = task.findMediaByMrdId(mrdId);
+
+            if (media != null) {
+                media.addChannelSession(channelSession);
+                this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
+            }
+        }
+    }
+
+    /**
+     * Remove session.
+     *
+     * @param channelSession the channel session
+     */
+    public void removeSession(ChannelSession channelSession) {
+        String mrdId = channelSession.getChannel().getChannelType().getMediaRoutingDomain();
+        String conversationId = channelSession.getConversationId();
+
+        try {
+            conversationLock.lock(conversationId);
+
+            List<Task> tasks = this.tasksRepository.findAllByConversationId(conversationId).stream()
+                    .filter(t -> t.getState().getName().equals(Enums.TaskStateName.ACTIVE))
+                    .toList();
+
+            for (Task task : tasks) {
+                TaskMedia media = task.findMediaByMrdId(mrdId);
+
+                if (media == null) {
+                    continue;
+                }
+
+                boolean isRemoved = media.removeChannelSession(channelSession.getId());
+
+                if (isRemoved) {
+                    this.tasksRepository.updateActiveMedias(task.getId(), task.getActiveMedia());
+
+                    if (media.getChannelSessions().isEmpty() && !media.getState().equals(TaskMediaState.ACTIVE)) {
+                        this.taskManager.revokeInProcessTask(task, false);
+                    }
+                }
+            }
+        } finally {
+            conversationLock.unlock(conversationId);
+        }
     }
 }

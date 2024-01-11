@@ -1,58 +1,53 @@
 package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.mediaroutingengine.routing.utility.RestRequest;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Multimap;
 import java.util.HashMap;
 import java.util.Map;
-import org.keycloak.adapters.springboot.KeycloakSpringBootProperties;
 import org.keycloak.representations.AccessTokenResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 /**
- *  The KeyCloak Service.
+ * The KeyCloak Service.
  */
 @Service
 public class KeyCloakService {
 
     private final Logger logger = LoggerFactory.getLogger(KeyCloakService.class);
 
-    private  final RestRequest restRequest;
+    private final RestRequest restRequest;
 
     public KeyCloakService(RestRequest restRequest) {
         this.restRequest = restRequest;
     }
 
     /**
-     *  Get token from keycloak.
+     * Get token from keycloak.
      *
      * @return keycloak access token.
      */
-    public  Object getToken() {
+    public Object getToken() {
 
         Map<String, String> response = new HashMap<>();
         logger.info("Get KeyCloak token request initiated");
-        String realm  = System.getenv("KEYCLOAK_REALM");
-        String host  = System.getenv("KEYCLOAK_HOST");
-        String url =  host + "realms/" + realm + "/protocol/openid-connect/token";
-        logger.info("Request URL {} ",  url);
+        String realm = System.getenv("KEYCLOAK_REALM");
+        String host = System.getenv("KEYCLOAK_HOST");
+        String url = host + "realms/" + realm + "/protocol/openid-connect/token";
+        logger.info("Request URL {} ", url);
         MultiValueMap<String, String> body = this.getRequestBody();
-        logger.debug("Request body {} ",  body);
+        logger.debug("Request body {} ", body);
         ResponseEntity<AccessTokenResponse> accessTokenResponse = this.restRequest.getToken(body, url);
         if (accessTokenResponse != null && accessTokenResponse.getBody() != null) {
             response.put("access_token", accessTokenResponse.getBody().getToken());
         }
         logger.info("Get KeyCloak token request handled gracefully");
-        return  response;
+        return response;
 
     }
-
 
 
     private MultiValueMap<String, String> getRequestBody() {

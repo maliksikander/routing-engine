@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.routing.service;
 
-import com.ef.mediaroutingengine.routing.dto.AssignResourceRequest;
+import com.ef.cim.objectmodel.dto.AssignResourceRequest;
+import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
 
 /**
  * The interface Assign resource service.
@@ -11,7 +12,7 @@ public interface AssignResourceService {
      * Assign string.
      *
      * @param request the request
-     * @return the string
+     * @param queue   the queue
      */
-    String assign(AssignResourceRequest request, boolean useQueueName, boolean offerToAgent, int priority);
+    void assign(String conversationId, AssignResourceRequest request, PrecisionQueue queue);
 }

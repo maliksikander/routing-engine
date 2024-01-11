@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.routing.dto;
 
 
+import com.ef.cim.objectmodel.task.Task;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,8 +29,15 @@ public class RevokeTaskRequest {
      * The Conversation id.
      */
     private String conversationId;
+
     /**
-     * The Room id.
+     * Instantiates a new Revoke task request.
+     *
+     * @param task the task
      */
-    private String roomId;
+    public RevokeTaskRequest(Task task) {
+        this.taskId = task.getId();
+        this.agentId = task.getAssignedTo().getId();
+        this.conversationId = task.getConversationId();
+    }
 }

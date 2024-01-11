@@ -1,9 +1,7 @@
 package com.ef.mediaroutingengine.routing.dto;
 
 import com.ef.cim.objectmodel.CCUser;
-import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.cim.objectmodel.TaskState;
-import com.ef.cim.objectmodel.dto.TaskDto;
+import com.ef.cim.objectmodel.task.TaskMedia;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,13 +17,8 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 public class AssignTaskRequest {
-    /**
-     * The task dto.
-     */
-    private TaskDto task;
-    /**
-     * The Cc user.
-     */
+    private String taskId;
+    private String conversationId;
+    private TaskMedia media;
     private CCUser ccUser;
-
 }

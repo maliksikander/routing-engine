@@ -1,14 +1,31 @@
 package com.ef.mediaroutingengine.routing.service;
 
-import com.ef.cim.objectmodel.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import com.ef.cim.objectmodel.CCUser;
+import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.PrecisionQueueEntity;
+import com.ef.cim.objectmodel.RoutingAttribute;
+import com.ef.cim.objectmodel.RoutingAttributeType;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
 import com.ef.mediaroutingengine.routing.dto.RoutingAttributeDeleteConflictResponse;
-import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.RoutingAttributesPool;
 import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.routing.repository.RoutingAttributeRepository;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,13 +35,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -46,7 +56,9 @@ class RoutingAttributesServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        this.routingAttributesService = new RoutingAttributesServiceImpl(repository, routingAttributesPool, precisionQueueRepository, agentsRepository);
+        this.routingAttributesService =
+                new RoutingAttributesServiceImpl(repository, routingAttributesPool, precisionQueueRepository,
+                        agentsRepository);
     }
 
 
@@ -58,7 +70,8 @@ class RoutingAttributesServiceImplTest {
 
         RoutingAttribute returnedValue = routingAttributesService.create(routingAttribute);
 
-        ArgumentCaptor<RoutingAttribute> routingAttributeArgumentCaptor = ArgumentCaptor.forClass(RoutingAttribute.class);
+        ArgumentCaptor<RoutingAttribute> routingAttributeArgumentCaptor =
+                ArgumentCaptor.forClass(RoutingAttribute.class);
         verify(this.repository, times(1)).insert(routingAttribute);
         verify(this.routingAttributesPool, times(1)).insert(routingAttributeArgumentCaptor.capture());
         assertEquals(routingAttribute.getId(), returnedValue.getId());
@@ -110,7 +123,7 @@ class RoutingAttributesServiceImplTest {
 
             verify(routingAttributesPool, times(1)).deleteById(any());
             verify(repository, times(1)).deleteById(any());
-            assertEquals(null, response);
+            assertNull(response);
 
         }
 
@@ -130,7 +143,7 @@ class RoutingAttributesServiceImplTest {
             precisionQueueEntities.add(entity);
 
             RoutingAttributeDeleteConflictResponse response = new RoutingAttributeDeleteConflictResponse();
-            response.setPrecisionQueues(precisionQueueEntities);
+            response.setPrecisionQueueEntities(precisionQueueEntities);
 
             RoutingAttributesServiceImpl spy = Mockito.spy(routingAttributesService);
 
@@ -139,7 +152,7 @@ class RoutingAttributesServiceImplTest {
 
             RoutingAttributeDeleteConflictResponse responseReturned = spy.delete(id);
 
-            assertEquals(response.getPrecisionQueues(), responseReturned.getPrecisionQueues());
+            assertEquals(response.getPrecisionQueueEntities(), responseReturned.getPrecisionQueueEntities());
         }
 
     }
@@ -152,7 +165,7 @@ class RoutingAttributesServiceImplTest {
         void when_agentDoesNotExistInRepository() {
             RoutingAttribute routingAttribute = getRoutingAttributeRequest();
             String routingId = UUID.randomUUID().toString();
-            
+
             assertFalse(routingAttributesService.updateAgents(routingAttribute, routingId));
         }
 
@@ -212,7 +225,6 @@ class RoutingAttributesServiceImplTest {
         MediaRoutingDomain mediaRoutingDomain = new MediaRoutingDomain();
         mediaRoutingDomain.setId(UUID.randomUUID().toString());
         mediaRoutingDomain.setName("chat");
-        mediaRoutingDomain.setInterruptible(false);
         return mediaRoutingDomain;
     }
 }

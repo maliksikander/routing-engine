@@ -9,7 +9,6 @@ import org.springframework.data.mongodb.repository.Query;
  * The interface Agents repository.
  */
 public interface AgentsRepository extends MongoRepository<CCUser, String> {
-
     /**
      * Find by routing attribute id list.
      *

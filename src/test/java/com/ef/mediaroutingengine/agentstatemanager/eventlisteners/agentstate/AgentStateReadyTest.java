@@ -13,9 +13,9 @@ import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
-import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.cim.objectmodel.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
+import com.ef.mediaroutingengine.routing.model.Agent;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,13 +40,13 @@ class AgentStateReadyTest {
         Agent agent = getNewAgent();
 
         agent.setState(new AgentState(Enums.AgentStateName.READY, null));
-        assertFalse(this.agentStateReady.updateState(agent, newState,false).isAgentStateChanged());
+        assertFalse(this.agentStateReady.updateState(agent, newState, false).isAgentStateChanged());
 
         agent.setState(new AgentState(Enums.AgentStateName.LOGOUT, null));
-        assertFalse(this.agentStateReady.updateState(agent, newState,false).isAgentStateChanged());
+        assertFalse(this.agentStateReady.updateState(agent, newState, false).isAgentStateChanged());
 
         agent.setState(new AgentState(Enums.AgentStateName.LOGIN, null));
-        assertFalse(this.agentStateReady.updateState(agent, newState,false).isAgentStateChanged());
+        assertFalse(this.agentStateReady.updateState(agent, newState, false).isAgentStateChanged());
     }
 
     @Test
@@ -56,7 +56,7 @@ class AgentStateReadyTest {
 
         AgentState newState = new AgentState(Enums.AgentStateName.READY, null);
 
-        AgentStateChangedResponse res = this.agentStateReady.updateState(agent, newState,false);
+        AgentStateChangedResponse res = this.agentStateReady.updateState(agent, newState, false);
         // Assert agent state is updated to new state
         assertEquals(newState, agent.getState());
         // verify the correct repository calls are made

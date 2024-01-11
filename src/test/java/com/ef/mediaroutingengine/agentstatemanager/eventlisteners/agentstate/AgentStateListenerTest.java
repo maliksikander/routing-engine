@@ -11,10 +11,10 @@ import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
-import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.cim.objectmodel.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.routing.model.Agent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -46,7 +46,7 @@ class AgentStateListenerTest {
         Agent agent = getAgent();
 
         when(factory.getDelegate(newState.getName())).thenReturn(null);
-        this.agentStateListener.run(agent, newState,false);
+        this.agentStateListener.run(agent, newState, false);
 
         verify(factory, times(1)).getDelegate(any());
         verifyNoInteractions(jmsCommunicator);
@@ -60,7 +60,8 @@ class AgentStateListenerTest {
         AgentStateDelegate delegate = mock(AgentStateDelegate.class);
 
         when(factory.getDelegate(newState.getName())).thenReturn(delegate);
-        when(delegate.updateState(agent, newState,false)).thenReturn(new AgentStateChangedResponse(null, true, new ArrayList<>()));
+        when(delegate.updateState(agent, newState, false)).thenReturn(
+                new AgentStateChangedResponse(null, true, new ArrayList<>()));
         this.agentStateListener.run(agent, newState, false);
 
         verify(factory, times(1)).getDelegate(any());

@@ -6,16 +6,17 @@ import com.ef.cim.objectmodel.CimEvent;
 import com.ef.cim.objectmodel.CimEventName;
 import com.ef.cim.objectmodel.CimEventType;
 import com.ef.cim.objectmodel.Enums;
+import com.ef.cim.objectmodel.StateChangeEvent;
 import com.ef.cim.objectmodel.dto.AgentReservedDto;
 import com.ef.cim.objectmodel.dto.NoAgentAvailableDto;
-import com.ef.cim.objectmodel.dto.RevokeResourceDto;
-import com.ef.cim.objectmodel.dto.TaskEnqueuedDto;
-import com.ef.cim.objectmodel.dto.TaskEnqueuedQueue;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskEnqueuedDto;
+import com.ef.cim.objectmodel.task.TaskMedia;
+import com.ef.cim.objectmodel.task.TaskQueue;
+import com.ef.cim.objectmodel.task.TaskStateChangedDto;
 import com.ef.mediaroutingengine.global.commons.Constants;
-import com.ef.mediaroutingengine.global.dto.StateChangeEvent;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -140,125 +141,50 @@ public class ActivemqCommunicator implements JmsCommunicator {
     }
 
     @Override
-    public void publishTaskStateChangeForReporting(Task task) {
-        try {
-            String messageStr = this.getSerializedCimEvent(AdapterUtility.createTaskDtoFrom(task),
-                    CimEventName.TASK_STATE_CHANGED, task.getTopicId(), task.getChannelSession());
-            TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
-            messageToSend.setText(messageStr);
-
-            messageToSend.setJMSType(CimEventName.TASK_STATE_CHANGED.name());
-            messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
-
-            conversationEventPublisher.send(messageToSend);
-
-            logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
-                    CimEventName.TASK_STATE_CHANGED, messageStr, topics.get(1));
-        } catch (JMSException | JsonProcessingException e) {
-            e.printStackTrace();
-        }
-
+    public void publishTaskStateChanged(Task task, ChannelSession channelSession, boolean taskStateChanged,
+                                        String... mediaStateChanges) {
+        CimEventName event = CimEventName.TASK_STATE_CHANGED;
+        TaskStateChangedDto dto = new TaskStateChangedDto(task, taskStateChanged, mediaStateChanges);
+        this.publishConversationEvent(event, dto, task.getConversationId(), channelSession);
     }
 
-    /**
-     * To publish NoAgentAvailable event.
-     *
-     * @param task the Task
-     */
     @Override
-    public void publishNoAgentAvailable(Task task) {
-        try {
-            String messageStr = this.getSerializedCimEvent(new NoAgentAvailableDto(task.getType()),
-                    CimEventName.NO_AGENT_AVAILABLE, task.getTopicId(), task.getChannelSession());
-            TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
-            messageToSend.setText(messageStr);
+    public void publishNoAgentAvailable(String conversationId, TaskMedia media) {
+        CimEventName event = CimEventName.NO_AGENT_AVAILABLE;
+        NoAgentAvailableDto data = new NoAgentAvailableDto(media.getType());
 
-            messageToSend.setJMSType(CimEventName.NO_AGENT_AVAILABLE.name());
-            messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
-
-            conversationEventPublisher.send(messageToSend);
-
-            logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
-                    CimEventName.NO_AGENT_AVAILABLE, messageStr, topics.get(1));
-        } catch (JMSException | JsonProcessingException e) {
-            e.printStackTrace();
-        }
+        this.publishConversationEvent(event, data, conversationId, media.getRequestSession());
     }
 
-    /**
-     * Publish Task Enqueued Event.
-     *
-     * @param task  the Task
-     * @param queue the queue info
-     */
     @Override
-    public void publishTaskEnqueued(Task task, PrecisionQueue queue) {
-        try {
-            TaskEnqueuedDto taskEnqueuedDto = new TaskEnqueuedDto(AdapterUtility.createTaskDtoFrom(task),
-                    new TaskEnqueuedQueue(queue.getId(), queue.getName()));
-            String messageStr = this.getSerializedCimEvent(taskEnqueuedDto,
-                    CimEventName.TASK_ENQUEUED, task.getTopicId(), task.getChannelSession());
-            TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
-            messageToSend.setText(messageStr);
+    public void publishTaskEnqueued(Task task, TaskMedia media, PrecisionQueue queue) {
+        CimEventName event = CimEventName.TASK_ENQUEUED;
+        TaskEnqueuedDto data = new TaskEnqueuedDto(task, new TaskQueue(queue.getId(), queue.getName()));
 
-            messageToSend.setJMSType(CimEventName.TASK_ENQUEUED.name());
-            messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
-
-            conversationEventPublisher.send(messageToSend);
-
-            logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
-                    CimEventName.TASK_ENQUEUED, messageStr, topics.get(1));
-        } catch (JMSException | JsonProcessingException e) {
-            e.printStackTrace();
-        }
+        this.publishConversationEvent(event, data, task.getConversationId(), media.getRequestSession());
     }
 
-    /**
-     * to publish Agent Reserved event on topic.
-     *
-     * @param task the task object
-     */
     @Override
-    public void publishAgentReserved(Task task, CCUser agent) {
-        try {
-            String messageStr = this.getSerializedCimEvent(new AgentReservedDto(AdapterUtility
-                    .createTaskDtoFrom(task), agent), CimEventName.AGENT_RESERVED, task.getTopicId(),
-                    task.getChannelSession());
-            TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
-            messageToSend.setText(messageStr);
+    public void publishAgentReserved(Task task, TaskMedia media, CCUser agent) {
+        CimEventName event = CimEventName.AGENT_RESERVED;
+        AgentReservedDto data = new AgentReservedDto(task, agent);
 
-            messageToSend.setJMSType(CimEventName.AGENT_RESERVED.name());
-            messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
-
-            conversationEventPublisher.send(messageToSend);
-
-            logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
-                    CimEventName.AGENT_RESERVED, messageStr, topics.get(1));
-        } catch (JMSException | JsonProcessingException e) {
-            e.printStackTrace();
-        }
+        this.publishConversationEvent(event, data, task.getConversationId(), media.getRequestSession());
     }
 
-    /**
-     * to publish revoke resource on topic.
-     *
-     * @param task the task object.
-     */
-    @Override
-    public void publishRevokeTask(Task task, RevokeResourceDto revokeResourceDto) {
+    private void publishConversationEvent(CimEventName event, Object data, String conversationId,
+                                          ChannelSession channelSession) {
         try {
-            String messageStr = this.getSerializedCimEvent(revokeResourceDto, CimEventName.REVOKE_RESOURCE,
-                    task.getTopicId(), task.getChannelSession());
+            String message = this.getSerializedCimEvent(data, event, conversationId, channelSession);
             TextMessage messageToSend = this.conversationEventPublisherSession.createTextMessage();
-            messageToSend.setText(messageStr);
 
-            messageToSend.setJMSType(CimEventName.REVOKE_RESOURCE.name());
+            messageToSend.setText(message);
+            messageToSend.setJMSType(event.name());
             messageToSend.setJMSCorrelationID(MDC.get(Constants.MDC_CORRELATION_ID));
 
             conversationEventPublisher.send(messageToSend);
 
-            logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'",
-                    CimEventName.REVOKE_RESOURCE, messageStr, topics.get(1));
+            logger.info("Jms event: '{}' with payload: '{}' published on topic: '{}'", event, message, topics.get(1));
         } catch (JMSException | JsonProcessingException e) {
             e.printStackTrace();
         }
@@ -275,8 +201,7 @@ public class ActivemqCommunicator implements JmsCommunicator {
                                          ChannelSession channelSession)
             throws JsonProcessingException {
         CimEvent cimEvent = new CimEvent(message, eventName, CimEventType.NOTIFICATION,
-                conversationId, AdapterUtility.getSender(), channelSession, channelSession.getRoomId(),
-                channelSession.getRoomLabel());
+                conversationId, AdapterUtility.getSender(), channelSession, channelSession.getRoomInfo());
         return this.objectMapper.writeValueAsString(cimEvent);
     }
 

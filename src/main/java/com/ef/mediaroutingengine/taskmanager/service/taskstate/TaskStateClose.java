@@ -1,12 +1,13 @@
 package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 
+import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.TaskState;
-import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
-import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskState;
+import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate.AgentStateListener;
+import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
-import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 
 /**
  * The type Task state close.
@@ -15,61 +16,46 @@ public class TaskStateClose implements TaskStateModifier {
     /**
      * The Precision queues pool.
      */
-    private final PrecisionQueuesPool precisionQueuesPool;
-    /**
-     * The Tasks pool.
-     */
-    private final TasksPool tasksPool;
-    /**
-     * The Task manager.
-     */
+    private final AgentsPool agentsPool;
+    private final AgentStateListener agentStateListener;
     private final TaskManager taskManager;
-    /**
-     * The JMS Communicator.
-     */
-    private final JmsCommunicator jmsCommunicator;
 
     /**
-     * Default constructor. Loads the dependencies.
+     * Instantiates a new Task state close.
      *
-     * @param precisionQueuesPool Pool of all precision queues
-     * @param taskManager         handles tasks closing.
+     * @param agentsPool         the agents pool
+     * @param agentStateListener the agent state listener
+     * @param taskManager        the task manager
      */
-    public TaskStateClose(PrecisionQueuesPool precisionQueuesPool, TasksPool tasksPool, TaskManager taskManager,
-                          JmsCommunicator jmsCommunicator) {
-        this.precisionQueuesPool = precisionQueuesPool;
-        this.tasksPool = tasksPool;
+    public TaskStateClose(AgentsPool agentsPool, AgentStateListener agentStateListener, TaskManager taskManager) {
+        this.agentsPool = agentsPool;
+        this.agentStateListener = agentStateListener;
         this.taskManager = taskManager;
-        this.jmsCommunicator = jmsCommunicator;
     }
 
 
     @Override
     public boolean updateState(Task task, TaskState state) {
-        task.setTaskState(state);
-
-        this.precisionQueuesPool.endTask(task);
-        this.taskManager.removeFromPoolAndRepository(task);
-        this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-
         if (isRona(state)) {
-            this.taskManager.endTaskFromAgentOnRona(task);
-            this.taskManager.rerouteReservedTask(task);
+            this.handleRona(task, state);
             return true;
         }
 
-        String conversationId = task.getTopicId();
-
-        if (tasksPool.findInProcessTaskFor(conversationId) == null) {
-            this.taskManager.cancelAgentRequestTtlTimerTask(conversationId);
-            this.taskManager.removeAgentRequestTtlTimerTask(conversationId);
-        }
-
-        this.taskManager.endTaskFromAssignedAgent(task);
+        this.taskManager.closeTask(task, state);
         return true;
     }
 
     private boolean isRona(TaskState state) {
         return state.getReasonCode() != null && state.getReasonCode().equals(Enums.TaskStateReasonCode.RONA);
+    }
+
+    private void handleRona(Task task, TaskState state) {
+        Agent agent = this.agentsPool.findBy(task.getAssignedTo());
+        agent.removeReservedTask();
+
+        AgentState agentState = new AgentState(Enums.AgentStateName.NOT_READY, null);
+        this.agentStateListener.propertyChange(agent, agentState, true);
+
+        this.taskManager.rerouteReserved(task, state);
     }
 }

@@ -19,6 +19,11 @@ public interface AgentsService {
      */
     CCUser createOrUpdate(CCUser agent);
 
+    /**
+     * Create or update.
+     *
+     * @param keycloakUser the keycloak user
+     */
     void createOrUpdate(KeycloakUser keycloakUser);
 
     /**
@@ -44,6 +49,11 @@ public interface AgentsService {
      */
     ResponseEntity<Object> update(CCUser agent, String id);
 
+    /**
+     * Update.
+     *
+     * @param keycloakUser the keycloak user
+     */
     void update(KeycloakUser keycloakUser);
 
     /**

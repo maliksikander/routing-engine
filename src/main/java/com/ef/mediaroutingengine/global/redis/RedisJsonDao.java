@@ -16,11 +16,11 @@ public class RedisJsonDao<T> {
     /**
      * The Redis client.
      */
-    private final RedisClient redisClient;
+    protected final RedisClient redisClient;
     /**
      * The Type.
      */
-    private final String type;
+    protected final String type;
     /**
      * The Clazz.
      */
@@ -114,6 +114,32 @@ public class RedisJsonDao<T> {
     }
 
     /**
+     * Find all list.
+     *
+     * @param ids the ids
+     * @return the list
+     */
+    public List<T> findAll(List<String> ids) {
+        if (ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String[] keys = ids.stream()
+                .map(id -> this.type + ":" + id)
+                .toArray(String[]::new);
+
+        return this.redisClient.multiGetJson(this.clazz, keys);
+    }
+
+    public <G> G findObjField(String id, String path, Class<G> clazz) {
+        return this.redisClient.getJson(this.getKey(id), path, clazz);
+    }
+
+    public <G> List<G> findArrayField(String id, String path, Class<G> clazz) {
+        return this.redisClient.getJsonArray(this.getKey(id), path, clazz);
+    }
+
+    /**
      * Update field boolean.
      *
      * @param id    the id
@@ -150,7 +176,7 @@ public class RedisJsonDao<T> {
      * @param id the id
      * @return the key
      */
-    private String getKey(String id) {
+    protected String getKey(String id) {
         return this.type + ":" + id;
     }
 }

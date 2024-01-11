@@ -3,7 +3,6 @@ package com.ef.mediaroutingengine.agentstatemanager.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -16,7 +15,6 @@ import static org.mockito.Mockito.when;
 import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
-import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentMrdStateChangeRequest;
 import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangeRequest;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
@@ -25,8 +23,6 @@ import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.service.AgentsService;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -86,7 +82,7 @@ class AgentStateServiceTest {
         doReturn(agent).when(spy).validateAndGetAgent(agentId);
 
         spy.agentState(request);
-        verify(agentStateListener, times(1)).propertyChange(agent, agentState,false);
+        verify(agentStateListener, times(1)).propertyChange(agent, agentState, false);
     }
 
     @Nested
@@ -101,15 +97,10 @@ class AgentStateServiceTest {
             agentStateService.agentLogin(request);
 
             ArgumentCaptor<AgentState> captor = ArgumentCaptor.forClass(AgentState.class);
-            verify(agentStateListener, times(1)).propertyChange(eq(agent), captor.capture(),eq(false));
+            verify(agentStateListener, times(1)).propertyChange(eq(agent), captor.capture(), eq(false));
 
             assertEquals(Enums.AgentStateName.LOGIN, captor.getValue().getName());
             assertNull(captor.getValue().getReasonCode());
-        }
-
-        @Test
-        void createsNewAgent_then_callsAgentStateListenerWithStateLogin_whenAgentNotFoundInPool() {
-
         }
 
         private KeycloakUser getKeyCloakUserInstance() {
@@ -117,21 +108,6 @@ class AgentStateServiceTest {
             keycloakUser.setId(UUID.randomUUID().toString());
             keycloakUser.setUsername("user");
             return keycloakUser;
-        }
-
-        private List<MediaRoutingDomain> getMrdList() {
-            List<MediaRoutingDomain> mrdList = new ArrayList<>();
-            mrdList.add(getNewMrdInstance("chat"));
-            mrdList.add(getNewMrdInstance("voice"));
-            return mrdList;
-        }
-
-        private MediaRoutingDomain getNewMrdInstance(String name) {
-            MediaRoutingDomain mrd = new MediaRoutingDomain();
-            mrd.setId(UUID.randomUUID().toString());
-            mrd.setName(name);
-            mrd.setMaxRequests(5);
-            return mrd;
         }
     }
 

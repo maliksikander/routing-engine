@@ -9,26 +9,23 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
-import com.ef.cim.objectmodel.dto.TaskDto;
 import com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate.AgentMrdStateListener;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.ConflictException;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.dto.AssociatedMrdUpdateConflictResponse;
 import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.model.AgentTask;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.pool.RoutingAttributesPool;
 import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -286,12 +283,10 @@ public class AgentsServiceImpl implements AgentsService {
 
         Agent agent = this.agentsPool.findBy(id);
 
-        List<Task> tasks = agent.getAllTasks();
-        if (!tasks.isEmpty()) {
+        List<AgentTask> agentTasks = agent.getAllTasks();
+        if (!agentTasks.isEmpty()) {
             logger.error("Could not delete agent, there are tasks associated to the agent | Agent: {}", id);
-            List<TaskDto> taskDtoList = new ArrayList<>();
-            tasks.forEach(task -> taskDtoList.add(AdapterUtility.createTaskDtoFrom(task)));
-            return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
+            return new ResponseEntity<>(agentTasks, HttpStatus.CONFLICT);
         }
 
         CCUser ccUser = optionalCcUser.get();
@@ -386,8 +381,7 @@ public class AgentsServiceImpl implements AgentsService {
      */
     private void putAgentMrdStateChangeRequest(Agent agent, String mrdId,
                                                Enums.AgentMrdStateName agentMrdStateName) {
-        AgentMrdState agentMrdState = agent.getAgentMrdState(mrdId);
-        if (agentMrdState.getMrd().isManagedByRe()) {
+        if (this.mrdPool.getType(mrdId).isManagedByRe()) {
             this.agentMrdStateListener.propertyChange(agent, mrdId, agentMrdStateName, true);
         }
     }

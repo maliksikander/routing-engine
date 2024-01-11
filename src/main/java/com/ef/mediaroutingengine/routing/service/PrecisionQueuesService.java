@@ -3,6 +3,8 @@ package com.ef.mediaroutingengine.routing.service;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.mediaroutingengine.routing.dto.AssociatedAgentsResponse;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
+import com.ef.mediaroutingengine.routing.dto.QueuesWithAvailableAgentsRes;
+import com.ef.mediaroutingengine.routing.model.Agent;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 
@@ -50,7 +52,7 @@ public interface PrecisionQueuesService {
      * @param conversationId id for the conversation
      * @return the precision queue with available agents
      */
-    ResponseEntity<Object> retrieveQueuesWithAssociatedAvailableAgents(String conversationId);
+    List<QueuesWithAvailableAgentsRes> getQueuesWithAvailableAgents(String conversationId, Agent agent);
 
     /**
      * Flush the task(s) in queue(s).

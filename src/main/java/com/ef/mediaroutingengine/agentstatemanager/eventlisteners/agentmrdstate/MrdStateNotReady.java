@@ -3,22 +3,28 @@ package com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate
 import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.pool.MrdPool;
 
 /**
  * The type Mrd state not ready.
  */
 public class MrdStateNotReady implements MrdStateDelegate {
+    private final MrdPool mrdPool;
+
+    public MrdStateNotReady(MrdPool mrdPool) {
+        this.mrdPool = mrdPool;
+    }
 
     @Override
     public Enums.AgentMrdStateName getNewState(Agent agent, AgentMrdState agentMrdState) {
-        if (!agentMrdState.getMrd().isManagedByRe()) {
+        if (!this.mrdPool.getType(agentMrdState.getMrd().getId()).isManagedByRe()) {
             return Enums.AgentMrdStateName.NOT_READY;
         }
 
         Enums.AgentMrdStateName currentState = agentMrdState.getState();
         String mrdId = agentMrdState.getMrd().getId();
 
-        if (agent.getReservedTask() != null && agent.getReservedTask().getMrd().getId().equals(mrdId)) {
+        if (agent.getReservedTask() != null && agent.getReservedTask().getMrdId().equals(mrdId)) {
             return currentState;
         }
 

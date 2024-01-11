@@ -1,10 +1,9 @@
 package com.ef.mediaroutingengine.routing.queue;
 
-import com.ef.mediaroutingengine.taskmanager.model.Task;
+import com.ef.mediaroutingengine.routing.model.QueueTask;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.validation.constraints.NotNull;
@@ -16,7 +15,7 @@ public class PriorityQueue {
     /**
      * The Multi level queue map.
      */
-    private final Map<Integer, ConcurrentLinkedQueue<Task>> multiLevelQueueMap;
+    private final Map<Integer, ConcurrentLinkedQueue<QueueTask>> multiLevelQueueMap;
     /**
      * The No of queue levels.
      */
@@ -38,7 +37,7 @@ public class PriorityQueue {
      * @param task the task service
      * @return the boolean
      */
-    public boolean enqueue(@NotNull Task task) {
+    public boolean enqueue(@NotNull QueueTask task) {
         return this.multiLevelQueueMap.get(task.getPriority()).offer(task);
     }
 
@@ -49,7 +48,7 @@ public class PriorityQueue {
      *             removed from queue otherwise (queue peek operation)
      * @return the task service in both cases (poll or peak), returns null if task not found
      */
-    public Task dequeue(boolean poll) {
+    public QueueTask dequeue(boolean poll) {
         for (int i = NO_OF_QUEUE_LEVELS; i >= 1; i--) {
             if (!this.multiLevelQueueMap.get(i).isEmpty()) {
                 return poll
@@ -58,6 +57,17 @@ public class PriorityQueue {
             }
         }
         return null;
+    }
+
+    /**
+     * Remove by task id boolean.
+     *
+     * @param taskId the task id
+     */
+    public void remove(@NotNull String taskId) {
+        for (Map.Entry<Integer, ConcurrentLinkedQueue<QueueTask>> entry : this.multiLevelQueueMap.entrySet()) {
+            entry.getValue().removeIf(t -> t.getTaskId().equals(taskId));
+        }
     }
 
     /**
@@ -74,65 +84,14 @@ public class PriorityQueue {
     }
 
     /**
-     * Index of int.
-     *
-     * @param taskId the task id
-     * @return the int
-     */
-    public int indexOf(String taskId) {
-        int index = -1;
-        int previousQueuesSize = 0;
-        for (int i = NO_OF_QUEUE_LEVELS; i >= 1; i--) {
-            Queue<Task> queue = this.multiLevelQueueMap.get(i);
-            int k = 0;
-            for (Task task : queue) {
-                if (task.getId().equals(taskId)) {
-                    index = previousQueuesSize + k;
-                    return index;
-                }
-                k++;
-            }
-            previousQueuesSize = previousQueuesSize + queue.size();
-        }
-        return index;
-    }
-
-    /**
-     * Get task service.
-     *
-     * @param taskId the task id
-     * @return the task service
-     */
-    public Task getTask(String taskId) {
-        for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
-            for (Task task : entry.getValue()) {
-                if (task.getId().equals(taskId)) {
-                    return task;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Task exists boolean.
-     *
-     * @param task the task service
-     * @return the boolean
-     */
-    public boolean taskExists(@NotNull Task task) {
-        return taskExists(task.getId());
-    }
-
-    /**
      * Task exists boolean.
      *
      * @param taskId the task id
      * @return the boolean
      */
-    public boolean taskExists(String taskId) {
-        for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
-            for (Task task1 : entry.getValue()) {
+    public boolean exists(String taskId) {
+        for (Map.Entry<Integer, ConcurrentLinkedQueue<QueueTask>> entry : this.multiLevelQueueMap.entrySet()) {
+            for (QueueTask task1 : entry.getValue()) {
                 if (taskId.equals(task1.getId())) {
                     return true;
                 }
@@ -141,32 +100,16 @@ public class PriorityQueue {
         return false;
     }
 
-    /**
-     * Remove boolean.
-     *
-     * @param task the task service
-     * @return the boolean
-     */
-    public boolean remove(@NotNull Task task) {
-        for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
-            for (Task t : entry.getValue()) {
-                if (t.getId().equals(task.getId())) {
-                    entry.getValue().remove(t);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
+
 
     /**
      * Returns the list of enqueued tasks.
      *
      * @return list of enqueued tasks
      */
-    public List<Task> getEnqueuedTasksList() {
-        List<Task> taskList = new LinkedList<>();
-        for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
+    public List<QueueTask> getAll() {
+        List<QueueTask> taskList = new LinkedList<>();
+        for (Map.Entry<Integer, ConcurrentLinkedQueue<QueueTask>> entry : this.multiLevelQueueMap.entrySet()) {
             taskList.addAll(entry.getValue());
         }
         return taskList;
@@ -175,11 +118,12 @@ public class PriorityQueue {
     /**
      * Gets position.
      *
-     * @param task the task
+     * @param taskId   the task id
+     * @param priority the priority
      * @return the position
      */
-    public int getPosition(Task task) {
-        int positionInSamePriority = getPositionInSamePriority(task);
+    public int getPosition(String taskId, int priority) {
+        int positionInSamePriority = getPositionInSamePriority(taskId, priority);
 
         if (positionInSamePriority == -1) {
             return -1;
@@ -187,17 +131,17 @@ public class PriorityQueue {
 
         int position = positionInSamePriority;
 
-        for (int i = task.getPriority() + 1; i <= NO_OF_QUEUE_LEVELS; i++) {
+        for (int i = priority + 1; i <= NO_OF_QUEUE_LEVELS; i++) {
             position += this.multiLevelQueueMap.get(i).size();
         }
 
         return position;
     }
 
-    private int getPositionInSamePriority(Task task) {
+    private int getPositionInSamePriority(String taskId, int priority) {
         int position = 1;
-        for (Task queuedTask : this.multiLevelQueueMap.get(task.getPriority())) {
-            if (queuedTask.getId().equals(task.getId())) {
+        for (QueueTask queuedTask : this.multiLevelQueueMap.get(priority)) {
+            if (queuedTask.getTaskId().equals(taskId)) {
                 return position;
             }
             position++;
@@ -205,42 +149,17 @@ public class PriorityQueue {
         return -1;
     }
 
-    /**
-     * Restores the tasks in the queue from backup.
-     *
-     * @param taskList list of tasks to be restored
-     */
-    public void restoreBackup(@NotNull List<Task> taskList) {
-        for (Task task : taskList) {
-            this.enqueue(task);
-        }
-    }
-
-    /**
-     * Returns the max time a task has been enqueued.
-     *
-     * @return max enqueue time.
-     */
-    public long getMaxTime() {
-        long maxTime = 0;
-        for (Map.Entry<Integer, ConcurrentLinkedQueue<Task>> entry : this.multiLevelQueueMap.entrySet()) {
-            if ((entry.getValue()).peek() != null) {
-                long queueMaxTime = System.currentTimeMillis() - (entry.getValue()).peek().getEnqueueTime();
-                if (queueMaxTime > maxTime) {
-                    maxTime = queueMaxTime;
-                }
-            }
-        }
-        return maxTime;
-    }
-
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder("->/");
 
         for (int i = NO_OF_QUEUE_LEVELS; i >= 1; i--) {
-            for (Task task : this.multiLevelQueueMap.get(i)) {
-                result.append(task.getId()).append(",");
+            for (QueueTask task : this.multiLevelQueueMap.get(i)) {
+                result.append("Task ID: ")
+                        .append(task.getTaskId())
+                        .append(", Media ID: ")
+                        .append(task.getMediaId())
+                        .append("|");
             }
         }
 
