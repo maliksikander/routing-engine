@@ -1,7 +1,7 @@
 package com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate;
 
 import com.ef.cim.objectmodel.AgentState;
-import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
+import com.ef.cim.objectmodel.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.routing.model.Agent;
 
 /**

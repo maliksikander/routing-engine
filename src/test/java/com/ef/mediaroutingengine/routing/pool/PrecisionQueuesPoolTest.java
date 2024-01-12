@@ -1,14 +1,13 @@
 package com.ef.mediaroutingengine.routing.pool;
 
-import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
-import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class PrecisionQueuesPoolTest {
     private PrecisionQueuesPool pool;

@@ -1,15 +1,22 @@
 package com.ef.mediaroutingengine.routing.pool;
 
+import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
-import com.ef.cim.objectmodel.TaskQueue;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskMedia;
+import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.model.NewTaskPayload;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
+import com.ef.mediaroutingengine.routing.model.QueueEventName;
+import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.stereotype.Repository;
 
@@ -26,8 +33,8 @@ public class PrecisionQueuesPool {
     /**
      * Loads all the precision queues from DB.
      *
-     * @param entities the precision queue entities
-     * @param agentsPool             the agents pool
+     * @param entities   the precision queue entities
+     * @param agentsPool the agents pool
      */
     public void loadFrom(List<PrecisionQueueEntity> entities, AgentsPool agentsPool) {
         this.pool.clear();
@@ -93,43 +100,6 @@ public class PrecisionQueuesPool {
     }
 
     /**
-     * Calculate avg talk time of long.
-     *
-     * @param queue the queue
-     * @param task  the task
-     * @return the long
-     */
-    private long calculateAvgTalkTimeOf(PrecisionQueue queue, Task task) {
-        long currentTotalTalkTime = queue.getAverageTalkTime() * queue.getNoOfTask();
-        long newTotalTalkTime = currentTotalTalkTime + task.getHandlingTime();
-        return newTotalTalkTime / (queue.getNoOfTask() + 1);
-    }
-
-    /**
-     * Ends a task in the particular precision queue in the pool.
-     *
-     * @param task the task to end
-     * @return true if task found and ended, false otherwise
-     */
-    public boolean endTask(Task task) {
-        if (task.getQueue() == null) {
-            return false;
-        }
-        PrecisionQueue queue = this.pool.get(task.getQueue().getId());
-        if (queue != null) {
-            if (queue.getAverageTalkTime() != null && queue.getAverageTalkTime() > 0) {
-                queue.setAverageTalkTime(calculateAvgTalkTimeOf(queue, task));
-            } else {
-                queue.setAverageTalkTime(task.getHandlingTime());
-            }
-            queue.incrNoOfTask();
-            queue.removeTask(task);
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Size int.
      *
      * @return the int
@@ -176,5 +146,81 @@ public class PrecisionQueuesPool {
      */
     public void deleteFromAll(Agent agent) {
         pool.forEach((k, v) -> v.deleteAssociatedAgentFromAll(agent));
+    }
+
+    /**
+     * Publish new request.
+     *
+     * @param task  the task
+     * @param media the media
+     */
+    public void publishNewRequest(Task task, TaskMedia media) {
+        String evtName = QueueEventName.NEW_REQUEST;
+        NewTaskPayload payload = new NewTaskPayload(task, media);
+        this.notifyQueues(new PropertyChangeEvent(this, evtName, null, payload));
+    }
+
+    /**
+     * Publish agent available.
+     *
+     * @param agentMrdState the agent mrd state
+     */
+    public void publishAgentAvailable(AgentMrdState agentMrdState) {
+        String eventName = QueueEventName.AGENT_AVAILABLE;
+        PropertyChangeEvent evt = new PropertyChangeEvent(this, eventName, null, agentMrdState);
+        this.notifyQueues(agentMrdState.getMrd().getId(), evt);
+    }
+
+    /**
+     * Publish request accepted.
+     *
+     * @param mrdId the mrd id
+     */
+    public void publishRequestAccepted(String mrdId) {
+        String eventName = QueueEventName.REQUEST_ACCEPTED;
+        this.notifyQueues(mrdId, new PropertyChangeEvent(this, eventName, null, null));
+    }
+
+    /**
+     * Publish on failover.
+     */
+    public void publishOnFailover() {
+        this.notifyQueues(new PropertyChangeEvent(this, QueueEventName.ON_FAILOVER, null, null));
+    }
+
+    /**
+     * Notify queues.
+     *
+     * @param mrdId the mrd id
+     * @param evt   the evt
+     */
+    private void notifyQueues(String mrdId, PropertyChangeEvent evt) {
+        this.notifyQueues(evt, this.toList().stream().filter(p -> p.getMrd().getId().equals(mrdId)).toList());
+    }
+
+    /**
+     * Notify queues.
+     *
+     * @param evt the evt
+     */
+    private void notifyQueues(PropertyChangeEvent evt) {
+        this.notifyQueues(evt, this.toList());
+    }
+
+    /**
+     * Notify queues.
+     *
+     * @param evt    the evt
+     * @param queues the queues
+     */
+    private void notifyQueues(PropertyChangeEvent evt, List<PrecisionQueue> queues) {
+        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+        CompletableFuture.runAsync(() -> {
+            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+            for (PrecisionQueue queue : queues) {
+                queue.getTaskRouter().propertyChange(evt);
+            }
+            MDC.clear();
+        });
     }
 }

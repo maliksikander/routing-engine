@@ -1,12 +1,19 @@
 package com.ef.mediaroutingengine.global.dto;
 
 import java.sql.Timestamp;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  * The type Success response body.
  */
+@Getter
+@Setter
+@NoArgsConstructor
+@ToString
 public class SuccessResponseBody {
-
     /**
      * The Timestamp.
      */
@@ -23,40 +30,5 @@ public class SuccessResponseBody {
      */
     public SuccessResponseBody(String message) {
         this.message = message;
-    }
-
-    /**
-     * Gets timestamp.
-     *
-     * @return the timestamp
-     */
-    public Timestamp getTimestamp() {
-        return timestamp;
-    }
-
-    /**
-     * Gets message.
-     *
-     * @return the message
-     */
-    public String getMessage() {
-        return message;
-    }
-
-    /**
-     * Sets message.
-     *
-     * @param message the message
-     */
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    @Override
-    public String toString() {
-        return "SuccessResponseBody{"
-                + "timestamp=" + timestamp
-                + ", message='" + message + '\''
-                + '}';
     }
 }

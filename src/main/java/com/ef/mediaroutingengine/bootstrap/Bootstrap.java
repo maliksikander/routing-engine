@@ -9,12 +9,13 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.ExpressionEntity;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.MrdType;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.StepEntity;
-import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.TermEntity;
-import com.ef.cim.objectmodel.dto.TaskDto;
+import com.ef.cim.objectmodel.enums.MrdTypeName;
+import com.ef.cim.objectmodel.task.Task;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
@@ -25,11 +26,10 @@ import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.pool.RoutingAttributesPool;
 import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
 import com.ef.mediaroutingengine.routing.repository.MediaRoutingDomainRepository;
+import com.ef.mediaroutingengine.routing.repository.MrdTypeRepository;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.routing.repository.RoutingAttributeRepository;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
-import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,6 +77,7 @@ public class Bootstrap {
      * The Routing attribute repository.
      */
     private final RoutingAttributeRepository routingAttributeRepository;
+    private final MrdTypeRepository mrdTypeRepository;
     /**
      * In-memory pool of all agents.
      */
@@ -93,10 +94,6 @@ public class Bootstrap {
      * The Routing attributes pool.
      */
     private final RoutingAttributesPool routingAttributesPool;
-    /**
-     * In-memory pool of all Tasks.
-     */
-    private final TasksPool tasksPool;
     /**
      * The Task manager.
      */
@@ -119,7 +116,6 @@ public class Bootstrap {
      * @param mrdPool                      MRD Pool bean
      * @param precisionQueuesPool          Precision-Queues Pool bean
      * @param routingAttributesPool        the routing attributes pool
-     * @param tasksPool                    Tasks pool bean
      * @param taskManager                  the task manager
      * @param jmsCommunicator              JMS Communicator
      */
@@ -130,11 +126,11 @@ public class Bootstrap {
                      TasksRepository tasksRepository,
                      AgentPresenceRepository agentPresenceRepository,
                      RoutingAttributeRepository routingAttributeRepository,
+                     MrdTypeRepository mrdTypeRepository,
                      AgentsPool agentsPool,
                      MrdPool mrdPool,
                      PrecisionQueuesPool precisionQueuesPool,
                      RoutingAttributesPool routingAttributesPool,
-                     TasksPool tasksPool,
                      TaskManager taskManager,
                      JmsCommunicator jmsCommunicator) {
         this.agentsRepository = agentsRepository;
@@ -143,30 +139,26 @@ public class Bootstrap {
         this.tasksRepository = tasksRepository;
         this.agentPresenceRepository = agentPresenceRepository;
         this.routingAttributeRepository = routingAttributeRepository;
+        this.mrdTypeRepository = mrdTypeRepository;
         this.agentsPool = agentsPool;
         this.mrdPool = mrdPool;
         this.precisionQueuesPool = precisionQueuesPool;
         this.routingAttributesPool = routingAttributesPool;
-        this.tasksPool = tasksPool;
         this.taskManager = taskManager;
         this.jmsCommunicator = jmsCommunicator;
     }
 
     /**
      * Subscribes to state change Events JMS Topic to communicate state change with Agent-Manager.
-     *
-     * @return the boolean
      */
-    public boolean subscribeToStateEventsChannel() {
+    public void subscribeToStateEventsChannel() {
         try {
             this.jmsCommunicator.init("STATE_CHANNEL", "conversation-topic");
             logger.info("Successfully subscribed to JMS topic: STATE_CHANNEL");
-            return true;
         } catch (JMSException jmsException) {
             logger.error(ExceptionUtils.getMessage(jmsException));
             logger.error(ExceptionUtils.getStackTrace(jmsException));
         }
-        return false;
     }
 
     /**
@@ -180,7 +172,7 @@ public class Bootstrap {
         this.routingAttributesPool.loadFrom(routingAttributeRepository.findAll());
         logger.debug("Routing-Attributes pool loaded from DB");
 
-        this.mrdPool.loadFrom(this.getMrdFromConfigDb());
+        this.mrdPool.loadFrom(this.bootstrapMrdTypes(), this.getMrdFromConfigDb());
         logger.debug("MRDs pool loaded from DB");
 
         List<CCUser> ccUsers = this.getCcUsersFromConfigDb();
@@ -193,70 +185,17 @@ public class Bootstrap {
         logger.debug("Precision-Queues pool loaded from DB");
 
         // Load tasks from Tasks Repository
-        this.tasksPool.loadFrom(this.getTasksFromRepository());
-        this.handleTasksWithExpiredAgentRequestTtl();
-        this.associateTaskWithAgents();
-        this.taskManager.enqueueQueuedTasksOnFailover();
+        List<Task> tasks = this.tasksRepository.findAll();
+        this.taskManager.loadTasksOnStartup(tasks);
 
-        logger.info("Routing-Attributes pool size: {}", this.routingAttributesPool.size());
-        logger.info("Agents pool size: {}", this.agentsPool.size());
-        logger.info("Mrd pool size: {}", this.mrdPool.size());
-        logger.info("Precision-Queues pool size: {}", this.precisionQueuesPool.size());
-        logger.info("Task pool size: {}", this.tasksPool.size());
+        logger.info("Routing Attributes: {}", this.routingAttributesPool.size());
+        logger.info("Agents: {}", this.agentsPool.size());
+        logger.info("Media Routing Domains: {}", this.mrdPool.size());
+        logger.info("Precision Queues: {}", this.precisionQueuesPool.size());
+        logger.info("Tasks: {}", tasks.size());
 
         logger.debug(Constants.METHOD_ENDED);
     }
-
-    private void handleTasksWithExpiredAgentRequestTtl() {
-        List<Task> queuedAndReservedTasks = this.filterQueuedAndReservedTasks();
-
-        // Remove Queued Tasks whose agent Request ttl is expired
-        for (Task task : queuedAndReservedTasks) {
-            if (!this.isAgentRequestTtlExpired(task)) {
-                continue;
-            }
-
-            Enums.TaskStateName taskState = task.getTaskState().getName();
-
-            if (taskState.equals(Enums.TaskStateName.QUEUED)) {
-                logger.debug("QUEUED Task: {} AgentRequestTtl is expired, removing it..", task.getId());
-
-                task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED,
-                        Enums.TaskStateReasonCode.NO_AGENT_AVAILABLE));
-                this.taskManager.removeFromPoolAndRepository(task);
-                this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-                this.jmsCommunicator.publishNoAgentAvailable(task);
-                logger.debug("Task: {} removed", task.getId());
-
-            } else if (taskState.equals(Enums.TaskStateName.RESERVED)) {
-                logger.debug("RESERVED Task: {} AgentRequestTtl is expired, marking for deletion", task.getId());
-                task.markForDeletion();
-            }
-        }
-    }
-
-    private boolean isAgentRequestTtlExpired(Task task) {
-        int ttl = task.getChannelSession().getChannel().getChannelConfig().getRoutingPolicy().getAgentRequestTtl();
-        long delay = ttl * 1000L;
-        return System.currentTimeMillis() - task.getEnqueueTime() >= delay;
-    }
-
-    private List<Task> filterQueuedAndReservedTasks() {
-        return this.tasksPool.findAll().stream()
-                .filter(t -> t.getTaskState().getName().equals(Enums.TaskStateName.QUEUED)
-                        || t.getTaskState().getName().equals(Enums.TaskStateName.RESERVED))
-                .toList();
-    }
-
-    private List<TaskDto> getTasksFromRepository() {
-        List<TaskDto> taskDtoList = this.tasksRepository.findAll(2500);
-        for (TaskDto taskDto : taskDtoList) {
-            MediaRoutingDomain mediaRoutingDomain = this.mrdPool.findById(taskDto.getMrd().getId());
-            taskDto.setMrd(mediaRoutingDomain);
-        }
-        return taskDtoList;
-    }
-
 
     private List<PrecisionQueueEntity> getQueuesFromConfigDb() {
         List<PrecisionQueueEntity> precisionQueueEntities = precisionQueueRepository.findAll();
@@ -303,35 +242,35 @@ public class Bootstrap {
     }
 
     protected MediaRoutingDomain createCiscoCcMrd() {
-        MediaRoutingDomain ciscoCcMrd = new MediaRoutingDomain();
-        ciscoCcMrd.setId(Constants.CISCO_CC_MRD_ID);
-        ciscoCcMrd.setName("CISCO CC");
-        ciscoCcMrd.setInterruptible(false);
-        ciscoCcMrd.setDescription("Standard voice MRD for CISCO CC");
-        ciscoCcMrd.setMaxRequests(1);
-        ciscoCcMrd.setManagedByRe(false);
-        return ciscoCcMrd;
+        return new MediaRoutingDomain(Constants.CISCO_CC_MRD_ID, Constants.CISCO_CC_MRD_TYPE_ID,
+                "CISCO CC", "Standard voice MRD for CISCO CC", 1);
     }
 
     protected MediaRoutingDomain createCxVoiceMrd() {
-        MediaRoutingDomain cxVoiceMrd = new MediaRoutingDomain();
-        cxVoiceMrd.setId(Constants.CX_VOICE_MRD_ID);
-        cxVoiceMrd.setName("CX VOICE");
-        cxVoiceMrd.setInterruptible(false);
-        cxVoiceMrd.setDescription("Standard voice MRD for CX Voice");
-        cxVoiceMrd.setMaxRequests(1);
-        cxVoiceMrd.setManagedByRe(true);
-        return cxVoiceMrd;
+        return new MediaRoutingDomain(Constants.CX_VOICE_MRD_ID, Constants.CX_VOICE_MRD_TYPE_ID,
+                "CX VOICE", "Standard voice MRD for CX Voice", 1);
     }
 
     protected MediaRoutingDomain createChatMrd() {
-        MediaRoutingDomain chatMrd = new MediaRoutingDomain();
-        chatMrd.setId(Constants.CHAT_MRD_ID);
-        chatMrd.setName("CHAT");
-        chatMrd.setDescription("Standard chat MRD");
-        chatMrd.setMaxRequests(5);
-        chatMrd.setManagedByRe(true);
-        return chatMrd;
+        return new MediaRoutingDomain(Constants.CHAT_MRD_ID, Constants.CHAT_MRD_TYPE_ID,
+                "CHAT", "Standard chat MRD", 5);
+    }
+
+    List<MrdType> bootstrapMrdTypes() {
+        List<MrdType> mrdTypeList = this.mrdTypeRepository.findAll();
+        List<String> idList = mrdTypeList.stream().map(MrdType::getId).toList();
+
+        if (!idList.contains(Constants.CHAT_MRD_TYPE_ID)) {
+            mrdTypeList.add(new MrdType(Constants.CHAT_MRD_TYPE_ID, MrdTypeName.CHAT, true, true, true));
+        }
+        if (!idList.contains(Constants.CX_VOICE_MRD_TYPE_ID)) {
+            mrdTypeList.add(new MrdType(Constants.CX_VOICE_MRD_TYPE_ID, MrdTypeName.CX_VOICE, true, false, false));
+        }
+        if (!idList.contains(Constants.CISCO_CC_MRD_TYPE_ID)) {
+            mrdTypeList.add(new MrdType(Constants.CISCO_CC_MRD_TYPE_ID, MrdTypeName.CISCO_CC, false, false, false));
+        }
+
+        return this.mrdTypeRepository.saveAll(mrdTypeList);
     }
 
     private List<CCUser> getCcUsersFromConfigDb() {
@@ -347,22 +286,6 @@ public class Bootstrap {
         }
 
         return ccUsers;
-    }
-
-    /**
-     * Associate task with agent.
-     */
-    private void associateTaskWithAgents() {
-        for (Task task : this.tasksPool.findAll()) {
-            Agent agent = this.agentsPool.findBy(task.getAssignedTo());
-            if (agent != null) {
-                if (task.getTaskState().getName().equals(Enums.TaskStateName.RESERVED)) {
-                    agent.reserveTask(task);
-                } else if (task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
-                    agent.addActiveTask(task);
-                }
-            }
-        }
     }
 
     /**

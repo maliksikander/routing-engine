@@ -1,9 +1,11 @@
 package com.ef.mediaroutingengine.routing.dto;
 
 import com.ef.cim.objectmodel.ChannelSession;
-import com.ef.cim.objectmodel.TaskState;
-import com.ef.cim.objectmodel.TaskType;
+import com.ef.cim.objectmodel.task.TaskMediaState;
+import com.ef.cim.objectmodel.task.TaskType;
+import java.util.List;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,19 +25,12 @@ public class AssignAgentRequest {
     @NotBlank
     private String agent;
     @NotNull
-    private ChannelSession channelSession;
+    private ChannelSession requestSession;
+    @NotEmpty
+    private List<ChannelSession> channelSessions;
     @NotNull
-    private TaskState taskState;
+    private TaskMediaState state;
     @NotNull
-    private TaskType taskType;
-
-    @Override
-    public String toString() {
-        return "AssignAgentRequest{"
-                + "agent='" + agent + '\''
-                + ", channelSession=" + channelSession
-                + ", taskState=" + taskState
-                + ", taskType=" + taskType
-                + '}';
-    }
+    private TaskType type;
+    private boolean offerToAgent;
 }

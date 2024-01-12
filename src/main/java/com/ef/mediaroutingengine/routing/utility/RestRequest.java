@@ -1,16 +1,15 @@
 package com.ef.mediaroutingengine.routing.utility;
 
 import com.ef.cim.objectmodel.CCUser;
-import com.ef.cim.objectmodel.TaskState;
 import com.ef.cim.objectmodel.dto.QueueHistoricalStatsDto;
-import com.ef.cim.objectmodel.dto.TaskDto;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskMedia;
+import com.ef.cim.objectmodel.task.TaskMediaState;
 import com.ef.mediaroutingengine.config.ExternalServiceConfig;
 import com.ef.mediaroutingengine.global.commons.Constants;
-import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.global.utilities.ObjectToUrlEncodedConverter;
 import com.ef.mediaroutingengine.routing.dto.AssignTaskRequest;
 import com.ef.mediaroutingengine.routing.dto.RevokeTaskRequest;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -64,31 +63,42 @@ public class RestRequest {
     }
 
     /**
-     * Calls the Agent-manager's Assign-Task API.
+     * Post assign task boolean.
      *
-     * @param task  the task dto
-     * @param agent the agent to assign task to
-     * @return true if request successful, false otherwise.
+     * @param task  the task
+     * @param media the media
+     * @param state the state
+     * @param agent the agent
+     * @param async the async
+     * @return the boolean
      */
-    public boolean postAssignTask(Task task, CCUser agent, TaskState taskState, boolean async) {
+    public boolean postAssignTask(Task task, TaskMedia media, TaskMediaState state, CCUser agent, boolean async) {
         if (async) {
             String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
             CompletableFuture.runAsync(() -> {
                 MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
-                MDC.put(Constants.MDC_TOPIC_ID, task.getTopicId());
-                this.postAssignTask(task, agent, taskState);
+                MDC.put(Constants.MDC_TOPIC_ID, task.getConversationId());
+                this.postAssignTask(task, media, state, agent);
                 MDC.clear();
             });
             return true;
         }
 
-        return postAssignTask(task, agent, taskState);
+        return postAssignTask(task, media, state, agent);
     }
 
-    private boolean postAssignTask(Task task, CCUser agent, TaskState taskState) {
-        TaskDto taskDto = AdapterUtility.createTaskDtoFrom(task);
-        taskDto.setState(taskState);
-        AssignTaskRequest request = new AssignTaskRequest(taskDto, agent);
+    /**
+     * Post assign task boolean.
+     *
+     * @param task  the task
+     * @param media the media
+     * @param state the state
+     * @param agent the agent
+     * @return the boolean
+     */
+    private boolean postAssignTask(Task task, TaskMedia media, TaskMediaState state, CCUser agent) {
+        media.setState(state);
+        AssignTaskRequest request = new AssignTaskRequest(task.getId(), task.getConversationId(), media, agent);
 
         try {
             this.httpRequest(request, this.config.getAssignTaskUri(), HttpMethod.POST);
@@ -101,21 +111,38 @@ public class RestRequest {
     }
 
     /**
-     * Calls the agent manager's Revoke task API.
+     * Post revoke task.
      *
-     * @param task the task.
-     * @return true if request is successful
+     * @param task  the task
+     * @param async the async
      */
-    public boolean postRevokeTask(Task task) {
-        RevokeTaskRequest requestBody = new RevokeTaskRequest(task.getId(), task.getAssignedTo().getId(),
-                task.getTopicId());
+    public void postRevokeTask(Task task, boolean async) {
+        if (!async) {
+            this.postRevokeTask(task);
+            return;
+        }
+
+        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+        CompletableFuture.runAsync(() -> {
+            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+            MDC.put(Constants.MDC_TOPIC_ID, task.getConversationId());
+            this.postRevokeTask(task);
+            MDC.clear();
+        });
+
+    }
+
+    /**
+     * Post revoke task.
+     *
+     * @param task the task
+     */
+    private void postRevokeTask(Task task) {
         try {
-            this.httpRequest(requestBody, this.config.getRevokeTaskUri(), HttpMethod.POST);
-            return true;
+            this.httpRequest(new RevokeTaskRequest(task), this.config.getRevokeTaskUri(), HttpMethod.POST);
         } catch (Exception e) {
             logger.error(ExceptionUtils.getMessage(e));
             logger.error(ExceptionUtils.getStackTrace(e));
-            return false;
         }
     }
 
@@ -134,10 +161,6 @@ public class RestRequest {
         headers.set(Constants.MDC_CORRELATION_ID, MDC.get(Constants.MDC_CORRELATION_ID));
 
         HttpEntity<Object> httpRequest = new HttpEntity<>(requestBody, headers);
-
-        RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
-        Duration duration = Duration.ofSeconds(5);
-        RestTemplate restTemplate = restTemplateBuilder.setConnectTimeout(duration).build();
 
         try {
             switch (httpMethod) {
@@ -172,30 +195,24 @@ public class RestRequest {
     /**
      * Makes Post request to keycloak.
      *
-     * @param map  Request Body.
-     * @param uri  Request URL.
-     * @return     AccessTokenResponse Object.
+     * @param map Request Body.
+     * @param uri Request URL.
+     * @return AccessTokenResponse Object.
      */
-    public ResponseEntity<AccessTokenResponse>  getToken(MultiValueMap<String, String> map, String uri) {
-
+    public ResponseEntity<AccessTokenResponse> getToken(MultiValueMap<String, String> map, String uri) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         HttpEntity<MultiValueMap<String, String>> requestBodyFormUrlEncoded = new HttpEntity<>(map, headers);
-        RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
-        Duration duration = Duration.ofSeconds(5);
-        RestTemplate restTemplate = restTemplateBuilder.setConnectTimeout(duration).build();
+
         restTemplate.getMessageConverters().add(new ObjectToUrlEncodedConverter(new ObjectMapper()));
 
         try {
-            return restTemplate.postForEntity(uri,
-                    requestBodyFormUrlEncoded, AccessTokenResponse.class);
+            return restTemplate.postForEntity(uri, requestBodyFormUrlEncoded, AccessTokenResponse.class);
         } catch (ResourceAccessException resourceAccessException) {
             logger.error(ExceptionUtils.getMessage(resourceAccessException));
             logger.error(ExceptionUtils.getStackTrace(resourceAccessException));
         }
 
-
         return null;
     }
-
 }

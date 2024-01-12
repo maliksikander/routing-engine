@@ -1,7 +1,9 @@
 package com.ef.mediaroutingengine.routing.pool;
 
 import com.ef.cim.objectmodel.MediaRoutingDomain;
+import com.ef.cim.objectmodel.MrdType;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,13 +18,17 @@ public class MrdPool {
      * The MRD pool.
      */
     private final Map<String, MediaRoutingDomain> pool = new ConcurrentHashMap<>();
+    private final Map<String, MrdType> mrdTypes = new HashMap<>();
 
     /**
      * Load pool at start of application.
      *
      * @param mediaRoutingDomains list of media-routing-domains from config db.
      */
-    public void loadFrom(List<MediaRoutingDomain> mediaRoutingDomains) {
+    public void loadFrom(List<MrdType> mrdTypes, List<MediaRoutingDomain> mediaRoutingDomains) {
+        this.mrdTypes.clear();
+        mrdTypes.forEach((t -> this.mrdTypes.put(t.getId(), t)));
+
         this.pool.clear();
         mediaRoutingDomains.forEach(mrd -> this.pool.put(mrd.getId(), mrd));
     }
@@ -45,8 +51,8 @@ public class MrdPool {
         MediaRoutingDomain existing = this.pool.get(mediaRoutingDomain.getId());
         if (existing != null) {
             existing.setName(mediaRoutingDomain.getName());
+            existing.setType(mediaRoutingDomain.getType());
             existing.setDescription(mediaRoutingDomain.getDescription());
-            existing.setInterruptible(mediaRoutingDomain.isInterruptible());
             existing.setMaxRequests(mediaRoutingDomain.getMaxRequests());
         }
     }
@@ -93,5 +99,21 @@ public class MrdPool {
      */
     public int size() {
         return this.pool.size();
+    }
+
+    /**
+     * Gets type.
+     *
+     * @param mrdId the mrd id
+     * @return the type
+     */
+    public MrdType getType(String mrdId) {
+        MediaRoutingDomain mrd = this.findById(mrdId);
+
+        if (mrd == null) {
+            return null;
+        }
+
+        return this.mrdTypes.get(mrd.getType());
     }
 }

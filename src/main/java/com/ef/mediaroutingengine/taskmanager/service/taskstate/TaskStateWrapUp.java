@@ -1,10 +1,10 @@
 package com.ef.mediaroutingengine.taskmanager.service.taskstate;
 
+import com.ef.cim.objectmodel.ChannelSession;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.cim.objectmodel.TaskState;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskState;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
-import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 
 /**
@@ -27,13 +27,15 @@ public class TaskStateWrapUp implements TaskStateModifier {
 
     @Override
     public boolean updateState(Task task, TaskState state) {
-        if (!task.getTaskState().getName().equals(Enums.TaskStateName.ACTIVE)) {
+        if (!task.getState().getName().equals(Enums.TaskStateName.ACTIVE)) {
             return false;
         }
 
-        task.setTaskState(state);
-        tasksRepository.save(task.getId(), AdapterUtility.createTaskDtoFrom(task));
-        jmsCommunicator.publishTaskStateChangeForReporting(task);
+        task.setState(state);
+        this.tasksRepository.updateState(task.getId(), state);
+
+        ChannelSession session = task.getActiveMedia().get(task.getActiveMedia().size() - 1).getRequestSession();
+        this.jmsCommunicator.publishTaskStateChanged(task, session, true);
 
         return true;
     }

@@ -1,10 +1,12 @@
 package com.ef.mediaroutingengine.routing.controller;
 
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
+import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
+import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.service.PrecisionQueuesService;
 import java.util.Optional;
-import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
@@ -37,6 +39,7 @@ public class PrecisionQueuesController {
      * The API calls are passed to this service for processing.
      */
     private final PrecisionQueuesService service;
+    private final AgentsPool agentsPool;
 
     /**
      * Default Constructor. Loads the required dependency beans.
@@ -44,8 +47,9 @@ public class PrecisionQueuesController {
      * @param service handles the actual processing for the API calls.
      */
     @Autowired
-    public PrecisionQueuesController(PrecisionQueuesService service) {
+    public PrecisionQueuesController(PrecisionQueuesService service, AgentsPool agentsPool) {
         this.service = service;
+        this.agentsPool = agentsPool;
     }
 
     /**
@@ -80,10 +84,20 @@ public class PrecisionQueuesController {
      */
     @CrossOrigin(origins = "*")
     @GetMapping(value = "precision-queues/available-agents", produces = "application/json")
-    public ResponseEntity<Object> retrieveQueuesWithAvailableAgents(@RequestParam @NotBlank String conversationId) {
-        logger.info("request received on retrieveQueuesWithAvailableAgents for fetching precision queues "
-                + "with available agents");
-        return this.service.retrieveQueuesWithAssociatedAvailableAgents(conversationId);
+    public ResponseEntity<Object> retrieveQueuesWithAvailableAgents(@RequestParam @NotBlank String conversationId,
+                                                                    @RequestParam @NotBlank String agentId) {
+        logger.info("Request to receive queues with available agents on conversation: {} for agent: {}",
+                conversationId, agentId);
+
+        Agent agent = this.agentsPool.findBy(agentId);
+
+        if (agent == null) {
+            String errorMsg = "No agent found with id: " + agentId;
+            logger.error(errorMsg);
+            throw new NotFoundException(errorMsg);
+        }
+
+        return ResponseEntity.ok().body(this.service.getQueuesWithAvailableAgents(conversationId, agent));
     }
 
     /**
@@ -153,7 +167,7 @@ public class PrecisionQueuesController {
     @GetMapping(value = "precision-queues/associated-agents")
     public ResponseEntity<Object> getAssociatedAgents(@RequestParam(value = "queueId") Optional<String> queueId) {
         return queueId.<ResponseEntity<Object>>map(id ->
-                ResponseEntity.ok().body(this.service.getAssociatedAgentsOf(id)))
+                        ResponseEntity.ok().body(this.service.getAssociatedAgentsOf(id)))
                 .orElseGet(() -> ResponseEntity.ok().body(this.service.getAllAssociatedAgents()));
     }
 }

@@ -56,6 +56,9 @@ maven-compile:
   extends: .maven_compile
   stage: compile
   when: on_success
+  script:
+    - mvn compiler:compile -s settings.xml
+    - mvn compiler:testCompile -s settings.xml
   only:
     - /^.+_f-.+$/
     - /^.+_b-.+$/
@@ -70,6 +73,9 @@ maven-test:
   stage: test
   when: on_success
   extends: .maven_test
+
+  script:
+    - mvn verify -s settings.xml
   only:
     - /^.+_f-.+$/
     - /^.+_b-.+$/

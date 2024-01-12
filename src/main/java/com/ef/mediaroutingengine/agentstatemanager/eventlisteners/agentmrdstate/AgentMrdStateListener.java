@@ -3,14 +3,17 @@ package com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentmrdstate
 import com.ef.cim.objectmodel.AgentMrdState;
 import com.ef.cim.objectmodel.AgentPresence;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
+import com.ef.cim.objectmodel.MrdType;
+import com.ef.cim.objectmodel.dto.AgentStateChangedResponse;
+import com.ef.cim.objectmodel.task.TaskMedia;
+import com.ef.cim.objectmodel.task.TaskType;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
 import com.ef.mediaroutingengine.routing.model.Agent;
-import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
+import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
-import java.beans.PropertyChangeEvent;
+import com.ef.mediaroutingengine.routing.utility.TaskUtility;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -44,6 +47,7 @@ public class AgentMrdStateListener {
      * The Jms communicator to publish agent presence on topic.
      */
     private final JmsCommunicator jmsCommunicator;
+    private final MrdPool mrdPool;
     /**
      * Creates and return the appropriate state change delegate.
      */
@@ -60,11 +64,12 @@ public class AgentMrdStateListener {
     @Autowired
     public AgentMrdStateListener(PrecisionQueuesPool precisionQueuesPool,
                                  AgentPresenceRepository agentPresenceRepository,
-                                 JmsCommunicator jmsCommunicator,
+                                 JmsCommunicator jmsCommunicator, MrdPool mrdPool,
                                  MrdStateDelegateFactory factory) {
         this.precisionQueuesPool = precisionQueuesPool;
         this.agentPresenceRepository = agentPresenceRepository;
         this.jmsCommunicator = jmsCommunicator;
+        this.mrdPool = mrdPool;
         this.factory = factory;
     }
 
@@ -117,7 +122,7 @@ public class AgentMrdStateListener {
             Enums.AgentMrdStateName currentState = agentMrdState.getState();
             Enums.AgentMrdStateName newState = delegate.getNewState(agent, agentMrdState);
 
-            logger.debug("new state after evaluating states is {}", newState.name());
+            logger.debug("new state after evaluating states is {}", newState);
 
             if (!newState.equals(currentState)) {
                 this.updateState(agent, agentMrdState, newState);
@@ -131,7 +136,7 @@ public class AgentMrdStateListener {
 
                 if (isStateReadyOrActive(newState)) {
                     logger.debug("Triggering task-routers for MRD: {}", agentMrdState.getMrd().getId());
-                    this.fireStateChangeToTaskSchedulers(agentMrdState);
+                    this.precisionQueuesPool.publishAgentAvailable(agentMrdState);
                 }
             } else {
                 logger.info("MRD state change from: {} to: {} not allowed | MRD: {} | Agent: {}", currentState,
@@ -156,7 +161,7 @@ public class AgentMrdStateListener {
         agentMrdState.setState(state);
         logger.debug("agent {} MRDs state after updating in memory agent object {} ",
                 agent.getKeycloakUser().getUsername(),
-                agent.getAgentMrdStates().toString());
+                agent.getAgentMrdStates());
 
         this.agentPresenceRepository.updateAgentMrdStateList(agent.getId(), agent.getAgentMrdStates());
     }
@@ -177,25 +182,72 @@ public class AgentMrdStateListener {
     }
 
     /**
-     * Fire state change to task schedulers.
+     * Change state on media close.
      *
-     * @param agentMrdState the agent mrd state
+     * @param agent the agent
+     * @param media the media
      */
-    void fireStateChangeToTaskSchedulers(AgentMrdState agentMrdState) {
-        String correlationId = MDC.get(Constants.MDC_CORRELATION_ID);
+    public void changeStateOnMediaClose(Agent agent, TaskMedia media) {
+        String mrdId = media.getMrdId();
+        MrdType mrdType = this.mrdPool.getType(mrdId);
 
-        CompletableFuture.runAsync(() -> {
-            MDC.put(Constants.MDC_CORRELATION_ID, correlationId);
+        TaskType type = media.getType();
 
-            String eventName = "AGENT_MRD_STATE_" + agentMrdState.getState().name();
-            for (PrecisionQueue precisionQueue : this.precisionQueuesPool.toList()) {
-                if (precisionQueue.getMrd().getId().equals(agentMrdState.getMrd().getId())) {
-                    PropertyChangeEvent evt = new PropertyChangeEvent(this, eventName, null, agentMrdState);
-                    precisionQueue.getTaskScheduler().propertyChange(evt);
-                }
+        if (!(type.getMode().equals(Enums.TaskTypeMode.QUEUE) || TaskUtility.isNamedAgentTransfer(type))
+                || !mrdType.isManagedByRe()) {
+            return;
+        }
+
+        Enums.AgentMrdStateName currentMrdState = agent.getAgentMrdState(mrdId).getState();
+        int noOfTasks = agent.getNoOfActiveQueueTasks(mrdId);
+        int maxAgentTasks = agent.getAgentMrdState(mrdId).getMaxAgentTasks();
+
+        if (currentMrdState.equals(Enums.AgentMrdStateName.PENDING_NOT_READY) && noOfTasks < 1) {
+            this.propertyChange(agent, mrdId, Enums.AgentMrdStateName.NOT_READY, true);
+        } else if (currentMrdState.equals(Enums.AgentMrdStateName.BUSY)) {
+            if (noOfTasks < 1) {
+                this.propertyChange(agent, mrdId, Enums.AgentMrdStateName.READY, true);
+            } else if (noOfTasks < maxAgentTasks) {
+                this.propertyChange(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, true);
             }
+        } else if (currentMrdState.equals(Enums.AgentMrdStateName.ACTIVE)) {
+            if (noOfTasks >= maxAgentTasks) {
+                this.propertyChange(agent, mrdId, Enums.AgentMrdStateName.BUSY, true);
+            } else if (noOfTasks < 1) {
+                this.propertyChange(agent, mrdId, Enums.AgentMrdStateName.READY, true);
+            }
+        }
+    }
 
-            MDC.clear();
-        });
+    /**
+     * Change state on media active.
+     *
+     * @param agent the agent
+     * @param media the media
+     */
+    public void changeStateOnMediaActive(Agent agent, TaskMedia media) {
+        logger.debug("method started");
+
+        String mrdId = media.getMrdId();
+        MrdType mrdType = this.mrdPool.getType(mrdId);
+
+        logger.debug("MrdType: {}", mrdType);
+
+        if (!mrdType.isManagedByRe()) {
+            return;
+        }
+
+        int noOfTasks = agent.getNoOfActiveQueueTasks(mrdId);
+        int maxAllowedTasks = agent.getAgentMrdState(mrdId).getMaxAgentTasks();
+
+        logger.debug("noOfTasks: {}, maxAllowedTasks: {}", noOfTasks, maxAllowedTasks);
+
+        if (noOfTasks >= maxAllowedTasks) {
+            this.propertyChange(agent, mrdId, Enums.AgentMrdStateName.BUSY, false);
+        } else if (noOfTasks == 1) {
+            this.propertyChange(agent, mrdId, Enums.AgentMrdStateName.ACTIVE, false);
+        }
+
+        logger.debug("method ended");
     }
 }

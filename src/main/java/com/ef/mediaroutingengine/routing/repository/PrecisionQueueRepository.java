@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.repository.Query;
  * The interface Precision queue entity repository.
  */
 public interface PrecisionQueueRepository extends MongoRepository<PrecisionQueueEntity, String> {
-
     /**
      * Find by mrd id list.
      *

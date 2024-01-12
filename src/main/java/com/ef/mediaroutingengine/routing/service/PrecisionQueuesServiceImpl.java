@@ -3,29 +3,28 @@ package com.ef.mediaroutingengine.routing.service;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
-import com.ef.cim.objectmodel.TaskState;
-import com.ef.cim.objectmodel.dto.TaskDto;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskState;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.global.locks.ConversationLock;
 import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
 import com.ef.mediaroutingengine.routing.TaskRouter;
 import com.ef.mediaroutingengine.routing.dto.AssociatedAgentEntity;
 import com.ef.mediaroutingengine.routing.dto.AssociatedAgentsResponse;
 import com.ef.mediaroutingengine.routing.dto.PrecisionQueueRequestBody;
-import com.ef.mediaroutingengine.routing.dto.QueuesWithAvailableAgentsResponse;
+import com.ef.mediaroutingengine.routing.dto.QueueAvailableAgent;
+import com.ef.mediaroutingengine.routing.dto.QueuesWithAvailableAgentsRes;
+import com.ef.mediaroutingengine.routing.model.Agent;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
+import com.ef.mediaroutingengine.routing.model.QueueTask;
 import com.ef.mediaroutingengine.routing.pool.MrdPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.taskmanager.TaskManager;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
-import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
-import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
+import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,14 +40,14 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
+    /**
+     * The constant logger.
+     */
     private static final Logger logger = LoggerFactory.getLogger(PrecisionQueuesServiceImpl.class);
     /**
      * The Repository.
      */
     private final PrecisionQueueRepository repository;
-
-    private final TasksPool tasksPool;
-
     /**
      * The Precision queues pool.
      */
@@ -61,8 +60,11 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * The Task manager.
      */
     private final TaskManager taskManager;
-
-    private final JmsCommunicator jmsCommunicator;
+    /**
+     * The Tasks repository.
+     */
+    private final TasksRepository tasksRepository;
+    private final ConversationLock conversationLock = new ConversationLock();
 
     /**
      * Default constructor.
@@ -70,18 +72,18 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * @param repository          precision queue repository
      * @param precisionQueuesPool the precision queues pool
      * @param mrdPool             the mrd pool
+     * @param taskManager         the task manager
+     * @param tasksRepository     the tasks repository
      */
     @Autowired
     public PrecisionQueuesServiceImpl(PrecisionQueueRepository repository,
-                                      PrecisionQueuesPool precisionQueuesPool,
-                                      MrdPool mrdPool, TasksPool tasksPool, TaskManager taskManager,
-                                      JmsCommunicator jmsCommunicator) {
+                                      PrecisionQueuesPool precisionQueuesPool, MrdPool mrdPool,
+                                      TaskManager taskManager, TasksRepository tasksRepository) {
         this.repository = repository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.mrdPool = mrdPool;
-        this.tasksPool = tasksPool;
         this.taskManager = taskManager;
-        this.jmsCommunicator = jmsCommunicator;
+        this.tasksRepository = tasksRepository;
     }
 
     @Override
@@ -121,11 +123,12 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
             throw new NotFoundException(errorMessage);
         }
 
-        if (queueId != null && repository.existsById(queueId)) {
-            PrecisionQueueEntity precisionQueue = this.repository.findById(queueId).get();
+        if (queueId != null && this.repository.existsById(queueId)) {
+            PrecisionQueueEntity precisionQueue = this.repository.findById(queueId).orElse(null);
             logger.debug("PrecisionQueue existed in DB. | PrecisionQueue:  {}", precisionQueue);
             return new ResponseEntity<>(precisionQueue, HttpStatus.OK);
         }
+
         return new ResponseEntity<>(repository.findAll(), HttpStatus.OK);
     }
 
@@ -169,12 +172,8 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
             throw new NotFoundException(errorMessage);
         }
 
-        List<Task> tasks = this.tasksPool.findByQueueId(id);
+        List<Task> tasks = this.tasksRepository.findAllByQueueId(id);
         if (tasks.isEmpty()) {
-            PropertyChangeListener listener = this.precisionQueuesPool.findById(id).getTaskScheduler();
-            this.taskManager.removePropertyChangeListener(Enums.EventName.NEW_TASK.name(), listener);
-            logger.debug("PrecisionQueue's TaskRouter removed from the TaskManager's PropertyChangeListener list");
-
             this.precisionQueuesPool.deleteById(id);
             logger.debug("PrecisionQueue deleted from the in-memory PrecisionQueue pool | Queue: {}", id);
 
@@ -186,9 +185,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
         }
 
         logger.info("Could not delete PrecisionQueue, there are tasks associated to it | Queue: {}", id);
-        List<TaskDto> taskDtoList = new ArrayList<>();
-        tasks.forEach(task -> taskDtoList.add(AdapterUtility.createTaskDtoFrom(task)));
-        return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
+        return new ResponseEntity<>(tasks, HttpStatus.CONFLICT);
     }
 
     /**
@@ -197,25 +194,21 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * @return the list of QueuesWithAvailableAgentsResponse
      */
     @Override
-    public ResponseEntity<Object> retrieveQueuesWithAssociatedAvailableAgents(String conversationId) {
-        List<QueuesWithAvailableAgentsResponse> responseList = new ArrayList<>();
+    public List<QueuesWithAvailableAgentsRes> getQueuesWithAvailableAgents(String conversationId, Agent agent) {
+        try {
+            conversationLock.lock(conversationId);
 
-        this.precisionQueuesPool.toList().forEach(pq -> {
-            String mrdId = pq.getMrd().getId();
-            AtomicInteger totalAvailableAgents = new AtomicInteger(0);
+            String mrdId = agent.getTaskByConversationId(conversationId).getMrdId();
+            return this.precisionQueuesPool.toList().stream()
+                    .filter(p -> p.getMrd().getId().equals(mrdId))
+                    .map(p -> new QueuesWithAvailableAgentsRes(p, p.getAssociatedAgents().stream()
+                            .filter(a -> a.isAvailableForReservation(mrdId, conversationId))
+                            .map(a -> new QueueAvailableAgent(a, mrdId)).toList())
+                    ).toList();
 
-            pq.getSteps().forEach(step -> step.getAssociatedAgents().forEach(agent -> {
-                if (agent != null && agent.isAvailableForRouting(mrdId, conversationId)) {
-                    totalAvailableAgents.getAndIncrement();
-                }
-            }));
-
-            responseList.add(new QueuesWithAvailableAgentsResponse(pq.getId(), pq.getName(),
-                    totalAvailableAgents.intValue(), mrdId, new ArrayList<>()));
-        });
-
-        logger.info("returning the list of the precision queues with the available agents");
-        return new ResponseEntity<>(responseList, HttpStatus.OK);
+        } finally {
+            conversationLock.unlock(conversationId);
+        }
     }
 
     /**
@@ -271,33 +264,37 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * @param enqueuedSince enqueue time.
      */
     void flushQueue(@NotNull PrecisionQueue queue, int enqueuedSince) {
-        List<Task> removedTasks = new ArrayList<>();
-
         synchronized (queue.getServiceQueue()) {
-            queue.getTasks().stream()
-                    .filter(task -> this.isTaskEnqueuedSince(enqueuedSince, task))
-                    .forEach(task -> {
-                        task.removePropertyChangeListener(Enums.EventName.STEP_TIMEOUT.name(),
-                                queue.getTaskScheduler());
-                        queue.getServiceQueue().remove(task);
-                        removedTasks.add(task);
-                    });
+            for (QueueTask queueTask : queue.getTasks()) {
+
+                if (!this.isTaskEnqueuedSince(enqueuedSince, queueTask)) {
+                    continue;
+                }
+
+                try {
+                    conversationLock.lock(queueTask.getConversationId());
+
+                    Task task = this.tasksRepository.find(queueTask.getTaskId());
+                    TaskState state = new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.FORCE_CLOSED);
+
+                    if (task != null) {
+                        this.taskManager.closeTask(task, state);
+                    }
+                } finally {
+                    conversationLock.unlock(queueTask.getConversationId());
+                }
+            }
         }
-
-        removedTasks.forEach(task -> {
-            task.getTimer().cancel();
-            taskManager.cancelAgentRequestTtlTimerTask(task.getTopicId());
-            taskManager.removeAgentRequestTtlTimerTask(task.getTopicId());
-
-
-            task.setTaskState(new TaskState(Enums.TaskStateName.CLOSED, Enums.TaskStateReasonCode.FORCE_CLOSED));
-            this.taskManager.removeFromPoolAndRepository(task);
-            this.jmsCommunicator.publishTaskStateChangeForReporting(task);
-        });
-
     }
 
-    boolean isTaskEnqueuedSince(int value, Task task) {
+    /**
+     * Is task enqueued since boolean.
+     *
+     * @param value the value
+     * @param task  the task
+     * @return the boolean
+     */
+    boolean isTaskEnqueuedSince(int value, QueueTask task) {
         return (System.currentTimeMillis() - task.getEnqueueTime()) >= (value * 1000L);
     }
 
@@ -344,6 +341,7 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
      * Method to add all the agents in the provided list.
      *
      * @param queue the queue.
+     * @return the list
      */
     public List<AssociatedAgentEntity> createAssociatedAgents(PrecisionQueue queue) {
         return queue.getAssociatedAgents().stream()
@@ -351,6 +349,12 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
                 .toList();
     }
 
+    /**
+     * Throw exception if queue name is not unique.
+     *
+     * @param requestBody the request body
+     * @param queueId     the queue id
+     */
     void throwExceptionIfQueueNameIsNotUnique(PrecisionQueueRequestBody requestBody, String queueId) {
         for (PrecisionQueue queue : this.precisionQueuesPool.toList()) {
             if (!queue.getId().equals(queueId) && queue.getName().equals(requestBody.getName())) {

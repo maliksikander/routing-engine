@@ -8,13 +8,16 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.cim.objectmodel.TaskAgent;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
+import com.ef.cim.objectmodel.task.Task;
+import com.ef.cim.objectmodel.task.TaskAgent;
+import com.ef.cim.objectmodel.task.TaskMedia;
+import com.ef.mediaroutingengine.routing.utility.TaskUtility;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.validation.constraints.NotNull;
@@ -31,7 +34,7 @@ public class Agent {
     /**
      * The Active tasks.
      */
-    private final Map<String, List<Task>> activeTasks;
+    private final Map<String, List<AgentTask>> activeTasks;
     /**
      * The Agent mrd states.
      */
@@ -47,7 +50,8 @@ public class Agent {
     /**
      * The Reserved task.
      */
-    private Task reservedTask;
+    private AgentTask reservedTask;
+    private boolean nonInterruptible;
 
     /**
      * Default constructor, An Agent object can only be created from a CCUser object.
@@ -128,12 +132,13 @@ public class Agent {
      *
      * @param task task to be added
      */
-    public void addActiveTask(Task task) {
-        String mrdId = task.getMrd().getId();
-        this.activeTasks.computeIfAbsent(mrdId, k -> Collections.synchronizedList(new ArrayList<>()));
-        List<Task> taskList = this.activeTasks.get(mrdId);
-        if (!taskList.contains(task)) {
-            taskList.add(task);
+    public void addActiveTask(Task task, TaskMedia taskMedia) {
+        this.activeTasks.computeIfAbsent(taskMedia.getMrdId(), k -> Collections.synchronizedList(new ArrayList<>()));
+        List<AgentTask> taskList = this.activeTasks.get(taskMedia.getMrdId());
+
+        AgentTask agentTask = new AgentTask(task, taskMedia);
+        if (!taskList.contains(agentTask)) {
+            taskList.add(agentTask);
         }
     }
 
@@ -147,15 +152,24 @@ public class Agent {
     }
 
     /**
-     * Ends task assigned to the current Agent's object.
+     * Remove task.
      *
-     * @param task the task to end.
+     * @param taskId the task id
+     * @param mrdId  the mrd id
      */
-    public void removeTask(Task task) {
-        String mrdId = task.getMrd().getId();
-        List<Task> tasks = this.activeTasks.get(mrdId);
-        if (tasks != null) {
-            tasks.remove(task);
+    public void removeTask(String taskId, String mrdId) {
+        List<AgentTask> agentTasks = this.activeTasks.get(mrdId);
+
+        if (agentTasks == null) {
+            return;
+        }
+
+        ListIterator<AgentTask> iter = agentTasks.listIterator();
+        while (iter.hasNext()) {
+            if (iter.next().getTaskId().equals(taskId)) {
+                iter.remove();
+                break;
+            }
         }
     }
 
@@ -166,18 +180,16 @@ public class Agent {
      * @return total number of active tasks on an agent's mrd
      */
     public int getNoOfActiveQueueTasks(String mrdId) {
-        List<Task> tasks = this.activeTasks.get(mrdId);
-        if (tasks == null) {
+        List<AgentTask> agentTasks = this.activeTasks.get(mrdId);
+
+        if (agentTasks == null) {
             return 0;
         }
 
-        int counter = 0;
-        for (Task task : tasks) {
-            if (task.getType().getMode().equals(Enums.TaskTypeMode.QUEUE)) {
-                counter++;
-            }
-        }
-        return counter;
+        return (int) agentTasks.stream()
+                .filter(t -> t.getTaskType().getMode().equals(Enums.TaskTypeMode.QUEUE)
+                        || TaskUtility.isNamedAgentTransfer(t.getTaskType()))
+                .count();
     }
 
     /**
@@ -198,8 +210,8 @@ public class Agent {
      *
      * @return list of all tasks from all MRDs
      */
-    public List<Task> getAllTasks() {
-        List<Task> result = this.getActiveTasksList();
+    public List<AgentTask> getAllTasks() {
+        List<AgentTask> result = this.getActiveTasksList();
         if (reservedTask != null) {
             result.add(reservedTask);
         }
@@ -207,12 +219,25 @@ public class Agent {
     }
 
     /**
+     * Gets task by conversation id.
+     *
+     * @param conversationId the conversation id
+     * @return the task by conversation id
+     */
+    public AgentTask getTaskByConversationId(String conversationId) {
+        return this.getAllTasks().stream()
+                .filter(t -> t.getConversationId().equals(conversationId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
      * Gets active tasks list.
      *
      * @return the active tasks list
      */
-    public List<Task> getActiveTasksList() {
-        List<Task> result = new ArrayList<>();
+    public List<AgentTask> getActiveTasksList() {
+        List<AgentTask> result = new ArrayList<>();
         this.activeTasks.forEach((k, v) -> result.addAll(v));
         return result;
     }
@@ -312,18 +337,25 @@ public class Agent {
     }
 
     /**
-     * Reserve task.
+     * Reserve task boolean.
      *
-     * @param task the task
+     * @param task  the task
+     * @param media the media
+     * @return the boolean
      */
-    public void reserveTask(Task task) {
-        this.reservedTask = task;
+    public synchronized boolean reserveTask(Task task, TaskMedia media) {
+        if (reservedTask == null) {
+            this.reservedTask = new AgentTask(task, media);
+            return true;
+        }
+
+        return false;
     }
 
     /**
      * Remove reserved task.
      */
-    public void removeReservedTask() {
+    public synchronized void removeReservedTask() {
         this.reservedTask = null;
     }
 
@@ -336,8 +368,16 @@ public class Agent {
         return this.reservedTask != null;
     }
 
-    public Task getReservedTask() {
+    public AgentTask getReservedTask() {
         return this.reservedTask;
+    }
+
+    public boolean isNonInterruptible() {
+        return nonInterruptible;
+    }
+
+    public void setNonInterruptible(boolean nonInterruptible) {
+        this.nonInterruptible = nonInterruptible;
     }
 
     /**
@@ -412,21 +452,32 @@ public class Agent {
      * @param mrdId the mrd id
      * @return the boolean
      */
-    public boolean isAvailableForRouting(String mrdId, String conversationId) {
+    public boolean isAvailableForReservation(String mrdId, String conversationId) {
+        // (Agent State is ready) AND (AgentMrdState is ready OR active) AND (No task is reserved for this agent)
+        // Only one task can be *reserved* for an Agent at a time.
+        return this.isAvailableForReservation(mrdId)
+                && !this.isActiveOn(conversationId);
+    }
+
+    /**
+     * Is available for reservation boolean.
+     *
+     * @param mrdId the mrd id
+     * @return the boolean
+     */
+    public boolean isAvailableForReservation(String mrdId) {
         Enums.AgentStateName agentStateName = this.agentState.getName();
         Enums.AgentMrdStateName mrdState = this.getAgentMrdState(mrdId).getState();
 
-        // (Agent State is ready) AND (AgentMrdState is ready OR active) AND (No task is reserved for this agent)
-        // Only one task can be *reserved* for an Agent at a time.
         return agentStateName.equals(Enums.AgentStateName.READY)
                 && (mrdState.equals(Enums.AgentMrdStateName.ACTIVE)
                 || mrdState.equals(Enums.AgentMrdStateName.READY))
                 && !this.isTaskReserved()
-                && !this.isActiveOn(conversationId);
+                && !this.isNonInterruptible();
     }
 
     boolean isActiveOn(String conversationId) {
         return this.getActiveTasksList().stream()
-                .anyMatch(task -> task.getTopicId().equals(conversationId));
+                .anyMatch(t -> t.getConversationId().equals(conversationId));
     }
 }

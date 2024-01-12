@@ -20,10 +20,10 @@ import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.Enums;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
-import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
-import com.ef.mediaroutingengine.routing.model.Agent;
+import com.ef.cim.objectmodel.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;
+import com.ef.mediaroutingengine.routing.model.Agent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.List;
@@ -112,7 +112,7 @@ class AgentStateLoginTest {
         // Assert that the agent-state is updated to new state i.e. NotReady
         assertEquals(newState, agent.getState());
         // Assert that the agent-mrd-states are updated to NotReady
-        for (AgentMrdState agentMrdState: agent.getAgentMrdStates()) {
+        for (AgentMrdState agentMrdState : agent.getAgentMrdStates()) {
             assertEquals(Enums.AgentMrdStateName.NOT_READY, agentMrdState.getState());
         }
         // verify that agentPresenceRepository calls are made correctly
@@ -130,7 +130,7 @@ class AgentStateLoginTest {
 
         AgentState newState = new AgentState(Enums.AgentStateName.LOGIN, null);
 
-        assertFalse(this.agentStateLogin.updateState(agent, newState,false).isAgentStateChanged());
+        assertFalse(this.agentStateLogin.updateState(agent, newState, false).isAgentStateChanged());
     }
 
     @Test

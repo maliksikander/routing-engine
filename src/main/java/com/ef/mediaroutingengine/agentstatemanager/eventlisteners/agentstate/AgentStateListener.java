@@ -3,7 +3,7 @@ package com.ef.mediaroutingengine.agentstatemanager.eventlisteners.agentstate;
 import com.ef.cim.objectmodel.AgentPresence;
 import com.ef.cim.objectmodel.AgentState;
 import com.ef.cim.objectmodel.Enums;
-import com.ef.mediaroutingengine.agentstatemanager.dto.AgentStateChangedResponse;
+import com.ef.cim.objectmodel.dto.AgentStateChangedResponse;
 import com.ef.mediaroutingengine.agentstatemanager.repository.AgentPresenceRepository;
 import com.ef.mediaroutingengine.global.commons.Constants;
 import com.ef.mediaroutingengine.global.jms.JmsCommunicator;

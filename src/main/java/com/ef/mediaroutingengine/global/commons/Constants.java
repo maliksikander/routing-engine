@@ -32,6 +32,18 @@ public final class Constants {
      * The constant CHAT_MRD_ID.
      */
     public static final String CHAT_MRD_ID = "6305de07166ba1099d11d8e6";
+    /**
+     * The constant CHAT_MRD_TYPE_ID.
+     */
+    public static final String CHAT_MRD_TYPE_ID = "64f6edf8b89b71cc6cb60917";
+    /**
+     * The constant CX_VOICE_MRD_TYPE_ID.
+     */
+    public static final String CX_VOICE_MRD_TYPE_ID = "64f6ee2dd49f4e9d7eb5f591";
+    /**
+     * The constant CISCO_CC_MRD_TYPE_ID.
+     */
+    public static final String CISCO_CC_MRD_TYPE_ID = "64f6ee374776bb029f1174e1";
 
     /**
      * Instantiates a new Constants.

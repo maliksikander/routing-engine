@@ -5,19 +5,19 @@ import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.StepEntity;
 import com.ef.cim.objectmodel.TermEntity;
-import com.ef.cim.objectmodel.dto.TaskDto;
+import com.ef.cim.objectmodel.task.Task;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.global.exceptions.NotFoundException;
-import com.ef.mediaroutingengine.global.utilities.AdapterUtility;
+import com.ef.mediaroutingengine.routing.StepTimerService;
 import com.ef.mediaroutingengine.routing.model.PrecisionQueue;
+import com.ef.mediaroutingengine.routing.model.QueueTask;
 import com.ef.mediaroutingengine.routing.model.Step;
 import com.ef.mediaroutingengine.routing.pool.AgentsPool;
 import com.ef.mediaroutingengine.routing.pool.PrecisionQueuesPool;
 import com.ef.mediaroutingengine.routing.pool.RoutingAttributesPool;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
-import com.ef.mediaroutingengine.taskmanager.model.Task;
 import com.ef.mediaroutingengine.taskmanager.model.TaskStep;
-import com.ef.mediaroutingengine.taskmanager.pool.TasksPool;
+import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -52,9 +52,10 @@ public class StepsServiceImpl implements StepsService {
      */
     private final RoutingAttributesPool routingAttributesPool;
     /**
-     * The Tasks pool.
+     * The Step timer service.
      */
-    private final TasksPool tasksPool;
+    private final StepTimerService stepTimerService;
+    private final TasksRepository tasksRepository;
 
     /**
      * Instantiates a new Steps service.
@@ -67,12 +68,14 @@ public class StepsServiceImpl implements StepsService {
     @Autowired
     public StepsServiceImpl(PrecisionQueueRepository repository,
                             PrecisionQueuesPool precisionQueuesPool, AgentsPool agentsPool,
-                            RoutingAttributesPool routingAttributesPool, TasksPool tasksPool) {
+                            RoutingAttributesPool routingAttributesPool,
+                            StepTimerService stepTimerService, TasksRepository tasksRepository) {
         this.repository = repository;
         this.precisionQueuesPool = precisionQueuesPool;
         this.agentsPool = agentsPool;
         this.routingAttributesPool = routingAttributesPool;
-        this.tasksPool = tasksPool;
+        this.stepTimerService = stepTimerService;
+        this.tasksRepository = tasksRepository;
     }
 
     @Override
@@ -189,7 +192,7 @@ public class StepsServiceImpl implements StepsService {
 
     private ResponseEntity<Object> onlyOneStep(String queueId, PrecisionQueue precisionQueue,
                                                PrecisionQueueEntity precisionQueueEntity, String id) {
-        List<Task> tasks = this.tasksPool.findByQueueId(queueId);
+        List<Task> tasks = this.tasksRepository.findAllByQueueId(queueId);
         if (tasks.isEmpty()) {
             deleteStep(precisionQueue, precisionQueueEntity, id);
             logger.info("Step {} deleted from Queue {} successfully", id, queueId);
@@ -197,9 +200,7 @@ public class StepsServiceImpl implements StepsService {
         } else {
             logger.info("Could not Delete Step {} from Queue {}, there are tasks associated to Queue with "
                     + "only one step configured", id, queueId);
-            List<TaskDto> taskDtoList = new ArrayList<>();
-            tasks.forEach(task -> taskDtoList.add(AdapterUtility.createTaskDtoFrom(task)));
-            return new ResponseEntity<>(taskDtoList, HttpStatus.CONFLICT);
+            return new ResponseEntity<>(tasks, HttpStatus.CONFLICT);
         }
     }
 
@@ -218,7 +219,7 @@ public class StepsServiceImpl implements StepsService {
 
     private void lastStep(PrecisionQueue precisionQueue, int stepIndex, String id) {
         synchronized (precisionQueue.getServiceQueue()) {
-            for (Task task : precisionQueue.getTasks()) {
+            for (QueueTask task : precisionQueue.getTasks()) {
                 if (task.getCurrentStep() != null && task.getCurrentStep().getStep().getId().equals(id)) {
                     Step prevStep = precisionQueue.getStepAt(stepIndex - 1);
                     task.setCurrentStep(new TaskStep(prevStep, true));
@@ -229,10 +230,10 @@ public class StepsServiceImpl implements StepsService {
 
     private void notLastStep(PrecisionQueue precisionQueue, int stepIndex, String id) {
         synchronized (precisionQueue.getServiceQueue()) {
-            for (Task task : precisionQueue.getTasks()) {
-                if (task.getCurrentStep() != null && task.getCurrentStep().getStep().getId().equals(id)) {
-                    task.getTimer().cancel();
-                    task.setUpStepFrom(precisionQueue, stepIndex + 1);
+            for (QueueTask queueTask : precisionQueue.getTasks()) {
+                if (queueTask.getCurrentStep() != null && queueTask.getCurrentStep().getStep().getId().equals(id)) {
+                    this.stepTimerService.stop(queueTask.getTaskId());
+                    this.stepTimerService.startNext(queueTask, precisionQueue, stepIndex + 1);
                 }
             }
         }

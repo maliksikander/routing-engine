@@ -136,11 +136,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
         }
 
         logger.info("Could not delete RoutingAttribute {}, there are Queues or Agents associated to it", id);
-
-        RoutingAttributeDeleteConflictResponse response = new RoutingAttributeDeleteConflictResponse();
-        response.setAgents(agents);
-        response.setPrecisionQueues(precisionQueueEntities);
-        return response;
+        return new RoutingAttributeDeleteConflictResponse(precisionQueueEntities, agents);
     }
 
     /**

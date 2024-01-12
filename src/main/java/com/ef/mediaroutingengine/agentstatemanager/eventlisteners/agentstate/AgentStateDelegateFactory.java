@@ -56,11 +56,13 @@ public class AgentStateDelegateFactory {
         if (state == null) {
             return null;
         }
+
         return switch (state) {
             case LOGIN -> agentStateLogin;
             case NOT_READY -> agentStateNotReady;
             case READY -> agentStateReady;
             case LOGOUT -> agentStateLogout;
         };
+
     }
 }
