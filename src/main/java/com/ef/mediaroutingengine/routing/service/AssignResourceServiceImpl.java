@@ -79,7 +79,7 @@ public class AssignResourceServiceImpl implements AssignResourceService {
             request.getRequestType().setMetadata(new HashMap<>());
         }
         request.getRequestType().putMetadata("offerToAgent", offerToAgent);
-        if (offerToAgent && request.getCcUser() != null) {
+        if (request.getCcUser() != null) {
             logger.info("Assign To LastAssignedAgent {}", request.getCcUser().getKeycloakUser().getId());
             request.getRequestType().putMetadata("offeredAgentId", request.getCcUser().getKeycloakUser().getId());
 
