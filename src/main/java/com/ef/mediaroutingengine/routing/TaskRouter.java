@@ -176,7 +176,9 @@ public class TaskRouter implements PropertyChangeListener {
      * @return the boolean
      */
     private boolean assignToLastAssignedAgent(Task task) {
+
         String lastAssignedAgentId = task.getLastAssignedAgentId();
+        logger.info("Last Assigned AgentId {} ", lastAssignedAgentId);
         if (lastAssignedAgentId != null) {
             Agent agent = this.agentsPool.findBy(lastAssignedAgentId);
             String mrdId = this.precisionQueue.getMrd().getId();
