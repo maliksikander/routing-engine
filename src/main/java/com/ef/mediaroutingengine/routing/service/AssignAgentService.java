@@ -139,8 +139,12 @@ public class AssignAgentService {
         this.tasksRepository.insert(task);
         this.jmsCommunicator.publishTaskStateChanged(task, req.getRequestSession(), true, media.getId());
 
-        if (req.getState().equals(TaskMediaState.ACTIVE) && !this.mrdPool.getType(mrdId).isInterruptible()) {
-            agent.setNonInterruptible(true);
+        if (req.getState().equals(TaskMediaState.ACTIVE)) {
+            agent.addActiveTask(task, media);
+
+            if (!this.mrdPool.getType(mrdId).isInterruptible()) {
+                agent.setNonInterruptible(true);
+            }
         }
 
         if (req.isOfferToAgent()) {
