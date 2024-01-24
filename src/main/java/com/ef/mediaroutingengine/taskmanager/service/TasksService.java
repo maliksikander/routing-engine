@@ -162,7 +162,8 @@ public class TasksService {
                         continue;
                     }
 
-                    int ewt = this.calculateEwt(position, totalAgents, queueStats.getAverageHandleTime());
+                    int ewt = this.calculateEwt(position, totalAgents, queueStats.getAverageHandleTime(),
+                            precisionQueue.getEwtMinValue(), precisionQueue.getEwtMaxValue());
                     responses.add(new TaskEwtResponse(task, ewt, position));
                 }
             }
@@ -177,15 +178,26 @@ public class TasksService {
     }
 
     /**
-     * Calculate ewt int.
+     * Calculate ewt value.
      *
      * @param taskPosition      the task position
      * @param totalAgents       the total agents
      * @param averageHandleTime the average handle time
-     * @return the int
+     * @param ewtMinValue       the min ewt value cap.
+     * @param ewtMaxValue       the max ewt value cap.
+     * @return the ewt value.
      */
-    private int calculateEwt(int taskPosition, int totalAgents, int averageHandleTime) {
-        return totalAgents == 0 ? Integer.MAX_VALUE : taskPosition * averageHandleTime / totalAgents;
+    private int calculateEwt(int taskPosition, int totalAgents, int averageHandleTime, int ewtMinValue,
+                             int  ewtMaxValue) {
+        int ewt = totalAgents == 0 ? ewtMaxValue : taskPosition * averageHandleTime / totalAgents;
+
+        // Ensure that ewt is within the specified range
+        if (ewt < ewtMinValue) {
+            ewt = ewtMinValue;
+        } else if (ewt > ewtMaxValue) {
+            ewt = ewtMaxValue;
+        }
+        return ewt;
     }
 
     /**

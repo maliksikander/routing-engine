@@ -50,4 +50,14 @@ public class PrecisionQueueRequestBody {
      * The Agent service level duration.
      */
     private Integer agentSlaDuration;
+    /**
+     * Minimum value cap for EWT.
+     */
+    @NotNull
+    private int ewtMinValue;
+    /**
+     * Maximum value cap for EWT.
+     */
+    @NotNull
+    private int ewtMaxValue;
 }

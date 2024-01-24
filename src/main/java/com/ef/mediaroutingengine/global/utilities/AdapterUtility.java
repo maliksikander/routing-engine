@@ -29,6 +29,8 @@ public final class AdapterUtility {
         entity.setServiceLevelType(requestBody.getServiceLevelType());
         entity.setServiceLevelThreshold(requestBody.getServiceLevelThreshold());
         entity.setAgentSlaDuration(requestBody.getAgentSlaDuration());
+        entity.setEwtMinValue(requestBody.getEwtMinValue());
+        entity.setEwtMaxValue(requestBody.getEwtMaxValue());
         return entity;
     }
 

@@ -68,6 +68,14 @@ public class PrecisionQueue implements Queue {
      * The Agent service level duration.
      */
     private Integer agentSlaDuration;
+    /**
+     * Minimum value cap for EWT.
+     */
+    private int ewtMinValue;
+    /**
+     * Maximum value cap for EWT.
+     */
+    private int ewtMaxValue;
 
     /**
      * Parametrized constructor. Constructs a PrecisionQueue object with a PrecisionQueueEntity object.
@@ -83,6 +91,8 @@ public class PrecisionQueue implements Queue {
         this.serviceLevelType = pqEntity.getServiceLevelType();
         this.serviceLevelThreshold = pqEntity.getServiceLevelThreshold();
         this.agentSlaDuration = pqEntity.getAgentSlaDuration();
+        this.ewtMinValue = pqEntity.getEwtMinValue();
+        this.ewtMaxValue = pqEntity.getEwtMaxValue();
         this.steps = toSteps(pqEntity.getSteps());
         this.evaluateAgentsAssociatedWithSteps(agentsPool.findAll());
 
