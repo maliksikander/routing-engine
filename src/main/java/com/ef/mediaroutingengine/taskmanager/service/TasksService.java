@@ -164,6 +164,7 @@ public class TasksService {
 
                     int ewt = this.calculateEwt(position, totalAgents, queueStats.getAverageHandleTime(),
                             precisionQueue.getEwtMinValue(), precisionQueue.getEwtMaxValue());
+                    logger.info("Calculated ewt is {}", ewt);
                     responses.add(new TaskEwtResponse(task, ewt, position));
                 }
             }
@@ -193,8 +194,12 @@ public class TasksService {
 
         // Ensure that ewt is within the specified range
         if (ewt < ewtMinValue) {
+            logger.info("EWT value is {} which is less than the min bound that is {}, setting it to {}", ewt,
+                    ewtMinValue, ewtMinValue);
             ewt = ewtMinValue;
         } else if (ewt > ewtMaxValue) {
+            logger.info("EWT value is {} which is hgher than the max bound that is {}, setting it to {}", ewt,
+                    ewtMaxValue, ewtMaxValue);
             ewt = ewtMaxValue;
         }
         return ewt;
