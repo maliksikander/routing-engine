@@ -188,17 +188,17 @@ public class TasksService {
      * @param ewtMaxValue       the max ewt value cap.
      * @return the ewt value.
      */
-    private int calculateEwt(int taskPosition, int totalAgents, int averageHandleTime, int ewtMinValue,
-                             int  ewtMaxValue) {
+    private int calculateEwt(int taskPosition, int totalAgents, int averageHandleTime, Integer ewtMinValue,
+                             Integer  ewtMaxValue) {
         int ewt = totalAgents == 0 ? ewtMaxValue : taskPosition * averageHandleTime / totalAgents;
 
         // Ensure that ewt is within the specified range
-        if (ewt < ewtMinValue) {
+        if (ewtMinValue != null && ewt < ewtMinValue) {
             logger.info("EWT value is {} which is less than the min bound that is {}, setting it to {}", ewt,
                     ewtMinValue, ewtMinValue);
             ewt = ewtMinValue;
-        } else if (ewt > ewtMaxValue) {
-            logger.info("EWT value is {} which is hgher than the max bound that is {}, setting it to {}", ewt,
+        } else if (ewtMaxValue != null && ewt > ewtMaxValue) {
+            logger.info("EWT value is {} which is higher than the max bound that is {}, setting it to {}", ewt,
                     ewtMaxValue, ewtMaxValue);
             ewt = ewtMaxValue;
         }
