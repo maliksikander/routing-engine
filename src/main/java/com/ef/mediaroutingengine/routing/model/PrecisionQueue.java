@@ -71,11 +71,11 @@ public class PrecisionQueue implements Queue {
     /**
      * Minimum value cap for EWT.
      */
-    private int ewtMinValue;
+    private Integer ewtMinValue;
     /**
      * Maximum value cap for EWT.
      */
-    private int ewtMaxValue;
+    private Integer ewtMaxValue;
 
     /**
      * Parametrized constructor. Constructs a PrecisionQueue object with a PrecisionQueueEntity object.
