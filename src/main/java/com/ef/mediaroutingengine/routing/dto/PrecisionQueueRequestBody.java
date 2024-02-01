@@ -53,11 +53,9 @@ public class PrecisionQueueRequestBody {
     /**
      * Minimum value cap for EWT.
      */
-    @NotNull
     private Integer ewtMinValue;
     /**
      * Maximum value cap for EWT.
      */
-    @NotNull
     private Integer ewtMaxValue;
 }
