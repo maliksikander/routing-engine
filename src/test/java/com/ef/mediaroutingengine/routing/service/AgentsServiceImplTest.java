@@ -100,6 +100,100 @@ class AgentsServiceImplTest {
         verify(this.repository, times(1)).insert(ccUser);
     }
 
+    @Test
+    void test_saveUpdatedAgentInDb(CapturedOutput output) {
+        CCUser agent = getNewCcUser();
+        agentsService.saveUpdatedAgentInDb(agent);
+        verify(repository, times(1)).save(agent);
+        Assertions.assertThat(output).contains("Agent updated in Agents config DB");
+    }
+
+    @Test
+    void test_setAssociatedMrdsAndMaxAgentTasks() {
+        CCUser agent = getNewCcUser();
+        List<AgentMrdState> agentMrdStates = List.of(getAgentMrdState(Enums.AgentMrdStateName.ACTIVE));
+        agentsService.setAssociatedMrdsAndMaxAgentTasks(agent, agentMrdStates);
+        assertEquals(2, agent.getAssociatedMrds().size());
+    }
+
+    @Test
+    void test_updateAgentMrdStateToBusy_whenActivePushTaskGreaterOrEqualToMrdMaxRequests(CapturedOutput output) {
+        CCUser ccUser = getNewCcUser();
+        String mrdId = ccUser.getAssociatedMrds().get(0).getMrdId();
+        Agent agent = mock(Agent.class);
+
+        when(agentsPool.findBy(ccUser.getId())).thenReturn(agent);
+        when(agent.getNoOfActiveQueueTasks(mrdId)).thenReturn(12);
+        when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.ACTIVE));
+        when(mrdPool.getType(mrdId)).thenReturn(getMrdType());
+
+        agentsService.updateAgentMrdState(ccUser);
+        Assertions.assertThat(output).contains("MRD state has been changed from ACTIVE to BUSY.");
+    }
+
+    @Test
+    void test_updateAgentMrdStateToActive_whenActivePushTaskLessThanMrdMaxRequests(CapturedOutput output) {
+        CCUser ccUser = getNewCcUser();
+        String mrdId = ccUser.getAssociatedMrds().get(0).getMrdId();
+        Agent agent = mock(Agent.class);
+
+        when(agentsPool.findBy(ccUser.getId())).thenReturn(agent);
+        when(agent.getNoOfActiveQueueTasks(mrdId)).thenReturn(3);
+        when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.BUSY));
+        when(mrdPool.getType(mrdId)).thenReturn(getMrdType());
+
+        agentsService.updateAgentMrdState(ccUser);
+        Assertions.assertThat(output).contains("MRD state has been changed from BUSY to ACTIVE.");
+
+    }
+
+    private CCUser getNewCcUser() {
+        List<AssociatedRoutingAttribute> attributes = new ArrayList<>();
+        attributes.add(getNewAssociatedAttribute("Sales", RoutingAttributeType.BOOLEAN, 1));
+        attributes.add(getNewAssociatedAttribute("English", RoutingAttributeType.PROFICIENCY_LEVEL, 7));
+        CCUser ccUser = new CCUser();
+        ccUser.setKeycloakUser(getNewKeyClockUser());
+        ccUser.setAssociatedRoutingAttributes(attributes);
+        ccUser.setId(ccUser.getKeycloakUser().getId());
+
+        AssociatedMrd associatedMrd = new AssociatedMrd(UUID.randomUUID().toString(), 5);
+        ccUser.addAssociatedMrd(associatedMrd);
+        return ccUser;
+    }
+
+    private KeycloakUser getNewKeyClockUser() {
+        KeycloakUser keycloakUser = new KeycloakUser();
+        keycloakUser.setId(UUID.randomUUID().toString());
+        return keycloakUser;
+    }
+
+    private RoutingAttribute getNewAttribute(String name, RoutingAttributeType type) {
+        RoutingAttribute routingAttribute = new RoutingAttribute();
+        routingAttribute.setId(UUID.randomUUID().toString());
+        routingAttribute.setName(name);
+        routingAttribute.setDescription(name + "desc");
+        routingAttribute.setType(type);
+        routingAttribute.setDefaultValue(1);
+        return routingAttribute;
+    }
+
+    private AssociatedRoutingAttribute getNewAssociatedAttribute(String name, RoutingAttributeType type, int value) {
+        AssociatedRoutingAttribute associatedRoutingAttribute = new AssociatedRoutingAttribute();
+        associatedRoutingAttribute.setRoutingAttribute(getNewAttribute(name, type));
+        associatedRoutingAttribute.setValue(value);
+        return associatedRoutingAttribute;
+    }
+
+    private AgentMrdState getAgentMrdState(Enums.AgentMrdStateName state) {
+        MediaRoutingDomain mrd =
+                new MediaRoutingDomain(UUID.randomUUID().toString(), Constants.CHAT_MRD_TYPE_ID, "", "", 5);
+        return new AgentMrdState(mrd, state);
+    }
+
+    private MrdType getMrdType() {
+        return new MrdType(Constants.CHAT_MRD_TYPE_ID, MrdTypeName.CHAT, true, true, true);
+    }
+
     @Nested
     @DisplayName("update method tests")
     class UpdateTest {
@@ -137,6 +231,64 @@ class AgentsServiceImplTest {
             verify(agentPresenceRepository, times(1)).updateCcUser(ccUser);
             verify(precisionQueuesPool, times(1)).evaluateOnUpdateForAll(agent);
             verify(repository, times(1)).save(ccUser);
+        }
+    }
+
+    @Nested
+    @DisplayName("update bulk method test")
+    class UpdateBulk {
+        @Test
+        void shouldReturn_200_OK_whenBulk_agents_updatedSuccessfully() {
+            CCUser ccUser1 = getNewCcUser();
+            CCUser ccUser2 = getNewCcUser();
+            List<CCUser> ccUserList = new ArrayList<>(2);
+            ccUserList.add(ccUser1);
+            ccUserList.add(ccUser2);
+
+            String mrdIdForCcUser1 = ccUser1.getAssociatedMrds().get(0).getMrdId();
+            String mrdIdForCcUser2 = ccUser2.getAssociatedMrds().get(0).getMrdId();
+
+            when(repository.existsById(ccUser1.getId())).thenReturn(true);
+            when(repository.existsById(ccUser2.getId())).thenReturn(true);
+            when(routingAttributesPool.findById(
+                    ccUser1.getAssociatedRoutingAttributes().get(0).getRoutingAttribute().getId())).thenReturn(
+                    ccUser1.getAssociatedRoutingAttributes().get(0).getRoutingAttribute());
+            when(routingAttributesPool.findById(
+                    ccUser2.getAssociatedRoutingAttributes().get(0).getRoutingAttribute().getId())).thenReturn(
+                    ccUser2.getAssociatedRoutingAttributes().get(0).getRoutingAttribute());
+
+            when(routingAttributesPool.findById(
+                    ccUser1.getAssociatedRoutingAttributes().get(1).getRoutingAttribute().getId())).thenReturn(
+                    ccUser1.getAssociatedRoutingAttributes().get(0).getRoutingAttribute());
+            when(routingAttributesPool.findById(
+                    ccUser2.getAssociatedRoutingAttributes().get(1).getRoutingAttribute().getId())).thenReturn(
+                    ccUser2.getAssociatedRoutingAttributes().get(0).getRoutingAttribute());
+
+            Agent agent1 = mock(Agent.class);
+            Agent agent2 = mock(Agent.class);
+
+            when(agentsPool.findBy(ccUser1.getId())).thenReturn(agent1);
+            when(agentsPool.findBy(ccUser2.getId())).thenReturn(agent2);
+
+            when(mrdPool.getType(mrdIdForCcUser1)).thenReturn(getMrdType());
+            when(mrdPool.getType(mrdIdForCcUser2)).thenReturn(getMrdType());
+
+            when(agent1.getAgentMrdState(mrdIdForCcUser1)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.BUSY));
+            when(agent2.getAgentMrdState(mrdIdForCcUser2)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.BUSY));
+
+            assertEquals(2, ((List<CCUser>) agentsService.updateBulk(ccUserList).getBody()).size(),
+                    "should be able to update agents in bulk.");
+            assertEquals(HttpStatus.OK, agentsService.updateBulk(ccUserList).getStatusCode());
+        }
+
+        @Test
+        void shouldReturn_404_NOT_FOUND_when_userToUpdate_DoesNotExists() {
+            CCUser ccUser1 = getNewCcUser();
+            List<CCUser> ccUserList = new ArrayList<>(1);
+            ccUserList.add(ccUser1);
+
+            when(repository.existsById(ccUser1.getId())).thenReturn(false);
+            assertThrows(NotFoundException.class, () -> agentsService.updateBulk(ccUserList).getStatusCode());
         }
     }
 
@@ -192,7 +344,6 @@ class AgentsServiceImplTest {
         }
     }
 
-
     @Nested
     @DisplayName("validateAndSetRoutingAttributes method tests")
     class ValidateAndSetRoutingAttributesTest {
@@ -223,100 +374,5 @@ class AgentsServiceImplTest {
             agentsService.validateAndSetRoutingAttributes(ccUser);
             verifyNoInteractions(routingAttributesPool);
         }
-    }
-
-    @Test
-    void test_saveUpdatedAgentInDb(CapturedOutput output) {
-        CCUser agent = getNewCcUser();
-        agentsService.saveUpdatedAgentInDb(agent);
-        verify(repository, times(1)).save(agent);
-        Assertions.assertThat(output).contains("Agent updated in Agents config DB");
-    }
-
-    @Test
-    void test_setAssociatedMrdsAndMaxAgentTasks() {
-        CCUser agent = getNewCcUser();
-        List<AgentMrdState> agentMrdStates = List.of(getAgentMrdState(Enums.AgentMrdStateName.ACTIVE));
-        agentsService.setAssociatedMrdsAndMaxAgentTasks(agent, agentMrdStates);
-        assertEquals(2, agent.getAssociatedMrds().size());
-    }
-
-    @Test
-    void test_updateAgentMrdStateToBusy_whenActivePushTaskGreaterOrEqualToMrdMaxRequests(CapturedOutput output) {
-        CCUser ccUser = getNewCcUser();
-        String mrdId = ccUser.getAssociatedMrds().get(0).getMrdId();
-        Agent agent = mock(Agent.class);
-
-        when(agentsPool.findBy(ccUser.getId())).thenReturn(agent);
-        when(agent.getNoOfActiveQueueTasks(mrdId)).thenReturn(12);
-        when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.ACTIVE));
-        when(mrdPool.getType(mrdId)).thenReturn(getMrdType());
-
-        agentsService.updateAgentMrdState(ccUser);
-        Assertions.assertThat(output).contains("MRD state has been changed from ACTIVE to BUSY.");
-    }
-
-    @Test
-    void test_updateAgentMrdStateToActive_whenActivePushTaskLessThanMrdMaxRequests(CapturedOutput output) {
-        CCUser ccUser = getNewCcUser();
-        String mrdId = ccUser.getAssociatedMrds().get(0).getMrdId();
-        Agent agent = mock(Agent.class);
-
-        when(agentsPool.findBy(ccUser.getId())).thenReturn(agent);
-        when(agent.getNoOfActiveQueueTasks(mrdId)).thenReturn(3);
-        when(agent.getAgentMrdState(mrdId)).thenReturn(getAgentMrdState(Enums.AgentMrdStateName.BUSY));
-        when(mrdPool.getType(mrdId)).thenReturn(getMrdType());
-
-        agentsService.updateAgentMrdState(ccUser);
-        Assertions.assertThat(output).contains("MRD state has been changed from BUSY to ACTIVE.");
-
-    }
-
-
-    private CCUser getNewCcUser() {
-        List<AssociatedRoutingAttribute> attributes = new ArrayList<>();
-        attributes.add(getNewAssociatedAttribute("Sales", RoutingAttributeType.BOOLEAN, 1));
-        attributes.add(getNewAssociatedAttribute("English", RoutingAttributeType.PROFICIENCY_LEVEL, 7));
-        CCUser ccUser = new CCUser();
-        ccUser.setKeycloakUser(getNewKeyClockUser());
-        ccUser.setAssociatedRoutingAttributes(attributes);
-        ccUser.setId(ccUser.getKeycloakUser().getId());
-
-        AssociatedMrd associatedMrd = new AssociatedMrd(UUID.randomUUID().toString(), 5);
-        ccUser.addAssociatedMrd(associatedMrd);
-        return ccUser;
-    }
-
-    private KeycloakUser getNewKeyClockUser() {
-        KeycloakUser keycloakUser = new KeycloakUser();
-        keycloakUser.setId(UUID.randomUUID().toString());
-        return keycloakUser;
-    }
-
-    private RoutingAttribute getNewAttribute(String name, RoutingAttributeType type) {
-        RoutingAttribute routingAttribute = new RoutingAttribute();
-        routingAttribute.setId(UUID.randomUUID().toString());
-        routingAttribute.setName(name);
-        routingAttribute.setDescription(name + "desc");
-        routingAttribute.setType(type);
-        routingAttribute.setDefaultValue(1);
-        return routingAttribute;
-    }
-
-    private AssociatedRoutingAttribute getNewAssociatedAttribute(String name, RoutingAttributeType type, int value) {
-        AssociatedRoutingAttribute associatedRoutingAttribute = new AssociatedRoutingAttribute();
-        associatedRoutingAttribute.setRoutingAttribute(getNewAttribute(name, type));
-        associatedRoutingAttribute.setValue(value);
-        return associatedRoutingAttribute;
-    }
-
-    private AgentMrdState getAgentMrdState(Enums.AgentMrdStateName state) {
-        MediaRoutingDomain mrd =
-                new MediaRoutingDomain(UUID.randomUUID().toString(), Constants.CHAT_MRD_TYPE_ID, "", "", 5);
-        return new AgentMrdState(mrd, state);
-    }
-
-    private MrdType getMrdType() {
-        return new MrdType(Constants.CHAT_MRD_TYPE_ID, MrdTypeName.CHAT, true, true, true);
     }
 }
