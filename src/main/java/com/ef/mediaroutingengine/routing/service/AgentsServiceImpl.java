@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -267,6 +268,19 @@ public class AgentsServiceImpl implements AgentsService {
             this.repository.save(ccUser);
             this.agentPresenceRepository.updateCcUser(ccUser);
         }
+    }
+
+    @Override
+    public ResponseEntity<Object> updateBulk(List<CCUser> agents) {
+        logger.info("Request to update {} agents initiated...", agents.size());
+        var updatedAgentsList = agents.stream().map(agent -> {
+            String agentId = agent.getId();
+            this.update(agent, agentId);
+            return agent;
+        }).collect(Collectors.toList());
+
+        logger.info("{} agents updated successfully.", agents.size());
+        return new ResponseEntity<>(updatedAgentsList, HttpStatus.OK);
     }
 
     @Override

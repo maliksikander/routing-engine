@@ -57,6 +57,13 @@ public interface AgentsService {
     void update(KeycloakUser keycloakUser);
 
     /**
+     * Update Bulk cc user.
+     *
+     * @param agents list of updated agents.
+     */
+    ResponseEntity<Object> updateBulk(List<CCUser> agents);
+
+    /**
      * Delete.
      *
      * @param id the id
