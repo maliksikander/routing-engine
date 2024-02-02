@@ -2,6 +2,7 @@ package com.ef.mediaroutingengine.routing.controller;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.mediaroutingengine.routing.service.AgentsService;
+import java.util.List;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -95,5 +96,17 @@ public class AgentsController {
     @DeleteMapping(value = "/agents/{id}", produces = "application/json")
     public ResponseEntity<Object> deleteAgent(@PathVariable String id) {
         return this.service.delete(id);
+    }
+
+    /**
+     * This function updates the agents in bulk.
+     *
+     * @param requestBody list of updated agents.
+     * @return list of updated agents response.
+     */
+    @CrossOrigin(origins = "*")
+    @PutMapping(value = "/agents", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Object> updateAgents(@Valid @RequestBody List<CCUser> requestBody) {
+        return this.service.updateBulk(requestBody);
     }
 }
