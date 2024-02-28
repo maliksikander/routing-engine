@@ -1,6 +1,7 @@
 package com.ef.mediaroutingengine.routing.service;
 
 import com.ef.cim.objectmodel.ExpressionEntity;
+import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.StepEntity;
@@ -21,6 +22,9 @@ import com.ef.mediaroutingengine.taskmanager.repository.TasksRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -182,6 +186,53 @@ public class StepsServiceImpl implements StepsService {
         } else {
             return moreThanOneSteps(precisionQueue, existing.get(), id, stepIndex);
         }
+    }
+
+    @Override
+    public Set<KeycloakUser> previewAgentsMatchingStepCriteriaInQueue(String queueId, Optional<String> stepId) {
+        logger.info("Retrieving agents matching Steps in Queue : {} .Request initiated.", queueId);
+        PrecisionQueue precisionQueue = this.precisionQueuesPool.findById(queueId);
+        if (precisionQueue == null) {
+            String errorMessage = QUEUE_NOT_FOUND_MSG + queueId;
+            logger.error(errorMessage);
+            throw new NotFoundException(errorMessage);
+        }
+
+        Set<KeycloakUser> listOfAllAgentsInStepCriteria = stepId.isPresent()
+                ? this.previewAgentsInQueueStepLevel(precisionQueue, stepId)
+                : this.previewAgentsInQueueLevel(precisionQueue);
+
+        logger.info("({}) agents retrieved successfully.", listOfAllAgentsInStepCriteria.size());
+        return listOfAllAgentsInStepCriteria;
+    }
+
+    /**
+     * This function returns a list of available agents that exists in precisionQueue X for a specified Step.
+     *
+     * @param precisionQueue precisionQueue
+     * @param stepId         List of agents associated with Step X.
+     * @return List of agents in Queue X.
+     */
+    private Set<KeycloakUser> previewAgentsInQueueStepLevel(@NotNull PrecisionQueue precisionQueue,
+                                                            Optional<String> stepId) {
+        return precisionQueue.getSteps().stream()
+                .filter(step -> step.getId().equals(stepId.get()))
+                .flatMap(step -> step.getAssociatedAgents().stream())
+                .map(agent -> agent.getKeycloakUser())
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * This function returns a list of available agents that exists in precisionQueue X.
+     *
+     * @param precisionQueue precisionQueue.
+     * @return List of agents in Queue X.
+     */
+    private Set<KeycloakUser> previewAgentsInQueueLevel(@NotNull PrecisionQueue precisionQueue) {
+        return precisionQueue.getSteps().stream()
+                .flatMap(step -> step.getAssociatedAgents().stream())
+                .map(agent -> agent.getKeycloakUser())
+                .collect(Collectors.toSet());
     }
 
     private void deleteStep(PrecisionQueue precisionQueue, PrecisionQueueEntity precisionQueueEntity, String id) {
