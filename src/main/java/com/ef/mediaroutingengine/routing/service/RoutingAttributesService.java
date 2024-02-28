@@ -1,8 +1,10 @@
 package com.ef.mediaroutingengine.routing.service;
 
+import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.routing.dto.RoutingAttributeDeleteConflictResponse;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The interface Routing attributes service.
@@ -40,4 +42,12 @@ public interface RoutingAttributesService {
      * @return the routing attribute delete conflict response
      */
     RoutingAttributeDeleteConflictResponse delete(String id);
+
+    /**
+     * This function retrieves all agents with the associated routing attributes.
+     *
+     * @param routingAttributes routingAttributes list.
+     * @return Agents List
+     */
+    Set<KeycloakUser> retrieveAgentsWithAssociatedRoutingAttributes(List<RoutingAttribute> routingAttributes);
 }

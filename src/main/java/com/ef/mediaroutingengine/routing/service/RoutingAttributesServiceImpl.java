@@ -3,6 +3,7 @@ package com.ef.mediaroutingengine.routing.service;
 import com.ef.cim.objectmodel.AssociatedRoutingAttribute;
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.ExpressionEntity;
+import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.cim.objectmodel.StepEntity;
@@ -14,6 +15,8 @@ import com.ef.mediaroutingengine.routing.repository.AgentsRepository;
 import com.ef.mediaroutingengine.routing.repository.PrecisionQueueRepository;
 import com.ef.mediaroutingengine.routing.repository.RoutingAttributeRepository;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -137,6 +140,29 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
 
         logger.info("Could not delete RoutingAttribute {}, there are Queues or Agents associated to it", id);
         return new RoutingAttributeDeleteConflictResponse(precisionQueueEntities, agents);
+    }
+
+    @Override
+    public Set<KeycloakUser> retrieveAgentsWithAssociatedRoutingAttributes(List<RoutingAttribute> routingAttributes) {
+        logger.info("Request to retrieve agents with associated RoutingAttribute initiated.");
+
+        var allAgentsWithAssociatedRoutingAttributes = routingAttributes.stream()
+                .map(attr -> {
+                    if (!routingAttributesPool.existsById(attr.getId())) {
+                        String errorMessage = "Could not find RoutingAttribute : " + attr.getName() + " resource.";
+                        logger.error(errorMessage);
+                        throw new NotFoundException(errorMessage);
+                    }
+
+                    List<CCUser> usersEntityList = this.agentsRepository.findByRoutingAttributeId(attr.getId());
+                    return usersEntityList;
+                })
+                .flatMap(ccUsersStream -> ccUsersStream.stream())
+                .map(key -> key.getKeycloakUser())
+                .collect(Collectors.toSet());
+
+        logger.info("({}) agents retrieved successfully.", allAgentsWithAssociatedRoutingAttributes.size());
+        return allAgentsWithAssociatedRoutingAttributes;
     }
 
     /**
