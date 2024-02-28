@@ -1,7 +1,10 @@
 package com.ef.mediaroutingengine.routing.service;
 
+import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.StepEntity;
+import java.util.Optional;
+import java.util.Set;
 import org.springframework.http.ResponseEntity;
 
 /**
@@ -35,4 +38,13 @@ public interface StepsService {
      * @return the response entity
      */
     ResponseEntity<Object> delete(String queueId, String id);
+
+    /**
+     * This function retrieves all the agents that are falling in the steps criteria in queue X.
+     *
+     * @param stepId  stepId
+     * @param queueId queueId
+     * @return list og agents.
+     */
+    Set<KeycloakUser> previewAgentsMatchingStepCriteriaInQueue(String queueId, Optional<String> stepId);
 }

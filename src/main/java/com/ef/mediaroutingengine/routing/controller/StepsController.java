@@ -2,16 +2,19 @@ package com.ef.mediaroutingengine.routing.controller;
 
 import com.ef.cim.objectmodel.StepEntity;
 import com.ef.mediaroutingengine.routing.service.StepsService;
+import java.util.Optional;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -73,5 +76,20 @@ public class StepsController {
     @DeleteMapping("/precision-queues/{queueId}/steps/{id}")
     public ResponseEntity<Object> delete(@PathVariable String queueId, @PathVariable String id) {
         return this.service.delete(queueId, id);
+    }
+
+    /**
+     * This API retrieves list of agents who are falling in step criteria in queue (X).
+     *
+     * @param queueId queueId
+     * @return Agents list.
+     */
+    @CrossOrigin(origins = "*")
+    @GetMapping("/precision-queues/{queueId}/agents")
+    public ResponseEntity<Object> getAgentsMatchingStepsCriteria(@PathVariable String queueId,
+                                                                 @RequestParam(required = false)
+                                                                 Optional<String> stepId) {
+        return new ResponseEntity<>(this.service.previewAgentsMatchingStepCriteriaInQueue(queueId, stepId),
+                HttpStatus.OK);
     }
 }
