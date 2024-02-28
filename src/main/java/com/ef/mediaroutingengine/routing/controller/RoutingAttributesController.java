@@ -4,6 +4,7 @@ import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.global.dto.SuccessResponseBody;
 import com.ef.mediaroutingengine.routing.dto.RoutingAttributeDeleteConflictResponse;
 import com.ef.mediaroutingengine.routing.service.RoutingAttributesService;
+import java.util.List;
 import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,5 +103,19 @@ public class RoutingAttributesController {
         }
         SuccessResponseBody responseBody = new SuccessResponseBody("Successfully deleted");
         return new ResponseEntity<>(responseBody, HttpStatus.OK);
+    }
+
+    /**
+     * This API retrieves a list of all agents that are assigned with relevant routing attributes.
+     *
+     * @param requestBody List of routing attributes.
+     * @return list of agents.
+     */
+    @CrossOrigin(origins = "*")
+    @PostMapping(value = "/routing-attributes/agents", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Object> retrieveAgentsAssociatedWithRoutingAttribute(
+            @Valid @RequestBody List<RoutingAttribute> requestBody) {
+        return new ResponseEntity<>(this.service.retrieveAgentsWithAssociatedRoutingAttributes(requestBody),
+                HttpStatus.OK);
     }
 }

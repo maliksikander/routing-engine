@@ -10,6 +10,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.MediaRoutingDomain;
@@ -76,6 +77,73 @@ class RoutingAttributesServiceImplTest {
         verify(this.routingAttributesPool, times(1)).insert(routingAttributeArgumentCaptor.capture());
         assertEquals(routingAttribute.getId(), returnedValue.getId());
 
+    }
+
+    @Test
+    void testUpdatePrecisionQueue_when_UpdateIsSuccessful() {
+        RoutingAttribute routingAttribute = getRoutingAttributeRequest();
+        String routingId = UUID.randomUUID().toString();
+
+        PrecisionQueueEntity entity = mock(PrecisionQueueEntity.class);
+        List<PrecisionQueueEntity> precisionQueueEntities = new ArrayList<>();
+        precisionQueueEntities.add(entity);
+
+        doReturn(precisionQueueEntities).when(this.precisionQueueRepository).findByRoutingAttributeId(routingId);
+
+        routingAttributesService.updatePrecisionQueues(routingAttribute, routingId);
+
+        verify(this.precisionQueueRepository).saveAll(any());
+    }
+
+    private RoutingAttribute getRoutingAttributeRequest() {
+        RoutingAttribute routingAttribute = new RoutingAttribute();
+        routingAttribute.setId(UUID.randomUUID().toString());
+        routingAttribute.setName("test");
+        routingAttribute.setType(RoutingAttributeType.BOOLEAN);
+        return routingAttribute;
+    }
+
+    private PrecisionQueueRequestBody getPrecisionQueueRequest() {
+        PrecisionQueueRequestBody precisionQueueRequestBody = new PrecisionQueueRequestBody();
+        precisionQueueRequestBody.setId(UUID.randomUUID().toString());
+        precisionQueueRequestBody.setName("test");
+        precisionQueueRequestBody.setMrd(getMRD());
+        precisionQueueRequestBody.setServiceLevelThreshold(3);
+        return precisionQueueRequestBody;
+    }
+
+    private MediaRoutingDomain getMRD() {
+        MediaRoutingDomain mediaRoutingDomain = new MediaRoutingDomain();
+        mediaRoutingDomain.setId(UUID.randomUUID().toString());
+        mediaRoutingDomain.setName("chat");
+        return mediaRoutingDomain;
+    }
+
+    @Nested
+    class retrieveAgentsWithAssociatedRoutingAttributes {
+        @Test
+        void should_return_listOfAgents_withAssociatedRoutingAttributes() {
+            RoutingAttribute routingAttribute = getRoutingAttributeRequest();
+
+            when(routingAttributesPool.existsById(routingAttribute.getId())).thenReturn(true);
+            when(agentsRepository.findByRoutingAttributeId(routingAttribute.getId())).thenReturn(List.of(new CCUser()));
+            assertEquals(1,
+                    routingAttributesService.retrieveAgentsWithAssociatedRoutingAttributes(List.of(routingAttribute))
+                            .size());
+            assertFalse(
+                    routingAttributesService.retrieveAgentsWithAssociatedRoutingAttributes(List.of(routingAttribute))
+                            .isEmpty());
+        }
+
+        @Test
+        void should_throw_NOT_FOUND_whenProvidedRoutingAttributeDoesNotExists() {
+            RoutingAttribute routingAttribute = getRoutingAttributeRequest();
+
+            when(routingAttributesPool.existsById(routingAttribute.getId())).thenReturn(false);
+            assertThrows(NotFoundException.class,
+                    () -> routingAttributesService.retrieveAgentsWithAssociatedRoutingAttributes(
+                            List.of(routingAttribute)));
+        }
     }
 
     @Nested
@@ -185,46 +253,5 @@ class RoutingAttributesServiceImplTest {
             assertTrue(routingAttributesService.updateAgents(routingAttribute, routingId));
         }
 
-    }
-
-    @Test
-    void testUpdatePrecisionQueue_when_UpdateIsSuccessful() {
-        RoutingAttribute routingAttribute = getRoutingAttributeRequest();
-        String routingId = UUID.randomUUID().toString();
-
-        PrecisionQueueEntity entity = mock(PrecisionQueueEntity.class);
-        List<PrecisionQueueEntity> precisionQueueEntities = new ArrayList<>();
-        precisionQueueEntities.add(entity);
-
-        doReturn(precisionQueueEntities).when(this.precisionQueueRepository).findByRoutingAttributeId(routingId);
-
-        routingAttributesService.updatePrecisionQueues(routingAttribute, routingId);
-
-        verify(this.precisionQueueRepository).saveAll(any());
-    }
-
-
-    private RoutingAttribute getRoutingAttributeRequest() {
-        RoutingAttribute routingAttribute = new RoutingAttribute();
-        routingAttribute.setId(UUID.randomUUID().toString());
-        routingAttribute.setName("test");
-        routingAttribute.setType(RoutingAttributeType.BOOLEAN);
-        return routingAttribute;
-    }
-
-    private PrecisionQueueRequestBody getPrecisionQueueRequest() {
-        PrecisionQueueRequestBody precisionQueueRequestBody = new PrecisionQueueRequestBody();
-        precisionQueueRequestBody.setId(UUID.randomUUID().toString());
-        precisionQueueRequestBody.setName("test");
-        precisionQueueRequestBody.setMrd(getMRD());
-        precisionQueueRequestBody.setServiceLevelThreshold(3);
-        return precisionQueueRequestBody;
-    }
-
-    private MediaRoutingDomain getMRD() {
-        MediaRoutingDomain mediaRoutingDomain = new MediaRoutingDomain();
-        mediaRoutingDomain.setId(UUID.randomUUID().toString());
-        mediaRoutingDomain.setName("chat");
-        return mediaRoutingDomain;
     }
 }

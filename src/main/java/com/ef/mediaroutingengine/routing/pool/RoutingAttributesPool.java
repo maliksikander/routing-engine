@@ -27,6 +27,15 @@ public class RoutingAttributesPool {
         routingAttributes.forEach(routingAttribute -> pool.put(routingAttribute.getId(), routingAttribute));
     }
 
+    /** Check if attribute exists by id.
+     *
+     * @param id id
+     * @return boolean
+     */
+    public boolean existsById(String id) {
+        return this.pool.containsKey(id);
+    }
+
     /**
      * Find by id routing attribute.
      *
