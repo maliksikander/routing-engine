@@ -208,7 +208,15 @@ public class AgentsServiceImpl implements AgentsService {
 
     @Override
     public AgentPresence retrieveAgentByIdWithStates(String agentId) {
-        return this.agentPresenceRepository.find(agentId);
+        AgentPresence agentPresence = this.agentPresenceRepository.find(agentId);
+
+        if (agentPresence == null) {
+            String errorMsg = "Agent not found with id: " + agentId;
+            logger.error(errorMsg);
+            throw new NotFoundException(errorMsg);
+        }
+
+        return agentPresence;
     }
 
     @Override
