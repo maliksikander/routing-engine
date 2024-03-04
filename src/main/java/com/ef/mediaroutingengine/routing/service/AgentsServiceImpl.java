@@ -207,6 +207,11 @@ public class AgentsServiceImpl implements AgentsService {
     }
 
     @Override
+    public AgentPresence retrieveAgentByIdWithStates(String agentId) {
+        return this.agentPresenceRepository.find(agentId);
+    }
+
+    @Override
     public ResponseEntity<Object> update(CCUser ccUser, String id) {
         logger.info("Request to update CCUser initiated | CCUser: {}", id);
 

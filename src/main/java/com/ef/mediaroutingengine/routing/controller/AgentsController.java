@@ -70,6 +70,12 @@ public class AgentsController {
         return new ResponseEntity<>(this.service.retrieveAgentsWithStates(), HttpStatus.OK);
     }
 
+    @CrossOrigin(origins = "*")
+    @GetMapping(value = "/agents/{agentId}/states", produces = "application/json")
+    public ResponseEntity<Object> retrieveAgentByIdWithStates(@PathVariable String agentId) {
+        return new ResponseEntity<>(this.service.retrieveAgentByIdWithStates(agentId), HttpStatus.OK);
+    }
+
     /**
      * Updates-Agent API handler. Updates an Existing agent. Returns 404 Not-Found if the requested agent
      * is not found.

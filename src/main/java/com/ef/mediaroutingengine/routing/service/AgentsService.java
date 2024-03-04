@@ -40,6 +40,8 @@ public interface AgentsService {
      */
     List<AgentPresence> retrieveAgentsWithStates();
 
+    AgentPresence retrieveAgentByIdWithStates(String agentId);
+
     /**
      * Update cc user.
      *
