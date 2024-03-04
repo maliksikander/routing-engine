@@ -73,9 +73,9 @@ class StepsServiceImplTest {
             when(precisionQueuesPool.findById(queueId)).thenReturn(precisionQueue);
 
             assertEquals(1, stepsService.previewAgentsMatchingStepCriteriaInQueue(queueId, Optional.empty()).size());
-            assertEquals(getNewKeyClockUser().getUsername(),
+            assertEquals(getNewCcUser(),
                     stepsService.previewAgentsMatchingStepCriteriaInQueue(queueId,
-                            Optional.empty()).stream().findFirst().get().getUsername());
+                            Optional.empty()).stream().findFirst().get());
         }
 
         @Test
@@ -86,9 +86,9 @@ class StepsServiceImplTest {
             assertEquals(1,
                     stepsService.previewAgentsMatchingStepCriteriaInQueue(queueId, Optional.of(stepEntity.getId()))
                             .size());
-            assertEquals(getNewKeyClockUser().getUsername(),
+            assertEquals(getNewCcUser(),
                     stepsService.previewAgentsMatchingStepCriteriaInQueue(queueId,
-                            Optional.of(stepEntity.getId())).stream().findFirst().get().getUsername());
+                            Optional.of(stepEntity.getId())).stream().findFirst().get());
         }
 
         @Test
