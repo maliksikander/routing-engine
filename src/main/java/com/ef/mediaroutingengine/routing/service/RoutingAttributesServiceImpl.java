@@ -143,7 +143,7 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
     }
 
     @Override
-    public Set<KeycloakUser> retrieveAgentsWithAssociatedRoutingAttributes(List<RoutingAttribute> routingAttributes) {
+    public Set<CCUser> retrieveAgentsWithAssociatedRoutingAttributes(List<RoutingAttribute> routingAttributes) {
         logger.info("Request to retrieve agents with associated RoutingAttribute initiated.");
 
         var allAgentsWithAssociatedRoutingAttributes = routingAttributes.stream()
@@ -158,7 +158,6 @@ public class RoutingAttributesServiceImpl implements RoutingAttributesService {
                     return usersEntityList;
                 })
                 .flatMap(ccUsersStream -> ccUsersStream.stream())
-                .map(key -> key.getKeycloakUser())
                 .collect(Collectors.toSet());
 
         logger.info("({}) agents retrieved successfully.", allAgentsWithAssociatedRoutingAttributes.size());

@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.routing.service;
 
-import com.ef.cim.objectmodel.KeycloakUser;
+import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.RoutingAttribute;
 import com.ef.mediaroutingengine.routing.dto.RoutingAttributeDeleteConflictResponse;
 import java.util.List;
@@ -49,5 +49,5 @@ public interface RoutingAttributesService {
      * @param routingAttributes routingAttributes list.
      * @return Agents List
      */
-    Set<KeycloakUser> retrieveAgentsWithAssociatedRoutingAttributes(List<RoutingAttribute> routingAttributes);
+    Set<CCUser> retrieveAgentsWithAssociatedRoutingAttributes(List<RoutingAttribute> routingAttributes);
 }

@@ -1,5 +1,6 @@
 package com.ef.mediaroutingengine.routing.service;
 
+import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.ExpressionEntity;
 import com.ef.cim.objectmodel.KeycloakUser;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
@@ -189,7 +190,7 @@ public class StepsServiceImpl implements StepsService {
     }
 
     @Override
-    public Set<KeycloakUser> previewAgentsMatchingStepCriteriaInQueue(String queueId, Optional<String> stepId) {
+    public Set<CCUser> previewAgentsMatchingStepCriteriaInQueue(String queueId, Optional<String> stepId) {
         logger.info("Retrieving agents matching Steps in Queue : {} .Request initiated.", queueId);
         PrecisionQueue precisionQueue = this.precisionQueuesPool.findById(queueId);
         if (precisionQueue == null) {
@@ -198,7 +199,7 @@ public class StepsServiceImpl implements StepsService {
             throw new NotFoundException(errorMessage);
         }
 
-        Set<KeycloakUser> listOfAllAgentsInStepCriteria = stepId.isPresent()
+        Set<CCUser> listOfAllAgentsInStepCriteria = stepId.isPresent()
                 ? this.previewAgentsInQueueStepLevel(precisionQueue, stepId)
                 : this.previewAgentsInQueueLevel(precisionQueue);
 
@@ -213,12 +214,12 @@ public class StepsServiceImpl implements StepsService {
      * @param stepId         List of agents associated with Step X.
      * @return List of agents in Queue X.
      */
-    private Set<KeycloakUser> previewAgentsInQueueStepLevel(@NotNull PrecisionQueue precisionQueue,
+    private Set<CCUser> previewAgentsInQueueStepLevel(@NotNull PrecisionQueue precisionQueue,
                                                             Optional<String> stepId) {
         return precisionQueue.getSteps().stream()
                 .filter(step -> step.getId().equals(stepId.get()))
                 .flatMap(step -> step.getAssociatedAgents().stream())
-                .map(agent -> agent.getKeycloakUser())
+                .map(agent -> agent.toCcUser())
                 .collect(Collectors.toSet());
     }
 
@@ -228,10 +229,10 @@ public class StepsServiceImpl implements StepsService {
      * @param precisionQueue precisionQueue.
      * @return List of agents in Queue X.
      */
-    private Set<KeycloakUser> previewAgentsInQueueLevel(@NotNull PrecisionQueue precisionQueue) {
+    private Set<CCUser> previewAgentsInQueueLevel(@NotNull PrecisionQueue precisionQueue) {
         return precisionQueue.getSteps().stream()
                 .flatMap(step -> step.getAssociatedAgents().stream())
-                .map(agent -> agent.getKeycloakUser())
+                .map(agent -> agent.toCcUser())
                 .collect(Collectors.toSet());
     }
 

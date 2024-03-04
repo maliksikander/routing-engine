@@ -1,6 +1,6 @@
 package com.ef.mediaroutingengine.routing.service;
 
-import com.ef.cim.objectmodel.KeycloakUser;
+import com.ef.cim.objectmodel.CCUser;
 import com.ef.cim.objectmodel.PrecisionQueueEntity;
 import com.ef.cim.objectmodel.StepEntity;
 import java.util.Optional;
@@ -46,5 +46,5 @@ public interface StepsService {
      * @param queueId queueId
      * @return list og agents.
      */
-    Set<KeycloakUser> previewAgentsMatchingStepCriteriaInQueue(String queueId, Optional<String> stepId);
+    Set<CCUser> previewAgentsMatchingStepCriteriaInQueue(String queueId, Optional<String> stepId);
 }
