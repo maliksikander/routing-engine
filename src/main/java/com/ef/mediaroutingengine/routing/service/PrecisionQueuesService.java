@@ -30,6 +30,14 @@ public interface PrecisionQueuesService {
     ResponseEntity<Object> retrieve(String queueId);
 
     /**
+     * Retrieve by name precision queue entity.
+     *
+     * @param queueName the queue name
+     * @return the precision queue entity
+     */
+    PrecisionQueueEntity retrieveByName(String queueName);
+
+    /**
      * Update precision queue entity.
      *
      * @param requestBody the precision queue entity
