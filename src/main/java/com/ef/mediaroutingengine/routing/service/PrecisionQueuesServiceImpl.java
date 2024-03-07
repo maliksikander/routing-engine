@@ -133,6 +133,19 @@ public class PrecisionQueuesServiceImpl implements PrecisionQueuesService {
     }
 
     @Override
+    public PrecisionQueueEntity retrieveByName(String queueName) {
+        PrecisionQueueEntity queue = this.repository.findByName(queueName).orElse(null);
+
+        if (queue == null) {
+            String errorMsg = "No Queue found with name: " + queueName;
+            logger.error(errorMsg);
+            throw new NotFoundException(errorMsg);
+        }
+
+        return queue;
+    }
+
+    @Override
     public PrecisionQueueEntity update(PrecisionQueueRequestBody requestBody, String id) {
         logger.info("Update PrecisionQueue request initiated | Queue: {}", id);
 
