@@ -94,7 +94,8 @@ public class AgentStateNotReady implements AgentStateDelegate {
                     && !agentMrdState.getState().equals(Enums.AgentMrdStateName.PENDING_NOT_READY)) {
                 agentMrdState.setState(Enums.AgentMrdStateName.PENDING_NOT_READY);
                 mrdStateChanges.add(mrdId);
-            } else if (!agentMrdState.getState().equals(Enums.AgentMrdStateName.NOT_READY)) {
+            } else if (!(agentMrdState.getState().equals(Enums.AgentMrdStateName.NOT_READY)
+                    || agentMrdState.getState().equals(Enums.AgentMrdStateName.PENDING_NOT_READY))) {
                 agentMrdState.setState(Enums.AgentMrdStateName.NOT_READY);
                 mrdStateChanges.add(mrdId);
             }

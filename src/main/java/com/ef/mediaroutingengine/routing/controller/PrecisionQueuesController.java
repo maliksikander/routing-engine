@@ -75,6 +75,12 @@ public class PrecisionQueuesController {
         return this.service.retrieve(queueId);
     }
 
+    @CrossOrigin(origins = "*")
+    @GetMapping(value = "/precision-queues/name/{queueName}", produces = "application/json")
+    public ResponseEntity<Object> retrieveByName(@PathVariable String queueName) {
+        return ResponseEntity.ok().body(this.service.retrieveByName(queueName));
+    }
+
     /**
      * Retrieves-Precision-Queues API handler. Returns the list of all PrecisionQueues with
      * the associated available agents.
